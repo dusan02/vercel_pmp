@@ -1,0 +1,1088 @@
+<DefinitionAndReference>
+  <Element Id="fcx_DerivativesEmbeddedDerivativesAccountingPolicyTextBlock">
+    <definition>Describes an entity's accounting policy for embedded derivatives, including how such derivatives are identified and analyzed for possible separation from their host contracts.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisTotalAvailableForSaleSecurities">
+    <definition>This element represents a total of certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromPaymentsForOtherFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_OutstandingStockOptionsWithExercisePricesGreaterThanAverageMarketPriceOfCommonStock">
+    <definition>Outstanding stock options with exercise prices greater than the average market price of FCX's common stock during the period, which are excluded from the computation of diluted net income per share of common stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_SegmentReportingInformationTenkeStartUpCostExpense">
+    <definition>Segment startup costs associated with Tenke Fungurume's project</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeAssetDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_RioTintoShareOfJointVentureCashFlows">
+    <definition>Carrying value as of the balance sheet date of cash flows (due within one year or within the normal operating cycle if longer) due to PT Freeport Indonesia's joint venture partner, Rio Tinto.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_CompanysOwnershipInPtFreeportIndonesiaThroughEquityInAnotherCompanyPercent">
+    <definition>Percentage interest in PT Freeport Indonesia owned through ownership interest in PT Indocopper Investama</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCurrentReportingStatus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_NumberOfRodMillsInRodAndRefiningSegment">
+    <definition>The number of rod mills included in the Rod and Refining segment of reporting.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_DebtInstrumentFaceAmountAtRetirement">
+    <definition>The stated principal amount of the debt instrument at time of retirement, which may vary from the carrying amount because of unamortized premium or discount.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_PropertyPlantEquipmentAndDevelopmentCostsNet">
+    <definition>Tangible assets that are held by an entity for use in the production or supply of goods and services, for rental to others, or for administrative purposes and that are expected to provide economic benefit for more than one year; net of accumulated depreciation. Examples include land, buildings, production equipment and development costs.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_Changesinotherassetsandliabilities">
+    <definition>The net change during the reporting period in other noncurrent assets and liabilities not otherwise defined in the taxonomy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_LongTermMillAndLeachStockpiles">
+    <definition>Stockpile inventories not expected to be converted to cash, sold or exchanged within one year (or the normal operating cycle, if longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisTotalTrustAssets">
+    <definition>This element represents a total of certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_IncrementalCommonSharesAttributableToConversionOfMandatoryConvertiblePreferredStock">
+    <definition>Mandatory convertible preferred stock, if dilutive, shall be assumed to have been converted at the beginning of the period (or at time of issuance, if later), and the resulting common shares shall be included in common shares used to calculate diluted earnings per shares.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromOtherDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_SegmentReportingInformationIntersegmentRevenueIndonesia">
+    <definition>Amount of sales from PT Freeport Indonesia to PT Smelting</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsAtCarryingValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeLowerRemainingMaturityRange">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ExtinguishmentOfDebtGainLossNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ExtinguishmentOfDebtGainLossPerShareNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsReceivableNetCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ChangeInUnrealizedGainLossOnFairValueHedgingInstruments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingInformationRevenueFromExternalCustomers">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_SouthAmericanCapitalExpenditures">
+    <definition>The cash outflow for South America copper mines' purchases of and capital improvements on property, plant and equipment (capital expenditures), software, and other intangible assets and capitalized interest.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_ConversionsOfMandatoryConvertiblePreferredStockValue">
+    <definition>Represents amounts related to conversions of FCX's 6.75% Mandatory Convertible Preferred Stock into shares of FCX common stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Assets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeReclassificationOfDefinedBenefitPlansNetGainLossRecognizedInNetPeriodicBenefitCostNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_ExercisedStockOptionsIssuedRestrictedStockAndOtherShares">
+    <definition>Number of shares issued during the period as a result of the exercise of stock options, and shares issued during the period related to Restricted Stock Awards, net of any shares forfeited.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryWriteDown">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_PaymentsOfReclamationAndEnvironmentalObligations">
+    <definition>Payments for asset retirement obligations and environmental liabilities during the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryValuationReserves">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_IncrementalCommonSharesAttributableToDilutiveStockOptions">
+    <definition>Share options to be issued to an employee under a share-based compensation arrangement are considered options for purposes of computing diluted earnings per share. Such share-based awards shall be considered to be outstanding as of the grant date. If the equity share options are outstanding for only part of a period, the shares issuable shall be weighted to reflect the portion of the period during which they were outstanding.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_TrustAssetsCurrentAndLongTermFairValueDisclosure">
+    <definition>Represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption, parenthetical disclosure or within the fair value disclosures required in the footnote disclosures to the financial statements. This item represents the amount of trust assets (current and long-term) existing as of the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDefinedBenefitPlansDisclosuresTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_ReclamationAndEnvironmentalObligationsLessCurrentPortion">
+    <definition>Noncurrent portion of reclamation reserve and environmental reserve to restore a mining or drilling site to the condition agreed upon (1) within the mining or drilling contract, (2) in compliance with state or federal laws, or (3) as a result of settlement agreements with state or federal authorities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherInventorySupplies">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryFinishedGoods">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterestDecreaseFromDistributionsToNoncontrollingInterestHolders">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_GeneralInformationTextBlock">
+    <definition>Description containing the entire organization, consolidation and basis of presentation of financial statements disclosure.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeAssetNotDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_ChargesForReclamationAndEnvironmentalObligationsIncludingAccretion">
+    <definition>Charges for asset retirement obligations and environmental liabilities during the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_InventoryLcmAdjustmentEffectOnNetIncomeMolybdenum">
+    <definition>The effect of the lower of cost or market adjustment of the molybdenum inventory on net income.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForProceedsFromOtherInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_MandatoryConvertiblePreferredStockSharesIssuedUponConversion">
+    <definition>Number of common shares issued for each share of mandatory convertible preferred stock that was converted.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsOfDividendsPreferredStockAndPreferenceStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdjustmentsNoncashItemsToReconcileNetIncomeLossToCashProvidedByUsedInOperatingActivitiesOther">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_TotalInventories">
+    <definition>Carrying amount (lower of cost or market) as of the balance sheet date of inventories less all valuation and other allowances.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_InventoriesAndMillAndLeachStockpilesTextBlock">
+    <definition>Disclose the basis of stating inventory, the method of determining inventory cost, if inventories are stated above cost, the accrued net losses on firm purchase commitments for inventory and losses resulting from valuing inventory at the lower-of-cost-or-market, the major classes of inventories (such as finished goods, inventoried costs relating to long-term contracts or programs, work in process, raw materials and supplies). Includes current and long-term balances of mill and leach stockpiles.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_IncreaseDecreaseInNetPeriodicBenefitCosts">
+    <definition>Net change in net periodic benefit costs for the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PensionAndOtherPostretirementBenefitsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentPeriodEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCentralIndexKey">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_AntidilutivePreferredDividendsAttributableToMandatoryConvertiblePreferredStock">
+    <definition>Mandatory convertible preferred stock dividends (including those issuable pursuant to contingent stock agreements) that were not included in the computation of diluted income available to common shareholders because to do so would increase diluted income per common shareholder or decrease the diluted loss per common shareholder for the period presented.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarlyRepaymentOfSeniorDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ComprehensiveIncomeNetOfTaxIncludingPortionAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_AccruedIncomesTaxes">
+    <definition>Carrying amount as of the balance sheet date of the unpaid sum of the known and estimated amounts payable to satisfy all currently due domestic and foreign income tax obligations. In theory, the sum represents amounts due to tax jurisdictions based on tax returns as if they were ready and available for filing on and as of the balance sheet date, including tax uncertainties.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_Eliminationrecognitionofprofitonsalestounconsolidatedaffiliates">
+    <definition>Elimination (recognition) of profit on sales to unconsolidated affiliates.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanInterestCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueDisclosuresTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisTotalCashEquivalents">
+    <definition>This element represents a total of certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FederalIncomeTaxExpenseBenefitContinuingOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareDiluted">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_AnnualCashDividendBeforeAprilIncrease">
+    <definition>Annual cash dividend rate before April 2010 increase.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisMoneyMarketFundsCashEquivalents">
+    <definition>This element represents a certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsPayableAndAccruedLiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfSharesOutstandingBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_MillAndLeachStockpiles">
+    <definition>Carrying amount (lower of cost or market) as of the balance sheet date of stockpile inventories less all valuation and other allowances. Excludes noncurrent inventory balances (expected to remain on hand past one year or one operating cycle, if longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_NorthAmericaCapitalExpenditures">
+    <definition>The cash outflow for North America copper mines' purchases of and capital improvements on property, plant and equipment (capital expenditures), software, and other intangible assets and capitalized interest.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityFilerCategory">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccruedIncomeTaxesPayable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_DebtInstrumentInterestRateStatedPercentageAtRetirement">
+    <definition>Interest rate stated during the period retired.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_SegmentsCopperProductionPercent">
+    <definition>Percentage of primary division's copper production produced by that mine.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SharesIssued">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_InterestExpenseNet">
+    <definition>The aggregate interest expense incurred on trading liabilities, commercial paper, long-term debt, capital leases, deposits, and all other borrowings, net of capitalized interest.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_MandatoryConvertiblePreferredStockConversionRate">
+    <definition>Conversion rate related to FCX's mandatory convertible preferred stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_PercentageSubjectToShareholderRightsPlan">
+    <definition>Percentage of FCX's outstanding common stock previously subject to shareholder rights plan</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GainsLossesOnExtinguishmentOfDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativesPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_CurrentFiscalYearEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateReconciliationForeignIncomeTaxRateDifferential">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_DebtAndEquityTransactionsTextBlock">
+    <definition>Information regarding debt and equity transactions during the quarter to date and year to date periods (if applicable) covered by the current reporting date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestCostsIncurred">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_PaidToBrokersAssociatedWithMarginRequirements">
+    <definition>Amount paid to brokers associated with margin requirements (recorded in other current assets) at period end.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_CompanysOwnershipInIndividualMinePercent">
+    <definition>Percentage of company ownership in a particular mine.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisCorporateBondsTrustAssets">
+    <definition>This element represents a certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeFinancialInstrumentsAssetsFairValueDisclosure">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SellingGeneralAndAdministrativeExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDerivativeInstrumentsGainLossInStatementOfFinancialPerformanceTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_RevenuesGoodsAndServices">
+    <definition>Total revenue from sale of goods and services rendered during the reporting period, in the normal course of business, net of refining, hedging, prior period adjustments and royalties.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccountsReceivable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_CommonSharesIssuedAtConversionOfMandatoryConvertiblePreferredStock">
+    <definition>The number of shares of common stock issued upon conversion of mandatory convertible preferred stock to common stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherAssetsCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_DepreciationDepletionAndAmortizationAsReportedInStatementOfCashFlows">
+    <definition>Depreciation of property, plant and equipment directly related to goods produced and sold during the reporting period and the expense recognized in the current period that recognizes the reduction in the quantity of resources (for example, coal, oil, minerals, gas) that are held as assets on the statement of financial position. This element applies only to assets used in the production of goods sold.It includes results from discontinued operations, if applicable.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalYearFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueMeasurementInputsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInOperatingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_DerivativeLatestMaturityPeriod">
+    <definition>The month of the latest date the derivative matures.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueLiabilitiesMeasuredOnRecurringBasisCopperFuturesAndSwapContractsDerivatives">
+    <definition>This element represents a certain statement of financial position liability caption which represents a class of liabilities, or which may include an individual liability, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesAndStockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RestructuringCharges">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ChangeInUnrealizedGainLossOnHedgedItemInFairValueHedge">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfNewAccountingPronouncementsAndChangesInAccountingPrinciplesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_NumberOfPrimaryDivisions">
+    <definition>FCX has organized its operations into five primary divisions - North America copper mines, South America mining, Indonesia mining, Africa mining and Molybdenum operations.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDerivativeInstrumentsIncludedInTradingActivitiesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_OtherAccountsReceivable">
+    <definition>Carrying amounts due as of the balance sheet date from parties or arising from transactions not otherwise specified in the taxonomy. Represents the current amount receivable, that is amounts expected to be collected within one year, reduced to the estimated net realizable fair value by an allowance established by the entity of the amount it deems uncertain of collection.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_ReceivedFromBrokersAssociatedWithMarginRequirements">
+    <definition>Amount received from brokers associated with margin requirements at period end.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_DebtInstrumentRetirementPricePercentageOfPrincipalAmount">
+    <definition>Redemption price of a debt instrument stated as a percentage of principal amount of the instrument (plus accrued and unpaid interest).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_AfricanCapitalExpenditures">
+    <definition>The cash outflow for African purchases of and capital improvements on property, plant and equipment (capital expenditures), software, and other intangible assets and capitalized interest.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_LongTermDebtIncludingAmountsDueWithinOneYearFairValueDisclosure">
+    <definition>Represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption, parenthetical disclosure or within the fair value disclosures required in the footnote disclosures to the financial statements. This item represents the amount of long-term debt (including amounts due within one year) existing as of the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_DerivativesIncludedInAccountsReceivableFairValueDisclosure">
+    <definition>Represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption, parenthetical disclosure or within the fair value disclosures required in the footnote disclosures to the financial statements. This item represents the amount of derivatives included in accounts receivable existing as of the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdjustmentsToAdditionalPaidInCapitalSharebasedCompensationRequisiteServicePeriodRecognitionValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanNetPeriodicBenefitCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_MillStockpilesLongTerm">
+    <definition>Long-term portion of mill stockpiles not expected to be converted to cash, sold or exchanged within one year (or the normal operating cycle, if longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanActuarialNetGainsLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_AssumedConversionOfConvertiblePerpetualPreferredStockDividends">
+    <definition>Income impact for assumed conversion of convertible perpetual preferred stock in computing the dilutive effect of convertible securities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestCostsCapitalized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisUsCoreFixedIncomeFundTrustAssets">
+    <definition>This element represents a certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLossAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_IncreaseDecreaseInAmortizationOfActuarialLosses">
+    <definition>Net change in amortization of actuarial losses for the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_TotalProductInventories">
+    <definition>Carrying amount as of the balance sheet date of raw materials, work-in-process, and finished goods for Mining Operations and Atlantic Copper, S.A. (Atlantic Copper) held for future sale or to be used in manufacturing, servicing or production process.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_AntidilutiveCommonSharesAttributableToMandatoryConvertiblePreferredStockShares">
+    <definition>Common shares attributable to mandatory convertible preferred stock (including those issuable pursuant to contingent stock agreements) that could potentially dilute basic earnings per share (EPS) in the future that were not included in the computation of diluted EPS because to do so would increase EPS amounts or decrease loss per share amounts for the period presented.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsOfDividendsCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisCopperFuturesAndSwapContractsDerivatives">
+    <definition>This element represents a certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfSegmentReportingInformationBySegmentTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeAverageForwardPrice">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DividendsPreferredStockCash">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_Product">
+    <definition>Carrying amount as of the balance sheet date, including unprocessed items to be consumed in the production process; goods which are partially completed, and which require further materials, labor and overhead to be converted into finished goods; and goods held by the company that are readily available for sale.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisMoneyMarketFundsAvailableForSaleSecurities">
+    <definition>This element represents a certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDerivativeInstrumentsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_ScheduleOfDilutedEarningsPerShareTextBlock">
+    <definition>This element may be used to capture the complete disclosure pertaining to an entity's diluted earnings per share calculation.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProfitLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToAcquireOtherProductiveAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeLiabilityDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeLiabilityNotDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherNonoperatingIncomeExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_LeachStockpilesLongTerm">
+    <definition>Long-term portion of leach stockpiles not expected to be converted to cash, sold or exchanged within one year (or the normal operating cycle, if longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsAndHedgingActivitiesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_TenderOfSharesForStockBasedAwardsValue">
+    <definition>Value of stock tendered to the company during the period as a result of any share-based compensation plan other than an employee stock ownership plan (ESOP). This element is not the recognition of share-based compensation expense in pursuant to FAS 123R. That element is AdjustmentsToAdditionalPaidInCapitalSharebasedCompensationRequisiteServicePeriodRecognitionValue (Adjustments to Additional Paid in Capital, Share-based Compensation, Requisite Service Period Recognition, Value).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsGainLossRecognizedInIncomeNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_CurrentPortionOfReclamationAndEnvironmentalObligations">
+    <definition>Current portion of reclamation reserve and environmental reserve to restore a mining or drilling site to the condition agreed upon (1) within the mining or drilling contract, (2) in compliance with state or federal laws, or (3) as a result of settlement agreements with state or federal authorities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisTotalDerivatives">
+    <definition>This element represents a total of certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_ExercisedStockOptionsIssuedRestrictedStockAndOtherValue">
+    <definition>Amounts related to shares issued during the period as a result of the exercise of stock options, and shares issued during the period related to Restricted Stock Awards, net of any shares forfeited.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_SharesOfMandatoryConvertiblePreferredStockVoluntarilyConverted">
+    <definition>The number of shares of FCX's mandatory convertible preferred stock converted into FCX common stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Liabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CostsAndExpenses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_IndonesiaCapitalExpenditures">
+    <definition>The cash outflow for Indonesian purchases of and capital improvements on property, plant and equipment (capital expenditures), software, and other intangible assets and capitalized interest.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingInformationExpendituresForAdditionsToLongLivedAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AntidilutiveSecuritiesExcludedFromComputationOfEarningsPerShareAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueLiabilitiesMeasuredOnRecurringBasisTotalDerivativesLiabilities">
+    <definition>This element represents a total of certain statement of financial position liability caption which represents a class of liabilities, or which may include an individual liability, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingInformationIntersegmentRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisGovernmentMortgageBackedSecuritiesTrustAssets">
+    <definition>This element represents a certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_DerivativesIncludedInAccountsPayableAndAccruedLiabilitiesFairValueDisclosure">
+    <definition>Represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption, parenthetical disclosure or within the fair value disclosures required in the footnote disclosures to the financial statements. This item represents the amount of derivatives included in trade and related party payables and accrued expenses existing as of the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DividendsCommonStockCash">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PreferredStockDividends">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ExcessTaxBenefitFromShareBasedCompensationFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_Increaseinlongtermmillandleachstockpiles">
+    <definition>The net change during the reporting period in the aggregate value of long-term mill and leach stockpile inventories held by the reporting entity, associated with underlying transactions that are classified as operating activities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_EffectOfMolybdenumLcmInventoryAdjustmentOnDilutedEarningsPerShare">
+    <definition>Effect on diluted earnings per share of lower of cost or market adjustment of the molybdenum inventory.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_MandatoryConvertiblePreferredStockSharesOustandingPriorToConversion">
+    <definition>Number of shares outstanding of mandatory convertible preferred stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_AssumedConversionOfMandatoryConvertiblePreferredStockDividends">
+    <definition>Income impact for assumed conversion of mandatory convertible preferred stock in computing the dilutive effect of convertible securities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfSubsequentEventsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_MillAndLeachStockpilesTextBlock">
+    <definition>Includes current and long-term balances of mill and leach stockpiles.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_ConversionsOfMandatoryConvertiblePreferredStockShares">
+    <definition>Represents number of shares related to conversions of FCX's 6.75% Mandatory Convertible Preferred Stock into shares of FCX common stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_MandatoryConvertiblePreferredStockConversionShares">
+    <definition>The number of shares of FCX's mandatory convertible preferred stock converted into FCX common stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateContinuingOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_ConvertiblePerpetualPreferredStockDividendRatePercentage">
+    <definition>Dividend payment percentage rate for the convertible perpetual preferred stock, such as three percent.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_WeightedAverageExercisePriceOfOutstandingStockOptions">
+    <definition>The weighted-average exercise price of stock options with exercise prices greater than the average market price of FCX's common stock during the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityPublicFloat">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_IncreaseDecreaseInExpectedReturnOnPlanAssets">
+    <definition>Net change in expected return on plan assets for the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisAssetBackedSecuritiesTrustAssets">
+    <definition>This element represents a certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalPeriodFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_DerivativeAverageMarketPrice">
+    <definition>The average market price for a group of price risk forward or futures contracts, such as gas futures contracts.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDerivativeInstrumentsInStatementOfFinancialPositionFairValueTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ComprehensiveIncomeNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryWorkInProcess">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DividendsPayableCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_DepreciationDepletionAndAmortizationAsPresentedInIncomeStatement">
+    <definition>Depreciation of property, plant and equipment directly related to goods produced and sold during the reporting period and the expense recognized in the current period that recognizes the reduction in the quantity of resources (for example, coal, oil, minerals, gas) that are held as assets on the statement of financial position. This element applies only to assets used in the production of goods sold.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateReconciliationAtFederalStatutoryIncomeTaxRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromEquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisEquitySecuritiesAvailableForSaleSecurities">
+    <definition>This element represents a certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedReturnOnPlanAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLossAvailableToCommonStockholdersDiluted">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryRawMaterials">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentType">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_IncreaseDecreaseInSpecialRetirementBenefitsAndCurtailments">
+    <definition>Net change in special retirement benefits and curtailments for the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccountsPayableAndAccruedLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_CommonSharesIssuedAtVoluntaryConversionOfMandatoryConvertiblePreferredStock">
+    <definition>The number of shares of common stock issued upon voluntary conversion of mandatory convertible preferred stock to common stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_MillStockpilesCurrent">
+    <definition>Carrying amount (lower of cost or market) as of the balance sheet date of mill stockpile inventories less all valuation and other allowances. Excludes noncurrent inventory balances (expected to remain on hand past one year or one operating cycle, if longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueLiabilitiesMeasuredOnRecurringBasisEmbeddedDerivativesInProvisionalSalesPurchasesDerivatives">
+    <definition>This element represents a certain statement of financial position liability caption which represents a class of liabilities, or which may include an individual liability, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetsCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisTimeDepositsAvailableForSaleSecurities">
+    <definition>This element represents a certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanRecognizedNetGainLossDueToCurtailments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_MandatoryConvertiblePreferredStock">
+    <definition>Dollar value of issued nonredeemable, mandatorily convertible preferred stock whether issued at par value, no par or stated value. Note: elements for number of nonredeemable preferred shares, par value and other disclosure concepts are in another section within stockholders' equity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_AnnualCashDividendCurrent">
+    <definition>Annual cash dividend rate after April 2010 increase.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_NumberOfOperatingCopperMinesInSouthAmerica">
+    <definition>Number of operating copper mines in South America.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisGovernmentBondsAndNotesTrustAssets">
+    <definition>This element represents a certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_CommonSharesIssuedAtMandatoryConversionOfMandatoryConvertiblePreferredStock">
+    <definition>The number of shares of common stock issued upon mandatory conversion of mandatory convertible preferred stock to common stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_ExplorationAndResearchExpenses">
+    <definition>Exploration expenses (including prospecting) related to the mining industry would be included in operating expenses. Exploration costs include costs incurred in identifying areas that may warrant examination and in examining specific areas that are considered to have prospects of mineral reserves.
+
+Research and development costs are the aggregate costs incurred (1) in a planned search or critical investigation aimed at discovery of new knowledge with the hope that such knowledge will be useful in developing a new product or service, a new process or technique, or in bringing about a significant improvement to an existing product or process; or (2) to translate research findings or other knowledge into a plan or design for a new product or process or for a significant improvement to an existing product or process whether intended for sale or the entity's use, during the reporting period charged to research and development projects, including the costs of developing computer software up to the point in time of achieving technological feasibility, and costs allocated in accounting for a business combination to in-process projects deemed to have no alternative future use.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisMoneyMarketFundsTrustAssets">
+    <definition>This element represents a certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanSpecialTerminationBenefits">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdjustmentsToAdditionalPaidInCapitalTaxEffectFromShareBasedCompensation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_DerivativeNonmonetaryNotionalAmountIncludingWords">
+    <definition>Aggregate notional amount of derivative expressed in nonmonetary units. For example the number of barrels specified in a fuel oil forward purchase contract. This element is for the string item necessary when amount is not purely numerical (i.e. less than 6 barrels, etc.)</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IntangibleAssetsNetExcludingGoodwill">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_AmendmentFlag">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeLossNetOfTaxPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ForeignIncomeTaxExpenseBenefitContinuingOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_ContributionsFromNoncontrollingInterests">
+    <definition>The cash inflow contributed by noncontrolling interests. Includes noncash contributions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanServiceCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_JointVenturePartnerInterestInAssetsAndFutureProductionExceedingSpecifiedFloorPercent">
+    <definition>Joint venture partner's ownership percentage in certain assets and copper, gold and silver production exceeding a specified annual amount.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeUnrealizedHoldingGainLossOnSecuritiesArisingDuringPeriodNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherAssetsNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_MandatoryConvertiblePreferredStockDividendRatePercentage">
+    <definition>Dividend payment percentage rate for the mandatory convertible preferred stock, such as three percent.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_MandatoryConvertiblePreferredStockMandatoryConversionShares">
+    <definition>The number of shares of FCX's mandatory convertible preferred stock mandatorily converted into FCX common stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_QuarterlyCashDividendCurrent">
+    <definition>Quarterly cash dividend rate after April 2010 increase.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RepaymentsOfOtherDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_ContributionsFromNoncontrollingInterestsExcludingNoncashContributions">
+    <definition>The cash inflow contributed by noncontrolling interests.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockDividendsPerShareDeclared">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_NumberOfOperatingCopperMinesInNorthAmerica">
+    <definition>Number of operating copper mines in North America.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisEmbeddedDerivativesInProvisionalSalesPurchasesDerivatives">
+    <definition>This element represents a certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityRegistrantName">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLossAvailableToCommonStockholdersBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsOfDividendsMinorityInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisTimeDepositsCashEquivalents">
+    <definition>This element represents a certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInInventories">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueByBalanceSheetGroupingTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_IncrementalCommonSharesAttributableToConversionOfConvertiblePerpetualPreferredStock">
+    <definition>Convertible perpetual preferred stock, if dilutive, shall be assumed to have been converted at the beginning of the period (or at time of issuance, if later), and the resulting common shares shall be included in common shares used to calculate diluted earnings per shares.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_ProductionAndDelivery">
+    <definition>Costs incurred related to mineral extraction, processing and marketing and cost incurred during the reporting period in transporting goods and services to customers. Includes freight-out costs.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityWellKnownSeasonedIssuer">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="invest_DerivativeNonmonetaryNotionalAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RetainedEarningsAccumulatedDeficit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_SegmentReportingGeneralInformationPolicyTextBlock">
+    <definition>The segment reporting significant accounting policies regarding the segment general information about (a) factors used to identify reportable segments, including the basis of organization and (b) types of products and services from which each reportable segment derives its revenues.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInOtherOperatingAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityVoluntaryFilers">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CostOfRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsNotDesignatedAsHedgingInstrumentsGainLossNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_LeachStockpilesCurrent">
+    <definition>Carrying amount (lower of cost or market) as of the balance sheet date of mill stockpile inventories less all valuation and other allowances. Excludes noncurrent inventory balances (expected to remain on hand past one year or one operating cycle, if longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeDefinedBenefitPlansNetUnamortizedGainLossArisingDuringPeriodNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_ComponentsOfInventoriesTextBlock">
+    <definition>Components of inventory table disclosing the major classes of inventories (such as finished goods, inventoried costs relating to long-term contracts or programs, work in process, raw materials and supplies).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdditionalPaidInCapital">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_IncrementalCommonSharesAttributableToRestrictedStockUnits">
+    <definition>Nonvested shares to be issued to an employee under a share-based compensation arrangement are considered options for purposes of computing diluted earnings per share. Such share-based awards shall be considered to be outstanding as of the grant date. If the equity share options are outstanding for only part of a period, the shares issuable shall be weighted to reflect the portion of the period during which they were outstanding.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCommonStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_NetPaymentsProceedsFromExercisedStockOptions">
+    <definition>The net cash inflow or outflow associated with the exercise of stock options.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromIssuanceOfCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="fcx_FairValueAssetsMeasuredOnRecurringBasisTotalAssets">
+    <definition>This element represents a total of certain statement of financial position asset caption which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerSharePolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesFairValueDisclosure">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+</DefinitionAndReference>

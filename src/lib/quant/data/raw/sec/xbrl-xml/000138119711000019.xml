@@ -1,0 +1,510 @@
+<DefinitionAndReference>
+  <Element Id="us-gaap_OtherComprehensiveIncomeForeignCurrencyTranslationAdjustmentTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_ReceivablesFromCustomersNet">
+    <definition>Margin loans to clients stated net of allowance for doubtful accounts.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DepreciationAmortizationAndAccretionNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCommonStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DueFromRelatedParties">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestPaid">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsOfDividendsMinorityInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_PayableToAffiliate">
+    <definition>Amount of payable due to an entity that is affiliated with the reporting entity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterest">
+    <definition>Sum of operating profit and non-operating income (expense) before income (loss) from income taxes, extraordinary items, cumulative effects of changes in accounting principles, and non-controlling interest.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PayablesToCustomers">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsAtCarryingValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Liabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FinancialInstrumentsOwnedAndPledgedAsCollateralAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherIncome">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_IncreaseDecreaseInCashAndSecuritiesSegregatedForRegulatoryPurposes">
+    <definition>The net change in the amount of cash subject to withdrawal restrictions, restricted deposits held as compensating balances, and cash and securities segregated in compliance with regulations (such as cash deposited in a special reserve account for the exclusive benefit of customers pursuant).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_IncreaseDecreaseInOtherOperatingAssetsSCF">
+    <definition>The net change during the reporting period in other operating assets not otherwise defined in the taxonomy, not individually reported in the financial statements, or not separately disclosed in notes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_IncreaseDecreaseInSecuritiesPurchasedUnderAgreementsToResell">
+    <definition>The net change in the beginning and end of period for investments purchased under the agreement to resell such investment balances.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccruedLiabilitiesCurrentAndNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RepaymentsOfLinesOfCredit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_RevenueNetOfInterestExpense">
+    <definition>Revenues from trading gains/losses, commission and execution fees, interest income and other income net of interest expense recognized during the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FinancialInstrumentsOwnedAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_RegulationAndCapitalAdequacyTextBlock">
+    <definition>This element discusses the regulatory capital requirements imposed on the entity's Operating Companies.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockShares">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestIncomeOperating">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ForeignCurrencyTransactionGainLossUnrealized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityRegistrantName">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCentralIndexKey">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SecuritiesLoaned">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_DescriptionOfTradingActivitiesAndManagementOfRelatedRisksTextBlock">
+    <definition>Description of the nature of an entity's market making and brokerage trading activities and related risks, and how the entity manages those risks.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForProceedsFromProductiveAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfSubsequentEventsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInSecuritiesLoanedTransactions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AllowanceForDoubtfulAccountsReceivable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_IncreaseDecreaseInReceivablesFromCustomersNet">
+    <definition>The net change in the amount due from customers arising from margin loans to clients stated net of allowance for doubtful accounts.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestReceivable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_ReceivablesNet">
+    <definition>Sum of the carrying values as of the balance sheet date of receivables classified as other receivables.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCredit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_CollateralizedTransactionsTextBlock">
+    <definition>Description of collateralized transaction including financial assets that the company holds for its own account for trading or investment purposes that are carried at fair value and pledged to counterparties as collateral for financing transactions as well as margin loans to customers.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SecuritiesPurchasedUnderAgreementsToResell">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityVoluntaryFilers">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_InterestExpensePL">
+    <definition>Interest expense from customer cash balances, securities loaned, notes payable, stock borrow fees and other financial liabilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_AmendmentFlag">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_BrokerageCommissionsRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RelatedPartyTransactionsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesIssued">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalPeriodFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInFinancialInstrumentsUsedInOperatingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfSharesOutstandingBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SeniorNotes">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_CommitmentsContingenciesGuaranteesTextBlock">
+    <definition>Includes disclosure of commitments, contingencies and guarantees. This is used as a single block of text to encapsulate the entire disclosure including data and tables.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInOperatingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_IncreaseDecreaseInOtherReceivablesSCF">
+    <definition>The net change during the reporting period in other amounts due to the reporting entity, including amounts receivable from brokers/dealers, interest receivable and receivables from affiliates.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdditionalPaidInCapital">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesAuthorized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Revenues">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeForeignCurrencyTransactionAndTranslationAdjustmentNetOfTaxPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NoninterestExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeLossTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SecuritiesBorrowed">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForProceedsFromInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareDiluted">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfLineOfCreditFacilitiesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RepaymentsOfNotesPayable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_EquityAndEarningsPerShareTextBlock">
+    <definition>This element may be used to capture the complete disclosure pertaining to an entity's earnings per share and disclosures related to the initial public offering of common stock and resulting recapitalization.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_DescriptionOfBusinessTextBlock">
+    <definition>Description of Business</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RetainedEarningsAccumulatedDeficit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxesPaidNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ComprehensiveIncomeNetOfTaxIncludingPortionAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromRepaymentsOfShortTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_PaymentForRedemptionOfFormerMembersInterest">
+    <definition>The cash outflow associated with the redemption of former non-controlling members' interests.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestPayableCurrentAndNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_CurrentFiscalYearEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityFilerCategory">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectOfExchangeRateOnCashAndCashEquivalents">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Communication">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromEquityMethodInvestmentsNetOfDividendsOrDistributions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalYearFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdjustmentsNoncashItemsToReconcileNetIncomeLossToCashProvidedByUsedInOperatingActivitiesOther">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherNoninterestExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_TradingGainsLossesPL">
+    <definition>A broker-dealer or other financial entity may buy and sell securities exclusively for its own account, sometimes referred to as proprietary trading. The profit or loss is measured by the difference between the acquisition cost and the selling price or current market or fair value. The net gain or loss, includes both realized and unrealized, from trading cash instruments, equities and derivative contracts (including commodity contracts) that has been recognized during the accounting period for the broker dealer or other financial entity's own account. Include as trading revenue: (1) Revaluation adjustments to the carrying value of cash instruments reported as Trading assets, and Trading liabilities, resulting from the periodic marking to market of such instruments. (2) Revaluation adjustments from the periodic marking to market of interest rate, foreign exchange, equity derivative, and commodity and other derivative contracts held for trading. (3) Incidental income and expense related to the purchase and sale of cash instruments reported as Trading assets, and Trading liabilities, and derivative contracts held for trading. Trading gains and losses, which are composed of both realized and unrealized gains and losses, are generally presented net. (4) Net dividends, (5) net bond interest, and (6) currency translation gains and losses.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_IncreaseDecreaseInPayablesToCustomers">
+    <definition>The net change during the reporting period in the amounts payable to customers at the balance sheet date. The term customers generally excludes other broker-dealers; persons who are principal officers, directors, and stockholders; and persons whose securities or funds are part of the regulatory net capital of the broker-dealer. Another broker-dealer's account can be classified as a customer if the account is carried as an omnibus account in compliance with certain regulations. The accounts of principal officers, directors and stockholders may be combined in the customer captions if they are not material and the combination is disclosed in the oath that is required to accompany the annual audited FOCUS Report.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInSecuritiesBorrowed">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_DefinedContributionEmployeeIncentivePlansTextBlock">
+    <definition>Discloses the defined contribution plan and stock based and other employee incentive plans.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Assets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityWellKnownSeasonedIssuer">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentPeriodEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentType">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LaborAndRelatedExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_RedemptionOfFormerMembersInterest">
+    <definition>Redemption of former Non-Controlling members' interests.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PayablesToBrokerDealersAndClearingOrganizations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_ExecutionAndClearing">
+    <definition>The amount of expense during the period for floor brokerage fees paid to other broker-dealers to execute trades on their behalf, stock exchange fees and clearance fees, including market data, regulatory related fees and issuer fees.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ReceivablesFromBrokersDealersAndClearingOrganizations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCurrentReportingStatus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_OtherPayables">
+    <definition>Sum of the carrying values as of the balance sheet date of liabilities classified as other payables and listed separately on the face of the balance sheet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLossAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FinancialInstrumentsSoldNotYetPurchasedAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_IncreaseDecreaseInOtherAccountsPayableSCF">
+    <definition>The net change during the reporting period in other amounts payable, including amounts payable to brokers/dealers, payables to affiliates, interest payable and accounts payable and accrued liabilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProfitLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInFinancialInstrumentsSoldNotYetPurchased">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndSecuritiesSegregatedUnderFederalAndOtherRegulations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueDisclosuresTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesAndStockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="ibkr_OccupancyDepreiationAndAmortization">
+    <definition>The current period expense charged against earnings on long-lived, physical assets not used in production, and which are not intended for resale, to allocate or recognize the cost of such assets over their useful lives; or to record the reduction in book value of an intangible asset over the benefit period of such asset; or to reflect consumption during the period of an asset that is not used in production.  Amount of net occupancy expense may include items, such as depreciation of facilities and equipment, lease expenses, property taxes and data processing equipment and related expenses.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShortTermBorrowings">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockParOrStatedValuePerShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromNotesPayable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SignificantAccountingPoliciesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FinancialInstrumentsOwnedAndNotPledgedAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+</DefinitionAndReference>

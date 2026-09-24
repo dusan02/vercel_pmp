@@ -1,0 +1,1390 @@
+<DefinitionAndReference>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesDebtMaturitiesFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_IncrementalCommonSharesAttributableToRestrictedStock">
+    <definition>Incremental common shares attributable to restricted stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentInterestRateStatedPercentage">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossCumulativeChangesInNetGainLossFromCashFlowHedgesEffectNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_RemainingEstimatedPensionContributionsDuringPeriod">
+    <definition>Remaining estimated pension contributions during period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeDefinedBenefitPlansTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AllocatedShareBasedCompensationExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCreditFacilityAmountOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EmployeeServiceShareBasedCompensationTaxBenefitFromCompensationExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_RevenueDeficiency">
+    <definition>Revenue deficiency.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_MaximumLengthOfTimeOverWhichCompanyIsCurrentlyHedgingVariabilityInFutureCashFlowsForForecastedPowerTransactions">
+    <definition>Maximum length of time over which Company is currently hedging the variability in future cash flows with derivatives for forecasted power transactions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PensionAndOtherPostretirementDefinedBenefitPlansLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherReceivables">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DepreciationAmortizationAndAccretionNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxesPaidNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsGainLossReclassifiedFromAccumulatedOCIIntoIncomeEffectivePortionNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AllowanceForFundsUsedDuringConstructionInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_NuclearFuelPurchases">
+    <definition>The net cash outflow from any material that is commonly used in the generation of nuclear energy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_AvailableForSaleSecuritiesDebtMaturitiesAfterFifteenToTwentyYearsFairValue">
+    <definition>Available For Sale Securities Debt Maturities After Fifteen to twenty Years Fair Value.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_WeightedAverageInterestRate">
+    <definition>Weighted average interest rate.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesGrossRealizedGains">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_IssuancesOfFirstMortgageBondPercentage">
+    <definition>Issuances of first mortgage bond percentage.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsAtCarryingValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_FairValueAssetsMeasuredOnRecurringBasis">
+    <definition>Fair value assets measured on recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsGrantsInPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherNonoperatingIncomeExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_DerivativeInstrumentsDesignatedAsCashFlowHedgesOnConsolidatedStatementsOfIncomeTextBlock">
+    <definition>Derivative instruments designated as cash flow hedges on consolidated statements of income text block.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfSharesOutstandingBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockShares">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Assets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInRegulatoryAssetsAndLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_DerivativeInstrumentsNotDesignatedAsHedgingInstrumentsOnConsolidatedStatementsOfIncomeTextBlock">
+    <definition>Derivative instruments not designated as hedging instruments on the consolidated statements of income text block.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeAssetDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesGrossUnrealizedLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesContinuousUnrealizedLossPositionFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesGrossRealizedLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ConstructionPayableCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDefinedBenefitPlansDisclosuresTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_IssuanceOfCommercialPaperToFinanceAcquisitionAndOwnershipOfNuclearFuelTextBlock">
+    <definition>Issuance Of Commercial Paper To Finance Acquisition And Ownership Of Nuclear Fuel.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherInventorySupplies">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EmployeeServiceShareBasedCompensationAllocationOfRecognizedPeriodCostsCapitalizedAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInDeferredFuelCosts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanInterestCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_OtherRegulatoryAssets">
+    <definition>Carrying amount as of the balance sheet date of capitalized costs of regulated entities that are not expected to be recovered through revenue sources within one year or the normal operating cycle if longer and are not specifically broken out elsewhere in the balance sheet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_CommitmentAmountPercentageOfFacilityFeeMinimum">
+    <definition>Commitment amount percentage of facility fee minimum.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectOfExchangeRateOnCashAndCashEquivalents">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_NaturalGas">
+    <definition>Period end amount of property, plant and equipment (PPE) related to transmission and distribution of natural gas for resale owned by public utility.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingInformationIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_DeferredFuelCosts">
+    <definition>Carrying amount as of the balance sheet date of capitalized fuel costs of a regulated entity that are not expected to be recovered from customers within one year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesContinuousUnrealizedLossPosition12MonthsOrLongerAggregateLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_FairValueLiabilitiesMeasuredOnRecurringBasis">
+    <definition>Fair Value Liabilities Measured On Recurring Basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_FairValueAssetsMeasuredOnRecurringBasisTemporaryCashInvestments">
+    <definition>Fair Value, Assets Measured on Recurring Basis Temporary cash investments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TemporaryEquityCarryingAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PublicUtilitiesPropertyPlantAndEquipmentAccumulatedDepreciation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_ShareBasedCompensationArrangementByShareBasedPaymentAwardInMoneyStockOptionsIntrinsicValue">
+    <definition>Share based compensation arrangement by share based payment award in the money stock options intrinsic value.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_NotesPayableToNypa">
+    <definition>Notes payable to nypa.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetRetirementObligationsNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_AvailableForSaleSecuritiesContinuousUnrealizedLossPositionFairValueTextBlock">
+    <definition>Available for sale Securities Continuous Unrealized Loss Position Fair Value text block.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_DerivativeInstrumentsGainLossReclassifiedFromAccumulatedOCIIntoIncomeEffectivePortionTax">
+    <definition>Derivative Instruments Gain Loss Reclassified From Accumulated OCI Into Income Effective Portion, Tax.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfEmployeeServiceShareBasedCompensationAllocationOfRecognizedPeriodCostsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockIssuedDuringPeriodValueShareBasedCompensation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_SfasRegulatoryAssetNet">
+    <definition>Sfas Regulatory Asset Net</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_NypaValueSharingPayment">
+    <definition>Payments made under amended value sharing agreements with NYPA.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PublicUtilitiesPropertyPlantAndEquipmentNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProvisionForOtherLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCentralIndexKey">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_HedgeContractsInLiabilityPosition">
+    <definition>Dollar amount of hedge contract in a liability position.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsGrantsInPeriodWeightedAverageGrantDateFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ComprehensiveIncomeNetOfTaxIncludingPortionAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_SystemAgreementCostEqualizationAssets">
+    <definition>Carrying amount as of the balance sheet date of the System Agreement cost equalization payments that are expected to be recovered through Entergy Arkansas' production cost allocation rider within one year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquityNoteDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_DisallowanceCostsRecommended">
+    <definition>Disallowance costs recommended.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ImpairmentOfLongLivedAssetsHeldForUse">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInPensionAndPostretirementObligations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PublicUtilitiesPropertyPlantAndEquipmentConstructionWorkInProgress">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CapitalLeasedAssetsGross">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesContinuousUnrealizedLossPositionLessThan12MonthsAggregateLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_DerivativeInstrumentsNotDesignatedAsHedgingInstrumentsGainLossRecognizedInOtherComprehensiveIncomeEffectivePortionNet">
+    <definition>Derivative instruments not designated as hedging instruments gain loss recognized in other comprehensive income effective portion, net.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesContinuousUnrealizedLossPositionAggregateLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NuclearFuelNetOfAmortization">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossAvailableForSaleSecuritiesAdjustmentNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShortTermBankLoansAndNotesPayable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsPayableCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermTransitionBond">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityFilerCategory">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UnrealizedGainLossOnCashFlowHedgingInstruments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_GeneratingUnits">
+    <definition>Generating units.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetRetirementObligationAccretionExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_AvailableForSaleSecuritiesDebtMaturitiesAfterTwentyYearsFairValue">
+    <definition>Available For Sale Securities Debt Maturities After Twenty Years Fair Value.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfVariableInterestEntitiesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesDebtMaturitiesAfterOneThroughFiveYearsFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossForeignCurrencyTranslationAdjustmentNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromIssuanceOrSaleOfEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommitmentsAndContingenciesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAmortizationOfPriorServiceCostCredit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisAssetValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeAvailableForSaleSecuritiesTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredFuelCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherLongTermInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RegulatoryLiabilityCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisAssetPurchasesSalesIssuancesSettlements">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_LettersOfCredit">
+    <definition>Letters of credit.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromIssuanceOfLongTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommitmentsAndContingencies2009">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalPeriodFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInOtherOperatingCapitalNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InvestmentIncomeInterestAndDividend">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherAssetsCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UtilityRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_ContributedPensionPlans">
+    <definition>Contributed pension plans.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInReceivables">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_DeferredNuclearRefuelingOutageCosts">
+    <definition>Costs deferred during a nuclear refueling outage and amortized over the estimated period to the next outage because these refueling outage expenses are incurred to prepare the units to operate for the next operating cycle without having to be taken off line.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockSharesAcquired">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromSaleOfAvailableForSaleSecuritiesDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecurities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherNoncashExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingExpenses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_CostIncurredForRepoweringProject">
+    <definition>Cost incurred for repowering Project.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_DisallowanceCostsIncludingInterest">
+    <definition>Total disallowance costs including interest.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_DerivativeAssetNotDesignatedAsHedgingInstrumentOffset">
+    <definition>Derivative asset not designated as hedging instrument offset.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_LongTermNotesPayableTextBlock">
+    <definition>Long Term Notes Payable.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_AmountRelatedToRealignmentToAndRecoveryThroughBaseRatesOfCertainFuelCosts">
+    <definition>Amount related to a realignment to and recovery through base rates of certain fuel costs.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ImpairmentOfInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_RefundForFuelCostRecovery">
+    <definition>Refund for fuel cost recovery.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_CreditFacilityExpirationDate">
+    <definition>Credit facility expiration date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_ExpirationDate">
+    <definition>Expiration Date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_EarnedReturnOnCommonEquity">
+    <definition>Earned return on common equity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_AverageDurationOfDebtSecuritiesInYears">
+    <definition>Average duration of debt securities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeLiabilityNotDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInOperatingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_PercentageInPowerPlantOwnedByVie">
+    <definition>Percentage of the VIE's voting interest owned by the registrant. In general, a VIE is a corporation, partnership, trust, or any other legal structure used for business purposes that either (a) does not have equity investors with voting rights or (b) has equity investors that do not provide sufficient financial resources for the entity to support its activities. A VIE often holds financial assets, including loans or receivables, real estate or other property. A VIE may be essentially passive or it may engage in research and development or other activities on behalf of another company.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesGrossUnrealizedGains">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NonoperatingIncomeExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DecommissioningFundInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInInterestPayableNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_CreditFacilityMaximumBorrowingCapacity">
+    <definition>Credit facility maximum borrowing capacity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_DerivativeLiabilityDesignatedAsHedgingInstrumentOffset">
+    <definition>Derivative liability designated as hedging instrument offset.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCreditFacilityMaximumBorrowingCapacity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesDebtMaturitiesAmortizedCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_AverageMaturityOfDebtSecuritiesInYears">
+    <definition>Average maturity of debt securities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfLineOfCreditFacilitiesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityPublicFloat">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeForeignCurrencyTransactionAndTranslationGainLossArisingDuringPeriodNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_ChangesInCreditLineBorrowingsNet">
+    <definition>Changes in credit line borrowings net.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherLiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_AverageDilutiveEffectOfStockOptionsPerShare">
+    <definition>Average Dilutive Effect Of Stock Options Per Share.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockValueAcquiredCostMethod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesAndStockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccountsPayable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesContinuousUnrealizedLossPositionLessThanTwelveMonthsFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_ChangesInTransitionChargeAccount">
+    <definition>Changes in the account in which recoveries from customers through a transition charge are deposited and and from which payments are made to service the securitization bonds issued by Entergy Gulf States Reconstruction Funding.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockParOrStatedValuePerShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsGrantsInPeriodWeightedAverageGrantDateFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsReceivableGrossCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CustomerDepositsCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AllowanceForDoubtfulAccountsReceivableCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PensionAndOtherPostretirementDefinedBenefitPlansCurrentLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccruedLiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDerivativeInstrumentsInStatementOfFinancialPositionFairValueTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsOfDividendsCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_ConsolidatedDebtRatioOfCapitalization">
+    <definition>Consolidated debt ratio of capitalization.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromSaleOfProductiveAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingInformationRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_DerivativeAssetDesignatedAsHedgingInstrumentOffset">
+    <definition>Derivative asset designated as hedging instrument offset.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_AccruedUnbilledRevenues">
+    <definition>Unbilled amounts due for services rendered or products shipped. This element is distinct from unbilled contracts receivables because this is based on noncontract transactions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RepaymentsOfLongTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsReceivableNetCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeLiabilityDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_PaymentsOnLeaseIncludingInterest">
+    <definition>Payments on lease,including interest.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisAssetOriginated">
+    <definition>Fair value measurement with unobservable inputs reconciliation recurring basis asset originated.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GasDomesticRegulatedRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CapitalLeaseObligationsCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_NetCarryingValueOfPlant">
+    <definition>Net carrying value of plant.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalYearFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_ConsolidatedDebtRatio">
+    <definition>Consolidated debt ratio.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentPeriodEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesContinuousUnrealizedLossPositionTwelveMonthsOrLongerFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_AvailableForSaleSecuritiesDebtMaturitiesAfterTenToFifteenYearsFairValue">
+    <definition>Available for sale securities debt maturities after ten to fifteen years fair value.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsAndHedgingActivitiesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DividendsPreferredStockCash">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_ExpectedCurrentYearPensionContributions">
+    <definition>Expected current year pension contributions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCreditFacilityRemainingBorrowingCapacity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_AmountToBeRecoveredFromProposedSettlement">
+    <definition>Amount to be Recovered from proposed settlement.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareDiluted">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_AmendmentFlag">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeAssetNotDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashPaidForCapitalizedInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeForeignCurrencyTranslationAdjustmentTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UtilitiesOperatingExpenseFuelUsed">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ElectricUtilityRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_PensionCostForNonQualifiedPensionPlans">
+    <definition>Pension cost for non qualified pension plans.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesIncomeTaxExpenseOnChangeInUnrealizedHoldingGainOrLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromIssuanceOfFirstMortgageBond">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsNetNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesAuthorized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_DerivativeLiabilityNotDesignatedAsHedgingInstrumentOffset">
+    <definition>Derivative liability not designated as hedging instrument offset.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingInformationIntersegmentRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CapitalLeaseObligationsNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DividendsCommonStockCash">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_AverageCouponRateOfDebtSecuritiesPercentage">
+    <definition>Average Coupon Rate Of Debt Securities Percentage.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeDerivativesQualifyingAsHedgesNetOfTaxPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UtilitiesOperatingExpenseMaintenanceAndOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForProceedsFromOtherInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_CommitmentAmountPercentageOfFacilityFeeMaximum">
+    <definition>Commitment amount percentage of facility fee maximum.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsGrantsInPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RestrictedCashAndCashEquivalentsAtCarryingValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccruedIncomeTaxesPayable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredIncomeTaxesAndTaxCredits">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsGainLossRecognizedInOtherComprehensiveIncomeEffectivePortionNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProfitLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CapitalLeaseObligations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromSaleOfRestrictedInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CompetitiveEnergyRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentType">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueAssetsMeasuredOnRecurringBasisUnobservableInputReconciliationTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_PortionOfProceedsToRepayOutstandingDebt">
+    <definition>Portion of proceeds to repay outstanding debt.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_VolumeOfNaturalGasSwapsOutstanding">
+    <definition>Total volume of natural gas swaps outstanding.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PensionAndOtherPostretirementBenefitsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToAcquireRestrictedInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Cash">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForRepurchaseOfCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_RepurchasedCommonStockIssuedDuringPeriod">
+    <definition>Repurchased common stock issued during period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashEquivalentsAtCarryingValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TaxesExcludingIncomeAndExciseTaxes">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PublicUtilitiesPropertyPlantAndEquipmentOtherPropertyPlantAndEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_LongTermDoeObligations">
+    <definition>Long term doe obligations.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterestDecreaseFromDistributionsToNoncontrollingInterestHolders">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToInvestInDecommissioningFund">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLossAvailableToCommonStockholdersDiluted">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_LineOfCreditFacilityCommitmentFeeCommitmentFeePercentageOfCommitmentAmount">
+    <definition>Line of credit facility commitment fee, commitment fee percentage of commitment amount.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_InterestExpenses">
+    <definition>Interest expenses.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashFlowHedgeGainLossToBeReclassifiedWithinTwelveMonths">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_DecommissioningTrustFundTextBlock">
+    <definition>Describes decommissioning trust assets. May include disclosures such as the purpose of the funds, funding requirements, regulatory authorities and related cost recovery aspects.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PublicUtilitiesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedDeferredInvestmentTaxCredit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsGainLossRecognizedInIncomeNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShortTermBorrowings">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PublicUtilitiesAllowanceForFundsUsedDuringConstructionCapitalizedInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAmortizationOfTransitionObligationsAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeDerivativesQualifyingAsHedgesTaxEffectPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetsCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_RedemptionOfFirstMortgageBondPercentage">
+    <definition>Redemption of first mortgage bond percentage.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_DeferredFuelCostsCurrentLiabilities">
+    <definition>Carrying amount as of the balance sheet date of capitalized fuel costs of a regulated entity that are expected to be returned to customers through rate adjustments within one year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_FairValueOfDebtSecuritiesByContractualMaturitiesTextBlock">
+    <definition>Fair value of debt securities by contractual maturities text block.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_AccumulatedOtherComprehensiveIncomeLossTextBlock">
+    <definition>Accumulated other comprehensive income loss.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_OtherRegulatoryChargesCreditsNet">
+    <definition>Represents the debit or credit to defer certain costs or revenues because they will be recovered or returned to customers in the future.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedReturnOnPlanAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInFuelInventories">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_SummaryOfBorrowingsOutstandingAndCapacityAvailableUnderFacilityTextBlock">
+    <definition>Summary of the borrowings outstanding and capacity available under the facility.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_AuthorizedShortTermBorrowings">
+    <definition>Authorized short-term borrowings.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeMinimumPensionLiabilityNetAdjustmentNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PublicUtilitiesAllowanceForFundsUsedDuringConstructionCapitalizedCostOfEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingInformationProfitLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetsNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCreditFacilityExpirationDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestPayableCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingIntrinsicValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_NuclearRefuelingOutageExpenses">
+    <definition>Amortization of costs deferred during nuclear refueling outages over the estimated period to the next outage because these refueling outage expenses are incurred to prepare the units to operate for the next operating cycle without having to be taken off line.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_CurrentFiscalYearEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_FuelInventoryAtAverageCost">
+    <definition>Fossil fuel inventory held for consumption in the production of energy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_SegmentFinancialInformationTextBlock">
+    <definition>Segment Financial Information.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanServiceCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAmortizationOfGainsLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesDebtMaturitiesAfterFiveThroughTenYearsFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeUnrealizedHoldingGainLossOnSecuritiesArisingDuringPeriodNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanNetPeriodicBenefitCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCurrentReportingStatus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromDecommissioningFund">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherAssetsNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossDefinedBenefitPensionAndOtherPostretirementPlansNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DepreciationNonproduction">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesIssued">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingWeightedAverageExercisePrice">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DisclosureOfCompensationRelatedCostsShareBasedPaymentsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingInformationRevenueFromExternalCustomers">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PrepaidTaxes">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_CashFlowHedgesMoneyContracts">
+    <definition>Cash flow hedges money contracts.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockDividendsPerShareDeclared">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisAssetGainLossIncludedInEarnings">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsOfDividendsPreferredStockAndPreferenceStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PublicUtilitiesPropertyPlantAndEquipmentPlantInService">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_AdditionalRenewalPeriodOfLicense">
+    <definition>Additional renewal period of license.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermNotesPayable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RegulatoryLiabilityNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityRegistrantName">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CostOfPurchasedPower">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterestInNetIncomeLossPreferredUnitHolders">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCreditFacilityInterestRateDuringPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_WeightedAverageInterestRateOnBorrowings">
+    <definition>Weighted Average Interest Rate on Borrowings.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncrementalCommonSharesAttributableToShareBasedPaymentArrangements">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_CommitmentAmountPercentageOfFacilityFee">
+    <definition>Commitment amount percentage of facility fee.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_PlannedGenerationFromNonNuclearPowerPlantsSoldForwardUnderFinancialDerivatives">
+    <definition>Planned Generation From Non Nuclear Power Plants Sold Forward Under Financial Hedges</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_PlannedGenerationSoldForwardFromNonUtilityNuclearPowerPlants">
+    <definition>Planned Generation Sold Forward From Wholesale Commodities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_ShortTermBorrowingsAndOutstandingShortTermBorrowingsTextBlock">
+    <definition>Short-term borrowings and the outstanding short-term borrowings.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentCarryingAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardAwardVestingPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_FairValueOfLongTermDebt">
+    <definition>Fair value of long-term debt.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityWellKnownSeasonedIssuer">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Goodwill">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_BookValueAndFairValueOfLongTermDebtTextBlock">
+    <definition>Book value and the fair value of long-term debt.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForCapitalImprovements">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RetainedEarningsAccumulatedDeficit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityVoluntaryFilers">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_EarnedReturnOnCommonEquityAdjusted">
+    <definition>Earned return on common equity adjusted.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SecuritizedRegulatoryTransitionAssetsNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsNetCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdditionalPaidInCapital">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_RevenueDeficiencyAdjusted">
+    <definition>Revenue Deficiency Adjusted.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCommonStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriodPercentage">
+    <definition>Share based compensation arrangement by share based payment award equity instruments other than options vested in period percentage.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCreditFacilityCurrentBorrowingCapacity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="etr_CashFlowHedgesOutOfMoneyContracts">
+    <definition>Cash flow hedges out-of-the-money contracts.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesDebtMaturitiesWithinOneYearFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueAssetsMeasuredOnRecurringBasisTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingNumber">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+</DefinitionAndReference>

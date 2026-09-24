@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!--XBRL Document Created with Wdesk from Workiva, formerly WebFilings-->
+<!--p:1ae2330d1c28453fa179eacf5dcb1e6f,x:0d7c526a3e4148e5aafd85e41e3e6af9-->
+<xbrli:xbrl xmlns:country="http://xbrl.sec.gov/country/2013-01-31" xmlns:currency="http://xbrl.sec.gov/currency/2014-01-31" xmlns:dei="http://xbrl.sec.gov/dei/2014-01-31" xmlns:exch="http://xbrl.sec.gov/exch/2014-01-31" xmlns:invest="http://xbrl.sec.gov/invest/2013-01-31" xmlns:iso4217="http://www.xbrl.org/2003/iso4217" xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:naics="http://xbrl.sec.gov/naics/2011-01-31" xmlns:nonnum="http://www.xbrl.org/dtr/type/non-numeric" xmlns:num="http://www.xbrl.org/dtr/type/numeric" xmlns:ref="http://www.xbrl.org/2006/ref" xmlns:rfmd="http://www.rfmd.com/20140927" xmlns:sic="http://xbrl.sec.gov/sic/2011-01-31" xmlns:stpr="http://xbrl.sec.gov/stpr/2011-01-31" xmlns:us-gaap="http://fasb.org/us-gaap/2014-01-31" xmlns:us-roles="http://fasb.org/us-roles/2014-01-31" xmlns:us-types="http://fasb.org/us-types/2014-01-31" xmlns:utreg="http://www.xbrl.org/2009/utr" xmlns:xbrldi="http://xbrl.org/2006/xbrldi" xmlns:xbrldt="http://xbrl.org/2005/xbrldt" xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <link:schemaRef xlink:href="rfmd-20140927.xsd" xlink:type="simple" />
+  <xbrli:context id="FD2015Q2QTD">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sec.gov/CIK">0001604778</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:startDate>2014-06-29</xbrli:startDate>
+      <xbrli:endDate>2014-09-27</xbrli:endDate>
+    </xbrli:period>
+  </xbrli:context>
+  <xbrli:context id="FD2015Q2YTD">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sec.gov/CIK">0001604778</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:startDate>2014-03-30</xbrli:startDate>
+      <xbrli:endDate>2014-09-27</xbrli:endDate>
+    </xbrli:period>
+  </xbrli:context>
+  <xbrli:context id="FI2014Q4">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sec.gov/CIK">0001604778</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2014-03-29</xbrli:instant>
+    </xbrli:period>
+  </xbrli:context>
+  <xbrli:context id="FI2015Q2">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sec.gov/CIK">0001604778</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2014-09-27</xbrli:instant>
+    </xbrli:period>
+  </xbrli:context>
+  <xbrli:context id="I2015Q2SharesOutstanding">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sec.gov/CIK">0001604778</xbrli:identifier>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2014-10-29</xbrli:instant>
+    </xbrli:period>
+  </xbrli:context>
+  <xbrli:context id="I2015Q2SubsequentEventDate_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+    <xbrli:entity>
+      <xbrli:identifier scheme="http://www.sec.gov/CIK">0001604778</xbrli:identifier>
+      <xbrli:segment>
+        <xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+      </xbrli:segment>
+    </xbrli:entity>
+    <xbrli:period>
+      <xbrli:instant>2014-10-09</xbrli:instant>
+    </xbrli:period>
+  </xbrli:context>
+  <xbrli:unit id="number">
+    <xbrli:measure>xbrli:pure</xbrli:measure>
+  </xbrli:unit>
+  <xbrli:unit id="shares">
+    <xbrli:measure>xbrli:shares</xbrli:measure>
+  </xbrli:unit>
+  <xbrli:unit id="usd">
+    <xbrli:measure>iso4217:USD</xbrli:measure>
+  </xbrli:unit>
+  <xbrli:unit id="usdPerShare">
+    <xbrli:divide>
+      <xbrli:unitNumerator>
+        <xbrli:measure>iso4217:USD</xbrli:measure>
+      </xbrli:unitNumerator>
+      <xbrli:unitDenominator>
+        <xbrli:measure>xbrli:shares</xbrli:measure>
+      </xbrli:unitDenominator>
+    </xbrli:divide>
+  </xbrli:unit>
+  <us-gaap:AccumulatedOtherComprehensiveIncomeLossNetOfTax contextRef="FI2014Q4" decimals="0" id="Fact-F78058A1A1199752B6645800E4B8EB7E" unitRef="usd">0</us-gaap:AccumulatedOtherComprehensiveIncomeLossNetOfTax>
+  <us-gaap:AccumulatedOtherComprehensiveIncomeLossNetOfTax contextRef="FI2015Q2" decimals="0" id="Fact-09AB860FC27D3504102F5800E4AE7A9B" unitRef="usd">0</us-gaap:AccumulatedOtherComprehensiveIncomeLossNetOfTax>
+  <us-gaap:AdditionalPaidInCapital contextRef="FI2014Q4" decimals="0" id="Fact-0416EB922845B00BFB33580084927BCC" unitRef="usd">100</us-gaap:AdditionalPaidInCapital>
+  <us-gaap:AdditionalPaidInCapital contextRef="FI2015Q2" decimals="0" id="Fact-7C8334889235B56300FB580084928784" unitRef="usd">100</us-gaap:AdditionalPaidInCapital>
+  <us-gaap:Assets contextRef="FI2014Q4" decimals="0" id="Fact-C83310DDB57041ED424757FF59777707" unitRef="usd">0</us-gaap:Assets>
+  <us-gaap:Assets contextRef="FI2015Q2" decimals="0" id="Fact-942413E9CAF04374149857FF3FCDFE4C" unitRef="usd">0</us-gaap:Assets>
+  <us-gaap:AssetsCurrent contextRef="FI2015Q2" decimals="0" id="Fact-DD01FBFFEA9AA16D39F957FF3F555A6C" unitRef="usd">0</us-gaap:AssetsCurrent>
+  <us-gaap:AssetsCurrent contextRef="FI2014Q4" decimals="0" id="Fact-1F625175CE51ED61442257FF59779BC1" unitRef="usd">0</us-gaap:AssetsCurrent>
+  <us-gaap:BasisOfAccountingPolicyPolicyTextBlock contextRef="FD2015Q2YTD" id="Fact-97D26A05C99207A07D9F58577BD9D4B7">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The accompanying unaudited Condensed Financial Statements of the Company have been prepared in conformity with accounting principles generally accepted in the United States (&amp;#8220;U.S. GAAP&amp;#8221;) pursuant to the rules and regulations of the SEC regarding interim financial reporting.  Accordingly, the unaudited condensed financial statements do not include all of the information and footnotes required by U.S. GAAP for complete financial statements and should be read in conjunction with the Company&amp;#8217;s Form S-4.  In the opinion of management, the financial statements include all adjustments (which are of a normal and recurring nature) necessary for the fair presentation of the results of the interim periods presented.   &lt;br clear="none"/&gt;&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:BasisOfAccountingPolicyPolicyTextBlock>
+  <us-gaap:BasisOfPresentationAndSignificantAccountingPoliciesTextBlock contextRef="FD2015Q2YTD" id="Fact-C20D2BDA779F850DE40E585599B19919">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-weight:bold;"&gt;BASIS OF PRESENTATION AND SIGNIFICANT ACCOUNTING POLICIES&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;&lt;br clear="none"/&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The accompanying unaudited Condensed Financial Statements of the Company have been prepared in conformity with accounting principles generally accepted in the United States (&amp;#8220;U.S. GAAP&amp;#8221;) pursuant to the rules and regulations of the SEC regarding interim financial reporting.  Accordingly, the unaudited condensed financial statements do not include all of the information and footnotes required by U.S. GAAP for complete financial statements and should be read in conjunction with the Company&amp;#8217;s Form S-4.  In the opinion of management, the financial statements include all adjustments (which are of a normal and recurring nature) necessary for the fair presentation of the results of the interim periods presented.   &lt;br clear="none"/&gt; &lt;br clear="none"/&gt;Preparing financial statements requires management to make estimates and assumptions that affect the amounts that are reported in the financial statements and accompanying disclosures.  Although these estimates are based on management&amp;#8217;s best knowledge of current events and actions that the Company may undertake in the future, actual results may be different from these estimates. The results of operations for the three and six months ended September&amp;#160;27, 2014 are not necessarily indicative of the results to be expected for any future period or the full fiscal year. &lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;&lt;br clear="none"/&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The Company uses a 52- or 53-week fiscal year ending on the Saturday closest to March&amp;#160;31 of each year.  The first fiscal quarter of each year ends on the Saturday closest to June 30, the second fiscal quarter of each year ends on the Saturday closest to September 30 and the third fiscal quarter of each year ends on the Saturday closest to December 31.  Fiscal 2015 is a 52-week year.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:BasisOfPresentationAndSignificantAccountingPoliciesTextBlock>
+  <us-gaap:CashAndCashEquivalentsAtCarryingValue contextRef="FI2014Q4" decimals="0" id="Fact-71B0B0C640B826E820BA583882D46FF6" unitRef="usd">0</us-gaap:CashAndCashEquivalentsAtCarryingValue>
+  <us-gaap:CashAndCashEquivalentsAtCarryingValue contextRef="FI2015Q2" decimals="0" id="Fact-45FF263E01D01B9E770D5838968E7FB2" unitRef="usd">0</us-gaap:CashAndCashEquivalentsAtCarryingValue>
+  <us-gaap:CashAndCashEquivalentsPeriodIncreaseDecrease contextRef="FD2015Q2YTD" decimals="0" id="Fact-5EAD28D4BEE326F9669458409B253B6C" unitRef="usd">0</us-gaap:CashAndCashEquivalentsPeriodIncreaseDecrease>
+  <us-gaap:CommonStockParOrStatedValuePerShare contextRef="FI2014Q4" decimals="4" id="Fact-50968691801CD8F6E3755DE481201E3E" unitRef="usdPerShare">0.0001</us-gaap:CommonStockParOrStatedValuePerShare>
+  <us-gaap:CommonStockParOrStatedValuePerShare contextRef="FI2015Q2" decimals="4" id="Fact-15A75999509883C24CC45DE44452B1D8" unitRef="usdPerShare">0.0001</us-gaap:CommonStockParOrStatedValuePerShare>
+  <us-gaap:CommonStockSharesIssued contextRef="FI2014Q4" decimals="0" id="Fact-30A1A2FB4FBB4B65E7705DE3D6A76EE1" unitRef="shares">1000</us-gaap:CommonStockSharesIssued>
+  <us-gaap:CommonStockSharesIssued contextRef="FI2015Q2" decimals="0" id="Fact-6879BAB9D44D09AF21A75DE38ACCB7C4" unitRef="shares">1000</us-gaap:CommonStockSharesIssued>
+  <us-gaap:CommonStockSharesOutstanding contextRef="FI2014Q4" decimals="0" id="Fact-9278C7EBB3A4D67D68345DE3D753087F" unitRef="shares">1000</us-gaap:CommonStockSharesOutstanding>
+  <us-gaap:CommonStockSharesOutstanding contextRef="FI2015Q2" decimals="0" id="Fact-A060F23D094DA32C59C05DE38FEE1EF4" unitRef="shares">1000</us-gaap:CommonStockSharesOutstanding>
+  <us-gaap:CommonStockValue contextRef="FI2015Q2" decimals="0" id="Fact-85D42229E59B8A2F7A5358005E18C6C6" unitRef="usd">0</us-gaap:CommonStockValue>
+  <us-gaap:CommonStockValue contextRef="FI2014Q4" decimals="0" id="Fact-53323C48BD0ACF37D5F758005E18D04B" unitRef="usd">0</us-gaap:CommonStockValue>
+  <us-gaap:ComprehensiveIncomeNetOfTax contextRef="FD2015Q2QTD" decimals="0" id="Fact-F69714DE309C2A3E6D605829DA30B1A7" unitRef="usd">0</us-gaap:ComprehensiveIncomeNetOfTax>
+  <us-gaap:ComprehensiveIncomeNetOfTax contextRef="FD2015Q2YTD" decimals="0" id="Fact-F6302F529B8B72BD2C7F5829F4029A01" unitRef="usd">0</us-gaap:ComprehensiveIncomeNetOfTax>
+  <us-gaap:CostsAndExpenses contextRef="FD2015Q2QTD" decimals="0" id="Fact-72E472D34B8AA38C5CF658185FE137B5" unitRef="usd">0</us-gaap:CostsAndExpenses>
+  <us-gaap:CostsAndExpenses contextRef="FD2015Q2YTD" decimals="0" id="Fact-AED57554062E521468EB581874E5112A" unitRef="usd">0</us-gaap:CostsAndExpenses>
+  <us-gaap:DueFromOfficersOrStockholders contextRef="FI2014Q4" decimals="0" id="Fact-86BF7922CAEFBA511BAA5800B4589FF6" unitRef="usd">100</us-gaap:DueFromOfficersOrStockholders>
+  <us-gaap:DueFromOfficersOrStockholders contextRef="FI2015Q2" decimals="0" id="Fact-DBA30C27A893AA01C51E5800B44E88A0" unitRef="usd">100</us-gaap:DueFromOfficersOrStockholders>
+  <us-gaap:EarningsPerShareBasic contextRef="FD2015Q2YTD" decimals="0" id="Fact-78C39B66707261CA78B6581874EF9B96" unitRef="usdPerShare">0</us-gaap:EarningsPerShareBasic>
+  <us-gaap:EarningsPerShareBasic contextRef="FD2015Q2QTD" decimals="0" id="Fact-9B828A95CC8AC515D70658185FEB41D7" unitRef="usdPerShare">0</us-gaap:EarningsPerShareBasic>
+  <us-gaap:FiscalPeriod contextRef="FD2015Q2YTD" id="Fact-9E24F7707C4843C906B25858F8AB4AE8">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The Company uses a 52- or 53-week fiscal year ending on the Saturday closest to March&amp;#160;31 of each year.  The first fiscal quarter of each year ends on the Saturday closest to June 30, the second fiscal quarter of each year ends on the Saturday closest to September 30 and the third fiscal quarter of each year ends on the Saturday closest to December 31.  Fiscal 2015 is a 52-week year.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:FiscalPeriod>
+  <us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments contextRef="FD2015Q2YTD" decimals="0" id="Fact-FFE826EC976BB27EA10C581874E5901F" unitRef="usd">0</us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments>
+  <us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments contextRef="FD2015Q2QTD" decimals="0" id="Fact-C659B4C423DEDC67305E58185FE1FA0E" unitRef="usd">0</us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments>
+  <us-gaap:IncomeTaxExpenseBenefit contextRef="FD2015Q2QTD" decimals="0" id="Fact-91ADF648285706C5E0EE58185FE1D3E3" unitRef="usd">0</us-gaap:IncomeTaxExpenseBenefit>
+  <us-gaap:IncomeTaxExpenseBenefit contextRef="FD2015Q2YTD" decimals="0" id="Fact-E5892667D1F3119A232E581874E53948" unitRef="usd">0</us-gaap:IncomeTaxExpenseBenefit>
+  <us-gaap:IncreaseDecreaseInOperatingCapital contextRef="FD2015Q2YTD" decimals="0" id="Fact-BAF82C770868C806A6A3583867F47782" unitRef="usd">0</us-gaap:IncreaseDecreaseInOperatingCapital>
+  <us-gaap:Liabilities contextRef="FI2014Q4" decimals="0" id="Fact-B025927C708D75809CF657FFEF825AF2" unitRef="usd">0</us-gaap:Liabilities>
+  <us-gaap:Liabilities contextRef="FI2015Q2" decimals="0" id="Fact-9AE30C7DC105C3F7D16757FFEF8262C0" unitRef="usd">0</us-gaap:Liabilities>
+  <us-gaap:LiabilitiesAndStockholdersEquity contextRef="FI2014Q4" decimals="0" id="Fact-2B170FA14D6B6D1B31105801F63DD69E" unitRef="usd">0</us-gaap:LiabilitiesAndStockholdersEquity>
+  <us-gaap:LiabilitiesAndStockholdersEquity contextRef="FI2015Q2" decimals="0" id="Fact-78EB7D22DCF60F1B6EFF5801F633B425" unitRef="usd">0</us-gaap:LiabilitiesAndStockholdersEquity>
+  <us-gaap:LiabilitiesCurrent contextRef="FI2014Q4" decimals="0" id="Fact-23A59D3F3802B43ADC7657FFA0851072" unitRef="usd">0</us-gaap:LiabilitiesCurrent>
+  <us-gaap:LiabilitiesCurrent contextRef="FI2015Q2" decimals="0" id="Fact-5586A83061CC8EEFEB9257FFA085C737" unitRef="usd">0</us-gaap:LiabilitiesCurrent>
+  <us-gaap:NetCashProvidedByUsedInFinancingActivities contextRef="FD2015Q2YTD" decimals="0" id="Fact-9F065F35899A55DD076D583867FE78E3" unitRef="usd">0</us-gaap:NetCashProvidedByUsedInFinancingActivities>
+  <us-gaap:NetCashProvidedByUsedInInvestingActivities contextRef="FD2015Q2YTD" decimals="0" id="Fact-920F58AA27541E9A7379583868085BDA" unitRef="usd">0</us-gaap:NetCashProvidedByUsedInInvestingActivities>
+  <us-gaap:NetCashProvidedByUsedInOperatingActivities contextRef="FD2015Q2YTD" decimals="0" id="Fact-457954A14ADF80D7839358386808EBAD" unitRef="usd">0</us-gaap:NetCashProvidedByUsedInOperatingActivities>
+  <us-gaap:NetIncomeLoss contextRef="FD2015Q2YTD" decimals="0" id="Fact-BF066D2385B690A00C71581874EF4703" unitRef="usd">0</us-gaap:NetIncomeLoss>
+  <us-gaap:NetIncomeLoss contextRef="FD2015Q2QTD" decimals="0" id="Fact-F54C65BABB2A5302E32B58185FEB5CF4" unitRef="usd">0</us-gaap:NetIncomeLoss>
+  <us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock contextRef="FD2015Q2YTD" id="Fact-239AB5822D15E5D29D335852BE27DAE2">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-weight:bold;"&gt; ORGANIZATION&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; &lt;br clear="none"/&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;Qorvo, Inc. ("Qorvo" or the &amp;#8220;Company&amp;#8221;), formerly known as Rocky Holding, Inc., is a Delaware holding company and was incorporated on &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;December&amp;#160;13, 2013&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;.  The Company was formed for the purpose of effecting a strategic combination of RF Micro Devices, Inc., a North Carolina corporation (&amp;#8220;RFMD&amp;#8221;) and TriQuint Semiconductor, Inc., a Delaware corporation (&amp;#8220;TriQuint&amp;#8221;) through a &amp;#8220;merger of equals,&amp;#8221; in connection with the transactions contemplated by the Agreement and Plan of Merger and Reorganization, dated as of February 22, 2014 and amended as of July 15, 2014, by and among RFMD, TriQuint and the Company (&amp;#8220;Merger Agreement&amp;#8221;), and as described in the Company&amp;#8217;s Registration Statement on Form S-4 (&amp;#8220;Form S-4&amp;#8221;) filed with the Securities and Exchange Commission (&amp;#8220;SEC&amp;#8221;) on April 14, 2014, and as subsequently amended (File No. 333-195236).  The Registration Statement was declared effective on July 30, 2014.  On September 5, 2014, the shareholders of both RFMD and TriQuint approved the Merger Agreement at each company's special meeting of shareholders.  &lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;&lt;br clear="none"/&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;Effective October 3, 2014, in connection with the Merger Agreement, Rocky Holding, Inc. amended its Amended and Restated Certificate of Incorporation and amended and restated its bylaws to reflect the new name of the Company, Qorvo.  The Company's common stock is expected to be traded on the NASDAQ Global Stock Market under the ticker symbol "QRVO" following closing of the merger.  RFMD&amp;#8217;s board of directors has selected the following individuals to serve on the Company&amp;#8217;s board of directors (the &amp;#8220;Board&amp;#8221;) following the closing: Daniel A. DiLeo, Jeffery R. Gardner and John R. Harding.  TriQuint&amp;#8217;s board of directors has selected the following individuals to serve on the Board following the closing: Charles Scott Gibson, David H.Y. Ho, Roderick D. Nelson and Dr. Walden C. Rhines.  As previously announced, after closing, the Board also will include Robert A. Bruggeworth, Ralph G. Quinsey, who will serve as non-executive chairman, and Walter H. Wilkinson, Jr., who will serve as lead outside director.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;&lt;br clear="none"/&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The Company has formed &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;two&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; direct subsidiaries, Trident Merger Sub Inc. and Rocky Merger Sub Inc.  Pursuant to the Merger Agreement, Trident Merger Sub Inc. will merge with and into TriQuint, and Rocky Merger Sub Inc. will merge with and into RFMD (the &amp;#8220;Mergers&amp;#8221;).  As a result of the Mergers, TriQuint and RFMD will each become a wholly owned subsidiary of the Company. &lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;&lt;br clear="none"/&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The consummation of the business combination with TriQuint continues to be subject to certain regulatory approvals and satisfaction of customary closing conditions.  We currently anticipate the merger will be completed during the second half of calendar year 2014.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; &lt;br clear="none"/&gt;The Company has not commenced operations, has no significant assets or liabilities, and has not carried on any activities other than those incidental to its formation and the matters contemplated by the Merger Agreement.  As of September 27, 2014, RFMD is the Company&amp;#8217;s sole stockholder and the Company does not hold any equity interest in any other legal entity.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock>
+  <us-gaap:OtherComprehensiveIncomeLossNetOfTax contextRef="FD2015Q2QTD" decimals="0" id="Fact-99615D1CEADB1111C9685829DA26E5F8" unitRef="usd">0</us-gaap:OtherComprehensiveIncomeLossNetOfTax>
+  <us-gaap:OtherComprehensiveIncomeLossNetOfTax contextRef="FD2015Q2YTD" decimals="0" id="Fact-2B6AEE7D7E013D8DC1985829F4020199" unitRef="usd">0</us-gaap:OtherComprehensiveIncomeLossNetOfTax>
+  <us-gaap:RelatedPartyTransactionsDisclosureTextBlock contextRef="FD2015Q2YTD" id="Fact-0B087C49FBAEF6A1485358691A9418C0">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-weight:bold;"&gt;DUE FROM STOCKHOLDER&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;&lt;br clear="none"/&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;Amounts receivable from RFMD are associated with the issuance of the Company&amp;#8217;s common stock.  The Company has received payment of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$100&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; from RFMD for the purchase of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;1,000&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; shares of the Company's common stock.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:RelatedPartyTransactionsDisclosureTextBlock>
+  <us-gaap:RetainedEarningsAccumulatedDeficit contextRef="FI2014Q4" decimals="0" id="Fact-A02543C5DD33AF6161EA58011AFAFF83" unitRef="usd">0</us-gaap:RetainedEarningsAccumulatedDeficit>
+  <us-gaap:RetainedEarningsAccumulatedDeficit contextRef="FI2015Q2" decimals="0" id="Fact-18DFF37B4C9696CB568858011AE6E86C" unitRef="usd">0</us-gaap:RetainedEarningsAccumulatedDeficit>
+  <us-gaap:Revenues contextRef="FD2015Q2QTD" decimals="0" id="Fact-0C1DA11C25CAF42300B158185FD74202" unitRef="usd">0</us-gaap:Revenues>
+  <us-gaap:Revenues contextRef="FD2015Q2YTD" decimals="0" id="Fact-C6D31844ECC29E4E5598581874E5C068" unitRef="usd">0</us-gaap:Revenues>
+  <us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest contextRef="FI2014Q4" decimals="0" id="Fact-72CC5B249B467ECDE2A258016D0D63E7" unitRef="usd">0</us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest>
+  <us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest contextRef="FI2015Q2" decimals="0" id="Fact-D8A12E6868C63E74F99B58016D0D6315" unitRef="usd">0</us-gaap:StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest>
+  <us-gaap:StockholdersEquityNoteDisclosureTextBlock contextRef="FD2015Q2YTD" id="Fact-EDC58037DA39365E4DFE585FD7D44E79">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-weight:bold;"&gt;COMMON STOCK&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;&lt;br clear="none"/&gt;&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;As of September 27, 2014, there were 1,000 shares of common stock, par value of $0.0001 per share, of the Company issued and outstanding.  All such issued and outstanding shares were held by RFMD.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:StockholdersEquityNoteDisclosureTextBlock>
+  <us-gaap:UseOfEstimates contextRef="FD2015Q2YTD" id="Fact-EF654DFF7C5AD6CD156658581BF7DC76">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:144%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;Preparing financial statements requires management to make estimates and assumptions that affect the amounts that are reported in the financial statements and accompanying disclosures.  Although these estimates are based on management&amp;#8217;s best knowledge of current events and actions that the Company may undertake in the future, actual results may be different from these estimates. The results of operations for the three and six months ended September&amp;#160;27, 2014 are not necessarily indicative of the results to be expected for any future period or the full fiscal year. &lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:UseOfEstimates>
+  <us-gaap:WeightedAverageNumberOfSharesOutstandingBasic contextRef="FD2015Q2YTD" decimals="0" id="Fact-383B1A0C1A5B893527F8581874EF0C75" unitRef="shares">1000</us-gaap:WeightedAverageNumberOfSharesOutstandingBasic>
+  <us-gaap:WeightedAverageNumberOfSharesOutstandingBasic contextRef="FD2015Q2QTD" decimals="0" id="Fact-2B9D1E84385067B6342E58185FEB5866" unitRef="shares">1000</us-gaap:WeightedAverageNumberOfSharesOutstandingBasic>
+  <rfmd:NumberofDirectSubsidiaries contextRef="FD2015Q2YTD" decimals="INF" id="Fact-164974E7AFDEF2EB3646585C74D2126F" unitRef="number">2</rfmd:NumberofDirectSubsidiaries>
+  <rfmd:ReceiptofDuefromStockholder contextRef="I2015Q2SubsequentEventDate_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="0" id="Fact-B297B6D22688A30B3B1F586FEDFC5EA8" unitRef="usd">100</rfmd:ReceiptofDuefromStockholder>
+  <dei:AmendmentFlag contextRef="FD2015Q2YTD" id="Fact-B8D0196929AECD530EA7584CA773C5B3">false</dei:AmendmentFlag>
+  <dei:CurrentFiscalYearEndDate contextRef="FD2015Q2YTD" id="Fact-0A0C8B3D742A53D2A5D5584CAA613588">--03-28</dei:CurrentFiscalYearEndDate>
+  <dei:DocumentFiscalPeriodFocus contextRef="FD2015Q2YTD" id="Fact-25980E97A9B6C3AB9673584CA967E24D">Q2</dei:DocumentFiscalPeriodFocus>
+  <dei:DocumentFiscalYearFocus contextRef="FD2015Q2YTD" id="Fact-5FB491DB274FD8EB5D1B584CA88BEF02">2015</dei:DocumentFiscalYearFocus>
+  <dei:DocumentPeriodEndDate contextRef="FD2015Q2YTD" id="Fact-CD0DFDE72AC708634DB2584CA6799F7D">2014-09-27</dei:DocumentPeriodEndDate>
+  <dei:DocumentType contextRef="FD2015Q2YTD" id="Fact-846E421C90E4A95758CB584CA5897C1F">10-Q</dei:DocumentType>
+  <dei:EntityCentralIndexKey contextRef="FD2015Q2YTD" id="Fact-001AD7BB7764A54AE9A6584CA4A3CE11">0001604778</dei:EntityCentralIndexKey>
+  <dei:EntityCommonStockSharesOutstanding contextRef="I2015Q2SharesOutstanding" decimals="INF" id="Fact-CE778DE890B68B762627584ED7BC08D2" unitRef="shares">1000</dei:EntityCommonStockSharesOutstanding>
+  <dei:EntityFilerCategory contextRef="FD2015Q2YTD" id="Fact-49AAECE447759A36299C584CAB6FAA44">Non-accelerated Filer</dei:EntityFilerCategory>
+  <dei:EntityIncorporationDateOfIncorporation contextRef="FD2015Q2YTD" id="Fact-6D5B7498D22BF186578A585E4E760BD9">2013-12-13</dei:EntityIncorporationDateOfIncorporation>
+  <dei:EntityRegistrantName contextRef="FD2015Q2YTD" id="Fact-2231A3FB648C8C2934BB584C23B15F4F">Qorvo, Inc.</dei:EntityRegistrantName>
+  <link:footnoteLink xlink:role="http://www.xbrl.org/2003/role/link" xlink:type="extended" />
+</xbrli:xbrl>

@@ -1,0 +1,125 @@
+{
+  "splits": [],
+  "dividends": [
+    {
+      "cash_amount": 0.525,
+      "currency": "USD",
+      "declaration_date": "2026-05-28",
+      "dividend_type": "CD",
+      "ex_dividend_date": "2026-06-15",
+      "frequency": 4,
+      "id": "E91a81d09a7aca91bb5b865c233ef38c42e66518d2ca4010e8e4597c00a819607",
+      "pay_date": "2026-06-25",
+      "record_date": "2026-06-15",
+      "ticker": "META"
+    },
+    {
+      "cash_amount": 0.525,
+      "currency": "USD",
+      "declaration_date": "2026-02-12",
+      "dividend_type": "CD",
+      "ex_dividend_date": "2026-03-16",
+      "frequency": 4,
+      "id": "Ee27f699cbf3368d449ba85cd07190a3ddb3c6f4db0f658d469843043f729dcd8",
+      "pay_date": "2026-03-26",
+      "record_date": "2026-03-16",
+      "ticker": "META"
+    },
+    {
+      "cash_amount": 0.525,
+      "currency": "USD",
+      "declaration_date": "2025-12-03",
+      "dividend_type": "CD",
+      "ex_dividend_date": "2025-12-15",
+      "frequency": 4,
+      "id": "Ed0078373eec1cbd866a6140a3ac026efd53d24a4f40efe20439a34a535a7dcd4",
+      "pay_date": "2025-12-23",
+      "record_date": "2025-12-15",
+      "ticker": "META"
+    },
+    {
+      "cash_amount": 0.525,
+      "currency": "USD",
+      "declaration_date": "2025-09-11",
+      "dividend_type": "CD",
+      "ex_dividend_date": "2025-09-22",
+      "frequency": 4,
+      "id": "E352d0e5ee2e9f97c021ee138457b272f923a4d0ac764ba3e5a2e3aad5232772b",
+      "pay_date": "2025-09-29",
+      "record_date": "2025-09-22",
+      "ticker": "META"
+    },
+    {
+      "cash_amount": 0.525,
+      "currency": "USD",
+      "declaration_date": "2025-05-29",
+      "dividend_type": "CD",
+      "ex_dividend_date": "2025-06-16",
+      "frequency": 4,
+      "id": "Ea926aaf34c234b1c844cac965e0f8a3991e2bf42f88b3f0148576cc215a31a14",
+      "pay_date": "2025-06-26",
+      "record_date": "2025-06-16",
+      "ticker": "META"
+    },
+    {
+      "cash_amount": 0.525,
+      "currency": "USD",
+      "declaration_date": "2025-02-13",
+      "dividend_type": "CD",
+      "ex_dividend_date": "2025-03-14",
+      "frequency": 4,
+      "id": "E27c60f82e95faa5cf7f8c34f621350af97b3081412a630dfba702f9679f7ec36",
+      "pay_date": "2025-03-26",
+      "record_date": "2025-03-14",
+      "ticker": "META"
+    },
+    {
+      "cash_amount": 0.5,
+      "currency": "USD",
+      "declaration_date": "2024-12-05",
+      "dividend_type": "CD",
+      "ex_dividend_date": "2024-12-16",
+      "frequency": 4,
+      "id": "Ecec59fc797c01fe342c9693ce95f194450e2ca76f632da986c5e24e4836c64cf",
+      "pay_date": "2024-12-27",
+      "record_date": "2024-12-16",
+      "ticker": "META"
+    },
+    {
+      "cash_amount": 0.5,
+      "currency": "USD",
+      "declaration_date": "2024-09-05",
+      "dividend_type": "CD",
+      "ex_dividend_date": "2024-09-16",
+      "frequency": 4,
+      "id": "Ebb8825e317cd430d0ff8210f0b8cd537870a77a983de9d499bf86ed2a7b14c4e",
+      "pay_date": "2024-09-26",
+      "record_date": "2024-09-16",
+      "ticker": "META"
+    },
+    {
+      "cash_amount": 0.5,
+      "currency": "USD",
+      "declaration_date": "2024-05-30",
+      "dividend_type": "CD",
+      "ex_dividend_date": "2024-06-14",
+      "frequency": 4,
+      "id": "Edbd30f584bd978a9c21fa5a5f829a94f2c66b401057211d3bbf2f8b2963750b8",
+      "pay_date": "2024-06-26",
+      "record_date": "2024-06-14",
+      "ticker": "META"
+    },
+    {
+      "cash_amount": 0.5,
+      "currency": "USD",
+      "declaration_date": "2024-02-01",
+      "dividend_type": "CD",
+      "ex_dividend_date": "2024-02-21",
+      "frequency": 4,
+      "id": "Ef8795a4515fee5e57f05030294218f0aac8514e8f060886876b30f6d92337cd1",
+      "pay_date": "2024-03-26",
+      "record_date": "2024-02-22",
+      "ticker": "META"
+    }
+  ]
+}

@@ -1,0 +1,2274 @@
+<DefinitionAndReference>
+  <Element Id="us-gaap_NetCashProvidedByUsedInInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherNonoperatingIncomeExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityFilerCategory">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriodWeightedAverageGrantDateFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_PaymentsOnVendorFinancedEquipment">
+    <definition>The cash outflow (payments) on vendor-financed equipment.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DiscretionaryContributionPercentageMinimum">
+    <definition>Discretionary contribution percentage by the company for eligible employees based on service, range minimum.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationNoncurrentLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsVestedAndExpectedToVestOutstandingWeightedAverageExercisePrice">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredFederalIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingNumber">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesOther">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueLiabilitiesMeasuredOnRecurringBasisTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_OtherLiabilitiesNoncurrentTextBlock">
+    <definition>Disclosure of noncurrent other liabilities and reserve amounts as of the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UnrecognizedTaxBenefitsDecreasesResultingFromSettlementsWithTaxingAuthorities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdditionalPaidInCapitalCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockNumberOfSharesHeld">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationCurrentAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_BusinessCombinationDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DebtConversionDateConvertNotesForCash">
+    <definition>Date that holders of the zero-coupon subordinated notes may require the Company to purchase in cash all or a portion of their notes for the cash purchase price plus any accrued contingent additional principal and any accrued contingent interest.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NumberOfPrimaryLaboratories">
+    <definition>The number of primary laboratories included in the Company's network.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_EmployeeStockPurchasePlanNumberOfAuthorizedShares">
+    <definition>The maximum number of shares originally approved (usually by shareholders and board of directors), net of any subsequent amendments and adjustments, for purchase under the employee stock purchase plan.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanHealthCareCostTrendRateAssumedForNextFiscalYear">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_CommonsStockIssuedDuringPeriodSharesEmployeeStockPlans">
+    <definition>Number of common shares issued during the period as a result of an employee stock purchase plan and/or stock option plan.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesIssued">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationSharesAuthorizedUnderStockOptionPlansExercisePriceRangeLowerRangeLimit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DerivativesBasisAndUseOfDerivativesUseOfDerivativesTextBlock">
+    <definition>Describes an entity's use of derivatives in its operations, including how the entity initially designates how its derivatives will be used in its operations.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_TransitionCostsBilledThroughEndOfReimbursementPeriod">
+    <definition>Through the end of the reimbursement period, the amount that the insurance company billed to the entity for transition costs related to developing expanded networks.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDueInThreeYears">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationSharesAuthorizedUnderStockOptionPlansExercisePriceRangeExercisableOptionsWeightedAverageExercisePrice">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AmortizationOfIntangibleAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedFutureBenefitPaymentsInYearTwo">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_LongLivedAssetsPolicyTextBlock">
+    <definition>Describes an entity's impairment evaluation policy for long-lived assets. This policy addresses impairment of goodwill and long-lived assets.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisesInPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProvisionForDoubtfulAccounts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ValuationAllowancesAndReservesDeductions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DefinedBenefitPlanAmortizationAndDeferral">
+    <definition>An amount calculated as a basis for determining the effects of amortization expenses and other deferrals.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestRateDerivativeLiabilitiesAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanServiceCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ClassOfWarrantOrRightNumberOfSecuritiesCalledByWarrantsOrRights">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardFairValueAssumptionsExpectedDividendRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromSaleOfPropertyPlantAndEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_MinimumNumberOfTradingDaysToTriggerConversionPrice">
+    <definition>The minimum number of trading days within a number of consecutive trading days in a quarter that the common stock price must meet a specified threshold to trigger conversion price.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UnrecognizedTaxBenefitsThatWouldImpactEffectiveTaxRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_TransitionCostsPaidToDate">
+    <definition>Amount remitted by the entity to the insurance company to reimburse transition costs to develop expanded networks.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDueInFiveYears">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCreditFacilityAmountOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RestructuringReserveAccrualAdjustment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AgreementPeriodOverDurationExclusiveNationalProviderWithTransitionalCostsReimbursed">
+    <definition>Initial period of exclusive national provider agreement that transition costs related to developing expanded networks are reimbursed by the Company.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FutureAmortizationExpenseYearOne">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesDomestic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EmployeeServiceShareBasedCompensationTaxBenefitRealizedFromExerciseOfStockOptions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentCovenantCompliance">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCommonStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardNumberOfSharesAvailableForGrant">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentType">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToAcquireIntangibleAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_InternalUseSoftwarePolicyTextBlock">
+    <definition>Describes an entity's accounting policy for costs incurred when both (1) the software is acquired, internally developed, or modified solely to meet the entity's internal needs, and (2) during the software's development or modification, no substantive plan exists or is being developed to market the software externally.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DisclosureOfShareBasedCompensationArrangementsStockOptionsExercisedTextBlock">
+    <definition>Disclosure of the financial impact of select activity related to the exercise of stock options. This activity includes cash received from option exercises, the corresponding tax benefits realized, and the aggregate intrinsic value of options exercised.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanActuarialNetGainsLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToAcquireShortTermInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_BusinessAcquisitionNameOfAcquiredEntity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingWeightedAverageRemainingContractualTerm">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfRestructuringAndRelatedCostsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAmortizationOfNetGainsLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromIssuanceOfLongTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_CanadianLicenses">
+    <definition>Rights, generally of limited duration, under a license arrangement (for example, to sell or otherwise utilize specified products or processes in a specified territory). Specified territory is the Ontario, Canada province.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NumberOfJointVentureOwnershipTransactions">
+    <definition>Number of transactions affecting the ownership interest percentage in Ontario joint venture.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanTargetAllocationPercentageOfAssetsOther">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedFutureBenefitPaymentsInYearOne">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsNonvestedWeightedAverageGrantDateFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedFutureBenefitPaymentsInFiveFiscalYearsThereafter">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_CostMethodInvestmentsMaximumOwnershipPercentage">
+    <definition>This element represents the maximum ownership percentage of cost-method investments held by the Company. Generally, such investments do not have readily determinable fair values and are not required to be accounted for by the equity method. The carrying amount of such securities equates to cost, adjusted for other-than-temporary impairment.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsVestedAndExpectedToVestExercisableAggregateIntrinsicValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_EmployeeSeveranceBenefitsRelatedRestructuringReserveAccrualAdjustment">
+    <definition>Amount of any reversal and other adjustment made during the period to the amount of a previously accrued liability for employee severance benefits related restructuring costs, excluding adjustments for costs incurred during the period, costs settled during the period, and foreign currency translation adjustments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdjustmentsToAdditionalPaidInCapitalSharebasedCompensationRequisiteServicePeriodRecognitionValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeDerivativesQualifyingAsHedgesTaxEffectPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationGrossProfitLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationSharesAuthorizedUnderStockOptionPlansExercisePriceRangeOutstandingOptionsWeightedAverageExercisePriceBeginningBalance">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDerivativeInstrumentsGainLossInStatementOfFinancialPerformanceTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TaxesPayableCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityPublicFloat">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DefinedBenefitPlanExpectedRateOfReturnOnAssetsEquitySecurities">
+    <definition>An assumption as to the rate of return on plan assets reflecting the average rate of earnings expected on the funds invested or to be invested in equity securities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_WarrantsAndRightsIssuedPerCommonShare">
+    <definition>The specified number of warrants and/or rights received for each share of common stock held.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLossAvailableToCommonStockholdersDiluted">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AssumedBenefitPaymentsByYearTextBlock">
+    <definition>A schedule of assumed benefit payments for future periods by year. This element may be used for defined benefit, nonqualified supplemental retirement, and post-retirement benefit plans.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_SupplementalCashFlowDisclosuresTextBlock">
+    <definition>Designated to encapsulate the entire footnote disclosure that provides information on the supplemental cash flow activities, including cash and noncash transactions, for the period. Noncash is defined as information about all investing and financing activities of an enterprise during a period that affect recognized assets or liabilities but that do not result in cash receipts or cash payments in the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_MaximumCommitmentOfTransitionCostsToReimburse">
+    <definition>Represents the maximum amount the company has committed to reimburse insurance company for transition costs related to developing expanded networks in defined markets</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AccruedRepurchasesOfCommonStockCurrent">
+    <definition>Carrying value as of the balance sheet date of obligations incurred and payable for repurchase of common stock (due within one year or within the normal operating cycle if longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SignificantAccountingPoliciesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RetainedEarningsAccumulatedDeficit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsTaxDeferredExpenseCompensationAndBenefitsOther">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EntityWideDisclosureOnGeographicAreasRevenueFromExternalCustomersAttributedToIndividualForeignCountriesAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_FairValueOfFinancialInstrumentsPolicyTextBlock">
+    <definition>Describes an entity's accounting policy for determining the fair value of its financial instruments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanPlanAmendments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NumberOfPatientSpecimens">
+    <definition>The minimum number of patient specimens processed by the Company daily.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardFairValueAssumptionsRiskFreeInterestRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AccretedInterestOnZeroCouponSubordinatedNotes">
+    <definition>This element represents the accreted interest on zero-coupon subordinated notes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherNoncurrentLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AcceleratedRecognitionOfCompensationArrangementWithIndividualAcceleratedDefinedBenefitPlanObligations">
+    <definition>Executive retirement charge recorded during the period related to the acceleration of certain defined benefit plan obligations for certain individual(s).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsNetCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Goodwill">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesOtherComprehensiveIncome">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AdjustmentsToAdditionalPaidInCapitalTaxEffectAssociatedWithOptionExercisesFromStockPlans">
+    <definition>Tax benefit associated with share-based compensation plans other than an employee stock ownership plan (ESOP). The tax benefit results from the deduction by the entity on its tax return for an award of stock that exceeds the cumulative compensation cost for common stock recognized for financial reporting. Includes any resulting tax benefit that exceeds the previously recognized deferred tax asset (excess tax benefits).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DebtInstrumentPrincipalPaymentAtMaturity">
+    <definition>Amount of the required principal payment at maturity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsVestedAndExpectedToVestOutstandingWeightedAverageRemainingContractualTerm">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RestructuringReserveCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfShareBasedCompensationSharesAuthorizedUnderStockOptionPlansByExercisePriceRangeTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsGross">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_CurrentFiscalYearEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetsCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInOperatingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsOfDividendsMinorityInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanEffectOfOnePercentagePointDecreaseOnAccumulatedPostretirementBenefitObligation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NetProceedsFromIssuanceOfUnsecuredDebt">
+    <definition>The cash inflow from the issuance of uncollateralized debt obligation (where debt is not backed by the pledge of collateral), net of the cash outflow paid to third parties in connection with debt origination.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCentralIndexKey">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DefinedBenefitPlanExpectedRateOfReturnOnAssetsFixedIncomeSecurities">
+    <definition>An assumption as to the rate of return on plan assets reflecting the average rate of earnings expected on the funds invested or to be invested in fixed income securities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterestOwnershipPercentageByParent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareDiluted">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInInventories">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_UseOfEstimatesPolicyTextBlock">
+    <definition>Provides an entity's explanation that the preparation of financial statements in conformity with generally accepted accounting principles requires the use of management estimates.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AcquiredFiniteLivedIntangibleAssetAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCreditFacilityInterestRateAtPeriodEnd">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardFairValueAssumptionsExpectedVolatilityRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_AmendmentFlag">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ZeroCouponConvertibleSubordinatedNotesConversionTriggerPrice">
+    <definition>The zero-coupon subordinated notes conversion trigger price per share for the current period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ValueOfNoncontrollingInterestPut">
+    <definition>Change in additional paid-in capital as a result of the initial difference between the value of the put and the underlying noncontrolling interest being recorded as additional noncontrolling interest and as a reduction to additional paid-in capital.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_RemainingTermOfEquipmentLeasesForJointVenture">
+    <definition>The remaining term on the joint venture equipment leases for which the Company is a guarantor.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ProvisionForDoubtfulAccountsSpecialCharge">
+    <definition>Special charge against operations for uncollectible accounts receivable balances. Charges may include amounts owed by patients impacted by flooding, damages from severe weather and/or other unusual occurrences.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedFutureBenefitPaymentsInYearFive">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CostOfGoodsAndServicesSold">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SalesRevenueNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromSaleOfShortTermInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfGoodwillTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_IncomeLossFromContinuingOperationsBeforeIncomeTaxesAndMinorityInterest">
+    <definition>Sum of operating profit and nonoperating income (expense) before income taxes, extraordinary items, cumulative effects of changes in accounting principles, and noncontrolling interest.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NetProceedsFromIssuanceOfStockToEmployees">
+    <definition>The cash inflow associated with the amount received from holders exercising their stock options and employees related to shares purchased under the employee stock purchase plan.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ZeroCouponNotesFairValue">
+    <definition>Estimated fair value of the debt instrument (zero-coupon subordinated notes) at the balance-sheet date</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationNetSalesOrGrossRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_RestructuringReserveSettledWithCashAndOtherAdjustment">
+    <definition>Amount of cash paid and/or consideration other than cash paid in the period to fully or partially settle a specified, previously accrued type of restructuring cost.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccountsPayable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_IncrementalCommonSharesAttributableToStockOptions">
+    <definition>Aggregate awards of stock options and nonvested options to be issued to an employee under a stock option arrangement. Such stock options shall be considered to be outstanding as of the grant date for purposes of computing diluted earnings per share even though their exercise may be contingent upon vesting. Those options are included in the diluted Earnings Per Share (EPS) computation even if the employee may not receive (or be able to sell) the stock until some future date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanContributionsByPlanParticipants">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Liabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsTaxDeferredExpenseCompensationAndBenefitsPostretirementBenefits">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesGoodwillAndIntangibleAssetsIntangibleAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesAndStockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccountsReceivable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DefinedBenefitPlanAssumptionsUsedExpectedLongTermReturnOnAssets">
+    <definition>An assumption as to the rate of return on plan assets reflecting the average rate of earnings expected on the funds invested or to be invested to provide for the benefits included in the benefit obligation.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_BridgeTermLoanCreditAgreementMaximumBorrowingCapacity">
+    <definition>Maximum borrowing capacity under the bridge term loan credit agreement before the credit agreement was replaced and terminated by the Company in November 2010 by making an offering in the debt capital markets.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateReconciliationStateAndLocalIncomeTaxes">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationSharesAuthorizedUnderStockOptionPlansExercisePriceRangeNumberOfExercisableOptions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FutureAmortizationExpenseYearThree">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanRecognizedNetGainLossDueToCurtailments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockIssuedDuringPeriodSharesRestrictedStockAwardForfeited">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationSharesAuthorizedUnderStockOptionPlansExercisePriceRangeUpperRangeLimit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquityNoteDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SeveranceCosts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_IssuanceOfCommonStockUnderEmployeeStockPlans">
+    <definition>Aggregate change in value for stock issued during the period as a result of employee stock purchase plan, combined the value of stock issued during the period as a result of the exercise of stock options.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ClinicalLaboratoryTestingServicesNumberOfStates">
+    <definition>The number of states where the Company provides clinical laboratory testing services.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsLiabilitiesNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsVestedAndExpectedToVestExercisableWeightedAverageRemainingContractualTerm">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentMaturityDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanTargetAllocationPercentageOfAssetsEquitySecurities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanActualReturnOnPlanAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAccumulatedOtherComprehensiveIncomeNetGainsLossesBeforeTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsNonvestedNumber">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_MinimumPercentageMarketToCalculatedPriceAtWhichContingentCashInterestIsDue">
+    <definition>The percentage by which average market price exceeds the sum of the issue price, accrued original issue discount and contingent additional principal on the zero-coupon subordinated notes at which contingent cash interest becomes payable.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_IncomeTaxBenefitMinimumCertaintyPercentage">
+    <definition>For tax positions that are more likely than not to be sustained on audit by the taxing authority, the entity recognizes the largest amount of tax benefit that it believes exceeds a minimum likelihood of being recognized. This element represents the minimum percentage of likelihood that a tax benefit will be realized that the entity uses to assess if a benefit should be recognized.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedContributionPlanCostRecognized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateReconciliationAtFederalStatutoryIncomeTaxRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UnrecognizedTaxBenefitsIncomeTaxPenaltiesAndInterestAccrued">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsAndHedgingActivitiesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_TermLoanFacilityMaturitiesRepaymentsOfPrincipalInNextTwelveMonths">
+    <definition>Amount of debt under the term loan facility maturing within the next twelve months following the date of the latest balance sheet presented in the financial statements.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeDescriptionOfVariableRateBasis">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncrementalCommonSharesAttributableToConversionOfDebtSecurities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DebtInstrumentRemainingQuarterlyDateRangeEnd">
+    <definition>When presenting a range of remaining periodic payment dates, the latest date when the outstanding debt instruments are required to be repaid. May be presented in a variety of ways (for example: year only, month and year, day, month and year, and number of years).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UnrecognizedTaxBenefitsIncreasesResultingFromCurrentPeriodTaxPositions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_IntangibleAssetsFiniteLivedPolicyTextBlock">
+    <definition>Describes an entity's accounting policy for finite-lived intangible assets. This accounting policy also may address: (1) the amortization method used (2) the useful lives of such assets (3) how the entity assesses and measures impairment of such assets</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredForeignIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ValuationAllowancesAndReservesReservesOfBusinessesAcquired">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardNumberOfSharesAuthorized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_EmployeeStockPurchasePlanPercentOfMarketPrice">
+    <definition>The percentage of the market price of common stock participating employees are able to purchase company stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EmployeeServiceShareBasedCompensationUnrecognizedCompensationCostsOnNonvestedAwardsWeightedAveragePeriodOfRecognition">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EmployeeServiceShareBasedCompensationCashReceivedFromExerciseOfStockOptions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardFairValueAssumptionsExpectedTerm">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_BusinessAcquisitionCostInterestAndInvestmentBankingFees">
+    <definition>Amount of bridge financing fees incurred to finance the business acquisition.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockRepurchasedDuringPeriodValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentInterestRateAtPeriodEnd">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeFixedInterestRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanFairValueOfPlanAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentFaceAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RevenueRecognitionPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationSharesAuthorizedUnderStockOptionPlansExercisePriceRangeNumberOfOutstandingOptions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CurrentForeignTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanUltimateHealthCareCostTrendRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DepreciationDepletionAndAmortization">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DeferredIncomeTaxesAndOtherTaxLiabilities">
+    <definition>Represents the noncurrent portion of deferred tax liabilities, which result from applying the applicable tax rate to net taxable temporary differences pertaining to each jurisdiction to which the entity is obligated to pay income tax, combined with the noncurrent portion of the amount recognized for uncertain tax positions as of the balance sheet date. A noncurrent taxable temporary difference is a difference between the tax basis and the carrying amount of a noncurrent asset or liability in the financial statements prepared in accordance with generally accepted accounting principles. In a classified statement of financial position, an enterprise shall separate deferred tax liabilities and assets into a current amount and a noncurrent amount. Deferred tax liabilities and assets shall be classified as current or noncurrent based on the classification of the related asset or liability for financial reporting. A deferred tax liability or asset that is not related to an asset or liability for financial reporting, including deferred tax assets related to carryforwards, shall be classified according to the expected reversal date of the temporary difference.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CurrentIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AllowanceForDoubtfulAccountsReceivableCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DefinedBenefitPlanExpectedRateOfReturnOnAssetsOtherAssets">
+    <definition>An assumption as to the rate of return on plan assets reflecting the average rate of earnings expected on the funds invested or to be invested in other assets.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ComprehensiveIncomeNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedFutureBenefitPaymentsInYearThree">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommitmentsAndContingencies2009">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NoncashAccrualToPurchaseEquipment">
+    <definition>The increase during the period in vendor-financed purchases of equipment.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_SelfInsuranceReserveCurrent">
+    <definition>Carrying amount of accrued known and estimated losses incurred as of the balance sheet date for which no insurance coverage exists, and for which a claim has been made or is probable of being asserted, typically arising from workmen's' compensation-type of incidents and personal injury to nonemployees (due within one year or within the normal operating cycle if longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DebtInstrumentZeroCouponSubordinatedNotesMinimumContingentCashInterestRate">
+    <definition>Minimum accrued contingent cash interest rate on zero-coupon subordinated notes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_IssuedPriceFromIssuanceOfZeroCouponSubordinatedNotes">
+    <definition>The issuance price for each zero-coupon subordinated note.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_CombinedContractualValueOfNoncontrollingInterestPuts">
+    <definition>Represents the values of the joint venture puts wherein the noncontrolling interest holders have options to sell their equity interests at contractually determined values, which approximate fair values.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_StateTaxLossCarryoversExpirationDates">
+    <definition>The expiration dates of the state tax loss carryovers, or the applicable range of such expiration dates.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentConvertibleTermsOfConversionFeature">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_PropertyPlantAndEquipmentEstimatedUsefulLivesTextBlock">
+    <definition>Describes the periods of time over which an entity anticipates to receive utility from its property, plant and equipment (that is, the periods of time over which an entity allocates the initial cost of its property, plant and equipment).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AntidilutiveSecuritiesExcludedFromComputationOfEarningsPerShareAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_BusinessAcquisitionCostOfAcquiredEntityCashPaid">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_IncreaseDecreaseEstimateProvisionForDoubtfulAccounts">
+    <definition>Increase (decrease) in the estimate of the allowance for doubtful accounts due to the impact of certain events (i.e., economy, change in patient deductibles and copayments, and acquisitions, etc.) on the collectability of accounts receivable balances.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DerivativeTerm">
+    <definition>Description of period or term over which a derivative contract is effective ( years, months, years and months or other measure)</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsAtCarryingValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PensionContributions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanEffectOfOnePercentagePointIncreaseOnServiceAndInterestCostComponents">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCurrentReportingStatus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardAwardVestingPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromLongTermLinesOfCredit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfSharesOutstandingBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityWellKnownSeasonedIssuer">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromRepaymentsOfBankOverdrafts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_TaxIntangibleValueAmortizationPeriod">
+    <definition>Total tax related intangible value's amortization period (in years) for tax purposes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfAntidilutiveSecuritiesExcludedFromComputationOfEarningsPerShareTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_IncomeTaxReconciliationAdjustments">
+    <definition>Represents adjustments recorded to the tax provision during the period, including resolution of certain state tax issues under audit and the realization of foreign tax credits.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GoodwillAndIntangibleAssetsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ZeroCouponSubordinatedNotesConvertibleLatestDate">
+    <definition>The latest date of the applicable calendar quarter on which the zero-coupon subordinated notes can be converted into cash and common stock, which may be presented in a variety of ways (for example, (year only, month and year, day, month and year, quarter).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DefinedBenefitPlanFairValueOfPlanAssetsByCategoryTextBlock">
+    <definition>A schedule of plan assets at fair value by asset category.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsGrantsInPeriodWeightedAverageExercisePrice">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDueThereafter">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsGrantsInPeriodWeightedAverageGrantDateFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToAcquireEquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentUsefulLifeAverage">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FiniteLivedIntangibleAssetsUsefulLifeMinimum">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DebtInstrumentRemainingQuarterlyDateRangeStart">
+    <definition>When presenting a range of remaining periodic payment dates, the earliest date when the outstanding debt instruments are required to be repaid. May be presented in a variety of ways (for example: year only, month and year, day, month and year, and number of years).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PreferredStockParOrStatedValuePerShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_BusinessAcquisitionPurchasePriceAllocationAmortizableIntangibleAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AcceleratedRecognitionOfCompensationArrangementWithIndividualAcceleratedRestrictedStockCompensation">
+    <definition>Executive retirement charge recorded during the period related to the acceleration of the recognition of restricted stock and performance shares compensation for certain individual(s).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ForeignTaxLossCarryovers">
+    <definition>The foreign loss carryovers, before tax effects, available to reduce future taxable income under enacted tax laws.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestPayableCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCreditFacilityInitiationDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationNoncurrentAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsTaxDeferredExpenseReservesAndAccrualsSelfInsurance">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentOwnershipPercentage">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsReceivableGrossCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommitmentsAndContingenciesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityRegistrantName">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DisclosureOfCompensationRelatedCostsShareBasedPaymentsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ProfessionalLiabilityPolicyTextBlock">
+    <definition>Describes an entity's accounting policy for self-insurance of professional liability claims, which may include policies for calculating a liability amount.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisesInPeriodTotalIntrinsicValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_PrincipalAmountAtMaturityOfZeroCouponSubordinatedNotesRedeemed">
+    <definition>The principal amount at maturity of zero-coupon subordinated notes that were redeemed by the Company.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_EstimatedAmortizationExpenseThereafter">
+    <definition>Estimated amortization expense, Thereafter</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_BusinessAcquisitionPurchasePriceAllocationOperatingLossTaxAssets">
+    <definition>The amount of acquisition cost of a business combination allocated for net operating loss tax assets.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsValuationAllowance">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeLossTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForRepurchaseOfCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_SelfInsuranceReserveNoncurrent">
+    <definition>Carrying amount of accrued known and estimated losses incurred as of the balance sheet date for which no insurance coverage exists, and for which a claim has been made or is probable of being asserted, typically arising from workmen's' compensation-type of incidents and personal injury to nonemployees (due beyond one year or operating cycle if longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsVestedAndExpectedToVestOutstandingAggregateIntrinsicValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_SeniorUnsecuredCreditFacilitiesDebtCovenantInterestCoverageRatio">
+    <definition>For any period, the ratio of consolidated EBITDA (Earnings Before Interest, Taxes, Depreciation and Amortization) for such period to consolidated interest expense for such period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_EmployeeStockPurchasePlanExpense">
+    <definition>The expense amount recognized during the period related to the Company's employee stock purchase plan.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SellingGeneralAndAdministrativeExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationLiabilitiesAndEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DebtTermNumberYears">
+    <definition>The number of years the credit facility is available and to repaid before maturity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_OperatingLeasesFutureMinimumPaymentsDueLessRestructuringAcquisitionAccrualsAndFutureMinimumSubleaseRentals">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ScheduleOfAccountsReceivableTextBlock">
+    <definition>Disclosure itemizing the various types of trade accounts and notes receivable, and for each the gross carrying value, allowance, and net carrying value as of the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateReconciliationOtherAdjustments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_UnrecognizedTaxBenefitsIncomeTaxPenaltiesAndInterestExpenseBenefit">
+    <definition>The total offset of interest expense recognized for an underpayment of income taxes computed by applying the applicable statutory rate of interest to the difference between a tax position recognized for financial reporting purposes and the amount previously taken or expected to be taken in a tax return and the amount of statutory penalties in the period in which the entity claims or expects to claim a tax position, in its tax return, that does not meet the minimum statutory threshold to avoid penalties.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ConcentrationOfCreditRiskPolicyTextBlock">
+    <definition>A description of a company's credit risk accounting policy with respect to financial instruments. An entity shall disclose its policy for including whether the entity's cash and cash equivalents are insured or expose the entity to credit risk.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_BusinessExitCosts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_SeniorUnsecuredCreditFacilitiesDebtCovenantLeverageRatio">
+    <definition>On any date, the ratio of total debt to consolidated EBITDA (Earnings Before Interest, Taxes, Depreciation and Amortization) for the period of four consecutive fiscal quarters most recently ended on or prior to such date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardAwardVestingRights">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_BusinessCombinationReasonForBusinessCombination">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_MedicareMedicaidRevenuePercentage">
+    <definition>The percentage of revenue recognized in the period derived directly from the Medicare and Medicaid programs.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeForeignCurrencyTransactionAndTranslationAdjustmentBeforeTaxPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationEquityOrCapital">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDueInTwoYears">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsGrantsInPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockIssuedDuringPeriodValueRestrictedStockAwardForfeitures">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GoodwillTranslationAndPurchaseAccountingAdjustments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsPayableAndAccruedLiabilitiesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDefinedBenefitPlansDisclosuresTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RestructuringReserve">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_SeniorNotesFairValue">
+    <definition>Estimated fair value of the debt instrument (senior notes) at the balance-sheet date</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashEquivalentsAtCarryingValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EmbeddedDerivativeFairValueOfEmbeddedDerivativeLiability">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_PercentageOfOutstandingZeroCouponSubordinatedNotesRedeemed">
+    <definition>Redeemed percentage of the principal amount at maturity outstanding of the zero-coupon subordinated notes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_BusinessAcquisitionEffectiveDateOfAcquisition">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ConversionOfZeroCouponConvertibleDebt">
+    <definition>Value of stock issued during the period upon the conversion of convertible securities (zero-coupon subordinated notes) and/or reversal of deferred tax liability to reflect the tax benefit realized upon issuance of the stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesForeign">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_IndefiniteLivedIntangibleAssetsAccumulatedAmortization">
+    <definition>The accumulated amount of amortization of a major indefinite-lived intangible asset class is $0 since not subject to amortization. A major class is composed of intangible assets that can be grouped together because they are similar, either by their nature or by their use in the operations of a company.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockOptionPlanExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AccruedExpensesAndOtherCurrentTextBlock">
+    <definition>Includes disclosure of current accrued expenses and other liabilities (due within one year or within the normal operating cycle if longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedDepreciationDepletionAndAmortizationPropertyPlantAndEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDueInFourYears">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsReceivableNetCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfAcquiredFiniteLivedIntangibleAssetsByMajorClassTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanInterestCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FiniteLivedIntangibleAssetsUsefulLifeMaximum">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DeferredPaymentsOnAcquisitions">
+    <definition>This element represents deferred payments (payments on accrued acquisition related liabilities) on acquisitions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromMinorityShareholders">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockRepurchasedAndRetiredDuringPeriodShares">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsVestedAndExpectedToVestExercisableNumber">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromEquityMethodInvestmentsNetOfDividendsOrDistributions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AcceleratedRecognitionOfCompensationArrangementWithIndividualAcceleratedStockCompensationAndDefinedBenefitPlanObligations">
+    <definition>Executive retirement charges recorded during the period related to the acceleration of the recognition of stock compensation and the acceleration of certain defined benefit plan obligations for certain individual(s).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationCurrentLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCreditFacilityFrequencyOfPayments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromEquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanEffectOfOnePercentagePointDecreaseOnServiceAndInterestCostComponents">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AcceleratedCompensationArrangementWithIndividualPensionBenefitEligibilityAge">
+    <definition>Accelerated compensation arrangement age at which the retired executive is eligible for unreduced pension benefits based on the agreement executed between the company and the executive, in years.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccruedLiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Assets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EmployeeRelatedLiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationSharesAuthorizedUnderStockOptionPlansExercisePriceRangeOutstandingOptionsWeightedAverageRemainingContractualTerm">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_BusinessAcquisitionPurchasePriceAllocationIntangiblesExpectedTaxDeductibleAmount">
+    <definition>Total intangible value arising froma business combination that will be amortizable for tax purposes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_TaxBenefitRealizedUponConversionOfZeroCouponConvertibleDebt">
+    <definition>Reversal of deferred tax liability to reflect the tax benefit realized in connection with common stock issued upon conversion of zero-coupon subordinated notes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DebtConversionDateOfSubordinatedNotesAndIndenture">
+    <definition>Date of the terms for the zero-coupon subordinated notes and the Indenture.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedReturnOnPlanAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentUsefulLifeMaximum">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossDefinedBenefitPensionAndOtherPostretirementPlansNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ValuationAndQualifyingAccountsDisclosureTextBlock">
+    <definition>Encompasses the schedule of allowance and reserve accounts.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ClinicalLaboratoryTestingServicesNumberOfCanadianProvinces">
+    <definition>The number of Canadian provinces where the Company provides clinical laboratory testing services.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PensionAndOtherPostretirementBenefitsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredRevenueNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_PaymentsOnZeroCouponSubordinatedNotes">
+    <definition>The cash outflow (payments) on the zero-coupon subordinated notes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfShortTermDebtTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueDisclosuresTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UnrecognizedTaxBenefitsIncomeTaxPenaltiesAndInterestExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_RestrictedStockPerformanceSharesExpense">
+    <definition>The noncash expense that represents the cost of restricted stock and performance shares distributed to employees as compensation.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsOperatingLossCarryforwards">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeDerivativesQualifyingAsHedgesBeforeTaxPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossForeignCurrencyTranslationAdjustmentNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentFrequencyOfPeriodicPayment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_IntangibleAssetsGrossExcludingGoodwill">
+    <definition>Sum of the gross carrying amounts before accumulated amortization as of the balance sheet date of all intangible assets, excluding goodwill. The aggregate gross carrying amount (including any previously recognized impairment charges).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsTaxDeferredExpenseReservesAndAccrualsRestructuringCharges">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToMinorityShareholders">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxesPaidNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NetRestructuringCharges">
+    <definition>Amount charged against earnings in the period for incurred and estimated costs, excluding asset retirement obligations, associated with exit from or disposal of business activities or restructurings pursuant to a program that is planned and controlled by management, and changes either scope of business by an entity, or manner business is conducted. May include amount of reversals and other adjustments during the period to amounts of previously accrued liabilities for specified types of restructuring costs.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_StockConversionRateForZeroCouponSubordinatedNotes">
+    <definition>The number of shares of common stock issued for each unit of principal at maturity of zero coupon subordinated notes converted.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalPeriodFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PreferredStockSharesAuthorized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FutureAmortizationExpenseYearFive">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeDefinedBenefitPlansTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RestructuringReserveNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ScheduleOfIncomeTaxDisclosureTextblock">
+    <definition>Schedule containing the entire income tax disclosure. Examples include net deferred tax liability or asset recognized in an enterprise's statement of financial position, net change during the year in the total valuation allowance, approximate tax effect of each type of temporary difference and carryforward that gives rise to a significant portion of deferred tax liabilities and deferred tax assets, utilization of a tax carryback, and tax uncertainties information.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LeaseAndRentalExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateContinuingOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AcceleratedRecognitionOfExpenseRelatedToIndividualsDisclosureShareBasedPaymentsAndPostretirementBenefitsTextBlock">
+    <definition>Disclosure reflecting share-based, pension and other postretirement benefits with individual employees, which are generally due to acceleration of stock compensation and/or certain defined benefit plan obligations in connection with the retirement of individual employees. Disclosure also typically includes the amount of accelerated stock compensation and/or accelerated defined benefit plan obligations.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfValuationAndQualifyingAccountsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_FederalTaxLossCarryovers">
+    <definition>The federal loss carryovers, before tax effects, available to reduce future taxable income under enacted tax laws.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_TermLoanFacilityMaturitiesRepaymentsOfPrincipalInYearTwo">
+    <definition>Amount of debt under the term loan facility maturing in year two following the date of the latest balance sheet presented in the financial statements.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RestructuringReservePeriodExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCreditFacilityExpirationDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InvestmentsInAffiliatesSubsidiariesAssociatesAndJointVentures">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CurrentStateAndLocalTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ValuationAllowancesAndReservesBalance">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeRemainingMaturity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_CommonStockSalesPriceThresholdBeginning">
+    <definition>The beginning common stock price threshold (common stock price as compared with the accreted conversion price per share of common stock), adjusted quarterly with the declining threshold percentage, that must be met within a quarter in a specified consecutive trading period to trigger conversion price.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDueFutureMinimumSubleaseRentals">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_UnrecognizedTaxBenefitsIncreasesDecreasesResultingFromPriorPeriodTaxPositions">
+    <definition>The net change in unrecognized tax benefits resulting from tax positions taken in prior period tax returns, excluding amounts pertaining to examined tax returns.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInceptionDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ZeroCouponSubordinatedNotesConvertibleEarliestDate">
+    <definition>The earliest date of the applicable calendar quarter on which the zero-coupon subordinated notes can be converted into cash and common stock, which may be presented in a variety of ways (for example, (year only, month and year, day, month and year, quarter).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_LitigationJudgmentGrossWrongfulTermination">
+    <definition>This element represents the gross amount of the judgment against a subsidiary of the entity in connection with a wrongful termination lawsuit.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RepaymentsOfOtherLongTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingWeightedAverageExercisePrice">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ResearchAndDevelopmentExpensePolicyTextBlock">
+    <definition>Describes an entity's accounting policy for costs it has incurred (1) in a planned search or investigation aimed at discovery of new knowledge with the hope that such knowledge will be useful in developing a new product or service, a new process or technique, or in creating a significant improvement to an existing product or process or (2) to translate research findings or other knowledge into a plan or design for a new product or process or for a significant improvement to an existing product or process.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectOfExchangeRateOnCashAndCashEquivalents">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UnrecognizedTaxBenefitsReductionsResultingFromLapseOfApplicableStatuteOfLimitations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ConcentrationRiskAccountsReceivableMedicareAndMedicaid">
+    <definition>Gross receivable balance due from Medicare and Medicaid programs.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerSharePolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AcquisitionReserveNoncurrent">
+    <definition>Carrying value as of the balance sheet date of obligations incurred and payable for acquisition related expenses (due beyond one year or operating cycle if longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AcceleratedRecognitionOfCompensationArrangementWithIndividualAcceleratedStockCompensation">
+    <definition>Executive retirement charge recorded during the period related to the acceleration of the recognition of stock compensation for certain individual(s).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NumberOfEmployees">
+    <definition>The minimum number of employees currently working for the Company.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanYearThatRateReachesUltimateTrendRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_GuaranteeObligationsOnEquipmentLeasesForJointVenture">
+    <definition>The outstanding balance on joint venture equipment leases for which the Company is a guarantor.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfAccountsNotesLoansAndFinancingReceivableTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AcceleratedRecognitionOfCompensationArrangementWithIndividualAcceleratedStockOptionCompensation">
+    <definition>Executive retirement charge recorded during the period related to the acceleration of the recognition of stock option compensation for certain individual(s).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesPropertyPlantAndEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_QuarterlyFinancialInformationTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalYearFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherLiabilitiesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NoncontrollingInterestCurrent">
+    <definition>Represents contractual value of noncontrolling interest put (includes underlying noncontrolling interest). Classified as current due to the Company receiving notification from the holders of the noncontrolling interest that they intended to put their partnership units to the Company or the holders of the noncontrolling interest have the ability to put their partnership units within a year of the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InvestmentIncomeNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DepreciationAndAmortizationOfLeasedAssets">
+    <definition>The amount of depreciation recognized in the current period that reflects the allocation of the cost of tangible assets over the assets' useful lives. Includes production and non-production related depreciation. Also, may include amortization charged against earnings for the periodic recognition of capitalized leases.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_PropertyPlantAndEquipmentUsefulLifeSoftwareAverage">
+    <definition>Capitalized software costs are amortized over the estimated useful life of the underlying system.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentInterestRateEffectivePercentage">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PrepaidExpenseCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsGainRecognizedInOtherComprehensiveIncomeEffectivePortion">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsGrantsInPeriodWeightedAverageGrantDateFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCreditFacilityMaximumBorrowingCapacity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ShareBasedCompensationOptionAndIncentivePlansPolicyTextBlock">
+    <definition>Describes an entity's accounting policy for stock option and stock incentive plans. This disclosure may include (1) the types of stock option or incentive plans sponsored by the entity (2) the groups that participate in (or are covered by) each plan (3) significant plan provisions and (4) how stock compensation is measured, and the methodologies and significant assumptions used to determine that measurement.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_StateTaxLossCarryovers">
+    <definition>The state and local loss carryovers, before tax effects, available to reduce future taxable income under enacted tax laws.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_SeniorUnsecuredCreditFacilitiesMaximumBorrowingCapacity">
+    <definition>Maximum borrowing capacity under the credit facilities without consideration of any current restrictions on the amounts that could be borrowed or the amounts currently outstanding under the facilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentPrincipalOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_EmployeeStockPurchasePlanNumberOfSharesPurchased">
+    <definition>The number of shares under the employee stock purchase plan purchased by eligible employees during the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_IncrementalCommonSharesAttributableToRestrictedStockAwardsAndOther">
+    <definition>Aggregate awards of restricted stock units and other share based awards to be issued to an employee under a share based arrangement. Such awards shall be considered to be outstanding as of the grant date for purposes of computing diluted earnings per share even though their exercise may be contingent upon vesting. Those awards are included in the diluted Earnings Per Share (EPS) computation even if the employee may not receive (or be able to sell) the stock until some future date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_CompanysRestructuringActivitiesTextBlock">
+    <definition>The roll forward presentation of an entity's restructuring reserve and the changes to that reserve by major type of cost during the period associated with the exit from or disposal of business activities or restructurings.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NumberOfPatientServiceCenters">
+    <definition>The minimum number of patient service centers currently included in the Company's network.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NumberOfDaysUsedToEstablishAverageMarketPriceOfZeroCouponSubordinatedNotes">
+    <definition>The number of trading days used to determine the average market price of zero-coupon subordinated notes used to calculate the contingent cash interest rate.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ClassOfWarrantOrRightExercisePriceOfWarrantsOrRights">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EmployeeServiceShareBasedCompensationUnrecognizedCompensationCostsOnNonvestedAwards">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_CanadianLicensesAlbertaCanada">
+    <definition>Rights, generally of limited duration, under a license arrangement (for example, to sell or otherwise utilize specified products or processes in a specified territory). Specified territory is the Alberta, Canada province.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_UnderlyingNoncontrollingInterest">
+    <definition>Underlying noncontrolling interest (recorded a component in other liabilities and a component in mezzanine equity) represents total of all Stockholders' Equity (deficit) items, net of receivables from officers, directors owners, and affiliates of the entity which is directly or indirectly attributable to that ownership interest in subsidiary equity which is not attributable to the parent.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeForeignCurrencyTranslationGainLossArisingDuringPeriodTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_StateTaxLossCarryoversCurrentYearExpiration">
+    <definition>The state and local loss carryovers, before tax effects, that expired during the current period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NetRestructuringAndOtherSpecialCharges">
+    <definition>Amount charged against earnings in the period for incurred and estimated costs, excluding asset retirement obligations, associated with exit from or disposal of business activities or restructurings pursuant to a program that is planned and controlled by management, and materially changes either the scope of a business undertaken by an entity, or the manner in which that business is conducted. Also, may include amounts for any reversals and other adjustments made during the period to the amounts of previously accrued liabilities for specified types of restructuring costs. In addition, may include special charges (i.e., expense for the write-off of the carrying amount on the books of the entity of the asset to be abandoned, charge against operations for uncollectible accounts receivable balances, etc.)</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NoncontrollingInterestMezzanineEquity">
+    <definition>Represents contractual value of a noncontrolling interest put (includes underlying noncontrolling interest). In February 2010, the Company completed a transaction to sell the partnership units acquired from the previous noncontrolling interest holder to a new Canadian partner. As a result of this transaction, the Company recorded a component of noncontrolling interest in liabilities and a component in mezzanine equity. This item represents the mezzanine equity component.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentPeriodEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentPeriodicPaymentPrincipal">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsTaxDeferredExpenseReservesAndAccrualsAllowanceForDoubtfulAccounts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentInterestRateStatedPercentage">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeLiabilityDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfNewAccountingPronouncementsAndChangesInAccountingPrinciplesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsForfeituresAndExpirationsInPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredStateAndLocalIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AcquisitionOfAdditionalUnitsInJointVenture">
+    <definition>Amount of cash paid to acquire the additional partnership units in Ontario, Canada joint venture.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FiniteLivedIntangibleAssetsAccumulatedAmortization">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanContributionsByEmployer">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IntangibleAssetsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ValuationAllowancesAndReservesChargedToCostAndExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentGross">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesAuthorized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_CommonStockSharesOutstandingBeneficialOwnership">
+    <definition>The percentage of beneficial common stock ownership, held by any individual or group of individuals, which will grant its holder(s) the power to vote or influence transaction decisions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesOfLesseeDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_PrincipalAmountAtMaturityOfZeroCouponSubordinatedNotesOutstanding">
+    <definition>The principal amount at maturity of zero-coupon subordinated notes outstanding at the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ScheduleOfEarningsPerShareBasicAndDilutedByCommonClassTextBlock">
+    <definition>This element may be used to capture the complete disclosure pertaining to an entity's basic and diluted earnings per share.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AmountOutstandingLettersOfCredit">
+    <definition>An irrevocable undertaking (typically by a financial institution) to guarantee payment of a specified financial obligation. Element is primarily used for the aggregate amount issued in connection with certain insurance programs.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NonElectiveContribution">
+    <definition>The minimum non-elective contribution % by the company to all employees eligible for the defined contribution retirement plan. Contributions are concurrent with each payroll period and are non-forfeitable and vest immediately.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_LitigationJudgmentGrossPatentInfringment">
+    <definition>This element represents the gross amount paid by the entity for a patent infringement judgment.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsVestedAndExpectedToVestExercisableWeightedAverageExercisePrice">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_SeniorUnsecuredCreditFacilitiesMaximumLeverageRatioBeforeDividendPayments">
+    <definition>The maximum leverage ratio allowed by the senior credit facilities provided the company is not in default of the credit agreement covenants.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ShareBasedCompensationArrangementPerformanceShareAwardsVestingConditions">
+    <definition>Description of performance share award terms as to how many shares or portion of an award are no longer contingent on satisfaction of certain performance conditions, thereby giving the employee the legal right to convert the award to shares, to sell the shares, and be entitled to the cash proceeds of such sale.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DisclosureOfShareBasedCompensationArrangementsByShareBasedPaymentAwardTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CurrentFederalTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_CommonStockDecliningSalePriceThreshold">
+    <definition>The declining common stock sales price quarterly threshold adjustment/percentage, which thereby reduces the threshold for triggering the common stock conversion price.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_BusinessAcquisitionTaxCreditCarryforwardPeriodOperatingLossTaxAssets">
+    <definition>The carryforward period during which the net operating loss tax assets may be realized.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAssumptionsUsedCalculatingBenefitObligationDiscountRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_CapitationRevenuePercentage">
+    <definition>The percentage of revenue recognized in the period based on fees charged on a per capita basis with certain managed care customers.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLossAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_CommonStockSharesIssuedAndOutstandingTextBlock">
+    <definition>This schedule is used to show the common shares issued and outstanding of the entity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FutureAmortizationExpenseYearFour">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeDefinedBenefitPlansAdjustmentBeforeTaxPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_InterestPaidInCash">
+    <definition>The amount of cash paid during the current period for interest owed on money borrowed</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_PrincipalAmountOfZeroCouponSubordinatedNotes">
+    <definition>The principal amount of each zero-coupon subordinated note.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanBenefitsPaid">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherPostretirementDefinedBenefitPlanLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GainLossOnSaleOfPropertyPlantEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherAssetsNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ExcessTaxBenefitFromShareBasedCompensationFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_SeniorUnsecuredCreditFacilitiesInitiationDate">
+    <definition>Reflects when the credit facilities first became available, which may be presented in a variety of ways (year, month and year, day, month and year, quarter).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPensionPlanLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IntangibleAssetsNetExcludingGoodwill">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NumberOfConsecutiveTradingDaysInQuarterToTriggerConversionPrice">
+    <definition>The number of consecutive trading days in a quarter that the minimum number of trading days must fall within that the common stock price has met a specified threshold to trigger conversion price.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingIntrinsicValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_SoftwareDepreciation">
+    <definition>The amount of depreciation recognized in the current period that reflects the allocation of the cost of software related assets over the assets' useful lives.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ResearchAndDevelopmentExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DecreaseInAccruedExpensesAndOther">
+    <definition>The net change during the reporting period in the aggregate amount of expenses incurred but not yet paid and the net change during the reporting period in the value of other assets or liabilities used in operating activities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesZeroCouponNotes">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanTargetAllocationPercentageOfAssetsDebtSecurities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisesInPeriodWeightedAverageExercisePrice">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsVestedAndExpectedToVestOutstandingNumber">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AcceleratedRecognitionOfStockCompensationAndBenefitPlanObligationsWithIndividualDescription">
+    <definition>Description of the accelerated recognition of stock compensation and certain defined benefit plan obligations related to certain individuals.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DiscretionaryContributionPercentageMaximum">
+    <definition>The maximum discretionary contribution % by the company for eligible employees based on service.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_DebtConversionAnnouncementDate">
+    <definition>The date announced by the Company that its zero-coupon subordinated notes may be converted into cash and common stock at the stock conversion rate for the applicable quarterly period. In order to exercise the option to convert all or a portion of the notes, holders are required to validly surrender their notes at any time during the applicable calendar quarter.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AcquiredFiniteLivedIntangibleAssetWeightedAverageUsefulLife">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_RestrictedStockAwardsAndPerformanceSharesSurrendered">
+    <definition>The value of stock related to restricted stock awards and performance shares forfeited during the period in noncash investing or financing transactions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashFlowSupplementalDisclosuresTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccruedRoyaltiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_QuarterlyFinancialResultsTextBlock">
+    <definition>Schedule disclosing quarterly financial data in the annual financial statements. The disclosure includes a tabular presentation of financial information for each fiscal quarter for the current and previous year and may include revenues, gross profit, income (loss) before extraordinary items and cumulative effect of a change in accounting principle and earnings per share data.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RepaymentsOfLongTermLinesOfCredit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_OperatingLeasesFutureMinimumPaymentsDueIncludedInRestructuringAndAcquisitionAccruals">
+    <definition>Future contractually required payments on leases defined as operating, which are included in restructuring and acquisition related accruals.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ChangesInCommonSharesIssuedAndHeldInTreasuryTextBlock">
+    <definition>This schedule is used to show the changes in common shares issued and held in treasury by the entity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockIssuedDuringPeriodSharesConversionOfConvertibleSecurities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FutureAmortizationExpenseYearTwo">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanNetPeriodicBenefitCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedFutureBenefitPaymentsInYearFour">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToAcquirePropertyPlantAndEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_EntityWideDisclosureOnGeographicAreasRevenueFromExternalCustomersAttributedToIndividualForeignCountriesAmountCanadianDollars">
+    <definition>Amount of revenue from external customers attributed to an individual foreign country from which revenue is material. An entity also may provide subtotals of geographic information about groups of countries. Amount in Canadian dollars.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanBenefitObligation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanCurtailments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockParOrStatedValuePerShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_BusinessAcquisitionCostOfAcquiredEntityTransactionCosts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GoodwillAcquiredDuringPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossCumulativeChangesInNetGainLossFromCashFlowHedgesEffectNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_FairValueLiabilitiesMeasuredOnRecurringBasisNoncontrollingInterestPuts">
+    <definition>This element represents a certain statement of financial position liability caption which represents a class of liabilities, or which may include an individual liability, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RepaymentsOfLongTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationNetIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanEffectOfOnePercentagePointIncreaseOnAccumulatedPostretirementBenefitObligation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeFairValueOfDerivativeLiability">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToAcquireBusinessesNetOfCashAcquired">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAccumulatedBenefitObligation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ProjectedDefinedBenefitPlanNetPeriodicBenefitCost">
+    <definition>The projected amount of net periodic benefit cost for defined benefit plans for the fiscal year. Periodic benefit costs include the following components: service cost, interest cost, expected return on plan assets, gain or loss, prior service cost or credit, transition asset or obligation, and gain or loss due to settlements or curtailments).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ComprehensiveIncomeNoteTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInPrepaidDeferredExpenseAndOtherAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDueCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GrossProfit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestRateCashFlowHedgeLiabilityAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_FacilityRelatedRestructuringReserveAccrualAdjustment">
+    <definition>Amount of any reversal and other adjustment made during the period to the amount of a previously accrued liability for facility related restructuring costs, excluding adjustments for costs incurred during the period, costs settled during the period, and foreign currency translation adjustments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdjustmentsToAdditionalPaidInCapitalTaxEffectFromShareBasedCompensation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashUninsuredAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentIssuanceDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProfitLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_ForeignTaxLossCarryoversExpirationDates">
+    <definition>The expiration dates of the foreign tax loss carryovers, or the applicable range of such expiration dates.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentUsefulLifeMinimum">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfRestructuringReserveByTypeOfCostTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsForfeituresAndExpirationsInPeriodWeightedAverageExercisePrice">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AcquisitionReserveCurrent">
+    <definition>Carrying value as of the balance sheet date of obligations incurred and payable for acquisition related expense (due within one year or within the normal operating cycle if longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesTaxDeferredIncome">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityVoluntaryFilers">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_AgreementDurationExclusiveNationalProvider">
+    <definition>The length of an agreement entered into by the entity to be the exclusive national laboratory provider for an insurance company. This particular agreement had an effective date of January 1, 2007.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAssumptionsUsedCalculatingBenefitObligationRateOfCompensationIncrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_BusinessAcquisitionPurchasePriceAllocationGoodwillAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UnrecognizedTaxBenefits">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsOfDebtIssuanceCosts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeLossBeforeTaxPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_CommonStockSalesPriceThresholdEnding">
+    <definition>The ending common stock price threshold (common stock price as compared with the accreted conversion price per share of common stock), adjusted quarterly with the declining threshold percentage, that must be met within a quarter in a specified consecutive trading period to trigger conversion price.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_CommonStockRepurchaseAuthorizationOutstanding">
+    <definition>The dollar amount of share (common shares) repurchase authorization approved by the Board of Directors which remains available to the Company.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongLivedAssetsToBeAbandonedCarryingValueOfAsset">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherAccruedLiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsPayableCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsGrantsInPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_FederalTaxLossCarryoversExpirationDates">
+    <definition>The expiration dates of the federal tax loss carryovers, or the applicable range of such expiration dates.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_VariableRateDebtFairValue">
+    <definition>Estimated fair value of the debt instrument (variable rate debt) at the balance-sheet date</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_NoncashAccrualToRepurchaseCommonStock">
+    <definition>The change in the accrual for purchases of common stock during the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_EmployeeStockPurchasePlanFairValueEmployeePurchaseRight">
+    <definition>The fair value of the employee's purchase right calculated using the Black-Scholes model.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDerivativeInstrumentsInStatementOfFinancialPositionFairValueTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="lh_CashPurchasePricePerSubordinateNote">
+    <definition>The cash purchase price for each zero-coupon subordinated note.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+</DefinitionAndReference>

@@ -1,0 +1,2214 @@
+<DefinitionAndReference>
+  <Element Id="oxy_ShareBasedCompensationByShareBasedPaymentAwardPerformanceTargetPayoutToBeSettledInSharesAndExcessInCashPerformanceBasedAwards">
+    <definition>This element represents the first percentage of the payout that is to be settled in shares, and any payout in excess of this percentage is to be settled in cash.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_IncomeLossFromContinuingOperationsAfterNoncontrollingInterestBeforeIncomeTaxesForeign">
+    <definition>The portion of earnings (loss) from continuing operations net of noncontrolling interest before income taxes that is attributable to foreign operations.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EnvironmentalReservesRangeBetweenZeroToOneMillionSiteCategoryNumberOfSites">
+    <definition>This item represents the number of sites with each site's reserves in between zero to one million.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityFilerCategory">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriodWeightedAverageGrantDateFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanHealthCareCostTrendRateConsumerPriceIndexIncrease">
+    <definition>This element represents the assumed Consumer Price Index (CPI) increase used for projecting health care cost trend rates.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsTaxDeferredExpenseReservesAndAccrualsAssetRetirementObligations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsForfeitedInPeriodWeightedAverageGrantDateFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DiscontinuedOperationIncomeLossFromDiscontinuedOperationDuringPhaseOutPeriodBeforeIncomeTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredFederalIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingExpenses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DeferredTaxAssetsPropertyPlantAndEquipment">
+    <definition>The amount as of the balance sheet date of the estimated future tax deductions attributable to the difference between the tax basis of capital assets and the basis of capital assets computed in accordance with generally accepted accounting principles. The difference in basis, attributable to different capitalization of costs, depreciation, or amortization methodologies, will decrease future taxable income when such basis difference is realized. Capital assets include but are not limited to assets such as land, real estate, leasehold improvements, machinery and equipment and furniture and fixtures.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_SwapAverageStrikePrice">
+    <definition>Weighted average strike price related to a group of swap derivatives.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PreferredStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdditionalPaidInCapitalCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfChangesInBenefitObligationsAndPlanAssetsTableTextBlock">
+    <definition>Disclosure of the change in the benefit obligation and fair value of plan assets of pension plans and/or other employee benefit plans from the beginning to the end of the period, showing separately, if applicable, the effects of the following: service cost, interest cost, contributions by plan participants, actuarial gains and losses, foreign currency exchange rate changes, benefits paid, plan amendments, business combinations, divestitures, curtailments, settlements, and special and contractual termination benefits. The disclosure may also include the funded status of the plan and disclosure of the accumulated benefit obligation.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EnvironmentalCostsCapitalExpenditures">
+    <definition>This element represents the environmental costs included in capital expenditures.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAmortizationOfNetPriorServiceCostCredit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PrepaidExpensesAndOtherAssetsCurrent">
+    <definition>Sum of prepaid expenses and other assets that are expected to be consumed or realized within one year. Prepaid expenses are expenditures made in advance of when the economic benefit of the cost will be realized, and which will be expensed in future periods with the passage of time or when a triggering event occurs. Other assets include deferred tax assets and assets that are not otherwise specified in the balance sheet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfFutureNetMinimumPaymentsForCapitalAndNoncancelableOperatingLeasesTableTextBlock">
+    <definition>Disclosure of the future net minimum lease payments for capital and noncancelable operating leases.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ValuationAllowancesAndReservesChargedToCostAndExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanHealthCareCostTrendRateAssumedForNextFiscalYear">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PriceRiskDerivativeInstrumentsNotDesignatedAsHedgingInstrumentsLiabilityAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentInterestRateStatedPercentageRateRangeMinimum">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_IncomeLossFromContinuingOperationsAfterNoncontrollingInterestBeforeIncomeTaxes">
+    <definition>The portion of earnings (loss) from continuing operations net of noncontrolling interest before income taxes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDueInThreeYears">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfOwnershipInterestsInEquityInvestmentsTableTextBlock">
+    <definition>Disclosure of summarized financial information of interest in equity investments' assets, liabilities, revenues and expenses.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UnrecognizedTaxBenefitsThatWouldImpactEffectiveTaxRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_FairValueLiabilitiesMeasuredOnRecurringBasis">
+    <definition>Fair Value as of the balance sheet date of liabilities measured on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_UnrecognizedTaxBenefitsDecreasesResultingFromPriorPeriodTaxPositionsAndSettlementsWithTaxingAuthorities">
+    <definition>The gross amount of decreases in unrecognized tax benefits resulting from tax positions taken in prior period tax returns and from settlements with taxing authorities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedFutureBenefitPaymentsInYearTwo">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAmountsRecognizedInBalanceSheet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DueFromRelatedParties">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanPensionPlansWithPlanAssetsInExcessOfAccumulatedBenefitObligationsAggregateProjectedBenefitObligation">
+    <definition>If aggregate disclosures are presented, the aggregate projected benefit obligation for pension plans with plan assets in excess of accumulated benefit obligations as of the measurement date of each statement of financial position presented.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_FairValueAssetsAndLiabilitiesMeasuredOnRecurringBasisTextBlock">
+    <definition>This element represents the disclosure related to assets and liabilities that are measured at fair value on a recurring basis. The disclosures contemplated herein include the fair value measurements at the reporting date by the level within the fair value hierarchy in which the fair value measurements in their entirety fall, segregating fair value measurements using quoted prices in active markets for identical assets (Level 1), significant other observable inputs (Level 2), and significant unobservable inputs (Level 3).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanServiceCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardFairValueAssumptionsExpectedDividendRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentType">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ReceivablesInRespectOfCashCollateralPaidNet">
+    <definition>The amount of receivables in respect of cash collateral paid that has been netted with derivative liabilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetRetirementObligationLiabilitiesIncurred">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PriceRiskDerivativeInstrumentsNotDesignatedAsHedgingInstrumentsAssetAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_AssetImpairmentChargesNetOfTax">
+    <definition>The charge after tax against earnings resulting from the aggregate write down of all assets from their carrying value to their fair value.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ShareBasedCompensationByShareBasedPaymentAwardPerformanceTargetPayoutLowEndOfRange">
+    <definition>This element represents the performance target payout ratios for total performance-based awards granted during the reporting period, low end of range.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CompensationRelatedCostsPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_AmendmentFlag">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanEffectOfOnePercentagePointIncreaseOnAccumulatedPostretirementBenefitObligation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EnvironmentalReservesExceedingTenMillionThresholdValueSiteCategory">
+    <definition>This item represents the amount which a site's reserve must exceed, which is ten million.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DerivativeLiabilitiesNetFairValueAfterCounterpartyNettingAndCashCollateralOffsetting">
+    <definition>The amount as of the balance sheet date of the fair value of derivative liabilities after counterparty netting and offsetting of cash collateral when a legal right to offset exists.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_NaturalGasHeldInStorage">
+    <definition>The amount of natural gas held in storage, in cubic feet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccruedIncomeTaxesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCommonStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CapitalizedExploratoryWellCostChargedToExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_SignificantComponentsOfAccruedLiabilities">
+    <definition>The total amount of significant components within the accrued liabilities balance disclosed on the balance sheet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_CostOfSalesExcludingDepreciationDepletionAndAmortization">
+    <definition>The aggregate costs related to goods produced and sold by an entity during the reporting period, excluding related depreciation, depletion, and amortization expenses.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAmortizationOfNetGainsLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfComponentsOfIncomeTaxExpenseBenefitTableTextBlock">
+    <definition>Disclosure of the components of income tax expense attributable to continuing operations for each year presented including, but not limited to: current tax expense (benefit), deferred tax expense (benefit), investment tax credits, government grants, the benefits of operating loss carryforwards, tax expense that results from allocating certain tax benefits either directly to contributed capital or to reduce goodwill or other noncurrent intangible assets of an acquired entity, adjustments of a deferred tax liability or asset for enacted changes in tax laws or rates or a change in the tax status of the entity, and adjustments of the beginning-of-the-year balances of a valuation allowance because of a change in circumstances that causes a change in judgment about the realizability of the related deferred tax asset in future years.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanActuarialNetGainsLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryRawMaterials">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DerivativeFairValueOfDerivativeLiabilityAmountOffsetAgainstCounterpartyNettingAndCashCollateral">
+    <definition>The amount as of the balance sheet date of the fair value of derivative liabilities that was offset by counterparty netting and cash collateral when a legal right to offset exists.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromContinuingOperationsIncludingPortionAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_UnremittedForeignEarnings">
+    <definition>The amount as of the balance sheet date of undistributed foreign earnings on which the entity has not provided deferred taxes as these amounts are considered to be indefinitely reinvested.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeUnrealizedHoldingGainLossOnSecuritiesArisingDuringPeriodTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetRetirementObligationAccretionExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanFairValueOfPlanAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromDiscontinuedOperationsNetOfTaxPerBasicShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilityNotRecognizedAmountOfUnrecognizedDeferredTaxLiability">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForProceedsFromOtherInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanPensionPlansWithAccumulatedBenefitObligationsInExcessOfPlanAssetsAggregateAccumulatedBenefitObligation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_NumberOfSitesSignificantAmountOfReserve">
+    <definition>This element represents the number of sites for which the reporting entity has established environmental remediation reserves.  The sites' reserves represent a significant portion of the reporting entity's total environmental remediation reserve associated with the type of environmental remediation site.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedFutureBenefitPaymentsInYearOne">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfEnvironmentalLossContingenciesByCategoryOfSiteTextBlock">
+    <definition>Disclosures of environmental loss contingencies by categories of sites and reserve balances by site categories. Does not include loss contingencies that are not environmental in nature. This element may be used for a listing and details of all of an entity's environmental loss disclosures about categories of sites.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EmployeeServiceShareBasedCompensationNonvestedAwardsTotalCompensationCostNotYetRecognizedPeriodForRecognition">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncrementalCommonSharesAttributableToShareBasedPaymentArrangements">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsGrantsInPeriodWeightedAverageGrantDateFairValueOfEntityStock">
+    <definition>The weighted average fair value of the entity's stock at grant for nonvested share-based awards issued during the period on other than stock option plans (for example, phantom stock plan, stock appreciation rights plan, performance target plan).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CapitalizedExploratoryWellCostAdditionsPendingDeterminationOfProvedReserves">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccrualForEnvironmentalLossContingencies">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PercentageOfSalesTotalRelatedPartySales">
+    <definition>This element represents sales from the related party as a percentage of the total related party sales.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfValuationAndQualifyingAccountsDisclosureTableTextBlock">
+    <definition>Schedule of any allowance and reserve accounts (their beginning and ending balances, as well as a reconciliation by type of activity during the period). Disclosure of the required information may be within the footnotes to the financial statements or a supplemental schedule to the financial statements.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsOfDividendsMinorityInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetImpairmentCharges">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GainLossOnDispositionOfAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SuspendedWellCostsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RetainedEarningsAccumulatedDeficit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DeferredTaxAssetsStateTaxes">
+    <definition>This element represents the tax effect as of the balance sheet date of the amount of excess of tax deductions over gross income in a year which cannot be used on the tax return of a state in the current year but can be carried forward to reduce taxable income or income taxes payable in a future year, for which there must be sufficient tax-basis income to utilize a portion to realize the deferred tax asset.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossAvailableForSaleSecuritiesAdjustmentNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanCurrencyAdjustments">
+    <definition>The amount of net (gain or) loss recognized in net periodic benefit cost as a result of changes in foreign exchange rates.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EnvironmentalRemediationSitesNumber">
+    <definition>Represents the number of remediation sites of the entity, as aggregated by type of environmental remediation site.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisesInPeriodWeightedAverageExercisePrice">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardFairValueAssumptionsRiskFreeInterestRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_SupplementalRetirementPlanSupplementalRetirementPlanAccruedLiabilities">
+    <definition>This element represents the accrued liabilities for supplemental retirement benefit plan which provides restoration of benefit lost due to government limitations on qualified retirement benefits.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_CollarsDailyVolumesAndWeightedAverageStrikePriceTextblock">
+    <definition>Daily Volumes and weighted-average strike prices of collars.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInInvestingActivitiesContinuingOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PropertyPlantAndEquipmentGrossOilAndGasSegmentSuccessfulEffortsMethod">
+    <definition>Carrying amount at the balance sheet date for long-lived physical assets used in the normal conduct of business and not intended for resale related to the Oil and Gas Segment. This can include land, physical structures, machinery, vehicles, furniture, computer equipment, construction in progress, and capitalized costs of acquiring properties, drilling, successful exploration wells and capitalized development costs. Amount does not include accumulated depreciation.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesPropertyPlantAndEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationCostOfSalesOrRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DeferredTaxAssetsEnvironmentalReserves">
+    <definition>The tax effect as of the balance sheet date of the amount of the estimated future tax deductions arising from currently nondeductible expenses in environmental reserves, which can only be deducted for tax purposes when such liabilities are actually incurred, and which can only be realized if sufficient tax-basis income is generated in future periods to enable the deduction to be taken.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsForfeitedInPeriodWeightedAverageGrantDateFairValueOfEntityStock">
+    <definition>The weighted average fair value of the entity's stock as of the grant date of share-based award plans other than stock option plans that were not exercised or put into effect during the reporting period as a result of the occurrence of a terminating event specified in the contractual agreement of the plan.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareDiluted">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashProvidedByUsedInOperatingActivitiesDiscontinuedOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsGross">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_CurrentFiscalYearEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_RevenuesOperatingAndNonoperating">
+    <definition>The sum of operating revenues and nonoperating revenues. Operating revenues are the aggregate revenue recognized during the period derived from goods sold, services rendered, or other activities that constitute an entity's earning process. Nonoperating revenues are the aggregate revenue recognized during the period derived from ancillary business-related activities that are not considered part of the normal operations of the business.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetsCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInOperatingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeDefinedBenefitPlansTaxPortionAttributableToParent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCentralIndexKey">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ProductRevenueToNetSalesPercentage">
+    <definition>Represents the percentage of product revenue to total net sales of the reported segment.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromContinuingOperationsPerDilutedShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfIncomeFromContinuingOperationsBeforeIncomeTaxDomesticAndForeignAndNetOfNoncontrollingInterestTableTextBlock">
+    <definition>Disclosure of income from continuing domestic and foreign operations before domestic and foreign income taxes and net of noncontrolling interests.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ValuationAllowancesAndReservesCurrent">
+    <definition>Total of allowances and reserves, the valuation and qualifying accounts that are either netted against the cost of an asset (in order to value it at its carrying value) or that reflect a liability established to represent expected future costs, which are classified as current.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PropertyPlantAndEquipmentGrossCorporate">
+    <definition>Carrying amount at the balance sheet date for long-lived physical assets used in the normal conduct of business and not intended for resale related to the Corporate portion of the company. This can include land, physical structures, machinery, vehicles, furniture, computer equipment, construction in progress, and similar items. Amount does not include accumulated depreciation.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PriceRiskDerivativeLiabilitiesAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PercentageOfOwnershipInterestInOilAndGasProperties">
+    <definition>Represents the percentage of interest in assets and liabilities associated with the investee accounted for, under the equity method of accounting.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesOfAssetsHeldForSale">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DeferredCreditsAndOtherLiabilitiesNoncurrent">
+    <definition>Sum of deferred and other domestic and foreign income taxes, long-term liabilities of discontinued operations and other noncurrent liabilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_CashFlowHedgesScheduleOfLocationAndAmountOfGainsAndLossesReportedTextBlock">
+    <definition>This represents pre-tax gains/losses recognized in Accumulated Comprehensive Income, amounts reclassified from Accumulated Comprehensive Income and recognized in net sales, and hedge ineffectiveness for the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EquityMethodInvestmentSummarizedFinancialInformationLongTermDebt">
+    <definition>This item represents the disclosure of summarized financial information  for long-term debt for unconsolidated subsidiaries and 50 percent-or-less owned entities accounted for using the equity method of accounting. If investments in common stock of corporate joint ventures or other investments accounted for under the equity method are, in the aggregate, material in relation to the financial position or results of operations of an investor, it may be necessary to present summarized information as to liabilities of the investee, or group of investments for which combined disclosure is appropriate, either by individual financial statement caption or in groups, as appropriate. Such summarized financial information may, at a minimum, include current and noncurrent liabilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsNonvestedNumber">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedFutureBenefitPaymentsInYearFive">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeUnrealizedGainLossOnDerivativesArisingDuringPeriodTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtMaturitiesRepaymentsOfPrincipalInYearFour">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PercentageOfPurchasesTotalRelatedPartyPurchase">
+    <definition>This element represents purchases from the related party as a percentage of the total related party purchases.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesDerivatives">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsNonvestedWeightedAverageGrantDateFairValueOfEntityStock">
+    <definition>The weighted average fair value of the entity's stock relating to nonvested awards on share-based plans excluding option plans (for example, phantom stock plan, stock appreciation rights plan, revenue or profit achievement stock award plan) for which the employer is contingently obligated to issue equity instruments or transfer assets to an employee who has not yet satisfied service or performance criteria necessary to gain title to proceeds from the sale of the award or underlying shares.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CollateralAlreadyPostedAggregateFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StateAndLocalIncomeTaxExpenseBenefitContinuingOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccruedEnvironmentalLossContingenciesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationNetSalesOrGrossRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfAllocationOfPlanAssetsTableTextBlock">
+    <definition>Disclosure of the major categories of plan assets of pension plans and/or other employee benefit plans. This information may include, but is not limited to: the target allocation of plan assets, the fair value of each major category of plan assets, and the level within the fair value hierarchy in which the fair value measurements fall.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_NaturalGasSwapsDailyVolumeAndAverageStrikePriceTextBlock">
+    <definition>Daily Volumes and weighted-average strike prices of natural gas-swaps.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossDefinedBenefitPensionAndOtherPostretirementPlansNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_LongTermReceivablesAndOtherNoncurrentAssetsNet">
+    <definition>Amount due from customers or clients, more than one year from the balance sheet date, for goods or services that have been delivered or sold in the normal course of business, reduced to the estimated net realizable fair value by an allowance established by the entity of the amount it deems uncertain of collection, and the aggregate carrying amount, as of the balance sheet date, of noncurrent assets not separately disclosed in the balance sheet due to materiality considerations.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsTaxDeferredExpenseCompensationAndBenefitsPostretirementBenefits">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesAndStockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_LengthOfHydroCarbonContracts">
+    <definition>This element represents the length of the entity's hydrocarbon contracts.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EquityMethodInvestmentDifferenceBetweenCarryingAmountAndUnderlyingEquityRelatedToAssetsOtherThanGoodwill">
+    <definition>The difference between the amount at which an investment accounted for under the equity method of accounting is carried (reported) on the balance sheet and the amount of underlying equity in net assets, the reporting entity has in the investee, and which is related to assets other than goodwill, subject to amortization.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_FutureMinimumSubleaseRentalsToBeReceivedWithinOneYear">
+    <definition>This element represents the minimum sublease rentals (other than sale leasebacks) to be received under noncancelable subleases within one year of the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateReconciliationStateAndLocalIncomeTaxes">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanEffectOfOnePercentagePointDecreaseOnServiceAndInterestCostComponents">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentCarryingAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EnvironmentalCostsOperatingExpense">
+    <definition>This element represents the environmental costs included in operating expenses.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_RetainedEarningsUndistributedEarningsFromEquityMethodInvestees">
+    <definition>Amount of consolidated retained earnings that represent undistributed (not yet received) earnings from 50% or less owned persons accounted for by the equity method (equity method investees).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquityNoteDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfShareBasedCompensationRestrictedStockUnitsAwardActivityTableTextBlock">
+    <definition>Disclosure of the number and weighted-average grant date fair value for restricted stock units that were outstanding at the beginning and end of the year, and the number of restricted stock units that were granted, vested, or forfeited during the year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromIssuanceOfLongTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NonmonetaryNotionalAmountOfPriceRiskCashFlowHedgeDerivatives">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccrualForEnvironmentalLossContingenciesPayments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_FutureMinimumSubleaseRentalsToBeReceivedWithinTwoYears">
+    <definition>This element represents the minimum sublease rentals (other than sale leasebacks) to be received under noncancelable subleases within the second year following the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_LineOfCreditFacilityMaximumBorrowingCapacityAdjustedAmount">
+    <definition>This element represents adjusted maximum borrowing capacity under the credit facility without consideration of any current restrictions on the amount that could be borrowed.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EstimatedPeriodOftenTakenForInvestigationsAndCleanupMeasuresForComprehensiveEnvironmentalResponseCompensationAndLiabilityActNationalPrioritiesListSites">
+    <definition>Estimated period often taken for investigations and cleanup measures at Comprehensive Environmental Response Compensation And Liability Act (CERCLA) National Priorities List (NPL) sites.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanTargetAllocationPercentageOfAssetsEquitySecurities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanActualReturnOnPlanAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PeriodOfAgreementPotentialExtensionToUpgradeExistingContracts">
+    <definition>This element represents period of potential extension of agreements signed to upgrade its existing contracts.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfSignificantItemsIncludedInCorporateTableTextBlock">
+    <definition>Disclosure of signficant items, discontinued operations and tax effects included in Corporate.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedContributionPlanCostRecognized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateReconciliationAtFederalStatutoryIncomeTaxRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanNumberOfParticipatingEmployees">
+    <definition>This element represents the number of employees currently accruing benefits under defined benefit plans.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanAssumptionsUsedCalculatingNetPeriodicBenefitCostDiscountRateHighEndOfRange">
+    <definition>The interest rate used to adjust for the time value of money, high end of range.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsAndHedgingActivitiesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FederalIncomeTaxExpenseBenefitContinuingOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_CreditFacilityMaximumBorrowingCapacityAvailableInFormOfLettersOfCredit">
+    <definition>Maximum amount of credit facility available in the form of letters of credit.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GainLossOnContractTermination">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_IssuanceOfCommonStockAndOtherNet">
+    <definition>The change in equity due to the value of new stock issued during the period (net of issuance costs), as well as the value of stock issued during the period as a result of the exercise of stock options and other equity transactions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_LineOfCreditFacilityCommitmentFeePercentage">
+    <definition>The fee, expressed as a percentage of the line of credit facility, for the line of credit facility regardless of whether the facility has been used.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UnrecognizedTaxBenefitsIncreasesResultingFromCurrentPeriodTaxPositions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanChangeInBenefitObligationInterestCost">
+    <definition>Changes in the benefit obligation liability account for defined benefit plans due to interest cost.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashProvidedByUsedInFinancingActivitiesDiscontinuedOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_TreasuryStockAcquiredRepurchaseAuthorizedShares">
+    <definition>This element represents authorized shares under repurchase program by an entity's Board of Directors.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfDeferredTaxAssetsAndLiabilitiesTableTextBlock">
+    <definition>Disclosure of the components of net deferred tax asset or liability recognized in an entity's statement of financial position, including the following: the total of all deferred tax liabilities, the total of all deferred tax assets, the total valuation allowance recognized for deferred tax assets.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PercentageOfContributionToDevelopmentCapital">
+    <definition>This element represents percentage of contribution made to development capital.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanAccumulatedOtherComprehensiveIncomeNetGainsLossesNetOfTax">
+    <definition>The net amount of gains and losses, after tax, that are not yet recognized as a component of net periodic benefit cost, and that are recognized as increases or decreases in other comprehensive income as they arise. Gains and losses are due to changes in the value of either the benefit obligation or the plan assets resulting from experience different from that assumed or from a change in an actuarial assumption, or the consequence of a decision to temporarily deviate from the substantive plan.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PercentageOfInterestInOilAndGasProperties">
+    <definition>This element represents the percentage of interest in oil and gas properties held by the entity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredForeignIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_LongTermDebtFairValue">
+    <definition>The fair value amount of long-term debt whether such amount is presented as a separate caption or as a parenthetical disclosure. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. The element may be used in both the balance sheet and disclosure in the same submission.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeFairValueOfDerivativeLiability">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateReconciliationOtherAdjustments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardFairValueAssumptionsExpectedTerm">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EmployeeServiceShareBasedCompensationTaxBenefitFromCompensationExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromContinuingOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentFaceAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeReclassificationAdjustmentOnDerivativesIncludedInNetIncomeNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ReclassificationToWellFacilitiesAndEquipmentBasedOnDeterminationOfProvedReserves">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ShareBasedCompensationByShareBasedPaymentAwardRestrictedStockGrantedToNonEmployeeDirectors">
+    <definition>This element represents the number of restricted shares awarded to non-employee directors under equity-based award plan.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsNetCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanUltimateHealthCareCostTrendRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PropertyPlantAndEquipmentGrossChemicalSegment">
+    <definition>Carrying amount at the balance sheet date for long-lived physical assets used in the normal conduct of business and not intended for resale related to the Chemical Segment. This can include land, physical structures, machinery, vehicles, furniture, computer equipment, construction in progress, and similar items. Amount does not include accumulated depreciation.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DepreciationDepletionAndAmortization">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PriceRiskDerivativeAssetsAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeAverageFloorPrice">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_OperatingLossCarryforwardsForeign">
+    <definition>The foreign operating loss carryforwards, before tax effects, available to reduce future taxable income under enacted tax laws.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_StockIssuedDuringPeriodSharesStockOptionsExercisedAndOther">
+    <definition>Number of shares issued during the period as a result of the exercise of stock options and other stock-based plans.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsNotDesignatedAsHedgingInstrumentsGainLossNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DerivativeFairValueOfDerivativeAssetAmountOffsetAgainstCounterpartyNettingAndCashCollateral">
+    <definition>The amount as of the balance sheet date of the fair value of derivative assets that was offset by counterparty netting and cash collateral when a legal right to offset exists.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanAccumulatedOtherComprehensiveIncomeNetPriorServiceCostCreditNetOfTax">
+    <definition>Amount related to the cost of benefit changes, after tax, attributable to plan participants' prior service pursuant to a plan amendment or a plan initiation, which has not yet been recognized as components of net periodic benefit cost.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanChangeInFairValueOfPlanAssetsBenefitsPaid">
+    <definition>Changes in the fair value of plan assets for defined benefit plans due to benefits paid.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommitmentsAndContingencies2009">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetRetirementObligationsNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PercentageOfInterestInOilSandsProperties">
+    <definition>This element represents the percentage of ownership interest in oil sands properties.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccruedEnvironmentalLossContingenciesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ShareBasedCompensationArrangementsOptionsMaximumTermOfAward">
+    <definition>This element represents the maximum term of the award in which the holder of the award has to exercise the options or SARs.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisableWeightedAverageExercisePrice">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanPlanAmendmentsAndOther">
+    <definition>The amount of increase or decrease due to a change in the terms of an existing plan or the initiation of a new plan. A plan amendment may increase or decrease benefits, including those attributed to years of service already rendered. Also includes any increase or decrease in changes in benefit obligations from other activities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsTaxDeferredExpenseCompensationAndBenefits">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsAtCarryingValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DiscontinuedOperationTaxEffectOfDiscontinuedOperation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RelatedPartyTransactionRevenuesFromTransactionsWithRelatedParty">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TradingSecuritiesEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherInventorySupplies">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ShareBasedCompensationArrangementByShareBasedPaymentAwardNumberOfSharesAuthorizedForIssuanceUnderLongTermIncentivePlans">
+    <definition>Aggregate number of common shares authorized for issuance under long-term incentive plans.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanEffectOfOnePercentagePointIncreaseOnServiceAndInterestCostComponents">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCurrentReportingStatus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardAwardVestingPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeForeignCurrencyTransactionAndTranslationAdjustmentNetOfTaxPortionAttributableToParent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfSharesOutstandingBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityWellKnownSeasonedIssuer">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentGross">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockDividendsPerShareDeclared">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_CashFlowHedgesNetAfterTaxDerivativeActivityInAccumulatedOtherComprehensiveIncomeTextBlock">
+    <definition>Table showing net after-tax cashflow hedges derivative movement in accumulated other comprehensive income.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfAmountsRecognizedInBalanceSheetTableTextBlock">
+    <definition>Disclosure of the amounts that are recognized in the balance sheet (or statement of financial position) for pension plans and/or other employee benefit plans, showing separately the assets and current and noncurrent liabilities (if applicable) recognized.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsOfDividendsCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_SignificantAcquisitionsAndDisposalsAcquisitionPurchasePrice">
+    <definition>The purchase price agreed to in a significant acquisition or disposal.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDueThereafter">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PensionAndOtherPostretirementBenefitsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanEffectOfOnePercentagePointDecreaseOnAccumulatedPostretirementBenefitObligation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfEffectiveIncomeTaxRateReconciliationTableTextBlock">
+    <definition>Disclosure of the reconciliation using percentage or dollar amounts of the reported amount of income tax expense attributable to continuing operations for the year to the amount of income tax expense that would result from applying domestic federal statutory tax rates to pretax income from continuing operations.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CapitalizedCostsMineralInterestsInUnprovedProperties">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestAndDebtExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PreferredStockParOrStatedValuePerShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CapitalLeasesFutureMinimumPaymentsPresentValueOfNetMinimumPayments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetRetirementObligation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDueCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentOwnershipPercentage">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanPensionPlansWithAccumulatedBenefitObligationsInExcessOfPlanAssetsAggregateProjectedBenefitObligation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FinancialInstrumentsOwnedUSGovernmentAndAgencyObligationsAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommitmentsAndContingenciesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DisclosureOfCompensationRelatedCostsShareBasedPaymentsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfPercentageOfProductRevenueToTotalSalesOfReportedSegmentTableTextBlock">
+    <definition>Disclosure of percentage of product revenue to total sales of reported segment.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisesInPeriodTotalIntrinsicValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedFutureBenefitPaymentsInYearThree">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsValuationAllowance">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtPercentageBearingVariableInterestRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedDepreciationDepletionAndAmortizationPropertyPlantAndEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_FairValueAssetsMeasuredOnRecurringBasis">
+    <definition>Fair Value as of the balance sheet date of assets measured on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriodTotalFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DesignatedForecastedSalesOfNaturalGasAsCashFlowHedges">
+    <definition>This element represents the forecasted sales volume of natural gas from storage in cubic feet designated as cash flow hedges.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockIssuedDuringPeriodSharesNewIssues">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfStockBasedCompensationIncentiveAmountsTableTextBlock">
+    <definition>Disclosure of stock-based incentive amounts including compensation expense, income tax benefit recognized, intrinsic value of options/SARs, cash paid and fair value of awards.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedFutureBenefitPaymentsInFiveFiscalYearsThereafter">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsGainLossRecognizedInIncomeIneffectivePortionAndAmountExcludedFromEffectivenessTestingNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryGross">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashProvidedByUsedInInvestingActivitiesDiscontinuedOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestPaid">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInOtherOperatingCapitalNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockShares">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInFinancingActivitiesContinuingOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInOperatingActivitiesContinuingOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_SubsequentEventsDateMonth">
+    <definition>Date by month and year of subsequent event occurrence or of indication that subsequent event occurred.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_FairValuePolicyTextBlock">
+    <definition>Describes the entity's accounting policy for determining the fair value of its assets and liabilities and the valuation techniques utilized.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesIncomeStatementSubleaseRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationEquityOrCapital">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDueInTwoYears">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsGrantsInPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DueToRelatedPartiesCurrentAndNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCreditFacilityRemainingBorrowingCapacity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AllocatedShareBasedCompensationExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockAcquiredAverageCostPerShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForRepurchaseOfCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetRetirementObligationsAndEnvironmentalCostPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ForeignIncomeTaxExpenseBenefitContinuingOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_SharebasedCompensationArrangementBySharebasedPaymentAwardOptionsOutstandingWeightedAverageRemainingContractualTerm1">
+    <definition>The weighted average period between the balance sheet date and expiration for all awards outstanding under the plan, which may be expressed in a decimal value for number of years.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PropertyPlantAndEquipmentGrossMidstreamMarketingAndOtherSegment">
+    <definition>Carrying amount at the balance sheet date for long-lived physical assets used in the normal conduct of business and not intended for resale related to the Midstream, Marketing and Other Segment. This can include land, physical structures, machinery, vehicles, furniture, computer equipment, construction in progress, and similar items. Amount does not include accumulated depreciation.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashEquivalentsAtCarryingValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PeriodOfExpendingFirstHalfOfEnvironmentalReserves">
+    <definition>The number of future years over which the entity anticipates expenditures amounting to about half of the current environmental reserves.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CapitalizedExploratoryWellCosts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_CorporateSignificantItemsAffectingEarningsTaxEffect">
+    <definition>Represents the tax effect on corporate significant items affecting earnings.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RelatedPartyTransactionExpensesFromTransactionsWithRelatedParty">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TaxesExcludingIncomeAndExciseTaxes">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeFairValueOfDerivativeAsset">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetRetirementObligationLiabilitiesSettled">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanTargetAllocationPercentageOfAssetsDebtSecurities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromDiscontinuedOperationsNetOfTaxPerDilutedShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_VariableRateDebtAsPercentageOfLongTermDebtGross">
+    <definition>This element represents the variable-rate debt as a percentage of entity's total debt.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsTaxCreditCarryforwardsForeign">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfShareBasedCompensationPerformanceBasedAwardActivityTableTextBlock">
+    <definition>Disclosure of the number and weighted-average grant date fair value for stock compensation performance-based awards that were outstanding at the beginning and end of the year, and the number of units that were granted, vested, or forfeited during the year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsForfeitedInPeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDueInFourYears">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsReceivableNetCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisableWeightedAverageRemainingContractualTerm">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_FutureMinimumSubleaseRentalsToBeReceivedWithinFourYears">
+    <definition>This element represents the minimum sublease rentals (other than sale leasebacks) to be received under noncancelable subleases within the fourth year following the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanInterestCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NontradeReceivablesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryLIFOReserve">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromSaleMaturityAndCollectionsOfInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanPensionPlansWithPlanAssetsInExcessOfAccumulatedBenefitObligationsAggregateFairValueOfPlanAssets">
+    <definition>If aggregate disclosures are presented, the aggregate fair value of plan assets for pension plans with plan assets in excess of accumulated benefit obligations as of the measurement date of each statement of financial position presented.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PercentageOfEnvironmentalReservesAccountedByAssociatedSites">
+    <definition>This element represents the percentage of environmental reserves accounted for by associated sites.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromEquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccruedLiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ValuationAllowancesAndReservesDeductions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EmployeeServiceShareBasedCompensationCashFlowEffectCashUsedToSettleAwards">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanContributionsByEmployer">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_LongTermDebtMaturitiesRepaymentsOfPrincipalAfterYearFour">
+    <definition>Amount of long-term debt maturities after year four following the date of the latest balance sheet presented in the financial statements, which may include maturities of long-term debt, sinking fund requirements, and other securities redeemable at fixed of determinable prices and dates.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAssumptionsUsedCalculatingNetPeriodicBenefitCostDiscountRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedReturnOnPlanAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsExercisableNumber">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentUsefulLifeMaximum">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriodWeightedAverageGrantDateFairValueOfEntityStock">
+    <definition>The weighted average fair value of the entity's stock as of grant dates pertaining to a share-based award plan other than a stock option plan for which the grantee gained the right during the reporting period, by satisfying service and performance requirements, to receive or retain shares, other instruments, or cash in accordance with the terms of the arrangement.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAssetsForPlanBenefitsCurrentAndNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DisposalGroupIncludingDiscontinuedOperationRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueDisclosuresTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingIntrinsicValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_CostsAndOtherDeductions">
+    <definition>Total costs of sales, operating expenses, and nonoperating expenses for the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossForeignCurrencyTranslationAdjustmentNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanBusinessCombinationsAndAcquisitionsBenefitObligation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ExplorationExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxesPaidNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossCumulativeChangesInNetGainLossFromCashFlowHedgesEffectNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ShareBasedCompensationByShareBasedPaymentAwardPerformanceTargetPayoutHighOfRange">
+    <definition>This element represents the performance target payout ratios for performance-based awards granted during the reporting period, high end of range.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SalesRevenueNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalPeriodFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PreferredStockSharesAuthorized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromDiscontinuedOperationsNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanPensionPlansWithPlanAssetsInExcessOfAccumulatedBenefitObligationsAggregateAccumulatedBenefitObligation">
+    <definition>If aggregate disclosures are presented, the aggregate pension accumulated benefit obligation for pension plans with plan assets in excess of accumulated benefit obligations as of the measurement date of each statement of financial position presented.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInReceivables">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LeaseAndRentalExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateContinuingOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ProceedsFromDivestitureOfBusinessesAndSaleOfPropertyPlantAndEquipmentNet">
+    <definition>The cash inflows associated with the sale of businesses and the sale of property, plant and equipment. The cash inflow associated with the sale of businesses is the amount received from the sale of a portion of the company's business, for example a segment, division, branch or other business, during the period. The cash inflow associated with the sale of property, plant and equipment is the cash inflow from the sale of long-lived assets that are used in the normal conduct of business to produce goods and services and not intended for resale.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfValuationAndQualifyingAccountsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_BusinessCombinationsAndAssetAcquisitionsAndDispositionsTextBlock">
+    <definition>Description of significant business acquisitions (or series of individually immaterial business combinations or asset acquisitions) planned, initiated, or completed during the period, including background, timing, and allocation of acquisition costs. Also includes description of significant business or asset dispositions completed during the period, including background, timing and disclosures for discontinued operations, if applicable. This element may be used as a single block of text to encapsulate the all disclosures (including data and tables) regarding business combinations, asset acquisitions and business or asset dispositions, including leverage buyout transactions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PeriodOfExpendingSecondHalfOfEnvironmentalReserves">
+    <definition>The number of future years, subsequent to the years of expenditures amounting to about the first half of the current environmental reserves, where in the entity anticipates expending the remaining reserves.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EquityMethodInvestmentDifferenceBetweenCarryingAmountAndUnderlyingEquityRelatedToGoodwill">
+    <definition>The difference between the amount at which an investment accounted for under the equity method of accounting is carried (reported) on the balance sheet and the amount of underlying equity in net assets, the reporting entity has in the investee and which is related to goodwill.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CurrentStateAndLocalTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CurrentIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RevenueRecognitionPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDueFutureMinimumSubleaseRentals">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ShareBasedCompensationByShareBasedPaymentAwardAwardSettledInSharesPercentagePerformanceBasedAwards">
+    <definition>This element represents the percentage of performance-based awards settled for shares.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_AssetRetirementObligationAcquisitionsAndOther">
+    <definition>This element represents amount of the increase (decrease) in the amount of asset retirement obligations for the period associated with acquisitions and other activity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfChangeInAssetRetirementObligationTableTextBlock">
+    <definition>Disclosure of the changes in carrying amount of a liability for asset retirement obligations, for changes such as new obligations, changes in estimates of existing obligations, spending on existing obligations, property dispositions, and foreign currency translation.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DividendsCommonStockCash">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanForeignCurrencyExchangeRateChangesPlanAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingWeightedAverageExercisePrice">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfPensionAndPostretirementPlanAmountsRecognizedInAccumulatedOtherComprehensiveIncomeTableTextBlock">
+    <definition>The pretax total of net (gain) loss, prior service cost (credit), and transition assets (obligations), as well as minimum pension and postretirement liabilities if still remaining, included in accumulated other comprehensive income associated with a defined benefit pension or other postretirement plan(s) because they have yet to be recognized as components of net periodic benefit cost.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesOfDisposalGroupIncludingDiscontinuedOperationNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EnvironmentalRemediationExpensesAndInterestAccretion">
+    <definition>The increase (decrease) in the accrual for environmental loss in the period from revisions in estimates to existing obligations and interest accretion. The amount does not relate to changes in the environmental accrual related to business acquisitions or divestitures, or to currency movements.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_RelatedPartyTransactionOtherRevenuesFromTransactionsWithRelatedParty">
+    <definition>Reflects the sum of all other revenue and income realized from sales and other transactions (excluding transactions that are eliminated in consolidated or combined financial statements) with related party during the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtMaturitiesRepaymentsOfPrincipalInNextTwelveMonths">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeAverageCapPrice">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityRegistrantName">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeLossNetOfTaxPortionAttributableToParent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SummaryOfIncomeTaxContingenciesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAssumptionsUsedCalculatingNetPeriodicBenefitCostRateOfCompensationIncrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashFlowHedgeGainLossToBeReclassifiedWithinTwelveMonths">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_CollateralDepositedWithClearingHousesAndBrokers">
+    <definition>Amount of collateral deposited with clearing houses and brokers that has not been offset against derivative fair values.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsDerivativeInstruments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DerivativeAssetsNetFairValueAfterCounterpartyNettingAndCashCollateralOffsetting">
+    <definition>The amount as of the balance sheet date of the fair value of derivative assets after counterparty netting and offsetting of cash collateral when a legal right to offset exists.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_SharebasedCompensationArrangementBySharebasedPaymentAwardOptionsExercisableIntrinsicValue1">
+    <definition>The total dollar difference between fair values of the underlying shares reserved for issuance and exercise prices of vested portions of options outstanding and currently exercisable under the option plan as of the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Assets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherPostretirementBenefitExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsOutstandingNumber">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLossAvailableToCommonStockholdersBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanChangeInBenefitObligationServiceCost">
+    <definition>Changes in the benefit obligation liability account for defined benefit plans due to service cost.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherNoncashExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PensionAndOtherPostretirementDefinedBenefitPlansLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfInventoryDisclosureTextBlock">
+    <definition>This text block may be used to disclose the schedule pertaining to inventories during the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LineOfCreditFacilityMaximumBorrowingCapacity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromIssuanceOfCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetsOfDisposalGroupIncludingDiscontinuedOperationCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EntityWideDisclosureOnGeographicAreasRevenueFromExternalCustomersAttributedToForeignCountries">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForOtherTaxes">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentInterestRateStatedPercentageRateRangeMaximum">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanPensionPlansWithAccumulatedBenefitObligationsInExcessOfPlanAssetsAggregateFairValueOfPlanAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_TimePeriodForExpensingCostsOfExploratoryWellsIfDeterminationOfProvedReservesNotMade">
+    <definition>This element describes the maximum time period after which costs of exploratory wells are charged to expense if a determination of proved reserves has not been made.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanFundedStatusOfPlan">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfExpectedBenefitPaymentsTableTextBlock">
+    <definition>Disclosure of benefits expected to be paid by pension plans and/or other employee benefit plans in each of the next five fiscal years and in the aggregate for the five fiscal years thereafter.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_VolumesOfPriceRiskDerivativesNotDesignatedAsHedgingInstrumentsTextBlock">
+    <definition>This table provides the volumes of price risk derivatives not designated as hedging instruments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EquityMethodInvestmentRemainingOwnershipPercentage">
+    <definition>The percentage of remaining ownership of common stock or equity participation in the investee accounted for under the equity method of accounting.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerSharePolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EnvironmentalCostRecognizedTableTextBlock">
+    <definition>Tabular disclosure of costs recognized in the balance sheet and income statement in the period for known or estimated future costs arising from requirements to perform activities to remediate one or more sites.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentPeriodEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfEarningsPerShareReconciliationTableTextBlock">
+    <definition>Disclosure of the reconciliation of basic net earnings per share (or unit) to diluted earnings per share (or unit).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ReportingSegmentsNumber">
+    <definition>The number of reportable segments of the entity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentInterestRateStatedPercentage">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdjustmentsToAdditionalPaidInCapitalTaxEffectFromShareBasedCompensation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfNewAccountingPronouncementsAndChangesInAccountingPrinciplesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationCurrentAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredStateAndLocalIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AllowanceForDoubtfulAccountsReceivableCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanForeignCurrencyExchangeRateChangesBenefitObligation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_LongTermCommitmentsForMajorFixedAndDeterminableCapitalExpenditures">
+    <definition>This element represents the amount of the commitments for major fixed and determinable capital expenditure to be incurred in future.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InvestmentPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativesPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanEstimatedFutureEmployerContributionsInNextFiscalYear">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAssumptionsUsedCalculatingBenefitObligationDiscountRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesAuthorized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PercentageOfCrudeOilProductionCashFlowHedges">
+    <definition>The percentage of crude oil production as of the balance sheet date covered by agreements qualifying as cash flow hedges.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeUnrealizedHoldingGainLossOnSecuritiesArisingDuringPeriodNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PensionAndOtherPostretirementDefinedBenefitPlansCurrentLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PriceRiskCashFlowHedgeGainLossReclassifiedToEarningsNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EnvironmentalRemediationExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UnrealizedGainOnPriceRiskCashFlowDerivativesBeforeTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationCurrentLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalYearFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentUnamortizedDiscountPremiumNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EntityWideDisclosureOnGeographicAreasAssetsInForeignCountries">
+    <definition>Amount of total assets located in foreign countries.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeNetLiabilityPositionAggregateFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CurrentFederalTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAssumptionsUsedCalculatingNetPeriodicBenefitCostExpectedLongTermReturnOnAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EnvironmentalRemediationPossibleAdditionalLossBeyondAccruals">
+    <definition>This element represents the reasonably possible additional loss that may be incurred beyond the recorded liabilities for environmental remediation.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EnvironmentalReservesRangeBetweenZeroToOneMillionThresholdValueSiteCategoryUpperLimit">
+    <definition>This item represents the upper limit reserve, in which a site's reserve must range between zero to one million.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromContinuingOperationsPerBasicShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockValueAcquiredCostMethod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateReconciliationForeignIncomeTaxRateDifferential">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardFairValueAssumptionsWeightedAverageVolatilityRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanAssumptionsUsedCalculatingNetPeriodicBenefitCostRateOfCompensationIncreaseLowEndOfRange">
+    <definition>Expected rate of compensation increases (for pay-related plans), low end of range.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_NumberOfSitesNotIndemnifiedByThirdParty">
+    <definition>This element represents the number of sites which were not indemnified by a third party.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeUnrealizedGainLossOnDerivativesArisingDuringPeriodNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EquityMethodInvestmentNumberOfSeparateEconomicInterests">
+    <definition>Represents economic interests of the reporting entity for an equity investment.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GuaranteeObligationsMaximumExposure">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ExplorationAbandonmentAndImpairmentExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DeferredTaxLiabilitiesEquityInvestmentsPartnershipsAndForeignSubsidiaries">
+    <definition>The tax effect as of the balance sheet date of the amount of the estimated future tax reductions attributable to the difference between the tax basis and the generally accepted accounting principles basis of a company's equity method investment, partnership and foreign subsidiaries which will decrease future taxable income when such basis difference reverses.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanBenefitsPaid">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_InvestmentsAndRelatedPartyTransactionsTextBlock">
+    <definition>Disclosure of equity and other investments, including ownership interests, summarized information as to assets, liabilities, and results of operations of investees and carrying values of investments and advances to investees. Also includes disclosures on related party transactions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfCommonStockIssuancesTableTextBlock">
+    <definition>Disclosure of the rollforward of activities in common stock duirng the period presented including common stock issuances and options exercised and other activities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_MovementInAccrualForEnvironmentalLossContingenciesTableTextBlock">
+    <definition>Tabular disclosure of material changes in the expected aggregate amount of environmental loss contingencies since the prior balance sheet date. This element may be used for an entity's entire roll forward of environmental loss contingencies.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingLeasesFutureMinimumPaymentsDueInFiveYears">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_BusinessSalesRevenueToNetSalesPercentage">
+    <definition>Represents the percentage of sales revenues by business to total net sales of the reported segment.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesOfDisposalGroupIncludingDiscontinuedOperationCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_BasisSpreadOnEarlyDebtRepayment">
+    <definition>Represents the make whole spreads in basis points above the applicable Treasury Rate on early debt redemptions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAmortizationOfPriorServiceCostCredit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeDefinedBenefitPlansAdjustmentNetOfTaxPortionAttributableToParent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CostOfGoodsAndServicesSoldDepreciationAndAmortization">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardNumberOfSharesAvailableForGrant">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ComprehensiveIncomeNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockSharesAcquired">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SubsequentEventAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PriceRiskCashFlowHedgeLiabilityAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_OrganizationPresentationOfFinancialStatementsAndSignificantAccountingPoliciesDisclosureTextBlock">
+    <definition>Description containing the entire organization, consolidation, basis of presentation and summary of significant accounting policies.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_CorporateSignificantItemsAffectingEarningsTaxEffectTotal">
+    <definition>Represents the total tax effect on corporate significant items affecting earnings.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_FutureMinimumSubleaseRentalsToBeReceivedWithinFiveYears">
+    <definition>This element represents the minimum sublease rentals (other than sale leasebacks) to be received under noncancelable subleases within the fifth year following the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryFinishedGoods">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ExcessTaxBenefitsFromShareBasedCompensationAndOther">
+    <definition>The cash inflow reported in the entity's financing activities for excess tax benefits related to share-based compensation, stock options exercised and other financing activities. The cash inflow related to share-based compensation represents reductions in the entity's income taxes that arise when compensation cost (from non-qualified share-based compensation) recognized on the entity's tax return exceeds compensation cost from share-based compensation recognized in financial statements and the amount received from holders exercising their stock options.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PayablesInRespectOfCashCollateralReceivedNet">
+    <definition>The amount of payables in respect of cash collateral received that has been netted with derivative assets.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_OtherComprehensiveIncomeReclassificationAdjustmentOnDerivativesAndSecuritiesIncludedInNetIncomeTax">
+    <definition>Tax effects of the reclassification adjustment for unrealized gains or losses realized upon the sale of securities, net of tax, and for accumulated gains and losses from derivative instrument designated and qualifying as the effective portion of cash flow hedges included in the accumulated comprehensive income that was realized in net income during the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EnvironmentalReservesRangeBetweenZeroToOneMillionThresholdValueSiteCategoryLowerLimit">
+    <definition>This item represents the lower limit reserve, in which a site's reserve must range between zero and one million.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfNetBenefitCostsTableTextBlock">
+    <definition>Disclosure of the components of net benefit costs for pension plans and/or other employee benefit plans including service cost, interest cost, expected return on plan assets, gain or loss, prior service cost or credit, transition asset or obligation, and gain or loss recognized due to settlements or curtailments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfShareBasedCompensationStockOptionsAndStockAppreciationRightsAwardActivityTableTextBlock">
+    <definition>Disclosure of the number and weighted-average exercise prices (or conversion ratios) for stock options and stock appreciation rights that were outstanding at the beginning and end of the year, exercisable at the end of the year, and the number of stock options and stock appreciation rights that were granted, exercised or converted, forfeited, and expired during the year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_IncomeLossFromContinuingOperationsAfterNoncontrollingInterestBeforeIncomeTaxesDomestic">
+    <definition>The portion of earnings (loss) from continuing operations net of noncontrolling interest before income taxes that is attributable to domestic operations.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockIssuedDuringPeriodSharesStockOptionsExercised">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanAssumptionsUsedCalculatingNetPeriodicBenefitCostRateOfCompensationIncreaseHighEndOfRange">
+    <definition>Expected rate of compensation increases (for pay-related plans), high end of range.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_NumberOfSitesLiabilityRetainedAndIndemnifiedByThirdParty">
+    <definition>This element represents the number of sites in which the liability is retained and indemnified by third party.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_CorporateSignificantItemsAffectingEarningsBeforeTaxTotal">
+    <definition>Represents the total corporate significant items affecting earnings before taxes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesOther">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentDifferenceBetweenCarryingAmountAndUnderlyingEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DerivativeInstrumentsHedgeEffectivenessHighEndOfRange">
+    <definition>The high end of the percentage range used to determine if a hedge is effective and qualifies for hedge accounting.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PercentageOfInterestInSubsidiaryAfterAllTransactions">
+    <definition>This element represents the percentage of ownership interest in a subsidiary entity after all transactions to acquire ownership interests.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanNetPeriodicBenefitCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedFutureBenefitPaymentsInYearFour">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToAcquirePropertyPlantAndEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PriceRiskCashFlowHedgeAssetAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanBenefitObligation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockParOrStatedValuePerShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NonmonetaryNotionalAmountOfPriceRiskDerivativeInstrumentsNotDesignatedAsHedgingInstruments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsNonvestedWeightedAverageGrantDateFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RepaymentsOfLongTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationNetIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EmployeeServiceShareBasedCompensationNonvestedAwardsTotalCompensationCostNotYetRecognized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfPercentageOfTotalSalesOfReportedSegmentTableTextBlock">
+    <definition>Disclosure of percentage of sales by types of operations to total sales of reported segment.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfAccumulatedOtherComprehensiveIncomeTableTextBlock">
+    <definition>Accumulated change in equity from transactions and other events and circumstances from non-owner sources, net of tax effect, at fiscal year-end. Excludes net income (loss), and accumulated changes in equity from transactions resulting from investments by owners and distributions to owners. Includes foreign currency translation items, certain pension adjustments, and unrealized gains and losses on certain investments in debt and equity securities as well as changes in the fair value of derivatives related to the effective portion of a designated cash flow hedge.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_OtherComprehensiveIncomeReclassificationAdjustmentOnDerivativesAndSecuritiesIncludedInNetIncomeNetOfTax">
+    <definition>Net of tax effect of the reclassification adjustment for accumulated gains and losses from derivative instrument designated and qualifying as the effective portion of cash flow hedges included in accumulated comprehensive income that was realized in net income during the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ValuationAllowancesAndReservesBalance">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LeasesOfLesseeDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ValuationAllowancesAndReservesChargedToOtherAccounts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInPrepaidDeferredExpenseAndOtherAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfNetSalesAndPropertyPlantEquipmentByGeographicSegmentTableTextBlock">
+    <definition>Disclosure of net sales and property, plant and equipment, net by geographic areas.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfFairValueAssumptionsForSharedBasedCompensationPerformanceBasedAwardsTableTextBlock">
+    <definition>Disclosure of significant grant date assumptions used to estimate the fair value of performance based stock awards including grant date stock price, risk-free interest rate, dividend yield, volatility and expected life.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInInventories">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfSegmentReportingDisclosureTextBlock">
+    <definition>This text block may be used to capture the complete disclosure pertaining to an entity's reporting segments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_NetIncomeAttributableToParticipatingNonvestedSharesWithNonForfeitableDividendRights">
+    <definition>This element represents the net income (loss) attributable to participating securities, which are nonvested share-based payment awards that contain non-forfeitable rights to dividends or dividend equivalents (whether paid or unpaid). The shares are considered participating securities prior to vesting, and therefore have been included in the earnings allocations in computing basic and diluted EPS under the two-class method.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SignificantAcquisitionsAndDisposalsAcquisitionCostsOrSaleProceeds">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProfitLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentDividendsOrDistributions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LIFOInventoryAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentFairValueDisclosure">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EquityMethodInvestmentSummarizedFinancialInformationNoncurrentLiabilitiesOtherThanLongTermDebt">
+    <definition>This item represents the disclosure of summarized financial information for noncurrent liabilities other than long-term debt for unconsolidated subsidiaries and 50 percent-or-less owned entities accounted for using the equity method of accounting. If investments in common stock of corporate joint ventures or other investments accounted for under the equity method are, in the aggregate, material in relation to the financial position or results of operations of an investor, it may be necessary to present summarized information as to liabilities of the investee, or group of investments for which combined disclosure is appropriate, either by individual financial statement caption or in groups, as appropriate. Such summarized financial information may, at a minimum, include current and noncurrent liabilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentUsefulLifeMinimum">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DerivativeInstrumentsHedgeEffectivenessLowEndOfRange">
+    <definition>The low end of the percentage range used to determine if a hedge is effective and qualifies for hedge accounting.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfAssumptionsUsedTableTextBlock">
+    <definition>Disclosure of the assumptions used to determine for pension plans and/or other employee benefit plans the benefit obligation and net benefit cost, including assumed discount rates, rate increase in compensation increase, and expected long-term rates of return on plan assets.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityPublicFloat">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtMaturitiesRepaymentsOfPrincipalInYearTwo">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ShareBasedCompensationByShareBasedPaymentAwardAwardSettledInCashPercentagePerformanceBasedAwards">
+    <definition>This element represents the percentage of performance-based awards settled for cash.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DeferredTaxAssetValuationAllowancePolicyTextBlock">
+    <definition>Describes an entity's accounting policy for valuation allowances related to deferred tax assets.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_PurchaseOfAssetsNet">
+    <definition>The cash outflows related to purchasing assets other than capital expenditures, including assets acquired as the result of a merger.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityVoluntaryFilers">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccrualForEnvironmentalLossContingenciesIncreaseDecreaseForAcquisitionsAndDivestitures">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLossAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccountsPayableAndAccruedLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_EnvironmentalReservesExceedingTenMillionSiteCategoryNumberOfSites">
+    <definition>This item represents the number of sites with each site's reserves exceeding ten million.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CurrentForeignTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAssumptionsUsedCalculatingBenefitObligationRateOfCompensationIncrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccruedIncomeTaxesPayable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentSummarizedFinancialInformationNoncurrentAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UnrecognizedTaxBenefits">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_DefinedBenefitPlanAssumptionsUsedCalculatingNetPeriodicBenefitCostDiscountRateLowEndOfRange">
+    <definition>The interest rate used to adjust for the time value of money, low end of range.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_InterestDividendsAndOtherIncome">
+    <definition>Income derived from investments and income not otherwise specified in the income statement. Interest income represents earnings which reflect the time value of money or transactions in which the payments are for the use or forbearance of money. Dividend income represents a distribution of earnings to shareholders by investee companies.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_ScheduleOfRelatedPartyTransactionsTableTextBlock">
+    <definition>This element represents various related party transactions, inclusive of purchases, sales, services, advances due from and due to related parties.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAmortizationOfGainsLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtMaturitiesRepaymentsOfPrincipalInYearThree">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDebtInstrumentsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="oxy_FutureMinimumSubleaseRentalsToBeReceivedWithinThreeYears">
+    <definition>This element represents the minimum sublease rentals (other than sale leasebacks) to be received under noncancelable subleases within the third year following the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsPayableCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsOther">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ConsolidationPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentAdditions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetRetirementObligationRevisionOfEstimate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EnvironmentalLossContingencyDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDerivativeInstrumentsInStatementOfFinancialPositionFairValueTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+</DefinitionAndReference>

@@ -1,0 +1,1602 @@
+<DefinitionAndReference>
+  <Element Id="nee_RequiredCapacityAndOrMinimumPaymentsFifthYear">
+    <definition>Estimated required capacity and/or minimum payments for the fifth year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_TotalOtherDeductionsNet">
+    <definition>The aggregate amount of income (expense) of non-operating activities (that is to say, excluding activities not considered part of the operations of the business), not separately disclosed in the income statement due to materiality considerations</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherNonoperatingIncomeExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityFilerCategory">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_NetNonCurrentDerivativeAssetFairValue">
+    <definition>Fair value of non-current derivative assets, presented on a net basis after terms of master netting arrangements and margin cash collateral has been applied.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingExpenses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisOtherInvestmentsMortgageBackedSecurities">
+    <definition>This element represents a certain statement of financial position asset caption "Other investments" which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromPaymentsForOtherFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PurchasesOfOtherSecurities">
+    <definition>Purchases of securities held by an entity excluding securities held in nuclear decommissioning trust funds and a regulated utility's storm restoration funds, which are reported in a separate taxonomy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeAssetNotDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherLiabilitiesDerivatives">
+    <definition>Fair values as of the balance sheet date of all liabilities resulting from contracts that meet the criteria of being accounted for as derivative instruments, and which are expected to be extinguished or otherwise disposed of after one year or beyond the normal operating cycle, if longer, net of the effects of master netting arrangements and net of rights to reclaim margin cash collateral in accordance with FASB Staff Position (FSP) FIN 39-1, "Amendment of FASB Interpretation No. 39."</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisOtherInvestmentsUsGovernmentAndMunicipalBonds">
+    <definition>This element represents a certain statement of financial position asset caption "Other investments" which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherThanTemporaryImpairmentLossesOnSecuritiesHeldInNuclearDecommissioningFunds">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommercialPaper">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_TotalPlannedCapitalExpenditures">
+    <definition>Total estimated planned capital expenditures.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Assets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfVariableInterestEntitiesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CurrentRegulatoryAssetsDerivatives">
+    <definition>Carrying amount as of the balance sheet date of deferred derivatives of regulated entities that are expected to be recovered through revenue sources within one year or the normal operating cycle, if longer. Such costs are capitalized if they meet both of the following criteria: a. It is probable that future revenue in an amount at least equal to the capitalized cost will result from inclusion of that cost in allowable costs for rate-making purposes. b. Based on available evidence, the future revenue will be provided to permit recovery of the previously incurred cost rather than to provide for expected levels of similar future costs. If the revenue will be provided through an automatic rate-adjustment clause, this criterion requires that the regulator's intent clearly be to permit recovery of the previously incurred cost.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GainLossOnCashFlowHedgeIneffectivenessNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AdditionalCollateralAggregateFairValueDueToCreditRatingDowngradeToBbb">
+    <definition>The aggregate fair value of collateral that would be required to be posted for derivative instruments with credit-risk-related contingent features if the applicable corporate credit ratings were downgraded to BBB at the end of the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_TotalEnergyPaymentsUnderContracts">
+    <definition>Total energy payments under contrats, which are recoverable through the fuel clause.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_NonCurrentRegulatoryLiabilityAssetRetirementObligationRegulatoryExpenseDifference">
+    <definition>The regulatory liability as of the balance sheet date for the difference between the expense recognized under Statement of Financial Accounting Standards No.143, "Accounting for Asset Retirement Obligations" and FASB Interpretation No. 47, "Accounting for Conditional Asset Retirement Obligations," and the amount recoverable from ratepayers.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ProceedsFromSaleOfOtherSecurities">
+    <definition>Proceeds from the sale and maturity of securities held by an entity excluding securities held in nuclear decommissioning trust funds and a regulated utility's storm restoration funds, which are reported in a separate taxonomy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_SpecialUseFundsStormFundWeightedAverageMaturity">
+    <definition>This item represents the weighted-average maturity of debt securities in the storm fund at the balance sheet date and which are categorized neither as held-to-maturity nor trading securities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanServiceCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentType">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedAdditionalNewWindGenerationCapitalExpendituresOverCurrentYearHighRange">
+    <definition>High range of planned additional new wind generation capital expenditures in current year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedAdditionalNewWindGenerationCapitalExpendituresOverCurrentYearLowRange">
+    <definition>Low range of planned additional new wind generation capital expenditures in current year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PotentialRetrospectiveAssessmentsApproximateRecoveryOfProportionateShareFromMinorityInterestsUnderSecondaryFinancialProtectionSystem">
+    <definition>Potential retrospective assessment recoverable from minority interest for nuclear liability secondary financial protection.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_LongTermPurchaseCommitmentExpirationDate">
+    <definition>Specifies the expiration date covered by the arrangement.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_NetIncomeBeforeIncomeTaxes">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisDerivativeForeignCurrencySwapsAssets">
+    <definition>Net Fair Value of derivative assets reflected in the balance sheet as either a current or non current derivative asset</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedAdditionalGasInfrastructureCapitalExpendituresOverNextFiveYearsHighRange">
+    <definition>High range of planned additional gas infrastructure capital expenditures over next five years.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_LengthOfTransmissionLine">
+    <definition>Length of transmission line owned and operated by an entity that is consolidated by the consolidated VIE.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_IncreaseDecreaseInOtherOperatingAssetsNoncurrent">
+    <definition>The net change during the reporting period in other operating noncurrent assets not otherwise defined in the taxonomy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_VariableInterestEntityCarryingAmountOfCollateralizedAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCommonStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CurrentRegulatoryLiabilitiesPension">
+    <definition>Carrying amount as of the balance sheet date of the net unrecognized prior service costs (benefits) and actuarial losses (gains) of regulated entities expected to be paid to ratepayers within one year or the normal operating cycle if longer. Note that for an unregulated entity, this amount would appear as a component of other comprehensive income and is equivalent to UGT " Other Comprehensive Income, Defined Benefit Plan's Adjustment, before Tax, Period Increase (Decrease)."</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeReclassificationAdjustmentForSaleOfSecuritiesIncludedInNetIncomeNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueLiabilitiesMeasuredOnRecurringBasisDerivativeInterestRateSwapsLiabilities">
+    <definition>Net Fair Value of derivative assets reflected in the balance sheet as either a current or non current derivative liability</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedNewGenerationCapitalExpendituresPreConstructionCostsAndCarryingChargesCurrentYear">
+    <definition>Estimated pre-construction costs and carrying charges (equal to a pretax AFUDC rate) on new generation construction costs recoverable through the capacity clause, for the remainder of the current year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_SaleOfStockConsiderationReceivedUnderContinuousOfferingProgram">
+    <definition>Cash received on stock under Continuous Offering Program.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisNetAssetLiabilityTransfersNet">
+    <definition>This element represents [net] transfers in to and out of net assets (liabilities) measured at fair value on a recurring basis using unobservable inputs (Level 3) which have taken place during the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedAdditionalNewWindGenerationMwOverCurrentYear">
+    <definition>Planned additional new wind generation megawatts in current year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ApproximateOverTermOfFirmCommitmentsAgreementsWithContingencies">
+    <definition>Approximate firm commitments over term of agreements with contingencies.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromIssuanceOfLongTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityVoluntaryFilers">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForProceedsFromOtherInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NotionalAmountOfForeignCurrencyCashFlowHedgeDerivatives">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_RegulatoryReturnOnCommonEquity">
+    <definition>Regulatory return on common equity effective March 1, 2010.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherCurrentAssets">
+    <definition>AssetsCurrent minus CashAndCashEquivalentsAtCarryingValue minus CondensedFinancialStatementsReceivables</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AvailableForSaleSecuritiesGrossUnrealizedGainsTextBlock">
+    <definition>This item represents the gross unrealized gains for securities which are categorized neither as held-to-maturity nor trading securities. Such gross unrealized gains are the excess of the fair value of the Available-for-sale Securities over their carrying value as of the reporting date. Such gross unrealized gains are included in other comprehensive income in the statement of shareholders' equity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RepaymentsOfLongTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_SpecialUseFundsStormFundAssets">
+    <definition>Storm fund assets held by a regulated entity to pay for storm-related costs as incurred in future periods.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ObjectivesForUsingDerivativeInstrumentsPolicyTextBlock">
+    <definition>Description of the reasons for holding or issuing derivative instruments and nonderivative hedging instruments. Includes discussion of the objectives for holding or issuing derivative instruments, the context needed to understand those objectives, and the strategies for achieving those objectives. The description shall distinguish derivative and nonderivative instrument by the types of hedging relationships and between those instruments used for risk management purposes and those used for other purposes. Information about those instruments shall be disclosed in the context of each instrument's primary underlying risk exposure (for example, interest rate, credit, foreign exchange rate, interest rate and foreign exchange rate, or overall price).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueNetAssetsLiabilitiesMeasuredOnRecurringBasisChangeInUnrealizedGainLossIncludedInOperatingRevenues">
+    <definition>This item represents the amount of the total change in unrealized (holding) gains or losses for the period which are included in the statement of income (or changes in net assets) in Operating Revenues. Such unrealized (holding) gains or losses relate to those assets (liabilities) still held at the reporting date for which fair value is measured on a recurring basis using significant unobservable inputs (Level 3).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RetainedEarningsAccumulatedDeficit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MaximumLengthOfTimeHedgedInInterestRateCashFlowHedge">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeLiabilityDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueAssetsMeasuredOnRecurringBasisUnobservableInputReconciliationTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeAssetDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_SpecialUseFundsFairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. An amount representing decommission fund to pay for the costs of decontaminating and decommissioning of facilities through collection of revenues derived from utility assessments and government appropriations.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_CurrentFiscalYearEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetsCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInOperatingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_NonCurrentRegulatoryLiabilityAccruedAssetRemovalCosts">
+    <definition>The regulatory liability as of the balance sheet date for the amount recoverable from ratepayers for removal costs associated with utility plant in service which are not recognized as a liability under Statement of Financial Accounting Standards No.143, "Accounting for Asset Retirement Obligations" and FASB Interpretation No. 47, "Accounting for Conditional Asset Retirement Obligations."</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisDerivativeInterestRateSwapsAssets">
+    <definition>Net Fair Value of derivative assets reflected in the balance sheet as either a current or non current derivative asset</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCentralIndexKey">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ConvertibleSharesPurchased">
+    <definition>Shares of common stock if preferred stock converted to common stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareDiluted">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GuaranteeObligationsTerm">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesContinuousUnrealizedLossPosition12MonthsOrLongerAggregateLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeDefinedBenefitPlansAdjustmentNetOfTaxPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_AmendmentFlag">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AmountOfSecondaryFinancialProtectionPerIncidentAtNuclearReactor">
+    <definition>Amount of secondary financial protection liability insurance coverage per incident at any nuclear reactor in the United States.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PotentialRetrospectiveAssessmentsUnderSecondaryFinancialProtectionSystem">
+    <definition>Potential amount of retrospective assessment under secondary financial protection system, plus any applicable taxes per incident at any nuclear reactor in the United States.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeUnrealizedGainLossOnDerivativesArisingDuringPeriodTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_RequiredCapacityAndOrMinimumPaymentsFourthYear">
+    <definition>Estimated required capacity and/or minimum payments for the fourth year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AvailableForSaleSecuritiesInUnrealizedLossPositionsGreaterThan12MonthsQualitativeDisclosureNumberOfPositions">
+    <definition>Disclosure regarding factors used to determine that the impairment of securities not categorized as either held-to-maturity securities or trading securities (hence equal to available for sale securities) where cost exceeds fair value is not an other than temporary impairment . This item contains disclosure of the number of investment positions in the available-for-sale investments for those securities in an unrealized loss position for greater than 12 months determined to be temporarily impaired.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RegulatoryLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherRelatedToVie">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_NetPeriodicBenefitCostTextBlock">
+    <definition>Table detailing net periodic benefit cost for defined benefit plans for the period. Periodic benefit costs include the following components: service cost, interest cost, expected return on plan assets, gain or loss, prior service cost or credit, transition asset or obligation, and gain or loss due to settlements or curtailments).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_IncreaseDecreaseInMarginCashCollateral">
+    <definition>This element represents the net effect on cash flow from operations from the change in "Margin Deposit Assets", as defined in the UGT, and from the change in the amount of cash placed on deposit with the company by counterparties as security for trading or derivative contracts.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_MarginCashCollateralNotNettedAgainstDerivativeAssets">
+    <definition>Margin cash collateral received from counterparties not offset against derivative assets.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedGenerationCapitalExpendituresAfudcFourthYear">
+    <definition>Estimated AFUDC related to Generation for the remainder of the fourth year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ScheduleOfNetNotionalVolumeOfCommodityDerivativeInstrumentsTextBlock">
+    <definition>Net notional volumes associated with derivative instruments that are required to be reported at fair value. Includes significant volumes of transactions that have minimal exposure to commodity price changes because they are variable priced agreements.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_TotalPropertyPlantAndEquipmentNetRelatedToVies">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesAndStockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccountsReceivable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CurrentRegulatoryAssetsSecuritizedStormRecoveryCosts">
+    <definition>Carrying amount as of the balance sheet date of storm recovery property of a regulated entity expected to be amortized within one year based on expected collections from ratepayers for storm recovery bonds issued for unrecovered storm costs pursuant to state securitization provisions and a financing order issued by a regulator.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueLiabilitiesMeasuredOnRecurringBasisDerivativeForeignCurrencySwapsLiabilities">
+    <definition>Net Fair Value of derivative assets reflected in the balance sheet as either a current or non current derivative liability</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherLiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_NonCurrentRegulatoryLiabilityPension">
+    <definition>Carrying amount as of the balance sheet date of the net unrecognized prior service costs (benefits) and actuarial losses (gains) of regulated entities not expected to be paid to ratepayers within one year or the normal operating cycle if longer. Note that for an unregulated entity, this amount would appear as a component of other comprehensive income and is equivalent to UGT " Other Comprehensive Income, Defined Benefit Plan's Adjustment, before Tax, Period Increase (Decrease)."</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashFlowHedgeGainLossReclassifiedToEarningsNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_NonCurrentRegulatoryLiabilityOther">
+    <definition>Carrying amount as of the balance sheet date of other regulatory liabilities, not separately disclosed in the balance sheet due to materiality considerations, of regulated entities that are not expected to be returned to ratepayers within one year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromRepaymentsOfShortTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherCapitalExpenditures">
+    <definition>The cash outflow for acquisition of or capital improvements of property, plant and equipment, used to produce goods or deliver services, of the company's non reportable segments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_GainLossesOnCommodityContractsNotDesignatedAsHedgesRecordedAsRegulatoryAssetsLiabilities">
+    <definition>Pursuant to regulatory accounting treatment, net gain (loss) included in regulatory asstes and or liabilities for the period from the net change in fair value of derivative instrument not designated as hedging instrument.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_TotalCommonShareholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NumberOfInterestRateDerivativesHeld">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AdditionalCollateralAggregateFairValueDueToCreditRatingDowngradeToBelowInvestmentGrade">
+    <definition>The aggregate fair value of collateral that would be required to be posted for derivative instruments with credit-risk-related contingent features if the applicable corporate credit ratings were downgraded to below investment grade at the end of the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_WindElectricGeneratingFacilityCapability">
+    <definition>Total capability of wind electric generating facilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsAndLiabilitiesMeasuredOnRecurringBasisValuationTechniquesPolicyTextBlock">
+    <definition>For annual periods only, this element may be used to identify the combined disclosure of the valuation techniques used to measure fair value, and a discussion of changes in valuation techniques, if any, applied during the period to each separate major category of assets and liabilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CapitalExpendituresOfFpl">
+    <definition>The cash outflow for capital expenditures of a public utility for electric utility plant and equipment. Amount includes the allowance for borrowed funds used in construction and excludes the allowance for equity funds used during construction and excludes expenditures related to nuclear fuel, which has a separate taxonomy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesGrossRealizedGainsLossesSaleProceeds">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_RequiredCapacityAndOrMinimumPaymentsRemainderCurrentYear">
+    <definition>Estimated required capacity and/or minimum payments for the remainder of the current year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherInvestmentsEquitySecuritiesFairValueDisclosure">
+    <definition>This item represents the portion of other investments in common and preferred stocks and other forms of securities that provide ownership interests in a corporation.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_SpecialUseFundsCash">
+    <definition>Includes currency on hand in special use funds.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_SecuritizedStormRecoveryCostsRelatedToVie">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueLiabilitiesMeasuredOnRecurringBasisDerivativeFinancialInstrumentsLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherNoncashExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueNetAssetsLiabilitiesMeasuredOnRecurringBasisChangeInUnrealizedGainLossIncludedInOtherIncome">
+    <definition>This item represents the amount of the total change in unrealized (holding) gains or losses for the period which are included in the statement of income (or changes in net assets) in other income. Such unrealized (holding) gains or losses relate to those assets still held at the reporting date for which fair value is measured on a recurring basis using significant unobservable inputs (Level 3).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ForeignCurrencyContractsNetAssetLiabilityFairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. This item represents the net asset (liability) for contracts related to the exchange of different currencies, including foreign currency options, forward (delivery or nondelivery) contracts, and swaps entered into and existing as of the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_InterestExpenseAggregateExpenses">
+    <definition>The aggregate interest expense incurred on commercial paper, long-term debt, capital leases, customer deposits, and all other borrowings, including debt related commitment fees and debt issuance costs. Amounts is reported net of interest capitalized in accordance with Statement of Financial Accounting Standard No. 34 and net of any allowance for borrowed used during construction in accordance with Statement of Financial Accounting Standard No. 71 Paragraph 15.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisCashEquivalentsEquitySecurities">
+    <definition>This element represents a certain statement of financial position asset caption "cash and cash equivalents" which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GainLossOnFairValueHedgeIneffectivenessNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_StormAndPropertyInsuranceReserve">
+    <definition>Portion of proceeds from issuance of senior secured bonds used to reestablish storm and property insurance reserve.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AmountOfPrivateLiabilityInsurancePerNuclearPowerPlantSite">
+    <definition>Maximum obtainable amount of priviate liability insurance per nuclear site available under the Price-Anderson Act.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherIncomeDeductionsNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisNetAssetLiabilityGainLossIncludedInEarnings">
+    <definition>This element represents total gains or losses for the period (realized and unrealized), arising from assets measured at fair value on a recurring basis using unobservable inputs (Level 3), which are included in earnings or resulted in a change in net asset (liability) value.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_IncreaseDecreaseInInterestAndOtherTaxes">
+    <definition>The net change during the reporting period in interest payable, which represents the amount owed to note holders, bond holders, and other parties for interest earned on loans or credit extended to the reporting entity. AND The net change during the period in the amount of cash payments due to taxing authorities for nonincome-related taxes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CustomerDepositsCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeReclassificationAdjustmentOnDerivativesIncludedInNetIncomeNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_TotalGainLossToBeReclassifiedDuringNext12Months">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesGrossUnrealizedLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NotionalAmountOfInterestRateCashFlowHedgeDerivatives">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ScheduleOfNetDerivativeInstrumentsInStatementOfFinancialPositionFairValueTextBlock">
+    <definition>This element can be used as an alternative for disclosing the entity's tabular disclosure of the location and net fair value amounts of derivative instruments (and nonderivative instruments that are designated and qualify as hedging instruments) reported in the statement of financial position as a single block of text.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AllowanceForDoubtfulAccountsReceivableCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsPayableCurrentAndNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedNewGenerationCapitalExpendituresPreConstructionCostsAndCarryingChargesFourthYear">
+    <definition>Estimated pre-construction costs and carrying charges (equal to a pretax AFUDC rate) on new generation construction costs recoverable through the capacity clause, for the fourth year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_NetIncomeLossConsolidatedProfit">
+    <definition>The portion of consolidated profit or loss for the period, net of income taxes, which is attributable to the parent. If the entity does not present consolidated financial statements, the amount of profit or loss for the period, net of income taxes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ComprehensiveIncomeNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisAssetGrossTransfersOut">
+    <definition>This element represents gross transfers out of net assets (liabilities) measured at fair value on a recurring basis using unobservable inputs (Level 3) which have taken place during the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommitmentsAndContingencies2009">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForProceedsFromNuclearFuel">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_TotalNumberOfConsolidatedVariableInterestEntities">
+    <definition>Total number of consolidated variable interest entities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsOfDividends">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_MaximumDailyCleanAirActCivilPenaltiesPeriod3">
+    <definition>Maximum amount of civil pentalties per day for violation under Clean Air Act from March 16, 2004 through January 12, 2009.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AccruedInterestAndTaxes">
+    <definition>Carrying value as of the balance sheet date of the current portion of obligations incurred and payable (due within one year) for statutory income, sales, use, payroll, excise, real, property and other taxes. AND Sum of the carrying values as of the balance sheet date of interest payable (due within one year) on all forms of debt.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AntidilutiveSecuritiesExcludedFromComputationOfEarningsPerShareAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherOperationsAndMaintenanceExpenses">
+    <definition>All operating and maintenance expenses that are associated with the entity's normal revenue producing operation, excluding any expenses reported in other line items in the income statement.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsAtCarryingValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CapitalExpendituresIndependentPowerInvestmentsAndNuclearFuelPurchases">
+    <definition>CapitalExpendituresOfFpl plus IndependentPowerInvestments plus PaymentsForProceedsFromNuclearFuel plus OtherCapitalExpenditures</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_MarginCashCollateralNettedAgainstNetCurrentDerivativeLiabilities">
+    <definition>The amount of margin cash collateral provided to counterparties that was netted against current derivative liabilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedAdditionalNewWindGenerationMwOverNextFiveYears">
+    <definition>Planned additional new wind generation megawatts over next five years.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_RegulatoryReturnOnCommonEquityBasisPoints">
+    <definition>Regulatory return on common equity range of plus or minus basis points.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCurrentReportingStatus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherAssetsCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAmortizationOfTransitionObligationsAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_SpecialUseFundsEquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDerivativeInstrumentsInStatementOfFinancialPositionFairValueTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ScheduleOfDerivativeInstrumentsNotDesignatedAsHedgingInstrumentsGainLossInStatementOfFinancialPerformanceTextBlock">
+    <definition>Schedule of the location and amount of gains and losses reported in the statement of financial performance on derivative instruments not designated as cash flow hedging instruments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfSharesOutstandingBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherInvestmentsNotesReceivableFairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. An amount representing an agreement for an unconditional promise by the maker to pay the Company (holder) a definite sum of money at a future date(s) which is included in other investments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityWellKnownSeasonedIssuer">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherReceivablesNet">
+    <definition>Carrying amounts due as of the balance sheet date from parties or arising from transactions, other than customer receivables as specified in the taxonomy. Represents the aggregate amount of loans due within one year, as well as other amounts due, from partnership and joint ventures in which the company has an ownership interest, amounts due from taxing authorities, interest receivable and other amounts due within one year for various services, net of an allowance for any amount deemed to be uncertain of collection.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CashGrantsUnderAmericanRecoveryAndReinvestmentActOf2009">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherInvestmentsMareketableSecurities">
+    <definition>Investments in marketable securities and other noncurrent investments not otherwise specified in the taxonomy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccruedIncomeTaxesPayable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_QuantityOfElectricityPurchased">
+    <definition>Quantity of electricity output purchased from the qualifying facility under the PPA agreement.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentMaturityDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_VariableInterestEntityOwnershipPercentage">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_LongTermDebtIncludingCurrentMaturitiesFairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. Fair value of long-term debt including current maturities at the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_SpecialUseFundsLoans">
+    <definition>Includes portion of special use funds representing carrying amounts due as of the balance sheet date from loans, net of an allowance for any amount deemed to be uncertain of collection.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesDomestic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_VariableInterestEntityCarryingAmountOfLiabilitiesConsolidatedVIE">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisSpecialUseFundsCorporateDebtSecurities">
+    <definition>This element represents a certain statement of financial position asset caption "Special use funds" which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdditionalPaidInCapitalCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_MaximumDailyCleanAirActCivilPenaltiesPeriod4">
+    <definition>Maximum amount of civil pentalties per day for violation under Clean Air Act from January 13, 2009 forward.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_DamagesAssertedForBreachOfContract">
+    <definition>Amount of damages sought by plaintiff for breach of contract.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeForeignCurrencyTranslationAdjustmentTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_NuclearFuelAmortization">
+    <definition>The current period expense charged against earnings for the amortization of nuclear fuel to recognize its cost over its useful live.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisNetValue">
+    <definition>This element represents the net asset (liability) fair value using significant unobservable inputs (Level 3) which is required for reconciliation purposes of beginning and ending balances.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommitmentsAndContingenciesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedCapitalExpendituresFifthYear">
+    <definition>Estimated planned capital expenditures for the fifth year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_TotalCapacityPaymentsUnderContracts">
+    <definition>Total capacity payments under contrats, substantially all of which are recoverable through the capacity clause.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueLiabilitiesMeasuredOnRecurringBasisDerivativeCommodityContractsLiabilities">
+    <definition>Net Fair Value of derivative assets reflected in the balance sheet as either a current or non current derivative liability</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueMeasurementInputsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_Receivables">
+    <definition>AccountsReceivableNetCurrent plus OtherReceivablesNet</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="invest_DerivativeNonmonetaryNotionalAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedGenerationCapitalExpendituresAfudcThirdYear">
+    <definition>Estimated AFUDC related to Generation for the remainder of the third year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AmountOfLimitedInsuranceCoveragePerOccurencePerSiteUnderNuclearInsuranceMutualCompaniesForPropertyDamageDecontaminationAndPrematureDecommissioningRisks">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_IncreaseInBaseRateRevenues">
+    <definition>Increase in base rate revenues on an annualized basis beginning March 1, 2010.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_NaturalGasAndOrOilElectricGeneratingFacilityCapacity">
+    <definition>Total capability of natural gas and/or oil electric generating facilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeForeignCurrencyTransactionAndTranslationAdjustmentNetOfTaxPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ProceedsFromSaleOfSecuritiesInSpecialUseFunds">
+    <definition>Proceeds from the sale and maturity of securities held in nuclear decommissioning trust funds and a regulated utility's storm restoration funds.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeLiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedCapitalExpendituresRemainderCurrentYear">
+    <definition>Estimated planned capital expenditures for the remainder of the current year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_HeldToMaturityNotesReceivableMaturityDateLow">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ProceedsFromIssuanceOfSecuredSeniorLongTermDebt">
+    <definition>Net proceeds, after debt issuance costs, to the VIE.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_DerivativeLiabilitiesContract">
+    <definition>Fair values as of the balance sheet date of all liabilities resulting from contracts that meet the criteria of being accounted for as derivative instruments, and which are expected to be extinguished or otherwise disposed of within a year or the normal operating cycle, if longer, net of the effects of master netting arrangements and net of rights to reclaim margin cash collateral in accordance with FASB Staff Position (FSP) FIN 39-1, Amendment of FASB Interpretation No. 39.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_RequiredCapacityAndOrMinimumPaymentsAfterFifthYear">
+    <definition>Estimated required capacity and/or minimum payments after the fifth year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccountsPayable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_IncreaseDecreaseInOtherCurrentAssets">
+    <definition>The net change during the reporting period in other operating current assets not otherwise defined in the taxonomy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AdditionalCollateralAggregateFairValueDueToOtherFinancialMeasures">
+    <definition>The aggregate fair value of additional collateral that would be required to be posted for derivative instruments with credit-risk-related contingent features if certain cross-default provisions or certain financial measurement requirements were triggered at the end of the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AccumulatedDepreciationAndAmortization">
+    <definition>The cumulative amount of depreciation, depletion and amortization (related to property, plant and equipment, including nuclear fuel, but not including land) that has been recognized in the income statement.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedCapitalExpendituresTextBlock">
+    <definition>Estimated planned capital expenditures for a future period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeUnrealizedGainLossOnDerivativesArisingDuringPeriodNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedAdditionalNewSolarGenerationCapitalExpendituresOverNextFiveYearsLowRange">
+    <definition>Low range of planned additional new solar generation capital expenditures over next five years.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisDerivativeCommodityContractsAssets">
+    <definition>Net Fair Value of derivative assets reflected in the balance sheet as either a current or non current derivative asset</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisSpecialUseFundsOtherDebtSecurities">
+    <definition>This element represents a certain statement of financial position asset caption "Special use funds" which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_IncreaseDecreaseInOtherCurrentLiabilities">
+    <definition>The net change during the reporting period in other current operating obligations not otherwise defined in the taxonomy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalPeriodFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherAssetsSpecialUseFunds">
+    <definition>Decommission fund to pay for the costs of decontaminating and decommissioning of facilities through collection of revenues derived from utility assessments and government appropriations. Decommission fund investment for the process whereby a power station, at the end of its economic life, is taken permanently out of service and its site made available for other purposes. In the case of a nuclear station this comprises three different states of clearance. Immediately after the final closure, radioactive material such as nuclear fuel and operational waste is removed and the buildings surrounding the reactor shield are dismantled and finally the reactor itself is dismantled. Also includes storm fund assets held by a regulated entity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_LongTermPurchaseCommitmentMinimumAnnualQuantityRequired">
+    <definition>Sets forth the number of megawatts that must be purchased annually within the specified time period of the agreement to avoid penalties or unfavorable effects on pricing, among other adverse</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesContinuousUnrealizedLossPositionFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_TermOfAgreementsWithContingenciesLowerRange">
+    <definition>Low range of term of agreements with contingencies.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetRetirementObligationsNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsNotDesignatedAsHedgingInstrumentsGainLossNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsReceivableNetCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ElectricUtilityPlantInServiceAndOtherProperty">
+    <definition>Carrying amount at the balance sheet date for long-lived physical assets used in the normal conduct of business and not intended for resale. This can include land, physical structures, machinery, vehicles, furniture, computer equipment, and similar items. Amount does not include construction in progress or depreciation.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherCurrentLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanInterestCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentIssuanceDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ScheduleOfCashFlowDerivativeInstrumentsGainLossInStatementOfFinancialPerformanceTextBlock">
+    <definition>Schedule of the location and amount of gains and losses reported in the statement of financial performance (or when applicable, the statement of financial position, for example, gains and losses initially recognized in other comprehensive income) on derivative instruments designated and qualifying as cash flow hedging instruments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsAndHedgingActivitiesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_MaximumLengthOfTimeHedgedInCommodityCashFlowHedge">
+    <definition>Maximum length of time over which the entity is hedging its exposure to the variability in future cash flows for forecasted commodity transactions</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_RequiredCapacityAndOrMinimumPaymentsNextYear">
+    <definition>Estimated required capacity and/or minimum payments for the next year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedAdditionalSolarGenerationMwOverNextFiveYears">
+    <definition>Planned additional new solar generation megawatts over next five years.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ScheduleOfDerivativeInstrumentsNotDesignatedAsHedgingInstrumentsInStatementOfFinancialPositionFairValueTextBlock">
+    <definition>Tabular disclosure of the location and gross fair value amounts of derivative instruments not designated as hedging instruments reported in the statement of financial position as a single block of text.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueNetAssetsLiabilitiesMeasuredOnRecurringBasisGainLossIncludedInFuelPurchasedPowerAndInterchange">
+    <definition>This item represents the amount of the total realized and unrealized gains or losses for the period which are included in the statement of income (or changes in net assets) in fuel, purchased power and interchange; the fair value of which assets was or is measured on a recurring basis using significant unobservable inputs (Level 3).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CashGrantsUnderAmericanRecoveryAndReinvestmentActOf">
+    <definition>Cash grants under the American Recovery and Reinvestment Act of 2009</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RegulatedEntityOtherAssetsNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromEquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_SaleOfDifferentialMembershipInterests">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AvailableForSaleSecuritiesEquitySecuritiesAmortizedCost">
+    <definition>This item represents the cost of equity securities, which are categorized neither as held-to-maturity nor trading, net of adjustments made for accretion, amortization, other-than-temporary impairments, and hedging, if any.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueByBalanceSheetGroupingTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisSpecialUseFundsInvestedInCommingledFunds">
+    <definition>Fair value of investmetns in commingled funds whose underlying investments would be Level 1 if those investments were held directly by the registrant</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesGrossUnrealizedGains">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedReturnOnPlanAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_SeniorSecuredDebtAggregatePrincipalAmountIssued">
+    <definition>Aggregate principal amount of senior secured bonds (storm-recovery bonds) issued by the VIE.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CommonAndPreferredStockTextBlock">
+    <definition>This element may be used to capture disclosure pertaining to common stock and preferred stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PensionAndOtherPostretirementBenefitsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisSpecialUseFundsUsGovernmentAndMunicipalBonds">
+    <definition>This element represents a certain statement of financial position asset caption "Special use funds" which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueDisclosuresTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AggregatePriceForShares">
+    <definition>Aggregate price paid for common and preferred stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PrepaidPensionCostsContributionsInExcess">
+    <definition>Cumulative employer's contributions in excess of net pension cost recognized.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedAdditionalGasInfrastructureCapitalExpendituresOverNextFiveYearsLowRange">
+    <definition>Low range of planned additional gas infrastructure capital expenditures over next five years.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeReclassificationAdjustmentOnDerivativesIncludedInNetIncomeTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AvailableForSaleDebtSecuritiesGrossUnrealizedLossFairValueTextBlock">
+    <definition>This item represents the gross unrealized losses for debt securities which are categorized neither as held-to-maturity nor trading securities and the fair value of those debt securities in an unrealized loss position. Such gross unrealized losses are the excess of the carrying value of the Available-for-sale Debt Securities over their fair value as of the reporting date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PurchasesOfSecuritiesInSpecialUseFunds">
+    <definition>Purchases of securities held in nuclear decommissioning trust funds and a regulated utility's storm restoration funds.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CurrentRegulatoryAssetsDeferredClauseAndFranchiseExpenses">
+    <definition>Carrying amount as of the balance sheet date of deferred clause and franchise expenses of regulated entities that are expected to be recovered through revenue sources within one year or the normal operating cycle, if longer.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_NonCurrentRegulatoryAssetsDeferredClauseAndFranchiseExpenses">
+    <definition>Carrying amount as of the balance sheet date of deferred clause expenses of regulated entities that are not expected to be recovered through revenue sources within one year or the normal operating cycle if longer.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FundsReceivedFromSpentFuelSettlementAgreement">
+    <definition>Funds received from the US government related to property, plant and equipment costs in settlement of lawsuits against the US Department of Energy for failure to dispose of spent nuclear fuel.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeDefinedBenefitPlansTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_DebtDueWithinOneYear">
+    <definition>CommercialPaper plus NotesPayableAsOfBalanceSheetDate plus LongTermDebtCurrent</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAmortizationOfPriorServiceCostCredit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateContinuingOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedNewGenerationCapitalExpendituresPreConstructionCostsAndCarryingChargesNextYear">
+    <definition>Estimated pre-construction costs and carrying charges (equal to a pretax AFUDC rate) on new generation construction costs recoverable through the capacity clause, for the next year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ChangeInPrepaidOptionPremiumsAndDerivativeSettlements">
+    <definition>This element represents the net effect on cash flow from operations from the change in prepaid option premiums and the settlement of derivative contracts.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeReclassificationAdjustmentForSaleOfSecuritiesIncludedInNetIncomeTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_LettersOfCreditAlreadyPostedAggregateFairValue">
+    <definition>Letters of Credit that are already posted in the normal course of business, at the end of the reporting period, that could be applied toward the collateral requirements for derivative instruments with credit-risk-related contingent features.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ComponentsOfComprehensiveIncomeTextBlock">
+    <definition>Disclosure of the components of comprehensive income.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DepreciationAndAmortization">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PotentialRetrospectiveAssessmentsUnderSecondaryFinancialProtectionSystemPayablePerIncidentPerYear">
+    <definition>Potential amount of retrospective assessment under secondary financial protection system, plus any applicable taxes per incident at any nuclear reactor in the United States payable per year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedGenerationCapitalExpendituresAfudcCurrentYear">
+    <definition>Estimated AFUDC related to Generation for the remainder of the current year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInCustomerDeposits">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CapitalContributions">
+    <definition>capital contribution to subsidiary</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentGross">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_SpecialUseFundsNuclearDecommissioningFundsWeightedAverageMaturity">
+    <definition>This item represents the weighted-average maturity of debt securities in nuclear decommissioning funds at the balance sheet date and which are categorized neither as held-to-maturity nor trading securities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityRegistrantName">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesGrossRealizedGains">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_SaleOfStockMaximumGrossSalesPriceUnderContinuousOfferingProgram">
+    <definition>Maximum gross sales price of stock under continuous offering program</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CostRecoveryClausesAndFranchiseFees">
+    <definition>This element represents the net effect on cash flow from operations of the underrecovery or overrecovery of cost recovery clauses and franchise fees.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ConstructionInProgressGross">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisSpecialUseFundsEquitySecurities">
+    <definition>This element represents a certain statement of financial position asset caption "Special use funds" which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ApproximateAnnualFirmCommitmentsAgreementsWithContingencies">
+    <definition>Approximate annual firm commitments of agreements with contingencies.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermPurchaseCommitmentTimePeriod">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AccruedPropertyAdditions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AllowanceFordoubtfullOtherReceivables">
+    <definition>A provision for other receivables due within one year that are expected to be uncollectible.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_InterestRateTerms">
+    <definition>Description of the interest rate as being fixed or variable, and, if fixed, identification of the rate.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueAssetsMeasuredOnRecurringBasisDerivativeFinancialInstrumentsAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisNetAssetLiabilitySettlementsAndNetOptionPremiums">
+    <definition>This element represents settlements and net options premiums (net) which have taken place during the period in relation to net assets (liabilities) measured at fair value on a recurring basis using unobservable inputs (Level 3).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedCapitalExpendituresThirdYear">
+    <definition>Estimated planned capital expenditures for the third year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_TaxesOtherThanIncomeTaxes">
+    <definition>Taxes other than income taxes include, but are not limited to, property taxes, franchise taxes, federal and state unemployment taxes, FICA, regulatory assessment fees and gross receipts taxes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_InterestIncome">
+    <definition>Income derived from investments in debt securities and on cash and cash equivalents the earnings of which reflect the time value of money or transactions in which the payments are for the use or forbearance of money. Also includes interest recovered from ratepayers as permitted by regulators on under recovered storm costs and interest recorded on unrecognized tax benefits in accordance with FASB Interpretation No. 48.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromIssuanceOfCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueNetAssetsLiabilitiesMeasuredOnRecurringBasisGainLossIncludedInOperatingRevenues">
+    <definition>This item represents the amount of the total realized and unrealized gains or losses for the period which are included in the statement of income (or changes in net assets) in operating revenues; the fair value of which assets was or is measured on a recurring basis using significant unobservable inputs (Level 3).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_DeferredIncomeTaxBenefitAssociatedWithConvertibleInvestmentTaxCredits">
+    <definition>Deferred income tax benefit related to the difference between the financial statement and tax bases of renewable property.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NumberOfForeignCurrencyDerivativesHeld">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_MarginCashCollateralNettedAgainstNetNonCurrentDerivativeAssets">
+    <definition>The amount of margin cash collateral received from counterparties that was netted against noncurrent derivative assets.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedGenerationCapitalExpendituresAfudcFifthYear">
+    <definition>Estimated AFUDC related to Generation for the remainder of the fifth year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CurrentRegulatoryLiabilitiesDeferredClauseAndFranchiseRevenues">
+    <definition>Carrying amount as of the balance sheet date of capitalized revenues of regulated entities that are expected to be paid back to ratepayers as a reduction of revenue sources within one year or the normal operating cycle, if longer.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfSegmentReportingInformationBySegmentTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInOtherReceivables">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedCapitalExpendituresNextYear">
+    <definition>Estimated planned capital expenditures for the next year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CondensedConsolidatingFinancialStatementsTextBlock">
+    <definition>Disclosure of the condensed financial statements (balance sheet, income statement and statement of cash flows).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentPeriodEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CommonStockSharesPurchased">
+    <definition>Shares of common stock purchased.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisOtherInvestmentsOther">
+    <definition>This element represents a certain statement of financial position asset caption "Other investments" which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisOtherInvestmentsEquitySecurities">
+    <definition>This element represents a certain statement of financial position asset caption "Other investments" which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfCondensedFinancialStatementsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeLiabilityNotDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_SaleOfIndependentPowerInvestments">
+    <definition>The cash inflow from the sales related to independent power projects of a non-utility company.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_DerivativeFinancialInstrumentsNetAssetsLiabilitiesFairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. This item represents net derivative instrument asset (liability) which should be reported as of the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CommitmentsIncludedInPlannedCapitalExpenditures">
+    <definition>Commitments included in planned capital expenditures</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CostOfElectricityPurchased">
+    <definition>Total cost of electricity output purchased from the qualifying facility under the PPA agreement.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeUnrealizedHoldingGainLossOnSecuritiesArisingDuringPeriodNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalYearFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AdjustedRegulatoryEquityRatio">
+    <definition>Adjusted regulatory equity ratio effective March 1, 2010.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeNetLiabilityPositionAggregateFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PreferredStockSharesPurchased">
+    <definition>Shares of preferred stock purchased.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedAdditionalNewSolarGenerationCapitalExpendituresOverNextFiveYearsHighRange">
+    <definition>High range of planned additional new solar generation capital expenditures over next five years.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedAdditionalTransmissionLineInTexasCapitalExpendituresWithinNextFiveYears">
+    <definition>Planned transmission line in Texas capital expenditures within next five years.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_HeldToMaturityNotesReceivableMaturityDateHigh">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_LongTermDebtRelatedToVies">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_TotalCapitalization">
+    <definition>The sum of Stockholders' Equity and Long-term debt, Noncurrent, Total, as defined above.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_IncreaseDecreaseInOtherLiabilitiesNotOtherwiseDefined">
+    <definition>The net change during the reporting period in other noncurrent operating obligations not otherwise defined in the taxonomy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_InvestmentsInUnconsolidatedSpecialPurposeEntities">
+    <definition>Unconsolidated investments in certain special purpose entities, including but not limited to, investments in mortgage-backed securities, asset-backed securities and collateralized mortgage and debt obligations.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GainsLossesOnSalesOfAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedCapitalExpendituresFourthYear">
+    <definition>Estimated planned capital expenditures for the fourth year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CoalFiredGeneratingFacilityCapacity">
+    <definition>Capacity of coal-fired qualifying facility</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsAndLiabilitiesMeasuredOnRecurringBasisTextBlock">
+    <definition>This element represents the disclosure related to assets and liabilities that are measured at fair value on a recurring basis. The disclosures contemplated herein include the fair value measurements at the reporting date by the level within the fair value hierarchy in which the fair value measurements in their entirety fall, segregating fair value measurements using quoted prices in active markets for identical assets (Level 1), significant other observable inputs (Level 2), and significant unobservable inputs (Level 3).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedNewGenerationCapitalExpendituresPreConstructionCostsAndCarryingChargesThirdYear">
+    <definition>Estimated pre-construction costs and carrying charges (equal to a pretax AFUDC rate) on new generation construction costs recoverable through the capacity clause, for the third year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CapacityOfTransmissionLine">
+    <definition>Capacity of transmission line owned and operated by an entity that is consolidated by the consolidated VIE.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherAssetsNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeUnrealizedHoldingGainLossOnSecuritiesArisingDuringPeriodTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ConsolidationVariableInterestEntityPolicyTextBlock">
+    <definition>Describes an entity's accounting policy regarding its principles of consolidation for variable interest entities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockDividendsPerShareCashPaid">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_TermOfAgreementsWithContingenciesHighRange">
+    <definition>High range of term of agreements with contingencies.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_MaximumDailyCleanAirActCivilPenaltiesPeriod1">
+    <definition>Maximum amount of civil pentalties per day for violation under Clean Air Act from June 1, 1975 through January 30, 1997.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CashPaidForRepurchaseOfAcquiredShares">
+    <definition>Cash paid for repurchase of acquired shares.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_NonCurrentRegulatoryAssetsSecuritizedStormRecoveryCosts">
+    <definition>Carrying amount as of the balance sheet date of storm recovery property of a regulated entity expected to be amortized based on expected collections from ratepayers for storm recovery bonds issued for unrecovered storm costs pursuant to state securitization provisions and a financing order issued by a regulator, excluding amounts expected to be amortized within one year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherInvestmentsFinancialInstrumentsPrimarilyNotesReceivableFairValueDisclosure">
+    <definition>Other investments, primarily notes receivable, that are carried at estimated fair value or cost, which approximates fair value.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_DebtInstrumentPrincipalOutstandingWhenDebtInstrumentWasIssued">
+    <definition>Amount of outstanding principal due when debt instrument was issued.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentInterestRateStatedPercentage">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_ForeignTaxBenefit">
+    <definition>Foreign tax benefit reflecting the reduction of previously deferred income taxes resulting from an additional equity investment in a foreign operation.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_MarginCashCollateralNotNettedAgainstDerivativeLiabilities">
+    <definition>Margin cash collateral received from counterparties not offset against derivative liabilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GuaranteeObligationsMaximumExposure">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisSpecialUseFundsMortgageBackedSecurities">
+    <definition>This element represents a certain statement of financial position asset caption "Special use funds" which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesContinuousUnrealizedLossPositionTwelveMonthsOrLongerFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Revenues">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AdjustmentToRetainedEarningsForPreviouslyRecognizedOtherThanTemporaryImpairmentDebtSecurities">
+    <definition>Adjustment at April 1, 2009 to increase retained earnings based on assessment under new accounting provisions which indicated the previously recognized other than temporary impairment was temporary.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_DepreciationAndAmortizationExcludingNuclearFuel">
+    <definition>The current period expense charged against earnings on long-lived, physical assets used in the normal conduct of business and not intended for resale to allocate or recognize the cost of assets over their useful lives; or to record the reduction in book value of an intangible asset over the benefit period of such asset. Examples include buildings, production equipment and customer lists. Excludes amortization of nuclear fuel.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetsNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermPurchaseCommitmentTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanNetPeriodicBenefitCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_NotesPayableAsOfBalanceSheetDate">
+    <definition>Sum of the carrying values as of the balance sheet date of notes payable issued for a period of less than one year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueNetAssetsLiabilitiesMeasuredOnRecurringBasisChangeInUnrealizedGainLossIncludedInFuelPurchasedPowerAndInterchange">
+    <definition>This item represents the amount of the total change in unrealized (holding) gains or losses for the period which are included in the statement of income (or changes in net assets) in fuel, purchased power and interchange. Such unrealized (holding) gains or losses relate to those assets (liabilities) still held at the reporting date for which fair value is measured on a recurring basis using significant unobservable inputs (Level 3).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_SpecialUseFundsNuclearDecommissioningFundAssets">
+    <definition>Decommission fund to pay for the costs of decontaminating and decommissioning of facilities through collection of revenues derived from utility assessments and government appropriations. Decommission fund investment for the process whereby a power station, at the end of its economic life, is taken permanently out of service and its site made available for other purposes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CurrentAssetsDerviatives">
+    <definition>Fair values as of the balance sheet date for all assets resulting from contracts that meet the criteria of being accounted for as derivative instruments and which are expected to be converted into cash or otherwise disposed of within a year or the normal operating cycle, if longer, net of the effects of master netting arrangements and net of obligations to return margin cash collateral in accordance with FASB Staff Position (FSP) FIN 39-1, "Amendment of FASB Interpretation No. 39."</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_StateTaxBenefit">
+    <definition>State tax benefit related to the change in state tax law that extended the carry forward period of ITCs on certain wind projects.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_DepreciationExpenseReduction">
+    <definition>Depreciation expense reduction related to a depreciation reserve surplus.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesGrossRealizedLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsGainLossRecognizedInOtherComprehensiveIncomeEffectivePortionNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_IndependentPowerInvestments">
+    <definition>The cash outflow for capital expenditures related to independent power projects of a non-utility company. Amount includes capitalized interest and spending on equity method investees accounted for under the equity method of accounting but excludes expenditures related to nuclear fuel, which has a separate taxonomy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FuelPurchasedPowerAndInterchangeExpense">
+    <definition>Fuel, energy and capacity charges incurred to produce electricity, net of any deferral or recovery of in accordance with Statement of Financial Accounting Standard No.71. Includes amortization of nuclear fuel.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ComprehensiveIncomeNoteTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherCashFlowsFromInvestingActivitiesNet">
+    <definition>NetCashProvidedByUsedInInvestingActivities minus CondensedFinancialStatementsCapitalExpendituresIndependentPowerInvestmentsAndNuclearFuelPurchases minus SaleOfIndependentPowerInvestments</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_UnrealizedGainLossOnDerivativesAndCommodityContracts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInInventories">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentDividendsOrDistributions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MaximumLengthOfTimeHedgedInForeignCurrencyCashFlowHedge">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisAssetGainLossIncludedInRegulatoryAssetsAndLiabilities">
+    <definition>This element represents total gains or losses for the period (realized and unrealized), arising from net assets (liabilities) measured at fair value on a recurring basis using unobservable inputs (Level 3), which are included in regulatory assets and liabilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_RequiredCapacityAndOrMinimumPaymentsThirdYear">
+    <definition>Estimated required capacity and/or minimum payments for the third year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermPurchaseCommitmentMinimumQuantityRequired">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityPublicFloat">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesDebtMaturitiesAmortizedCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AvailableForSaleSecuritiesGrossRealizedGainsLossesSaleProceedsTextBlock">
+    <definition>This item represents the gross loss realized on the sale of debt or equity securities categorized neither as held-to-maturity nor trading securities, the gross profit realized on the sale of debt or equity securities categorized neither as held-to-maturity nor trading securities and the total amount of proceeds received for the sale of securities, categorized neither as held-to-maturity nor trading securities, during the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_MarginCashCollateralNettedAgainstNetNonCurrentDerivativeLiabilities">
+    <definition>The amount of margin cash collateral provided to counterparties that was netted against Noncurrent derivative liabilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_MaterialsSuppliesAndFossilFuelInventory">
+    <definition>Carrying amount (at average cost) as of the balance sheet date of materials, supplies and fossil fuel inventories less all valuation and other allowances. Excludes noncurrent inventory balances (expected to remain on hand past one year), such as nuclear fuel.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisGrossTransfersIn">
+    <definition>This element represents gross transfers into net assets (liabilities) measured at fair value on a recurring basis using unobservable inputs (Level 3) which have taken place during the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_AllowanceForEquityFundsUsedDuringConstruction">
+    <definition>The allowance for cost of equity funds used during construction, capitalized as part of the cost of plant and equipment for the portion financed by equity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeAssetsLiabilitiesAtFairValueNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_FairValueAssetsMeasuredOnRecurringBasisOtherInvestmentsCorporateDebtSecurities">
+    <definition>This element represents a certain statement of financial position asset caption "Other investments" which represents a class of assets, or which may include an individual asset, measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_NuclearFuel">
+    <definition>The carrying amount, at gross, as of the balance sheet of nuclear fuel held as property plant and equipment.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_InterestOwnedInGenerationFacility">
+    <definition>Percentage of interest owned in generation facility.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_OtherInvestmentsDebtSecuritiesTradingSecuritiesFairValueDisclosure">
+    <definition>Represents the portion of the balance sheet assertion valued at fair value by the entity. This element may be used with the fair value disclosures required in the footnote disclosures to the financial statements. Represents Other Investments in Trading Securities which consist of all investments in certain debt securities that are bought and held principally for the purpose of selling them in the near term (held for only a short period of time) or for which an entity has elected the fair value option.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAmortizationOfGainsLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDebtInstrumentsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_PlannedGenerationCapitalExpendituresAfudcNextYear">
+    <definition>Estimated AFUDC related to Generation for the remainder of the next year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_MarginCashCollateralNettedAgainstNetCurrentDerivativeAssets">
+    <definition>The amount of margin cash collateral received from counterparties that was netted against current derivative assets.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxCreditsAndAdjustments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberDilutedSharesOutstandingAdjustment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="nee_CurrentRegulatoryAssetsOther">
+    <definition>Carrying amount as of the balance sheet date of other deferred costs, not listed above, of regulated entities that are expected to be recovered through revenue sources within one year or the normal operating cycle, if longer. Such costs are capitalized if they meet both of the following criteria: a. It is probable that future revenue in an amount at least equal to the capitalized cost will result from inclusion of that cost in allowable costs for rate-making purposes. b. Based on available evidence, the future revenue will be provided to permit recovery of the previously incurred cost rather than to provide for expected levels of similar future costs. If the revenue will be provided through an automatic rate-adjustment clause, this criterion requires that the regulator's intent clearly be to permit recovery of the previously incurred cost.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+</DefinitionAndReference>

@@ -1,0 +1,934 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!--XBRL Document Created with Wdesk from Workiva, formerly WebFilings-->
+<!--p:593c95a5e4b341429d53ee79238e695d,x:51b171791122429f934f5214bfc0dd1f-->
+<xbrli:xbrl xmlns:country="http://xbrl.sec.gov/country/2013-01-31" xmlns:currency="http://xbrl.sec.gov/currency/2014-01-31" xmlns:dei="http://xbrl.sec.gov/dei/2014-01-31" xmlns:exch="http://xbrl.sec.gov/exch/2014-01-31" xmlns:invest="http://xbrl.sec.gov/invest/2013-01-31" xmlns:iso4217="http://www.xbrl.org/2003/iso4217" xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:mdtplc="http://www.medtronic.com/20150123" xmlns:naics="http://xbrl.sec.gov/naics/2011-01-31" xmlns:nonnum="http://www.xbrl.org/dtr/type/non-numeric" xmlns:num="http://www.xbrl.org/dtr/type/numeric" xmlns:ref="http://www.xbrl.org/2006/ref" xmlns:sic="http://xbrl.sec.gov/sic/2011-01-31" xmlns:stpr="http://xbrl.sec.gov/stpr/2011-01-31" xmlns:us-gaap="http://fasb.org/us-gaap/2014-01-31" xmlns:us-roles="http://fasb.org/us-roles/2014-01-31" xmlns:us-types="http://fasb.org/us-types/2014-01-31" xmlns:utreg="http://www.xbrl.org/2009/utr" xmlns:xbrldi="http://xbrl.org/2006/xbrldi" xmlns:xbrldt="http://xbrl.org/2005/xbrldt" xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<link:schemaRef xlink:href="mdtplc-20150123.xsd" xlink:type="simple" />
+	<xbrli:context id="D2015Q3IncorporationDateYTD">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:startDate>2014-06-12</xbrli:startDate>
+			<xbrli:endDate>2015-01-23</xbrli:endDate>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4Feb24">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-02-24</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="FD2015Q3QTD">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:startDate>2014-10-25</xbrli:startDate>
+			<xbrli:endDate>2015-01-23</xbrli:endDate>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="FI2015Q3">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-23</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q1IncorporationDate">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2014-06-12</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="FI2015Q3_us-gaap_StatementClassOfStockAxis_mdtplc_EuroDeferredSharesMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">mdtplc:EuroDeferredSharesMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-23</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="FI2015Q3_us-gaap_StatementClassOfStockAxis_mdtplc_EuroordinarysharesMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">mdtplc:EuroordinarysharesMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-23</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q3BODAuthorization">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-22</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="D2015Q3IncorporationDateYTD_us-gaap_StatementClassOfStockAxis_us-gaap_PreferredStockMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">us-gaap:PreferredStockMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:startDate>2014-06-12</xbrli:startDate>
+			<xbrli:endDate>2015-01-23</xbrli:endDate>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="FI2015Q2">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2014-10-24</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="FI2015Q3_us-gaap_StatementClassOfStockAxis_us-gaap_PreferredStockMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">us-gaap:PreferredStockMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-23</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="FI2015Q3_us-gaap_StatementClassOfStockAxis_mdtplc_NewMedtronicordinarysharesMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">mdtplc:NewMedtronicordinarysharesMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-23</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q3BODAuthorization_us-gaap_StatementClassOfStockAxis_mdtplc_NewMedtronicordinarysharesMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">mdtplc:NewMedtronicordinarysharesMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-22</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="FI2015Q3_us-gaap_RelatedPartyTransactionsByRelatedPartyAxis_us-gaap_AffiliatedEntityMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:RelatedPartyTransactionsByRelatedPartyAxis">us-gaap:AffiliatedEntityMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-23</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2024Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2024Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_CreditFacilityAxis_us-gaap_RevolvingCreditFacilityMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorUnsecuredRevolvingCreditAgreementMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:CreditFacilityAxis">us-gaap:RevolvingCreditFacilityMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorUnsecuredRevolvingCreditAgreementMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2045Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Due2045Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2014-12-10</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2016Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2016Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2023Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2023Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2025Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Due2025Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2014-12-10</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2044Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2044Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2043Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2043Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesMember_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2017FloatingMember_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2017FloatingMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2017Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:BusinessAcquisitionAxis">mdtplc:CovidienPLCMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Due2017Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotesDue2037Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:BusinessAcquisitionAxis">mdtplc:CovidienPLCMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotesDue2037Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2018Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Due2018Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2014-12-10</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="FD2015Q3QTD_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:BusinessAcquisitionAxis">mdtplc:CovidienPLCMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:startDate>2014-10-25</xbrli:startDate>
+			<xbrli:endDate>2015-01-23</xbrli:endDate>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2040Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2040Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="D2015Q4Jan26_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:startDate>2015-01-26</xbrli:startDate>
+			<xbrli:endDate>2015-01-26</xbrli:endDate>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2020Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2020Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2023Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:BusinessAcquisitionAxis">mdtplc:CovidienPLCMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Due2023Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2017Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2017Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="D2015Q4Jan26_us-gaap_DebtInstrumentAxis_mdtplc_SeniorUnsecuredTermLoanCreditAgreementMember_us-gaap_LongtermDebtTypeAxis_us-gaap_UnsecuredDebtMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorUnsecuredTermLoanCreditAgreementMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:UnsecuredDebtMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:startDate>2015-01-26</xbrli:startDate>
+			<xbrli:endDate>2015-01-26</xbrli:endDate>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2020FloatingMember_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Due2020FloatingMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2014-12-10</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2015NumberTwoMember_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:BusinessAcquisitionAxis">mdtplc:CovidienPLCMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Due2015NumberTwoMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2018Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2018Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2020Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Due2020Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2014-12-10</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2022Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2022Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2039Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2039Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="FD2015Q3YTD_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:BusinessAcquisitionAxis">mdtplc:CovidienPLCMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:startDate>2014-04-26</xbrli:startDate>
+			<xbrli:endDate>2015-01-23</xbrli:endDate>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2014-12-10</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2015NumberTwoMember_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2015NumberTwoMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2022Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Due2022Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2014-12-10</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2042Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2042Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="D2015Q4Jan26_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:BusinessAcquisitionAxis">mdtplc:CovidienPLCMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:startDate>2015-01-26</xbrli:startDate>
+			<xbrli:endDate>2015-01-26</xbrli:endDate>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_ShortTermDebtTypeAxis_us-gaap_CommercialPaperMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:ShortTermDebtTypeAxis">us-gaap:CommercialPaperMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2020Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:BusinessAcquisitionAxis">mdtplc:CovidienPLCMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Due2020Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2015Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:BusinessAcquisitionAxis">mdtplc:CovidienPLCMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Due2015Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="D2015Q4Jan26_us-gaap_CreditFacilityAxis_us-gaap_RevolvingCreditFacilityMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorUnsecuredRevolvingCreditAgreementMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:CreditFacilityAxis">us-gaap:RevolvingCreditFacilityMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorUnsecuredRevolvingCreditAgreementMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:startDate>2015-01-26</xbrli:startDate>
+			<xbrli:endDate>2015-01-26</xbrli:endDate>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:BusinessAcquisitionAxis">mdtplc:CovidienPLCMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2019Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2019Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2015Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2015Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2021Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:OutstandingSeniorNotesDue2021Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2022Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:BusinessAcquisitionAxis">mdtplc:CovidienPLCMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Due2022Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_SeniorUnsecuredTermLoanCreditAgreementMember_us-gaap_LongtermDebtTypeAxis_us-gaap_UnsecuredDebtMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorUnsecuredTermLoanCreditAgreementMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:UnsecuredDebtMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_CreditFacilityAxis_us-gaap_RevolvingCreditFacilityMember_us-gaap_DebtInstrumentAxis_mdtplc_PreviousSeniorUnsecuredRevolvingCreditAgreementMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:CreditFacilityAxis">us-gaap:RevolvingCreditFacilityMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:PreviousSeniorUnsecuredRevolvingCreditAgreementMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2035Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:SeniorNotes2015Due2035Member</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:LongtermDebtTypeAxis">us-gaap:SeniorNotesMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2014-12-10</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="D2015Q4Jan26_us-gaap_CreditFacilityAxis_us-gaap_RevolvingCreditFacilityMember_us-gaap_DebtInstrumentAxis_mdtplc_PreviousSeniorUnsecuredRevolvingCreditAgreementMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:CreditFacilityAxis">us-gaap:RevolvingCreditFacilityMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">mdtplc:PreviousSeniorUnsecuredRevolvingCreditAgreementMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:startDate>2015-01-26</xbrli:startDate>
+			<xbrli:endDate>2015-01-26</xbrli:endDate>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:context id="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember">
+		<xbrli:entity>
+			<xbrli:identifier scheme="http://www.sec.gov/CIK">0001613103</xbrli:identifier>
+			<xbrli:segment>
+				<xbrldi:explicitMember dimension="us-gaap:BusinessAcquisitionAxis">mdtplc:CovidienPLCMember</xbrldi:explicitMember>
+				<xbrldi:explicitMember dimension="us-gaap:SubsequentEventTypeAxis">us-gaap:SubsequentEventMember</xbrldi:explicitMember>
+			</xbrli:segment>
+		</xbrli:entity>
+		<xbrli:period>
+			<xbrli:instant>2015-01-26</xbrli:instant>
+		</xbrli:period>
+	</xbrli:context>
+	<xbrli:unit id="shares">
+		<xbrli:measure>xbrli:shares</xbrli:measure>
+	</xbrli:unit>
+	<xbrli:unit id="number">
+		<xbrli:measure>xbrli:pure</xbrli:measure>
+	</xbrli:unit>
+	<xbrli:unit id="EUR_PER_shares">
+		<xbrli:divide>
+			<xbrli:unitNumerator>
+				<xbrli:measure>iso4217:EUR</xbrli:measure>
+			</xbrli:unitNumerator>
+			<xbrli:unitDenominator>
+				<xbrli:measure>xbrli:shares</xbrli:measure>
+			</xbrli:unitDenominator>
+		</xbrli:divide>
+	</xbrli:unit>
+	<xbrli:unit id="usd">
+		<xbrli:measure>iso4217:USD</xbrli:measure>
+	</xbrli:unit>
+	<xbrli:unit id="adviser">
+		<xbrli:measure>mdtplc:adviser</xbrli:measure>
+	</xbrli:unit>
+	<xbrli:unit id="eur">
+		<xbrli:measure>iso4217:EUR</xbrli:measure>
+	</xbrli:unit>
+	<xbrli:unit id="USD_PER_shares">
+		<xbrli:divide>
+			<xbrli:unitNumerator>
+				<xbrli:measure>iso4217:USD</xbrli:measure>
+			</xbrli:unitNumerator>
+			<xbrli:unitDenominator>
+				<xbrli:measure>xbrli:shares</xbrli:measure>
+			</xbrli:unitDenominator>
+		</xbrli:divide>
+	</xbrli:unit>
+	<dei:AmendmentFlag contextRef="D2015Q3IncorporationDateYTD" id="Fact-84D80E3852C643B6A2D6EF5E7D02793B">false</dei:AmendmentFlag>
+	<dei:CurrentFiscalYearEndDate contextRef="D2015Q3IncorporationDateYTD" id="Fact-A2AF851665636D877A9FEF5E7D2150BE">--04-24</dei:CurrentFiscalYearEndDate>
+	<dei:DocumentFiscalPeriodFocus contextRef="D2015Q3IncorporationDateYTD" id="Fact-320FF1223136DB917D55EF5E7D218E34">Q3</dei:DocumentFiscalPeriodFocus>
+	<dei:DocumentFiscalYearFocus contextRef="D2015Q3IncorporationDateYTD" id="Fact-CF6AFA6944DAB1E452D4EF5E7D027E0D">2015</dei:DocumentFiscalYearFocus>
+	<dei:DocumentPeriodEndDate contextRef="D2015Q3IncorporationDateYTD" id="Fact-CD42CED36EE4EF63F69EEF5E7D027CB3">2015-01-23</dei:DocumentPeriodEndDate>
+	<dei:DocumentType contextRef="D2015Q3IncorporationDateYTD" id="Fact-5964A7DFB6404158EAE8EF5E7D11D127">10-Q</dei:DocumentType>
+	<dei:EntityCentralIndexKey contextRef="D2015Q3IncorporationDateYTD" id="Fact-0DC6FD09D7A20A63B896EF5E7D11D90E">0001613103</dei:EntityCentralIndexKey>
+	<dei:EntityCommonStockSharesOutstanding contextRef="I2015Q4Feb24" decimals="INF" id="Fact-48DA42B3ED67878F313DB9E93C26D963" unitRef="shares">1425066824</dei:EntityCommonStockSharesOutstanding>
+	<dei:EntityFilerCategory contextRef="D2015Q3IncorporationDateYTD" id="Fact-48929E02CA922FAF5181EF5E7D02B614">Non-accelerated Filer</dei:EntityFilerCategory>
+	<dei:EntityRegistrantName contextRef="D2015Q3IncorporationDateYTD" id="Fact-01D96167BC8897CA740FEF5E7D21FD93">Medtronic plc</dei:EntityRegistrantName>
+	<mdtplc:BusinessCombinationCashConsiderationTransferredPerShare contextRef="D2015Q4Jan26_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-024E967302D76B426DFBEF5E7D5FED58" unitRef="USD_PER_shares">35.19</mdtplc:BusinessCombinationCashConsiderationTransferredPerShare>
+	<mdtplc:BusinessCombinationConsiderationTransferredEquityInterestsIssuableIssuableInExchangeForEachShare contextRef="D2015Q4Jan26_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-90FAA2DA266DDE086C2EB8B196CC1128" unitRef="shares">0.956</mdtplc:BusinessCombinationConsiderationTransferredEquityInterestsIssuableIssuableInExchangeForEachShare>
+	<mdtplc:BusinessCombinationConsiderationTransferredNoncash contextRef="D2015Q4Jan26_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="-9" id="Fact-D4C84C09289E30E9F594C298AF29C4B2" unitRef="usd">34000000000</mdtplc:BusinessCombinationConsiderationTransferredNoncash>
+	<mdtplc:CommercialPaperMaximumBorrowingCapacity contextRef="I2015Q4_us-gaap_ShortTermDebtTypeAxis_us-gaap_CommercialPaperMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-95E122EF56E7C20328E3B8DEB20AE122" unitRef="usd">3500000000.0</mdtplc:CommercialPaperMaximumBorrowingCapacity>
+	<mdtplc:DeferredSharesOutstanding contextRef="FI2015Q3_us-gaap_StatementClassOfStockAxis_mdtplc_EuroDeferredSharesMember" decimals="INF" id="Fact-A1D4E9557832ED9245FD9E3D4DE2CC1F" unitRef="shares">39993</mdtplc:DeferredSharesOutstanding>
+	<mdtplc:DeferredSharesParorStatedValuePerShare contextRef="FI2015Q3" decimals="INF" id="Fact-0FBE348B291FD2E3ECC7B905ABE2A989" unitRef="EUR_PER_shares">1.00</mdtplc:DeferredSharesParorStatedValuePerShare>
+	<mdtplc:DeferredSharesParorStatedValuePerShare contextRef="FI2015Q3_us-gaap_StatementClassOfStockAxis_mdtplc_EuroDeferredSharesMember" decimals="INF" id="Fact-5F506710055D0873122B9E3E91475CD2" unitRef="EUR_PER_shares">1.00</mdtplc:DeferredSharesParorStatedValuePerShare>
+	<mdtplc:DeferredSharesValueOutstanding contextRef="FI2015Q3" decimals="-3" id="Fact-4C6F2B1272FCB8F3BF91B9048EA727F8" unitRef="usd">46000</mdtplc:DeferredSharesValueOutstanding>
+	<mdtplc:NumberofServiceProvidersAssociatedWithTheAcquisitionThatReceivedShares contextRef="D2015Q3IncorporationDateYTD" decimals="INF" id="Fact-2F77DDA31195774D92F49E6F0F81D011" unitRef="adviser">3</mdtplc:NumberofServiceProvidersAssociatedWithTheAcquisitionThatReceivedShares>
+	<mdtplc:NumberofSharesIssuedtoEachServiceProvider contextRef="D2015Q3IncorporationDateYTD_us-gaap_StatementClassOfStockAxis_us-gaap_PreferredStockMember" decimals="INF" id="Fact-3CA6C0446E6FCF6575819E73069432A9" unitRef="shares">624</mdtplc:NumberofSharesIssuedtoEachServiceProvider>
+	<mdtplc:OrdinarySharesParOrStatedValuePerShare contextRef="FI2015Q3_us-gaap_StatementClassOfStockAxis_mdtplc_NewMedtronicordinarysharesMember" decimals="INF" id="Fact-D612636FFF23C67E153FBCF8D7ADC052" unitRef="USD_PER_shares">0.0001</mdtplc:OrdinarySharesParOrStatedValuePerShare>
+	<mdtplc:RequiredPaymentonReturnofAssets contextRef="D2015Q3IncorporationDateYTD" decimals="-6" id="Fact-02E2138B9206A2DE3E7D9E5FA1A2517F" unitRef="usd">5000000</mdtplc:RequiredPaymentonReturnofAssets>
+	<us-gaap:AccountsPayableCurrent contextRef="FI2015Q3" decimals="-3" id="Fact-7C19FB650605BDDB778EEF5E7D8EC3C6" unitRef="usd">37000000</us-gaap:AccountsPayableCurrent>
+	<us-gaap:AdditionalPaidInCapital contextRef="FI2015Q3" decimals="-3" id="Fact-6B50B60DCA92A70589789DC89D249519" unitRef="usd">73000</us-gaap:AdditionalPaidInCapital>
+	<us-gaap:Assets contextRef="FI2015Q3" decimals="-3" id="Fact-A566150AF602F7138178EF5E7D7F4EC4" unitRef="usd">46000</us-gaap:Assets>
+	<us-gaap:AssetsCurrent contextRef="FI2015Q3" decimals="-3" id="Fact-10E5E34E259C36715EA7EF5E7D6FBB9C" unitRef="usd">46000</us-gaap:AssetsCurrent>
+	<us-gaap:AssetsHeldInTrust contextRef="FI2015Q3_us-gaap_RelatedPartyTransactionsByRelatedPartyAxis_us-gaap_AffiliatedEntityMember" decimals="0" id="Fact-FC4542CAAC61641E3C339E82C2E983A1" unitRef="eur">39993</us-gaap:AssetsHeldInTrust>
+	<us-gaap:AssetsHeldInTrust contextRef="FI2015Q3_us-gaap_RelatedPartyTransactionsByRelatedPartyAxis_us-gaap_AffiliatedEntityMember" decimals="0" id="Fact-720F6AA91A46975F9B1FBCA80509A3D8" unitRef="usd">46291</us-gaap:AssetsHeldInTrust>
+	<us-gaap:BusinessAcquisitionsProFormaRevenue contextRef="FD2015Q3QTD_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember" decimals="-6" id="Fact-D8EF68489B9675579F6FC29A61116A97" unitRef="usd">7004000000</us-gaap:BusinessAcquisitionsProFormaRevenue>
+	<us-gaap:BusinessAcquisitionsProFormaRevenue contextRef="FD2015Q3YTD_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember" decimals="-6" id="Fact-9B77D4AD600FB045BA25C29A9C03C20B" unitRef="usd">21065000000</us-gaap:BusinessAcquisitionsProFormaRevenue>
+	<us-gaap:BusinessCombinationConsiderationTransferred1 contextRef="D2015Q4Jan26_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="-9" id="Fact-C890BE1F3CC8630D2710EF5E7D9EB6A0" unitRef="usd">50000000000</us-gaap:BusinessCombinationConsiderationTransferred1>
+	<us-gaap:CashAndCashEquivalentsAtCarryingValue contextRef="FI2015Q3" decimals="-3" id="Fact-315A884543153BCBAEBDEF5E7D6FE6A4" unitRef="usd">46000</us-gaap:CashAndCashEquivalentsAtCarryingValue>
+	<us-gaap:CashAndCashEquivalentsAtCarryingValue contextRef="I2015Q1IncorporationDate" decimals="-3" id="Fact-42227FCDFC1C55EFFD765B989491F799" unitRef="usd">0</us-gaap:CashAndCashEquivalentsAtCarryingValue>
+	<us-gaap:CashAndCashEquivalentsPeriodIncreaseDecrease contextRef="D2015Q3IncorporationDateYTD" decimals="-3" id="Fact-F9B412DEFB84280E64725B98948FC46E" unitRef="usd">46000</us-gaap:CashAndCashEquivalentsPeriodIncreaseDecrease>
+	<us-gaap:CommitmentsAndContingencies contextRef="FI2015Q3" id="Fact-B2BA9BA763E472F61FFBEF5E7D7F812B" unitRef="usd" xsi:nil="true" />
+	<us-gaap:CommonStockParOrStatedValuePerShare contextRef="FI2015Q3" decimals="INF" id="Fact-080FA86657E204F9947DEF5E7D9EE083" unitRef="EUR_PER_shares">1.00</us-gaap:CommonStockParOrStatedValuePerShare>
+	<us-gaap:CommonStockParOrStatedValuePerShare contextRef="FI2015Q3_us-gaap_StatementClassOfStockAxis_mdtplc_EuroordinarysharesMember" decimals="INF" id="Fact-1782F25290AA013D03FEA3E295657410" unitRef="EUR_PER_shares">1.00</us-gaap:CommonStockParOrStatedValuePerShare>
+	<us-gaap:CommonStockSharesOutstanding contextRef="FI2015Q3_us-gaap_StatementClassOfStockAxis_mdtplc_EuroordinarysharesMember" decimals="INF" id="Fact-73A1D1FD954EDD1462DC9E3258985C2B" unitRef="shares">7</us-gaap:CommonStockSharesOutstanding>
+	<us-gaap:CommonStockValue contextRef="FI2015Q3" decimals="-3" id="Fact-18791602777865596CA9EF5E7D6F4B31" unitRef="usd">0</us-gaap:CommonStockValue>
+	<us-gaap:ComprehensiveIncomeNetOfTax contextRef="D2015Q3IncorporationDateYTD" decimals="-3" id="Fact-C9492AA60FB3F5EA7B1AEF5E7D40E8DC" unitRef="usd">-37075000</us-gaap:ComprehensiveIncomeNetOfTax>
+	<us-gaap:ComprehensiveIncomeNetOfTax contextRef="FD2015Q3QTD" decimals="-3" id="Fact-87EB3383D7CA74FFD2FFEF5E7D40EFB8" unitRef="usd">-37075000</us-gaap:ComprehensiveIncomeNetOfTax>
+	<us-gaap:ConversionOfStockSharesConverted1 contextRef="D2015Q4Jan26_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-2B803DD3ACDEB76C1957BD42108BCCD4" unitRef="shares">7</us-gaap:ConversionOfStockSharesConverted1>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2018Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember" decimals="INF" id="Fact-E82A31AE731F14D70014B8B6BE7F2814" unitRef="usd">1000000000.0</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2020FloatingMember_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember" decimals="INF" id="Fact-2E7F6E7BDE89960B91F4B8B6AB18EBD8" unitRef="usd">500000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2020Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember" decimals="INF" id="Fact-55D4445AD1356C7DA645B8B6D12E4513" unitRef="usd">2500000000.0</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2022Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember" decimals="INF" id="Fact-9EC5C8D77FEAFF931DEAB8B6E006A66B" unitRef="usd">2500000000.0</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2025Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember" decimals="INF" id="Fact-23E967CE6A39A40C8A60B8B6F35BDFA6" unitRef="usd">4000000000.0</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2035Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember" decimals="INF" id="Fact-CCF821B02A0D7712B1A8B8B7172A3331" unitRef="usd">2500000000.0</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2045Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember" decimals="INF" id="Fact-A755C84A535B28AA832FB8B707BCBAE5" unitRef="usd">4000000000.0</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember" decimals="INF" id="Fact-C99381E72244D205EBCAB8B474B418AA" unitRef="usd">17000000000.0</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2015Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-66A13A5A618D9DA8D791B8CFF32DC244" unitRef="usd">600000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2015NumberTwoMember_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-A16E9002C8C29004DADEB8CFF31DFBA2" unitRef="usd">400000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2017Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-EFCD6C1352FC52759EE8B8CFF33FDCC9" unitRef="usd">1150000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2020Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-17C8A05B9346751B2D6FB8CFF30348F6" unitRef="usd">600000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2022Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-593CFB430F100C19FD71B8CFF2FB4299" unitRef="usd">650000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2023Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-3984D47D090603AD4DDBB8CFF3112BCD" unitRef="usd">750000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-78E999E7066FEEE43912B8CFF30944C5" unitRef="usd">5000000000.000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotesDue2037Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-16ADAA91A7141F942F7AB8CFF2FF46CE" unitRef="usd">850000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2015Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-43F42355F192A846D962B8BFAC21B39D" unitRef="usd">1250000000.00</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2015NumberTwoMember_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-ABE0B5D44C9C6680C416B8BFAA721127" unitRef="usd">600000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2016Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-47F694D74A17818EFC63B8BFAC9B3158" unitRef="usd">500000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2017FloatingMember_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-960F0A337912773BC109B8BFAD3F45D1" unitRef="usd">250000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2017Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-B45ACFB45098425248D3B8BFAAA7E9E7" unitRef="usd">250000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2018Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-917B7182FC0C6E995254B8BFAA2E8B2B" unitRef="usd">1000000000.0</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2019Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-0F0EDB5E5123EF9210DCB8BFAB3E85C9" unitRef="usd">400000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2020Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-62FE942961CD8119306BB8BFAA0870A2" unitRef="usd">1250000000.00</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2021Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-4897AB37489B6A831776B8BFAAEE1D9E" unitRef="usd">500000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2022Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-0A087D794A46C76C348DB8BFAA4CEEAE" unitRef="usd">675000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2023Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-6DEF49E740B1A04B5EE8B8BFAD12C6E6" unitRef="usd">1250000000.000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2024Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-701447A2D98F568B3D0DB8BFABA9C847" unitRef="usd">850000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2039Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-B97EF2BD9EC091DC4CC2B8BFAD71CC17" unitRef="usd">300000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2040Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-1C56E3C38529ECF58D96B8BFAA18833C" unitRef="usd">500000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2042Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-09C88B6227B74ED7DA5EB8BFADA8107A" unitRef="usd">400000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2043Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-45073D98AA8F7D12BC26B8BFADE696AF" unitRef="usd">750000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2044Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-A7BAFC925EC066F762F3B8BFAA0B7D43" unitRef="usd">650000000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentFaceAmount contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesMember_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-FD6580446A811BF59BE0B8BFAC76F482" unitRef="usd">11375000000.000</us-gaap:DebtInstrumentFaceAmount>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2018Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember" decimals="INF" id="Fact-F7E51042F0BBC4F95F66B8BC929967CF" unitRef="number">0.015</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2020Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember" decimals="INF" id="Fact-6EF8ABC30AAD946320CEB8BC92B6453B" unitRef="number">0.025</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2022Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember" decimals="INF" id="Fact-B5FD32D6672513B685CFB8BC929BC44D" unitRef="number">0.0315</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2025Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember" decimals="INF" id="Fact-3B865F4E70E165012CE8B8BC92ACC2EE" unitRef="number">0.035</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2035Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember" decimals="INF" id="Fact-D8F94280793C33C14597B8BC92A42FF4" unitRef="number">0.04375</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2014Q3Dec10_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2045Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember" decimals="INF" id="Fact-98943F17121B4422CB70B8BC929E4A48" unitRef="number">0.04625</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2015Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-4862EBB4B48B145F096DB8D04D36772A" unitRef="number">0.0135</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2015NumberTwoMember_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-B14879649CAE69816EEEB8D04D17F9B2" unitRef="number">0.028</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2017Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-4FEC25A7B7E40C9970EFB8D04D452696" unitRef="number">0.06</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2020Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-02240F95DDCC8C8809D4B8D04D2529DA" unitRef="number">0.042</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2022Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-AD33A2F89327AABE1DBEB8D04D64C998" unitRef="number">0.032</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotes2015Due2023Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-1C3521CC6BCF6758F27DB8D04D543F68" unitRef="number">0.0295</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorNotesDue2037Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-A818E93D1A3118B9B690B8D04D1C522F" unitRef="number">0.0655</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2015Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-9DDF16437D831785A4DCB8C10259D343" unitRef="number">0.03</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2015NumberTwoMember_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-3006684D87644F413406B8C1041AB962" unitRef="number">0.0475</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2016Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-56A5CE74276CBEEA6414B8C1033DA990" unitRef="number">0.02625</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2017Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-AA540293B65074B49507B8C1022A734D" unitRef="number">0.00875</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2018Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-83EF1111D880D8BE7F80B8C102F3618F" unitRef="number">0.01375</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2019Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-B36D99897E92C80BA8AFB8C1021ABA62" unitRef="number">0.056</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2020Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-E39620F88D04F719EC1BB8C103FCD1BA" unitRef="number">0.0445</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2021Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-50A9B69550437EC09AD5B8C1051DC2F6" unitRef="number">0.04125</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2022Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-AC46C2E268BFCABD7904B8C1046364AB" unitRef="number">0.03125</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2023Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-F42611A0C5DB3F86E23AB8C10281057F" unitRef="number">0.0275</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2024Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-61324272AC29BC53DCC9B8C104ED6D4F" unitRef="number">0.03625</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2039Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-2FB0CDE499AD7107624CB8C1039A9F61" unitRef="number">0.065</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2040Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-DA6E8E6660679604789DB8C102B20C73" unitRef="number">0.0555</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2042Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-93574C706AD844AF1C67B8C1023B301F" unitRef="number">0.045</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2043Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-2D76BAF159B59BE83017B8C10221DE49" unitRef="number">0.04</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentInterestRateStatedPercentage contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_OutstandingSeniorNotesDue2044Member_us-gaap_LongtermDebtTypeAxis_us-gaap_SeniorNotesMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-A8051941A584B67BEA7CB8C1043C9433" unitRef="number">0.04625</us-gaap:DebtInstrumentInterestRateStatedPercentage>
+	<us-gaap:DebtInstrumentTerm contextRef="D2015Q4Jan26_us-gaap_CreditFacilityAxis_us-gaap_RevolvingCreditFacilityMember_us-gaap_DebtInstrumentAxis_mdtplc_PreviousSeniorUnsecuredRevolvingCreditAgreementMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" id="Fact-516A3697C2B9BFB55DB9B8DAC87B17F1">P5Y</us-gaap:DebtInstrumentTerm>
+	<us-gaap:DebtInstrumentTerm contextRef="D2015Q4Jan26_us-gaap_CreditFacilityAxis_us-gaap_RevolvingCreditFacilityMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorUnsecuredRevolvingCreditAgreementMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" id="Fact-52B4BC1874733277760CB8DB7406E558">P5Y</us-gaap:DebtInstrumentTerm>
+	<us-gaap:DebtInstrumentTerm contextRef="D2015Q4Jan26_us-gaap_DebtInstrumentAxis_mdtplc_SeniorUnsecuredTermLoanCreditAgreementMember_us-gaap_LongtermDebtTypeAxis_us-gaap_UnsecuredDebtMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" id="Fact-58FF39E18B06661DE756B8D8853C0FE1">P3Y</us-gaap:DebtInstrumentTerm>
+	<us-gaap:EarningsPerShareBasicAndDiluted contextRef="D2015Q3IncorporationDateYTD" decimals="-3" id="Fact-9BAD578238391A9DE3FDEF5E7D02AB4E" unitRef="USD_PER_shares">-5296000</us-gaap:EarningsPerShareBasicAndDiluted>
+	<us-gaap:EarningsPerShareBasicAndDiluted contextRef="FD2015Q3QTD" decimals="-3" id="Fact-1FE1D64288045541789EEF5E7D02B05F" unitRef="USD_PER_shares">-5296000</us-gaap:EarningsPerShareBasicAndDiluted>
+	<us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments contextRef="D2015Q3IncorporationDateYTD" decimals="-3" id="Fact-07417C7D0DA7AE43F07AEF5E7CB4B70A" unitRef="usd">-37075000</us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments>
+	<us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments contextRef="FD2015Q3QTD" decimals="-3" id="Fact-A2AC16AC31A5DB995063EF5E7D21A131" unitRef="usd">-37075000</us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments>
+	<us-gaap:IncreaseDecreaseInAccountsPayableAndAccruedLiabilities contextRef="D2015Q3IncorporationDateYTD" decimals="-3" id="Fact-C04DE2C6AAE1F3BC4F77B90B9612EC8D" unitRef="usd">37000000</us-gaap:IncreaseDecreaseInAccountsPayableAndAccruedLiabilities>
+	<us-gaap:IssuanceOfStockAndWarrantsForServicesOrClaims contextRef="D2015Q3IncorporationDateYTD" decimals="-3" id="Fact-A7CA9D684DEE0B29F1ACBC8C1A419BA8" unitRef="usd">75000</us-gaap:IssuanceOfStockAndWarrantsForServicesOrClaims>
+	<us-gaap:Liabilities contextRef="FI2015Q3" decimals="-3" id="Fact-CB6379D63DB24C701782EF5E7D7F2933" unitRef="usd">37000000</us-gaap:Liabilities>
+	<us-gaap:LiabilitiesAndStockholdersEquity contextRef="FI2015Q3" decimals="-3" id="Fact-6FF90BFB7983109130F9EF5E7D6F85BF" unitRef="usd">46000</us-gaap:LiabilitiesAndStockholdersEquity>
+	<us-gaap:LiabilitiesCurrent contextRef="FI2015Q3" decimals="-3" id="Fact-26FD626221A1F743BB8AEF5E7D8EBA4B" unitRef="usd">37000000</us-gaap:LiabilitiesCurrent>
+	<us-gaap:LineOfCredit contextRef="I2015Q4_us-gaap_DebtInstrumentAxis_mdtplc_SeniorUnsecuredTermLoanCreditAgreementMember_us-gaap_LongtermDebtTypeAxis_us-gaap_UnsecuredDebtMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="-8" id="Fact-DE61F349C0A93C3BE3AFB8D60A9EDABA" unitRef="usd">3000000000</us-gaap:LineOfCredit>
+	<us-gaap:LineOfCreditFacilityMaximumBorrowingCapacity contextRef="I2015Q4_us-gaap_CreditFacilityAxis_us-gaap_RevolvingCreditFacilityMember_us-gaap_DebtInstrumentAxis_mdtplc_PreviousSeniorUnsecuredRevolvingCreditAgreementMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-B26802E8673777898E3AB8D91C7F37C6" unitRef="usd">2250000000.00</us-gaap:LineOfCreditFacilityMaximumBorrowingCapacity>
+	<us-gaap:LineOfCreditFacilityMaximumBorrowingCapacity contextRef="I2015Q4_us-gaap_CreditFacilityAxis_us-gaap_RevolvingCreditFacilityMember_us-gaap_DebtInstrumentAxis_mdtplc_SeniorUnsecuredRevolvingCreditAgreementMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-7D9AD74467318D5CAC40B8DB57105BE4" unitRef="usd">3500000000.0</us-gaap:LineOfCreditFacilityMaximumBorrowingCapacity>
+	<us-gaap:NetCashProvidedByUsedInFinancingActivitiesContinuingOperations contextRef="D2015Q3IncorporationDateYTD" decimals="-3" id="Fact-BAFDA3C1423D470707B55B98949F6199" unitRef="usd">46000</us-gaap:NetCashProvidedByUsedInFinancingActivitiesContinuingOperations>
+	<us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations contextRef="D2015Q3IncorporationDateYTD" decimals="-3" id="Fact-54190A959C3352A84E485B98949ACE5E" unitRef="usd">0</us-gaap:NetCashProvidedByUsedInOperatingActivitiesContinuingOperations>
+	<us-gaap:NetIncomeLoss contextRef="D2015Q3IncorporationDateYTD" decimals="-3" id="Fact-AB236689055248792BA8EF5E7D11BA19" unitRef="usd">-37075000</us-gaap:NetIncomeLoss>
+	<us-gaap:NetIncomeLoss contextRef="FD2015Q3QTD" decimals="-3" id="Fact-254FC0F32FE61313A101EF5E7CC3F63B" unitRef="usd">-37075000</us-gaap:NetIncomeLoss>
+	<us-gaap:OperatingExpenses contextRef="D2015Q3IncorporationDateYTD" decimals="-3" id="Fact-DD932C8C62C317D3245CEF5E7D027381" unitRef="usd">37075000</us-gaap:OperatingExpenses>
+	<us-gaap:OperatingExpenses contextRef="FD2015Q3QTD" decimals="-3" id="Fact-370E9A63A9DC42B91539EF5E7D11A524" unitRef="usd">37075000</us-gaap:OperatingExpenses>
+	<us-gaap:OtherComprehensiveIncomeLossNetOfTax contextRef="D2015Q3IncorporationDateYTD" decimals="-3" id="Fact-C8B12DC4048872A3E971EF5E7D409A5D" unitRef="usd">0</us-gaap:OtherComprehensiveIncomeLossNetOfTax>
+	<us-gaap:OtherComprehensiveIncomeLossNetOfTax contextRef="FD2015Q3QTD" decimals="-3" id="Fact-FD62208BE2B8A41558B5EF5E7D501D68" unitRef="usd">0</us-gaap:OtherComprehensiveIncomeLossNetOfTax>
+	<us-gaap:PaymentsToAcquireBusinessesGross contextRef="D2015Q4Jan26_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="-9" id="Fact-B34EDBC3428529DD21FAC2986EFA983D" unitRef="usd">16000000000</us-gaap:PaymentsToAcquireBusinessesGross>
+	<us-gaap:PreferredStockParOrStatedValuePerShare contextRef="FI2015Q3" decimals="INF" id="Fact-80F88511E9D56828812DEF5E7CD317F7" unitRef="USD_PER_shares">1.00</us-gaap:PreferredStockParOrStatedValuePerShare>
+	<us-gaap:PreferredStockParOrStatedValuePerShare contextRef="FI2015Q3_us-gaap_StatementClassOfStockAxis_us-gaap_PreferredStockMember" decimals="INF" id="Fact-A6AF54FEF4B0DD55C5E09E6D3D0F0153" unitRef="USD_PER_shares">1.00</us-gaap:PreferredStockParOrStatedValuePerShare>
+	<us-gaap:PreferredStockValue contextRef="FI2015Q3" decimals="-3" id="Fact-CBF3F5E8F58962B845F6EF5E7D7F0C14" unitRef="usd">2000</us-gaap:PreferredStockValue>
+	<us-gaap:ProceedsFromIssuanceOrSaleOfEquity contextRef="D2015Q3IncorporationDateYTD" decimals="-3" id="Fact-3A2064E3E9D609588C025B98949EA4E1" unitRef="usd">46000</us-gaap:ProceedsFromIssuanceOrSaleOfEquity>
+	<us-gaap:RetainedEarningsAccumulatedDeficit contextRef="FI2015Q3" decimals="-3" id="Fact-49FD277B530A3B5132F5EF5E7D6F8417" unitRef="usd">-37075000</us-gaap:RetainedEarningsAccumulatedDeficit>
+	<us-gaap:SalesRevenueNet contextRef="D2015Q3IncorporationDateYTD" decimals="-3" id="Fact-F99FFAAC80246D084FAAEF5E7D11BCF5" unitRef="usd">0</us-gaap:SalesRevenueNet>
+	<us-gaap:SalesRevenueNet contextRef="FD2015Q3QTD" decimals="-3" id="Fact-1AC4EDA86FB3ABAE7D00EF5E7D02C0AF" unitRef="usd">0</us-gaap:SalesRevenueNet>
+	<us-gaap:SellingGeneralAndAdministrativeExpense contextRef="D2015Q3IncorporationDateYTD" decimals="-3" id="Fact-9E551DB77AAE392F725EEF5E7D0251DF" unitRef="usd">37075000</us-gaap:SellingGeneralAndAdministrativeExpense>
+	<us-gaap:SellingGeneralAndAdministrativeExpense contextRef="FD2015Q3QTD" decimals="-3" id="Fact-53B0720A0DE0C8F37216EF5E7CC35991" unitRef="usd">37075000</us-gaap:SellingGeneralAndAdministrativeExpense>
+	<us-gaap:SharePrice contextRef="I2015Q4_us-gaap_BusinessAcquisitionAxis_mdtplc_CovidienPLCMember_us-gaap_SubsequentEventTypeAxis_us-gaap_SubsequentEventMember" decimals="INF" id="Fact-7C786255411287C5D12DB8B196D9FA4D" unitRef="USD_PER_shares">76.95</us-gaap:SharePrice>
+	<us-gaap:StockIssuedDuringPeriodSharesNewIssues contextRef="D2015Q3IncorporationDateYTD_us-gaap_StatementClassOfStockAxis_us-gaap_PreferredStockMember" decimals="INF" id="Fact-673A72364F8A06188F5A9E6FF08CE743" unitRef="shares">1872</us-gaap:StockIssuedDuringPeriodSharesNewIssues>
+	<us-gaap:StockIssuedDuringPeriodValueNewIssues contextRef="D2015Q3IncorporationDateYTD_us-gaap_StatementClassOfStockAxis_us-gaap_PreferredStockMember" decimals="0" id="Fact-8B0DA8FA096E93AC130C9E70F4C17DDF" unitRef="usd">75000</us-gaap:StockIssuedDuringPeriodValueNewIssues>
+	<us-gaap:StockRepurchaseProgramNumberOfSharesAuthorizedToBeRepurchased contextRef="I2015Q3BODAuthorization" decimals="-6" id="Fact-5AB3E51C6B6CACF17D36BD1805CC83FD" unitRef="shares">80000000</us-gaap:StockRepurchaseProgramNumberOfSharesAuthorizedToBeRepurchased>
+	<us-gaap:StockRepurchaseProgramNumberOfSharesAuthorizedToBeRepurchased contextRef="I2015Q3BODAuthorization_us-gaap_StatementClassOfStockAxis_mdtplc_NewMedtronicordinarysharesMember" decimals="-6" id="Fact-2D00AC3052DD0C42E6D8BD17275CB816" unitRef="shares">80000000</us-gaap:StockRepurchaseProgramNumberOfSharesAuthorizedToBeRepurchased>
+	<us-gaap:StockRepurchaseProgramRemainingNumberOfSharesAuthorizedToBeRepurchased contextRef="FI2015Q2" decimals="-5" id="Fact-F39541F5D9A38E105F35BD19C987ED5A" unitRef="shares">33500000</us-gaap:StockRepurchaseProgramRemainingNumberOfSharesAuthorizedToBeRepurchased>
+	<us-gaap:StockholdersEquity contextRef="FI2015Q3" decimals="-3" id="Fact-0DE0B226024E2D8386D2EF5E7D7FA741" unitRef="usd">-36954000</us-gaap:StockholdersEquity>
+	<us-gaap:WeightedAverageNumberOfShareOutstandingBasicAndDiluted contextRef="D2015Q3IncorporationDateYTD" decimals="0" id="Fact-0D4093A125F23C66A624B9FDA5299651" unitRef="shares">7</us-gaap:WeightedAverageNumberOfShareOutstandingBasicAndDiluted>
+	<us-gaap:WeightedAverageNumberOfShareOutstandingBasicAndDiluted contextRef="FD2015Q3QTD" decimals="0" id="Fact-E61E454C43833EF61FCAEF5E7D024F4B" unitRef="shares">7</us-gaap:WeightedAverageNumberOfShareOutstandingBasicAndDiluted>
+	<us-gaap:BasisOfAccounting contextRef="D2015Q3IncorporationDateYTD" id="Fact-512036340639D265F05BEF5E7D0238D1">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:12px;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;text-decoration:underline;"&gt;Basis of Presentation&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;text-align:justify;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;New Medtronic was incorporated on June 12, 2014 as a private limited company incorporated in Ireland, and was re-registered effective January 26, 2015 as a public limited company. It was established for the purpose of facilitating the business combination between Medtronic and Covidien and is the successor registrant to Medtronic, Inc. &lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-top:8px;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The accompanying unaudited condensed consolidated financial statements have been prepared in accordance with accounting principles generally accepted in the United States of America (&amp;#8220;U.S.&amp;#8221; and such principles, &amp;#8220;U.S. GAAP&amp;#8221;) for interim financial information and with the instructions to Form 10-Q and Article 10 of Regulation S-X. Accordingly, they do not include all of the information necessary for a fair presentation of results of operations, comprehensive income, financial condition, and cash flows in conformity with U.S. GAAP. In the opinion of management, the condensed consolidated financial statements reflect all adjustments (consisting of normal recurring adjustments) considered necessary for a fair presentation of the results of New Medtronic and its subsidiaries for the periods presented. Operating results for interim periods are not necessarily indicative of results that may be expected for the fiscal year as a whole. The preparation of the financial statements in conformity with U.S. GAAP requires management to make estimates and assumptions that affect the reported amounts of assets, liabilities, revenues, expenses, and the related disclosures at the date of the financial statements and during the reporting period. Actual results could materially differ from these estimates. The Company&amp;#8217;s fiscal year 2015 will end on April&amp;#160;24, 2015.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-top:12px;text-align:justify;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-style:italic;"&gt;Acquisition of Covidien and Medtronic&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-top:8px;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;On June 15, 2014, the Company entered into the Transaction Agreement (as defined below) pursuant to which it was agreed that the Company would indirectly acquire Medtronic and Covidien through a series of transactions, as further described in Note 7.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-top:8px;text-align:justify;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;Following the consummation of the Transactions (as defined below), Medtronic and Covidien became subsidiaries of New Medtronic. &lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-top:8px;text-align:justify;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;As of January 23, 2015, New Medtronic had not conducted any activities other than those incident to its formation, the execution of the Transaction Agreement, the preparation of applicable filings under the U.S. securities laws and regulatory filings made in connection with the Transactions, the execution of financing agreements as the guarantor of the obligations of Medtronic as the initial borrower thereunder and other matters related to the Transactions contemplated by the Transaction Agreement.  See Note 7 for more information about the Transactions.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:BasisOfAccounting>
+	<us-gaap:BasisOfAccountingPolicyPolicyTextBlock contextRef="D2015Q3IncorporationDateYTD" id="Fact-D4ECFAF51BDA4D84F83AEF5E7D023D5A">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:120%;padding-top:8px;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The accompanying unaudited condensed consolidated financial statements have been prepared in accordance with accounting principles generally accepted in the United States of America (&amp;#8220;U.S.&amp;#8221; and such principles, &amp;#8220;U.S. GAAP&amp;#8221;) for interim financial information and with the instructions to Form 10-Q and Article 10 of Regulation S-X. Accordingly, they do not include all of the information necessary for a fair presentation of results of operations, comprehensive income, financial condition, and cash flows in conformity with U.S. GAAP. In the opinion of management, the condensed consolidated financial statements reflect all adjustments (consisting of normal recurring adjustments) considered necessary for a fair presentation of the results of New Medtronic and its subsidiaries for the periods presented. Operating results for interim periods are not necessarily indicative of results that may be expected for the fiscal year as a whole. The preparation of the financial statements in conformity with U.S. GAAP requires management to make estimates and assumptions that affect the reported amounts of assets, liabilities, revenues, expenses, and the related disclosures at the date of the financial statements and during the reporting period. Actual results could materially differ from these estimates.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:BasisOfAccountingPolicyPolicyTextBlock>
+	<us-gaap:CashAndCashEquivalentsPolicyTextBlock contextRef="D2015Q3IncorporationDateYTD" id="Fact-4FCFD5CDF775799092EF9DDD01357D72">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:120%;padding-top:8px;text-align:justify;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The Company considers cash and cash equivalents to include cash in banks, cash held in trust, commercial paper and deposits with financial institutions that can be liquidated without prior notice or penalty. The Company considers highly liquid investments with maturities of three months or less from the date of purchase to be cash equivalents. These investments are carried at cost, which approximates fair value.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:CashAndCashEquivalentsPolicyTextBlock>
+	<us-gaap:DescriptionOfNewAccountingPronouncementsNotYetAdopted contextRef="D2015Q3IncorporationDateYTD" id="Fact-9C25703D429365D2B788EF5E7D7F9A81">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:12px;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;text-decoration:underline;"&gt;New Accounting Pronouncements&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;In April 2014, the FASB issued amended guidance for reporting discontinued operations. The amended guidance changes the criteria for determining when the results of operations are to be reported as discontinued operations and expands the related disclosure requirements. The guidance defines a discontinued operation as a disposal of a component or group of components that is disposed of or classified as held for sale which is a strategic shift that has, or will have, a major effect on financial position and results of operations. This accounting guidance is effective prospectively for the Company beginning in the first quarter of fiscal year 2016. The adoption is not expected to have a material impact on the Company&amp;#8217;s consolidated financial statements.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;In May 2014, the FASB issued amended revenue recognition guidance to clarify the principles for recognizing revenue from contracts with customers. The guidance requires an entity to recognize revenue to depict the transfer of goods or services to customers in an amount that reflects the consideration to which an entity expects to be entitled in exchange for those goods or services. The guidance also requires expanded disclosures relating to the nature, amount, timing, and uncertainty of revenue and cash flows arising from contracts with customers. Additionally, qualitative and quantitative disclosures are required about customer contracts, significant judgments and changes in judgments, and assets recognized from the costs to obtain or fulfill a contract.&amp;#160;This accounting guidance is effective for the Company beginning in the first quarter of fiscal year 2018 using one of two prescribed retrospective methods.&amp;#160;Early adoption is not permitted.&amp;#160;The Company is evaluating the impact of the amended revenue recognition guidance on the Company&amp;#8217;s consolidated financial statements.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:DescriptionOfNewAccountingPronouncementsNotYetAdopted>
+	<us-gaap:FiscalPeriod contextRef="D2015Q3IncorporationDateYTD" id="Fact-4F1ABB5A314E748E72F6EF5E7D11379C">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:120%;padding-top:8px;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The Company&amp;#8217;s fiscal year 2015 will end on April&amp;#160;24, 2015.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:FiscalPeriod>
+	<us-gaap:ForeignCurrencyTransactionsAndTranslationsPolicyTextBlock contextRef="D2015Q3IncorporationDateYTD" id="Fact-060938A730B48B91245BC7235993455E">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:120%;padding-top:8px;text-align:justify;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The currency of the primary economic environment in which the Company operates (&amp;#8220;the functional currency&amp;#8221;) is the U.S. dollar.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:ForeignCurrencyTransactionsAndTranslationsPolicyTextBlock>
+	<us-gaap:LossContingencyDisclosures contextRef="D2015Q3IncorporationDateYTD" id="Fact-AA1ADE7390C5FFB5135DEF5E7D21B486">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:12px;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;text-decoration:underline;"&gt;Contingencies&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-top:10px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;New Medtronic had no material contingencies as of January 23, 2015. See Note 7 for information about events subsequent to January 23, 2015.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:LossContingencyDisclosures>
+	<us-gaap:NewAccountingPronouncementsPolicyPolicyTextBlock contextRef="D2015Q3IncorporationDateYTD" id="Fact-59FCE2A44533F220F01CBCCA6E5C1CF6">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:120%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;In April 2014, the FASB issued amended guidance for reporting discontinued operations. The amended guidance changes the criteria for determining when the results of operations are to be reported as discontinued operations and expands the related disclosure requirements. The guidance defines a discontinued operation as a disposal of a component or group of components that is disposed of or classified as held for sale which is a strategic shift that has, or will have, a major effect on financial position and results of operations. This accounting guidance is effective prospectively for the Company beginning in the first quarter of fiscal year 2016. The adoption is not expected to have a material impact on the Company&amp;#8217;s consolidated financial statements.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;In May 2014, the FASB issued amended revenue recognition guidance to clarify the principles for recognizing revenue from contracts with customers. The guidance requires an entity to recognize revenue to depict the transfer of goods or services to customers in an amount that reflects the consideration to which an entity expects to be entitled in exchange for those goods or services. The guidance also requires expanded disclosures relating to the nature, amount, timing, and uncertainty of revenue and cash flows arising from contracts with customers. Additionally, qualitative and quantitative disclosures are required about customer contracts, significant judgments and changes in judgments, and assets recognized from the costs to obtain or fulfill a contract.&amp;#160;This accounting guidance is effective for the Company beginning in the first quarter of fiscal year 2018 using one of two prescribed retrospective methods.&amp;#160;Early adoption is not permitted.&amp;#160;The Company is evaluating the impact of the amended revenue recognition guidance on the Company&amp;#8217;s consolidated financial statements.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:NewAccountingPronouncementsPolicyPolicyTextBlock>
+	<us-gaap:RelatedPartyTransactionsDisclosureTextBlock contextRef="D2015Q3IncorporationDateYTD" id="Fact-75F477F84EC1BB361A759E813DB3AB57">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:12px;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;text-decoration:underline;"&gt;Related Party Transactions&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;As of January 23, 2015, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;&amp;#8364;39,993&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; (&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$46,291&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; as of January 23, 2015) was held by A&amp;amp;L Goodbody, a related party to the Company, on trust for the Company.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:RelatedPartyTransactionsDisclosureTextBlock>
+	<us-gaap:SignificantAccountingPoliciesTextBlock contextRef="D2015Q3IncorporationDateYTD" id="Fact-66A8D16192062FE9DCE19DDB5C1F4792">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:12px;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;text-decoration:underline;"&gt;Summary of Significant Accounting Policies&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:8px;text-align:justify;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-style:italic;"&gt;Cash and Cash Equivalents&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-top:8px;text-align:justify;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The Company considers cash and cash equivalents to include cash in banks, cash held in trust, commercial paper and deposits with financial institutions that can be liquidated without prior notice or penalty. The Company considers highly liquid investments with maturities of three months or less from the date of purchase to be cash equivalents. These investments are carried at cost, which approximates fair value.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:8px;text-align:justify;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-style:italic;"&gt;Foreign Currency Translation&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-top:8px;text-align:justify;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The currency of the primary economic environment in which the Company operates (&amp;#8220;the functional currency&amp;#8221;) is the U.S. dollar.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:SignificantAccountingPoliciesTextBlock>
+	<us-gaap:StockholdersEquityNoteDisclosureTextBlock contextRef="D2015Q3IncorporationDateYTD" id="Fact-0444F85E003CF5D93F6D9DF5B2164195">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:12px;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;text-decoration:underline;"&gt;Shareholders&amp;#8217; Equity&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;As of January 23, 2015, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;seven&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; Euro ordinary shares, par value &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;&amp;#8364;1.00&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; each (the &amp;#8220;Euro Ordinary Shares&amp;#8221;) were owned by shareholders unrelated to Medtronic or Covidien. As of January 23, 2015, the holders of the Euro Ordinary Shares had voting rights, participated pro rata in all dividends declared by the Company with respect to the Euro Ordinary Shares and in the event of the Company&amp;#8217;s winding up, would have participated pro rata with all other ordinary shares in the total assets of the Company.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:8px;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;As of January 23, 2015, there were &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;39,993&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; euro deferred shares, par value &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;&amp;#8364;1.00&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; each (the &amp;#8220;Euro Deferred Shares&amp;#8221;) issued to the existing holders of the Euro Ordinary Shares. The holders of the Euro Deferred Shares are not entitled to receive any dividend or distribution and are not entitled to receive notice of, nor to attend, speak or vote at, any general meeting of the Company. On a return of assets, whether on liquidation or otherwise, the Euro Deferred Shares entitle the holder thereof only to the repayment of the amounts paid up on such shares, after repayment of the capital paid up on the Euro Ordinary Shares and the New Medtronic ordinary shares, par value &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$.0001&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; (the &amp;#8220;New Medtronic Ordinary Shares&amp;#8221;) plus the payment of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$5 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; on each of the Euro Ordinary Shares and the New Medtronic Ordinary Shares, and the holders of the Euro Deferred Shares (as such) are not entitled to any further participation in the assets or profits of the Company.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:8px;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;As of January 23, 2015, the Company had issued &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;624&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; A preferred shares, par value &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$1.00&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; each (the &amp;#8220;A Preferred Shares&amp;#8221;) to &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;three&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; of its advisers in connection with the Transactions, for a total of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;1,872&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; A Preferred Shares and an aggregate consideration of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$75,000&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;. The holder(s) of the A Preferred Shares shall be entitled in priority to any payment of dividend on any other class of shares in the Company to be paid a dividend in the amount per A Preferred Share equal to twice the dividend to be paid per New Medtronic Ordinary Share. On a return of assets, whether on liquidation or otherwise, the A Preferred Shares shall entitle the holder thereof to repayment of the capital paid up thereon in priority to any repayment of capital to the holder(s) of any other shares and the holders of the A Preferred Shares shall not be entitled to any further participation in the assets or profits of the Company. The holders of the A Preferred Shares shall not be entitled to receive notice of, nor to attend, speak or vote at any general meeting of the Company.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;On January 22, 2015, the Board of Directors of New Medtronic authorized New Medtronic to adopt the existing Medtronic share repurchase plan insofar as permitted under Irish law and subject to the creation of sufficient distributable reserves (the &amp;#8220;Share Repurchase Plan&amp;#8221;). Under the Share Repurchase Plan, the Board of Directors of New Medtronic authorized New Medtronic to repurchase &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;80 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; New Medtronic ordinary shares, less any previous repurchases by Medtronic under the existing Medtronic share repurchase plan, under which it was authorized to repurchase up to &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;80 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; shares. Medtronic had approximately &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;33.5 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; shares remaining under the existing Medtronic share repurchase plan as of October 24, 2014. Any repurchases will technically be effected as redemptions under Irish law.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:StockholdersEquityNoteDisclosureTextBlock>
+	<us-gaap:SubsequentEventsTextBlock contextRef="D2015Q3IncorporationDateYTD" id="Fact-E50253410C09B5D7B0219E8D7A5F9203">&lt;div style="font-family:Times New Roman;font-size:10pt;"&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:12px;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;text-decoration:underline;"&gt;Subsequent Events&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-top:10px;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-weight:bold;"&gt;Acquisition of Covidien and Medtronic&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The disclosures under the Introductory Note are incorporated herein by reference.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:13px;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;On January 26, 2015, (a) each Covidien ordinary share was converted into the right to receive &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$35.19&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; in cash and &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;0.956&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; of a newly issued New Medtronic share (the &amp;#8220;Arrangement Consideration&amp;#8221;) in exchange for each Covidien share held by such shareholders, and (b) each share of Medtronic common stock was converted into the right to receive one New Medtronic ordinary share. The total consideration of the Transactions is approximately &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$50 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;, consisting of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$16 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; cash and &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$34 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; of non-cash consideration based on Medtronic's closing stock price of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$76.95&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; per share on January 23, 2015. The fair value of the individual components of non-cash consideration are still being determined.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The issuance of New Medtronic shares in connection with the Transactions was registered under the Securities Act of 1933, as amended (the &amp;#8220;Securities Act&amp;#8221;), pursuant to New Medtronic&amp;#8217;s registration statement on Form S-4 (File No. 333-197406) (the &amp;#8220;Registration Statement&amp;#8221;) filed with the U.S. Securities and Exchange Commission (the &amp;#8220;SEC&amp;#8221;) and declared effective on November 20, 2014.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:12px;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;Pursuant to Rule 12g-3(c) under the Securities Exchange Act of 1934, as amended (the &amp;#8220;Exchange Act&amp;#8221;), New Medtronic is the successor issuer to Medtronic and to Covidien, New Medtronic&amp;#8217;s ordinary shares are deemed to be registered under Section 12(b) of the Exchange Act, and New Medtronic is subject to the informational requirements of the Exchange Act and the rules and regulations promulgated thereunder. New Medtronic&amp;#8217;s ordinary shares were approved for listing on the New York Stock Exchange (&amp;#8220;NYSE&amp;#8221;) and trade under the symbol &amp;#8220;MDT.&amp;#8221;&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:6px;padding-top:10px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The Transactions will be accounted for as business combinations using the acquisition method of accounting. The acquisition method of accounting requires, among other things, that assets acquired and liabilities assumed be recognized at their fair values as of the acquisition date and that the fair value of acquired in-process research and development be recorded on the balance sheet.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:6px;padding-top:10px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;Due to the limited amount of time since the acquisition date and the significant limitations on access to Covidien information prior to the acquisition date, the preliminary acquisition valuation for the business combination is incomplete at this time. As a result, the Company is unable to provide the amounts recognized as of the acquisition date for the major classes of assets acquired and liabilities assumed, including the information required for valuation of intangible assets and goodwill.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:6px;padding-top:10px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;The unaudited pro forma net sales of the combined entity for the three and nine months ended January&amp;#160;23, 2015 are &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$7.004 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; and &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$21.065 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;, respectively. The unaudited pro forma net sales of the combined entity are based on the historical financial net sales of Medtronic and Covidien as if the acquisition had been completed as of the beginning of fiscal year 2015. The historical Covidien net sales information for the three months ended January&amp;#160;23, 2015 are based upon the period from September 27, 2014 to December 26, 2014 and the historical Covidien net sales information for the nine months ended January&amp;#160;23, 2015 was based upon the period from March 29, 2014 to December 26, 2014. The unaudited pro forma net sales is not indicative of the results that actually would have been obtained if the acquisitions had occurred as of the beginning of fiscal year 2015 or that may be obtained in the future. Because the initial accounting for the business combination is incomplete at this time, the Company is unable to provide the pro forma net earnings of the combined entity.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:12px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-weight:bold;"&gt;Guarantees of Notes&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;On January 26, 2015, New Medtronic and Medtronic Global Holdings S.C.A., an entity organized under the laws of Luxembourg (&amp;#8220;Medtronic Luxco&amp;#8221;), each provided a full and unconditional guarantee of the obligations of Medtronic under the Medtronic December 2014 Notes (as defined below) and the Medtronic Outstanding Notes (as defined below) and of Covidien International Finance S.A., a Luxembourg company (&amp;#8220;CIFSA&amp;#8221;) under the Covidien Outstanding Notes (as defined below).  &lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;On December&amp;#160;10, 2014, Medtronic issued &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$17.000 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of unsecured senior notes consisting of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$500 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of floating rate senior notes due 2020, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$1.000 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;1.500%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2018, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$2.5 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;2.500%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2020, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$2.500 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;3.150%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2022, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$4.000 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;3.500%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2025, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$2.500 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;4.375%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2035, and &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$4.000 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;4.625%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2045 (collectively, the &amp;#8220;Medtronic December 2014 Notes&amp;#8221; or &amp;#8220;2015 Senior Notes&amp;#8221;).&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:13px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;As of January 26, 2015, in addition to the 2015 Senior Notes, Medtronic had &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$11.375 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount issued and outstanding consisting of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$250 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of floating rate senior notes due 2017, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$250 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;0.875%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2017, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$850 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;3.625%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2024, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$650 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;4.625%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2044, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$1.000 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;1.375%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2018, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$1.250 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;2.750%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2023, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$750 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;4.000%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2043, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$675 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;3.125%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2022, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$400 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;4.500%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2042, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$500 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;2.625%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2016, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$500 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;4.125%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2021, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$1.25 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;3.00%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2015, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$1.250 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;4.45%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2020, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$500 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;5.55%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2040, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$400 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;5.60%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2019, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$300 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;6.50%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2039 and &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$600 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;4.750%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2015 (collectively, the &amp;#8220;Medtronic Outstanding Notes&amp;#8221;).&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;As of January 26, 2015, Covidien had &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$5.000 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount issued and outstanding consisting of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$750 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;2.950%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2023, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$600 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;1.350%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2015, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$650 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;3.200%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2022, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$400 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;2.80%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2015, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$600 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;4.20%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2020, &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$1.150 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;6.000%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2017 and &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$850 million&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; aggregate principal amount of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;6.550%&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; senior notes due 2037 (collectively, the &amp;#8220;Covidien Outstanding Notes&amp;#8221;).&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:12px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-weight:bold;"&gt;Registration Rights Agreement Joinder&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:12px;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;On January 26, 2015, New Medtronic and Medtronic Luxco entered into a joinder agreement (&amp;#8220;Registration Rights Agreement Joinder&amp;#8221;) to the Registration Rights Agreement, dated as of December 10, 2014 (the &amp;#8220;Registration Rights Agreement&amp;#8221;), by and among Medtronic and Merrill Lynch, Pierce, Fenner &amp;amp; Smith Incorporated, Deutsche Bank Securities Inc. and J.P. Morgan Securities LLC, as representatives (the &amp;#8220;Representatives&amp;#8221;) of the several initial purchasers of the 2015 Senior Notes. The Registration Rights Agreement provides holders of the 2015 Senior Notes with certain rights relating to registration of such notes under the Securities Act. Under the Registration Rights Agreement Joinder, New Medtronic and Medtronic Luxco became parties to the Registration Rights Agreement.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:12px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-weight:bold;"&gt;Indemnification Agreements&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;Effective January 26, 2015, New Medtronic entered into deeds of indemnification (the &amp;#8220;Deeds of Indemnification&amp;#8221;) with the directors and corporate secretary of New Medtronic. The Deeds of Indemnification provide indemnification to such directors and the corporate secretary to the fullest extent permitted by the laws of Ireland, and in accordance with New Medtronic&amp;#8217;s memorandum and articles of association, for all expenses and other amounts actually incurred in any action or proceeding in which the director or corporate secretary is or may be involved by reason of the fact that he or she is or was a New Medtronic director or corporate secretary or otherwise serving New Medtronic or other entities at New Medtronic&amp;#8217;s request, on the terms and conditions set forth in the Deeds of Indemnification. Further, New Medtronic agrees, to the fullest extent permitted by the laws of Ireland, to advance expenses incurred in defense of these proceedings, on the terms and conditions set forth in the Deeds of Indemnification. The Deeds of Indemnification also provide procedures for requesting and obtaining indemnification and advancement of expenses.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:12px;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;Effective January 26, 2015, Medtronic Luxco, an indirect subsidiary of New Medtronic, entered into indemnification agreements (the &amp;#8220;Indemnification Agreements&amp;#8221;) with the directors and corporate secretary of New Medtronic. The Indemnification Agreements provide indemnification to such directors and the corporate secretary, provided such directors and the corporate secretary act in good faith and in a manner reasonably believed to be in or not opposed to the best interests of New Medtronic, to the fullest extent permitted by Delaware law, for all expenses and other amounts actually incurred in any action or proceeding in which the director or the corporate secretary is or may be involved by reason of the fact that he or she is or was a New Medtronic director or corporate secretary or otherwise serving New Medtronic or other entities at New Medtronic&amp;#8217;s request, on the terms and conditions set forth in the Indemnification Agreements. Further, Medtronic Luxco agrees to advance expenses incurred in defense of these proceedings, on the terms and conditions set forth in the Indemnification Agreements. The Indemnification Agreements also provide procedures for requesting and obtaining indemnification and advancement of expenses.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:12px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-weight:bold;"&gt;Term Loan Credit Agreement&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:12px;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;On January&amp;#160;26, 2015, Medtronic borrowed &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$3.0 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; for a term of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;three years&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; under that certain Senior Unsecured Term Loan Credit Agreement (the &amp;#8220;Term Loan Credit Agreement&amp;#8221;), among Medtronic, New Medtronic, Medtronic Luxco, the lenders from time to time party thereto and Bank of America, N.A., as administrative agent, to finance, in part, the cash component of the Arrangement Consideration and certain transaction expenses. New Medtronic and Medtronic Luxco have guaranteed the obligations of Medtronic under the Term Loan Credit Agreement.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:12px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-weight:bold;"&gt;Amended and Restated Revolving Credit Agreement&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:12px;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;On January&amp;#160;26, 2015, Medtronic amended and restated its existing &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$2.25 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;five&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;-year senior unsecured revolving credit facility and entered into the Amended and Restated Credit Agreement (&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$3.5 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;Five&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; Year Revolving Credit Facility) dated as of January&amp;#160;26, 2015 (the &amp;#8220;Amended and Restated Revolving Credit Agreement&amp;#8221;), by and among Medtronic, New Medtronic, Medtronic Luxco, the lenders from time to time party thereto and Bank of America, N.A., as administrative agent and issuing bank. Under the Amended and Restated Revolving Credit Agreement, the lenders party thereto will provide Medtronic and Medtronic Luxco with unsecured revolving credit commitments in an aggregate principal amount of up to &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$3.5 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;. Medtronic and Medtronic Luxco will be co-borrowers under the Amended and Restated Revolving Credit Agreement and each of Medtronic, Medtronic Luxco and New Medtronic will also guarantee the obligations of the co-borrowers under the Amended and Restated Revolving Credit Agreement.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:12px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-weight:bold;"&gt;Commercial Paper Program&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:12px;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;On January 26, 2015, Medtronic Luxco entered into various agreements pursuant to which Medtronic Luxco may issue unsecured commercial paper notes (the &amp;#8220;2015 Commercial Paper Program&amp;#8221;) on a private placement basis up to a maximum aggregate amount outstanding at any time of &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;$3.5 billion&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;. New Medtronic and Medtronic have guaranteed the obligations of Medtronic Luxco under the 2015 Commercial Paper Program. In connection with entry into the 2015 Commercial Paper Program, Medtronic and Covidien terminated their respective existing commercial paper programs.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:12px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;font-weight:bold;"&gt;Other Subsequent Events&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;padding-bottom:8px;padding-top:8px;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;On January 26, 2015, in connection with the consummation of the Transactions, New Medtronic amended and restated its Memorandum and Articles of Association.&lt;/font&gt;&lt;/div&gt;&lt;div style="line-height:120%;text-align:left;font-size:10pt;"&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;On January 26, 2015, New Medtronic converted each of the &lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt;seven&lt;/font&gt;&lt;font style="font-family:inherit;font-size:10pt;"&gt; Euro Ordinary Shares into Euro Deferred Shares.&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;</us-gaap:SubsequentEventsTextBlock>
+	<link:footnoteLink xlink:role="http://www.xbrl.org/2003/role/link" xlink:type="extended">
+	</link:footnoteLink>
+</xbrli:xbrl>

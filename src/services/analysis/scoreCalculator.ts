@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/db/prisma';
-import { aiService } from '../aiService';
 import { NotificationService } from '../notificationService';
 import { computeTTM } from '@/lib/utils/ttm';
 import { summarizeLossYears } from '@/lib/utils/analysisMath';
@@ -8,7 +7,7 @@ import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
 import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
 
 export interface CalculateScoresOptions {
-    /** Skip the AI verdict call (backfills/bulk jobs — keeps stored verdictText). */
+    /** No-op — AI verdict generation was removed (cost vs. value). */
     skipVerdict?: boolean;
     /** Skip quality-breakout notifications (backfills must not spam alerts). */
     skipNotify?: boolean;
@@ -59,7 +58,6 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     let healthScore = 50;
     let valuationScore = 50;
     let profitabilityScore = 50;
-    let verdictText = 'Neutral';
 
     const tickerData = await prisma.ticker.findUnique({
         where: { symbol },
@@ -423,16 +421,6 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     // the Early Winners EW score (quant engine, different scale/coverage).
     const overallScore = (healthScore + profitabilityScore + valuationScore + growthScore + qualityScore) / 5;
 
-    // ─── AI Verdict ────────────────────────────────────────────────
-    if (!opts.skipVerdict) try {
-        const aiVerdict = await aiService.generateInvestmentVerdict({
-            ticker: symbol,
-            scores: { H: healthScore, P: profitabilityScore, V: valuationScore },
-            context: `Altman Z: ${altmanZ?.toFixed(2)}, Repayment: ${debtRepaymentYears?.toFixed(1)}y, FCF Yield: ${fcf && marketCap ? (fcf / marketCap * 100).toFixed(1) : 'N/A'}%`
-        });
-        if (aiVerdict) verdictText = aiVerdict;
-    } catch (e) { }
-
     // ─── Signal Detection & Notification ───────────────────────────
     let lastQualitySignalAt: Date | undefined;
     if (!opts.skipNotify && altmanZ !== null && altmanZ > 3.0 && healthScore > 80) {
@@ -456,7 +444,6 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         where: { symbol },
         update: {
             healthScore, profitabilityScore, valuationScore,
-            ...(opts.skipVerdict ? {} : { verdictText }),
             growthScore, qualityScore, overallScore,
             piotroskiScore, beneishScore, interestCoverage, revenueCagr, netIncomeCagr,
             altmanZ, debtRepaymentYears, fcfMargin, fcfConversion,
@@ -464,7 +451,7 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
             ...(lastQualitySignalAt ? { lastQualitySignalAt } : {})
         },
         create: {
-            symbol, healthScore, profitabilityScore, valuationScore, verdictText,
+            symbol, healthScore, profitabilityScore, valuationScore,
             growthScore, qualityScore, overallScore,
             piotroskiScore, beneishScore, interestCoverage, revenueCagr, netIncomeCagr,
             altmanZ, debtRepaymentYears, fcfMargin, fcfConversion,

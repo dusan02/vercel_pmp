@@ -1,0 +1,890 @@
+<DefinitionAndReference>
+  <Element Id="dei_EntityFilerCategory">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_FacilityActionsTextBlock">
+    <definition>Disclosure of refranchising (gain)loss, Store closure (income) costs, and Store impairment charges by reportable segment.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_DollarValueOfSharesThatMayBeRepurchased">
+    <definition>Dollar value of shares remaining that may be repurchased.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_ImpairmentChargeRelatedToLjsAndAwDomesticBusinessesNotAllocatedToSegment">
+    <definition>Represents the non-cash portion of Goodwill impairment loss for the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromPaymentsForOtherFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ComprehensiveIncomeNoteTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeUnrealizedGainLossOnDerivativesArisingDuringPeriodNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfAccountsNotesLoansAndFinancingReceivableTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_OtherIncomeExpense">
+    <definition>The total amount of other operating income, costs and expenses not previously categorized. Includes such items as equity income from investments in unconsolidated affiliates, gains and losses associated with the sale of investments in unconsolidated affiliates and foreign exchange gains and losses.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanServiceCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_WeekAddedAsResultOfFiscalYearEndingOnLastSaturdayInDecember">
+    <definition>Adjustment to the fiscal period due to year ending on the last Saturday in December.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredGainLossOnDiscontinuationOfInterestRateFairValueHedge">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_ShareRepurchasesPriorToCurrentReportingDateButWithSettlementDatesSubsequentToCurrentReportingDate">
+    <definition>Number of shares repurchased with trade dates prior to current reporting date but with settlement dates subsequent to the current reporting date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfWeeksInEachOfFirstThreeQuartersOfEachFiscalYear">
+    <definition>The number of weeks in each of the first three quarters of each fiscal year if it is a 52 week fiscal year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_AdvertisingCooperativeLiabilities">
+    <definition>Aggregate amount of liabilities of advertising cooperatives which we control and consolidate. Liabilities consist of obligations arising from the receipt of contributions to purchase advertising and promotional programs.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_MinimumNumberOfHoursWorkedPerDayAfterWhichOvertimePayWasNotReceived">
+    <definition>Minimum number of hours worked per day after which overtime pay was not received.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IntangibleAssetsNetExcludingGoodwill">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetImpairmentCharges">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromDivestitureOfBusinesses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_ScheduleOfEarningsPerShareDilutedByCommonClassAndScheduleOfEarningsPerShareBasicByCommonClassTextBlock">
+    <definition>This element may be used to capture the complete disclosure pertaining to basic and diluted earnings per share.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfCompanyOwnedRestaurantsThatMayBeInClass">
+    <definition>Number of company-owned restaurants that may be in the class.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_PrepaidExpensesAndOtherCurrentAssets">
+    <definition>Sum of the amounts paid in advance for capitalized costs that will be expensed with the passage of time or the occurrence of a triggering event. In addition, includes aggregate carrying amount, as of the balance sheet date, of current assets not separately disclosed in the balance sheet due to materiality considerations. Prepaid expenses and current assets are expected to be realized or consumed within one year (or the normal operating cycle, if longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfSharesOutstandingBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Assets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_DefinedBenefitPlanEstimatedFutureEmployerContributionsInRemainderOfCurrentFiscalYearForUnitedKingdomPensionPlans">
+    <definition>The employer's best estimate of contributions expected to be paid to the United Kingdom Pension Plans during the remainder of the current fiscal year beginning after the date of the latest statement of financial position. Estimated contributions may be presented in the aggregate combining (1) contributions required by funding regulations or laws, (2) discretionary contributions, and (3) noncash contributions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetsHeldForSaleLongLived">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SubsequentEventAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_AdvertisingCooperativeAssetsRestricted">
+    <definition>Aggregate amount of assets of advertising cooperatives which we control and consolidate. Assets consist primarily of cash received from the Company and franchisees and accounts receivable from franchisees, and can only be used for selected purposes and are considered restricted.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfMonthsInFourthQuarterForCertainInternationalSubsidiariesThatOperateOnMonthlyCalendars">
+    <definition>Number of months in the fourth quarter for certain international subsidiaries that operate on monthly calendars.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDefinedBenefitPlansDisclosuresTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DepreciationDepletionAndAmortization">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ForeignCurrencyCashFlowHedgeDerivativeAtFairValueNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfPeriodsOrMonthsInAdvanceThatAllInternationalBusinessesExceptChinaCloseTheirBooks">
+    <definition>The amount of time (period or month) in advance that YUM's international businesses, except China, close their books to allow for facilitation of consolidated reporting.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_OtherNonCashChargesAndCreditsNet">
+    <definition>For other operating activities that do not fit into a more specific and appropriate element, the difference between income statement recognition timing and cash inflow or outflow.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterestDecreaseFromDistributionsToNoncontrollingInterestHolders">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanNetPeriodicBenefitCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InvestmentsInAffiliatesSubsidiariesAssociatesAndJointVenturesFairValueDisclosure">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectOfExchangeRateOnCashAndCashEquivalents">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsAtCarryingValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsNetNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateContinuingOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForProceedsFromOtherInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_FairValueAssetsAndLiabilitiesMeasuredOnRecurringBasisTextBlock">
+    <definition>This element represents the disclosure related to assets and liabilities, including [financial] instruments measured at fair value that are classified in stockholders' equity, if any, that are measured at fair value on a recurring basis. The disclosures contemplated herein include the fair value measurements at the reporting date by the level within the fair value hierarchy in which the fair value measurements in their entirety fall, segregating fair value measurements using quoted prices in active markets for identical assets (Level 1), significant other observable inputs (Level 2), and significant unobservable inputs (Level 3).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_ClosuresAndImpairmentExpenses">
+    <definition>Includes the net gain or loss on sales of real estate on which we formerly operated a Company restaurant that was closed, lease reserves established when we cease using a property under an operating lease and subsequent adjustments to those reserves and other facility-related expenses from previously closed stores; in addition, the charge against earnings resulting from the impairment of restaurants we anticipate continuing to operate as Company stores.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_AmountOfPossibleLossForContingencies">
+    <definition>Reflects the amount of possible loss from the specified contingency as of the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestRateFairValueHedgeDerivativeAtFairValueNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityPublicFloat">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfWeeksInFourthQuarterOfEachFiscalYearWith53Weeks">
+    <definition>The number of weeks in the fourth quater of each fiscal year if it is a 53 week fiscal year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PensionAndOtherPostretirementBenefitsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentPeriodEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCentralIndexKey">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromStockOptionsExercised">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NoncurrentNotesRecervableAndDirectFinancingLeases">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CostOfGoodsSold">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeAssetsLiabilitiesAtFairValueNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCurrentReportingStatus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquityNoteDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_OtherComprehensiveIncomeTableTextBlock">
+    <definition>Schedule of the amount of gains and losses recognized in other comprehensive income and reclassified from other comprehensive income on derivative instruments designated and qualifying as hedging instruments and related hedged items designated and qualifying in hedges.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLossAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccruedIncomeTaxesPayable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestIncomeExpenseNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GuaranteeObligationsMaximumExposure">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfMonthsInSecondQuarterForCertainInternationalSubsidiariesThatOperateOnMonthlyCalendars">
+    <definition>Number of months in the second quarter for certain international subsidiaries that operate on monthly calendars.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossForeignCurrencyTranslationAdjustmentNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInFairValueOfInterestRateFairValueHedgingInstruments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfWeeksInFourthQuarterOfEachFiscalYearWith52Weeks">
+    <definition>The number of weeks in the fourth quarter of each fiscal year if it is a 52 week fiscal year.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommitmentsAndContingenciesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ExcessTaxBenefitFromShareBasedCompensationFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockRepurchasedDuringPeriodShares">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_AmountInterestExpenseNetWasReducedForRecognizedGainsOnInterestRateSwaps">
+    <definition>Amount by which Interest expense, net was reduced for recognized gains (losses) on interest rate swaps.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentGross">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FranchiseCosts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AllowanceForDoubtfulAccountsReceivableCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfYearsNotesReceivableAndDirectFinancingLeasesAreDueWithinToBeIncludedInAccountsAndNotesReceivable">
+    <definition>Number of years notes receivable and direct financing leases are due within to be included in accounts and notes receivable</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_MinimumStatutoryDamagesPerOffenseUnderCaliforniaDisabledPersonsAct">
+    <definition>Minimum statutory damages per offense under California Disabled Persons Act</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_EstimatedImpactOfProposedIrsAdjustmentOnAdditionalTaxesFiscalYearsExamined">
+    <definition>Estimated impact of proposed IRS adjustment on additional taxes, resulting from the examination of fiscal years 2004 through 2006.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_ComparabilityOfPriorYearFinancialDataTextBlock">
+    <definition>Includes material items that affect the comparability of prior year financial data with data shown for the most recent accounting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_BusinessExitCosts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SubsequentEventDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SalesRevenueGoodsNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilityForClaimsAndClaimsAdjustmentExpensePropertyCasualtyLiability">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalYearFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Revenues">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInOperatingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_ValueOfShareRepurchasesPriorToCurrentReportingDateButWithSettlementDatesSubsequentToCurrentReportingDate">
+    <definition>Value of share repurchases with trade dates prior to current reporting date but with settlement dates subsequent to the current reporting date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherIncomeAndOtherExpenseDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_IncreaseDecreaseInFairValueOfInterestRateFairValueHedgingInstrumentsReportedAsAdditionToShortTermBorrowings">
+    <definition>Amount of unrealized gain (loss) related to the fair value of interest rate derivatives designed as fair value hedging instruments. Recognized in earnings and offsets the gain (loss) on the hedged item to the extent that the fair value hedge is determined to be effective. Reported as an addition to short-term borrowings.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromSaleOfPropertyPlantAndEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeReclassificationAdjustmentOnDerivativesIncludedInNetIncomeNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_MinimumStatutoryDamagesPerOffenseUnderUnruhAct">
+    <definition>Minimum statutory damages per offense under Unruh Act</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeForeignCurrencyTransactionAndTranslationGainLossArisingDuringPeriodNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_EstimatedImpactOfProposedIrsAdjustmentOnAdditionalTaxesForFiscalYearsPotentiallySubjectToExamination">
+    <definition>Estimated impact of proposed IRS adjustment on additional taxes, for fiscal years 2007 through 2009, that may be potentially subject to future examination. This estimate was computed on a similar basis to the fiscal 2004-2006 additional taxes.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesAndStockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfMonthsInThirdQuarterForCertainInternationalSubsidiariesThatOperateOnMonthlyCalendars">
+    <definition>Number of months in the third quarter for certain international subsidiaries that operate on monthly calendars.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToAcquirePropertyPlantAndEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Goodwill">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_CurrentFiscalYearEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsPayableAndAccruedLiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_ImpairmentOfLongLivedAssetsHeldForUsePrincipallyRelatedToRestaurantsOfferedToRefranchiseInUs">
+    <definition>The aggregate amount of write-downs for impairments recognized during the period for long lived assets held for use (including those held for disposal by means other than sale), principally related to KFC restaurants offered to refranchise in the U.S..</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsOfDividendsCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SubsequentEventDescription">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfSegmentReportingInformationBySegmentTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RepaymentsOfLongTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_TotalFairValueNetAssetsAndLiabilitiesMeasuredOnRecurringBasis">
+    <definition>Total fair value as of the balance sheet date for those assets and liabilities measured at fair value on a recurring basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProfitLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfRestaurantsRefranchisedInTaiwan">
+    <definition>Number of KFCs refranchised in Taiwan</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_AdditionalAmountUnderFranchiseeLoanPoolAvailableForLending">
+    <definition>Additional amount under the franchisee loan pool available for lending.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_MinimumNumberOfHoursWorkedPerWeekAfterWhichOvertimePayWasNotReceived">
+    <definition>Minimum number of hours worked per week after which overtime pay was not received.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsAndHedgingActivitiesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GeneralAndAdministrativeExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareDiluted">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_AmendmentFlag">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Liabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CostsAndExpenses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AntidilutiveSecuritiesExcludedFromComputationOfEarningsPerShareAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_IncomeTaxAndEffectiveTaxRateTextBlock">
+    <definition>Disclosure of income tax expense (benefit) and effective tax rate for the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesAuthorized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfDaysTradeReceivablesAreDueWithinAfterSaleOccurs">
+    <definition>Number of days trade receivables consisting of royalties from franchisees and licensees are generally due within after the corresponding sales occur and are classified as Accounts and notes receivable.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfOperatingSegments">
+    <definition>Represents the number of operating segments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterestDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_AccountsAndNotesReceivable">
+    <definition>The aggregate of amounts due from customers or clients, within one year of the balance sheet date (or one operating cycle, if longer), for goods or services that have been delivered or sold in the normal course of business and an amount representing an agreement for an unconditional promise by the maker to pay the entity (holder) a definite sum of money at a future date within one year of the balance sheet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_EstimatedImpactOfProposedIrsAdjustmentOnAdditionalInterestForFiscalYearsPotentiallySubjectToExamination">
+    <definition>Estimated impact of proposed IRS adjustment on additional interest, for fiscal years 2007 through 2009, that may be potentially subject to future examination. This estimate was computed on a similar basis to the fiscal 2004-2006 additional interest.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfSubsequentEventsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NotionalAmountOfInterestRateFairValueHedgeDerivatives">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccruedIncomeTaxesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CostOfGoodsSoldDirectMaterials">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CostOfGoodsSoldDirectLabor">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCommonStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_LossContingencyNumberOfPlaintiffs">
+    <definition>Number of individuals contended by plaintiffs that may be in the class.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromShortTermDebtMaturingInMoreThanThreeMonths">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_EstimatedImpactOfProposedIrsAdjustmentOnAdditionalInterestForFiscalYearsExamined">
+    <definition>Estimated impact of proposed IRS adjustment on additional interest, resulting from the examinations of fiscal years 2004 through 2006.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalPeriodFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_FrequencyOfAddingWeekAsResultOfFiscalYearEndingOnLastSaturdayInDecember">
+    <definition>The frequency of adjusting the fiscal period as a result of the fiscal year ending on the last Saturday in December.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDerivativeInstrumentsInStatementOfFinancialPositionFairValueTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityRegistrantName">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForRepurchaseOfCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectiveIncomeTaxRateReconciliationAtFederalStatutoryIncomeTaxRate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromEquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanExpectedReturnOnPlanAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShareBasedCompensation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccountsAndNotesReceivable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromRepaymentsOfShortTermDebtMaturingInThreeMonthsOrLess">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentType">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NotesAndLoansReceivableNetNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccountsPayableAndAccruedLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShortTermBorrowings">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_IncomeBeforeIncomeTaxes">
+    <definition>Sum of operating profit and interest income (expense) before income taxes. Also includes minority interest and income (loss) from equity method investments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FranchiseRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetsCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_ClosuresAndImpairmentExpensesExcludingGoodwillImpairment">
+    <definition>Includes the net gain/loss on sales of real estate on which we formerly operated a Company restaurant that was closed, lease reserves established when we cease using a property under an operating lease, subsequent adjustments to those reserves and other facility-related expenses from previously closed stores, and the charge against earnings resulting from the impairment of restaurants we anticipate continuing to operate. Does not include non-cash Goodwill impairment charges not allocated to segments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RepaymentsOfShortTermDebtMaturingInMoreThanThreeMonths">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_ScheduleOfOtherIncomeExpenseTextBlock">
+    <definition>Table of detailed components of Other (Income) Expense.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_SupplementalBalanceSheetInformationTextBlock">
+    <definition>Supplemental Balance Sheet Information</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InventoryNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NextFiscalYearWith53Weeks">
+    <definition>The next fiscal year with an adjustment to the fiscal period due to year ending on the last Saturday in December.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_CarryingValueOfGoodwillRelatedToTaiwanBusiness">
+    <definition>Carrying value of goodwill related to Taiwan business</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ComprehensiveIncomeNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueMeasurementInputsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfNewAccountingPronouncementsAndChangesInAccountingPrinciplesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanAmortizationOfGainsLosses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfStatesThatAssertStateLawClassActionClaims">
+    <definition>Number of states that assert state-law class action claims.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ExcessTaxBenefitFromShareBasedCompensationOperatingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ForeignCurrencyTransactionGainLossBeforeTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherAssetsNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesIssued">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfMonthsInFirstQuarterForCertainInternationalSubsidiariesThatOperateOnMonthlyCalendars">
+    <definition>Number of months in the first quarter for certain international subsidiaries that operate on monthly calendars.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_DebtObligationsExcludingCapitalLeases">
+    <definition>Debt obligations, excluding capital leases.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DefinedBenefitPlanInterestCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockDividendsPerShareDeclared">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInPrepaidDeferredExpenseAndOtherAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_CurrentPercentageOfOwnership">
+    <definition>Current percentage of ownership.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtAndCapitalLeaseObligations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GainLossOnDispositionOfAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueMeasuredOnRecurringBasisInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_ImpairmentOfLongLivedAssetsHeldForUseIncludedInRefranchisingGainLoss">
+    <definition>Impairment of long lived assets held for use measured at fair value on a non-recurring basis included in Refranchising (gain) loss.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_TotalLoansOutstanding">
+    <definition>Total loans outstanding under lending/financing programs</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_ExpirationDateOfShareRepurchaseAuthorization">
+    <definition>Expiration date of share repurchase authorization.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_GoodwillImpairmentChargeRelatedToLjsAndAwDomesticBusinessesNotAllocatedToSegment">
+    <definition>Represents the non-cash portion of Goodwill impairment loss for the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockRepurchasedDuringPeriodValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncrementalCommonSharesAttributableToShareBasedPaymentArrangements">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInInventories">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_RepurchaseOfSharesOfCommonStockTextBlock">
+    <definition>A table reflecting activity for repurchases of shares of Common Stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_NumberOfYearsNotesReceivableAndDirectFinancingLeasesAreDueBeyondToBeIncludedInOtherAssets">
+    <definition>Number of years notes receivable and direct financing leases are due beyond to be included in other assets.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PensionContributions">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityWellKnownSeasonedIssuer">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsNotesAndLoansReceivableNetCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RetainedEarningsAccumulatedDeficit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedDepreciationDepletionAndAmortizationPropertyPlantAndEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityVoluntaryFilers">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_GuaranteeObligationsMaximumExposureAtPresentValue">
+    <definition>Present value of maximum potential amount of future payments (undiscounted) the guarantor could be required to make under the guarantee or each group of similar guarantees before reduction for potential recoveries under recourse or collateralization provisions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_ApproximateNumberOfRestaurantsInRestaurantGroupsOfferedForRefranchisingWithLongLivedAssetsThatWereDeemedImpairedOnHeldForUseBasis">
+    <definition>Approximate number of restaurants in the restaurant groups offered for refranchising with long-lived assets that were deemed impaired on a held for use basis.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockNoParValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsNetCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_OtherLiabilitiesAndDeferredCredits">
+    <definition>Aggregate carrying amount, as of the balance sheet date, of noncurrent obligations not separately disclosed in the balance sheet due to materiality considerations. In addition, carrying amount as of the balance sheet date of unearned revenue or income not otherwise specified in the taxonomy. Noncurrent liabilities are expected to be paid after one year or beyond the normal operating cycle, if longer.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GoodwillWrittenOffRelatedToSaleOfBusinessUnit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeDefinedBenefitPlansAdjustmentNetOfTaxPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_RevolvingCreditFacilitiesThreeMonthsOrLessNet">
+    <definition>The net cash inflow (outflow) on the revolving credit facilities for borrowings having original maturities of three months or less are reported net in this item.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NotionalAmountOfForeignCurrencyDerivatives">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="yum_AcquisitionsAndDisposalsOfInvestments">
+    <definition>Cash flow disclosure related to acquisitions and disposals of investments, other than acquisitions or disposals of restaurants from/to franchisees.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AllowanceForNotesAndLoansReceivableNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CostOfGoodsSoldOverhead">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+</DefinitionAndReference>

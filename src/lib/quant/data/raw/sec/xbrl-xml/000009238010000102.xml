@@ -1,0 +1,982 @@
+<DefinitionAndReference>
+  <Element Id="us-gaap_AccountsPayable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtInstrumentInterestRateStatedPercentage">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfRestructuringAndRelatedCostsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_ScheduleOfDerivativeInstrumentsInCashFlowHedgingRelationshipsGainLossInStatementOfFinancialPerformanceTextBlock">
+    <definition>Schedule of the location and amount of gains and losses reported in the statement of financial performance (or when applicable, the statement of financial position, for example, gains and losses initially recognized in other comprehensive income) on derivative instruments designated and qualifying as hedging instruments in cash flow hedges.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_NonCashCollateralPledgedAggregateFairValue">
+    <definition>The aggregate fair value of assets (non-cash) pledged, at the end of the reporting period, as collateral for oustanding derivative instruments with credit-risk-related contingent features.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RepaymentsOfOtherShortTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromPaymentsForOtherFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ComprehensiveIncomeNoteTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_TotalOtherExpensesIncome">
+    <definition>The aggregate amount of all remaining items that are excluded from the normal operations of the business, including interest expense, interest income, interest capitalized, and other nonoperating gains, losses, income, and expenses.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FuelDerivativeInstruments">
+    <definition>The unrealized gains and losses (net) recognized in earnings during the period, representing (a) the amount of hedge ineffectiveness from derivative instruments designated and qualifying as hedging instruments, and (b) the change in the market value of derivative instruments either not designated as hedges or that did not qualify for hedge accounting</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeAssetDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueAssetsMeasuredOnRecurringBasisFuelDerivativesOptionContractsRecordedAsNetLiability">
+    <definition>The asset fair value of financial contracts between two parties, the buyer and the seller of the option, where the buyer has the right but not the obligation to buy/sell an agreed quantity of a particular commodity or financial instrument from the seller of the option at a certain time for a certain price. The seller is obligated to buy/sell the asset a the strike price if the buyer exercises the option. Recorded as a net liability in the Condensed Consolidated Balance Sheet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_AuctionRateSecuritiesLowerRemainingMaturityRange">
+    <definition>The low end of the range of time remaining until maturity for auction rate securities held.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_VolumeOfFuelHedgingTextBlock">
+    <definition>Disclosure of the volume of fuel hedging for the current year (including current and prior period actuals), as well as for future periods.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_PaymentsOfLongTermDebtAndCapitalLeaseObligations">
+    <definition>The cash outflow for debt and for leases meeting the criteria for capitalization, initially having maturity due after one year or beyond the normal operating cycle, if longer.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CollateralAlreadyPostedAggregateFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxAssetsNetCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_CashCollateralReceivedFromProvidedToFuelDerivativeCounterparties">
+    <definition>The net change during the reporting period in the amount of cash held either as collateral directly or provided to third parties associated with derivative instruments. Upon the occurance of any specified triggering event or condition associated with the derivative, these amounts can be utilized to recover all or a portion of the amounts due or payable under the derivative.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_ProgramDevelopmentAgreementMaximumExpenditureReimbursement">
+    <definition>The agreed upon maximum amount of reimbursement to be received for Company expenditures made related to scheduled construction. The expenditures have been made prior to, but will ultimately be reimbursed through, subsequent bond issuance.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_PassThroughCertificatesFairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption or as a parenthetical disclosure. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. The element may be used in both the balance sheet and disclosure in the same submission. Fair value of pass through certificates at the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_TermLoanAgreementDueForFairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption or as a parenthetical disclosure. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. The element may be used in both the balance sheet and disclosure in the same submission. Fair value of the term loan agreement due 2020 at the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherNonoperatingIncomeExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RepaymentsOfLinesOfCredit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueLiabilitiesMeasuredOnRecurringBasisFuelDerivativesOptionContractsRecordedAsNetAsset">
+    <definition>The liability fair value of financial contracts between two parties, the buyer and the seller of the option, where the buyer has the right but not the obligation to buy/sell an agreed quantity of a particular commodity or financial instrument from the seller of the option at a certain time for a certain price. The seller is obligated to buy/sell the asset a the strike price if the buyer exercises the option. Recorded as a net asset in the Condensed Consolidated Balance Sheet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Assets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_JetFuelConsumptionPercentageCoveredByHedges">
+    <definition>Jet fuel consumption covered by fuel derivatives instruments as a percentage of total jet fuel consumption.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AvailableForSaleSecuritiesGrossUnrealizedLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueMeasuredOnRecurringBasisOtherAvailableForSaleSecurities">
+    <definition>Securities investments which are held as available-for-sale and are not disclosed elsewhere in the table.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_AuctionRateSecuritiesClassifiedAsTradingSecurities">
+    <definition>Securities that are debt instruments (corporate or municipal bonds) that typically have long-term nominal maturities for which the interest rate is reset through an auction process. It could also refer to a preferred stock for which the dividend is reset through the same type of auction process. Classified as trading securities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_InvestmentGradeRatingFairValueOfFuelDerivativeLevelAtWhichCashIsReceived">
+    <definition>If credit rating is investment grade, description of the circumstances in which credit-risk-related contingent features (cash received from counterparty) could be triggered in derivative instruments that are in a net liability position at the end of the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_AuctionRateSecuritiesSoldAtParAfterFailedAuctions">
+    <definition>Auction Rate securities sold at par after failed auctions during 1Q08.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_OtherComprehensiveIncomeUnrealizedGainLossOnFuelDerivativesArisingDuringPeriodNetOfTax">
+    <definition>Change in accumulated gains and losses from fuel derivative instruments designated and qualifying as the effective portion of cash flow hedges, net of tax effect. The after tax effect change includes an entity's share of an equity investee's increase (decrease) in deferred hedging gains or losses.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsGainLossRecognizedInIncomeNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_ScheduleOfEarningsPerShareBasicAndDilutedByCommonClassTextBlock">
+    <definition>This element may be used to capture the complete disclosure pertaining to an entity's basic and diluted earnings per share.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WorkersCompensationLiabilityCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeAssetNotDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForProceedsFromOtherInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FrenchCreditAgreementsDueForFairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption or as a parenthetical disclosure. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. The element may be used in both the balance sheet and disclosure in the same submission. Fair value of French credit agreements due 2012 at the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_TotalNumberOfEmployeesElectedToParticipate">
+    <definition>Represents the total number of employees who elected to participate in Freedom '09, the one-time voluntary early retirement program.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FrenchCreditAgreementsDue2017FairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption or as a parenthetical disclosure. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. The element may be used in both the balance sheet and disclosure in the same submission. Fair value of French credit agreements due 2017 at the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDividendsPayableTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeFinancialInstrumentsLiabilitiesFairValueDisclosure">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_NumberOfCreditsRequiredToEarnAwardForFreeTravel">
+    <definition>Represents the total number of credits required to earn an award for free travel, earned by Customers for flights taken on Southwest Airlines.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_ScheduleOfDerivativeInstrumentsNotInCashFlowHedgingRelationshipsGainLossInStatementOfFinancialPerformanceTextBlock">
+    <definition>Schedule of the location and amount of gains and losses reported in the statement of financial performance (or when applicable, the statement of financial position, for example, gains and losses initially recognized in other comprehensive income) on derivative instruments not designated and qualifying as hedging instruments in cash flow hedges.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityPublicFloat">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_VolumeOfFuelHedged">
+    <definition>Jet fuel commodity hedged in a derivative instrument whose primary underlying risk is tied to commodity prices.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisNetAssetAndLiabilityValue">
+    <definition>This element represents net assets and liabilities measured at fair value using significant unobservable inputs (Level 3) which is required for reconciliation purposes of beginning and ending balances.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_BusinessAcquisitionDateOfAcquisitionAgreement">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentPeriodEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCentralIndexKey">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DepreciationAndAmortization">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueNetAssetsAndLiabilitiesMeasuredOnRecurringBasisChangeInUnrealizedGainLossIncludedInOtherIncome">
+    <definition>This item represents the amount of the total change in unrealized (holding) gains or losses for the period which are included in the statement of income (or changes in net assets) in other income. Such unrealized (holding) gains or losses relate to those assets and liabilities still held at the reporting date for which fair value is measured on a recurring basis using significant unobservable inputs (Level 3).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueDisclosuresTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GainLossOnComponentsExcludedFromAssessmentOfPriceRiskCashFlowHedgeEffectiveness">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCurrentReportingStatus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_OtherComprehensiveIncomeUnrealizedGainLossOnInterestRateDerivativesArisingDuringPeriodNetOfTax">
+    <definition>Change in accumulated gains and losses from interest rate derivative instruments designated and qualifying as the effective portion of cash flow hedges, net of tax effect. The after tax effect change includes an entity's share of an equity investee's increase (decrease) in deferred hedging gains or losses.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_BusinessCombinationDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromLinesOfCredit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfSharesOutstandingBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_PercentageOfCapacityReduction">
+    <definition>Represents the percentage by which the Company has decided to reduce its flying capacity. The one-time voluntary early retirement program was offered in order to right-size headcount in conjunction with the Company's decision to reduce its capacity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_NotesDue2016FairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption or as a parenthetical disclosure. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. The element may be used in both the balance sheet and disclosure in the same submission. Fair value of 5.75% notes due 2016 at the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisNetAssetAndLiabilitySales">
+    <definition>This element represents sales which have taken place during the period in relation to net assets and liabilities measured at fair value on a recurring basis using unobservable inputs (Level 3).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PriceRiskCashFlowHedgeUnrealizedGainLossToBeReclassifiedDuringNext12Months">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisNetAssetAndLiabilityGainLossIncludedInOtherComprehensiveIncome">
+    <definition>This element represents total gains or losses for the period (realized and unrealized), arising from net assets and liabilities measured at fair value on a recurring basis using unobservable inputs (Level 3), which are included in other comprehensive income (a separate component of shareholders' equity.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_NotesDue2012FairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption or as a parenthetical disclosure. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. The element may be used in both the balance sheet and disclosure in the same submission. Fair value of 6.5% notes due 2012 at the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueLiabilitiesMeasuredOnRecurringBasisTotalLiabilities">
+    <definition>Total fair market value of securities investments classified as liabilities as of the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueAssetsAndLiabilitiesMeasuredOnRecurringBasisUnobservableInputReconciliationTextBlock">
+    <definition>This element represents, for the fair value measurement of assets and liabilities using significant unobservable inputs (Level 3), a reconciliation of the beginning and ending balances, separately presenting changes during the period attributable to the following: (1) total gains or losses for the period (realized and unrealized), segregating gains or losses included in earnings (or changes in net assets) (2) purchases, sales, issuances, and settlements (net); and (3) transfers in and out of Level 3.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingExpenses">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncrementalCommonSharesAttributableToShareBasedPaymentArrangements">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TreasuryStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommitmentsAndContingenciesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_MaximumValuePerShareOfAirtranCommonStockProvidedByExchangeRatioAdjustmentMechanismInDollarsPerShare">
+    <definition>Represents the maximum value per share of the acquiree's common stock (based on the average share price of the Acquirer) provided by the exchange ratio adjustment mechanism.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativesPolicyTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdditionalPaidInCapitalCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueLiabilitiesMeasuredOnRecurringBasisFuelDerivativesSwapContractsRecordedAsNetLiability">
+    <definition>The liability fair value of forward-based contracts in which two parties agree to swap streams of payments over a specified period. The payment streams are based on an agreed-upon (or notional) principal amount. Recorded as a net liability in the Condensed Consolidated Balance Sheet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsAtCarryingValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueAssetsAndLiabilitiesMeasuredOnRecurringBasisTextBlock">
+    <definition>This element represents the disclosure related to assets and liabilities that are measured at fair value on a recurring basis. The disclosures include the fair value measurements at the reporting date by the level within the fair value hierarchy in which the fair value measurements in their entirety fall, segregating fair value measurements using quoted prices in active markets for identical assets (Level 1), significant other observable inputs (Level 2), and significant unobservable inputs (Level 3).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromIssuanceOfLongTermDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_OtherComprehensiveIncomeUnrealizedGainLossOnInterestRateDerivativesArisingDuringPeriodTax">
+    <definition>Tax effect on the change in accumulated gains and losses from interest rate derivative instruments designated and qualifying as the effective portion of cash flow hedges. Includes an entity's share of an equity investee's increase (decrease) in deferred hedging gains or losses.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccruedVacationCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FrequentFlyerProgramPolicyTextBlock">
+    <definition>Describes the company's frequent flyer program accounting policy. Includes explanation for accruing partially earned frequent flyer awards.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueAssetsMeasuredOnRecurringBasisFuelDerivativesSwapContractsRecordedAsNetAsset">
+    <definition>The asset fair value of forward-based contracts in which two parties agree to swap streams of payments over a specified period. The payment streams are based on an agreed-upon (or notional) principal amount. Recorded as a net asset in the Condensed Consolidated Balance Sheet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PassengerRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_TermLoanAgreementBDueForFairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption or as a parenthetical disclosure. This element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. The element may be used in both the balance sheet and disclosure in the same submission. Fair value of the term loan agreement due 2019, at 6.84%, at the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_DebtInstrumentMaturityDateYear">
+    <definition>Date when the debt instrument is scheduled to be fully repaid, which may be presented in a variety of ways (year, month and year, day, month and year, quarter, etc.).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_TargetAggregateValueOfMergerConsiderationWhenExchangeRatioIsAdjustedAndAdditionalConsiderationIsRequiredInDollarsPerShare">
+    <definition>Represents the target aggregate value of Merger consideration, comprised of the adjusted exchange ratio when the average price threshold is not met, and an additional amount of consideration delivered at the election of the Acquirer. This consideration may be an additional amount of cash, an additional number (or fraction) of shares of the Acquirer's common stock, or a combination of both.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_SalariesWagesAndBenefits">
+    <definition>Expenditures for salaries, including payroll tax expense, compensation, postemployment and benefit-related expenses not elsewhere specified in the taxonomy (such as health plan, profit sharing, workers compensation, incentives, other fringe benefits and perquisites) incurred in the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_NotesDue2014FairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption or as a parenthetical disclosure. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. The element may be used in both the balance sheet and disclosure in the same submission. Fair value of 5.25% notes due 2014 at the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_CashCollateralDepositsDueToOrFromThirdPartiesAndNetUnrealizedLossesTextBlock">
+    <definition>Disclosure of cash collateral deposits provided to or from a counterparty, due to or from third parties for settled fuel contracts, and net unrealized gains/losses from fuel hedges, net of tax, for fuel derivative instruments and hedging activities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_PaymentsForProceedsFromOtherOperatingActivities">
+    <definition>Net increases or decreases in cash from operating activities not otherwise defined in the taxonomy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_ResidualValuesPercentOfOriginalCostPriorToChange">
+    <definition>Represents the percent of original cost, prior to the change in estimate, on which the residual values of the Company's remaining owned 737-300 and 737-500 aircraft are based.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeLiabilityNotDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Revenues">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInOperatingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_InvestmentGradeRatingFairValueOfFuelDerivativeLevelAtWhichNonCashCollateralIsPledged">
+    <definition>If credit rating is investment grade, description of the circumstances in which credit-risk-related contingent features (noncash collateral pledged to counterparty) could be triggered in derivative instruments that are in a net liability position at the end of the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsPayableAndAccruedLiabilitiesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_NonInvestmentGradeRatingFairValueOfFuelDerivativeLevelAtWhichNonCashCollateralIsPledged">
+    <definition>If credit rating is non-investment grade, description of the circumstances in which credit-risk-related contingent features (noncash collateral pledged to counterparty) could be triggered in derivative instruments that are in a net liability position at the end of the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_LandingFeesAndOtherRentals">
+    <definition>Direct costs incurred at airports in which the Company conducts flight operations. The costs primarily consist of fees paid to the airport authority for takeoff and landing, gate space and facilities, allocations of common space such as security and other terminal costs, and fuel storage facilities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_DepositsOnFlightEquipmentPurchaseContracts">
+    <definition>Carrying amount at the balance sheet date of deposits made to the manufacturer for new flight equipment still under construction. Includes construction costs to date and capitalized interest for assets being constructed that are not ready to be placed into service.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LongTermDebtCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_CollateralAlreadyPostedAggregateFairValueCurrent">
+    <definition>Total cash that is already posted, at the end of the reporting period, as current collateral for derivative instruments with credit-risk-related contingent features.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_PrepaidExpensesAndOtherCurrentAssets">
+    <definition>Sum of the amounts paid in advance for capitalized costs that will be expensed with the passage of time or the occurrence of a triggering event, as well as current assets not separately disclosed in the balance sheet due to materiality considerations. Amounts will be charged against earnings within one year or the normal operating cycle, if longer.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_OtherComprehensiveIncomeChangesInFairValueNetOfTax">
+    <definition>Change in accumulated gains and losses from derivative instrument designated and qualifying as the effective portion of cash flow hedges, net of tax effect. The after tax effect change includes an entity's share of an equity investee's increase (decrease) in deferred hedging gains or losses. Also includes changes in fair value related to defined contribution plans and available for sale securities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_AccountsAndOtherReceivables">
+    <definition>Amount due from customers, clients, other third parties, or arising from other transactions not otherwise specified in the taxonomy, for goods or services (including trade receivables) that have been delivered or sold in the normal course of business, reduced to the estimated net realizable fair value by an allowance established by the entity of the amount it deems uncertain of collection. Primarily consists of amounts due from credit card companies associated with sales of tickets for future travel and amounts due from counterparties associated with fuel derivative instruments that have settled. Carrying amounts are due as of the balance sheet date and are expected to be collected within one year of the balance sheet date (or the normal operating cycle, whichever is longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeLiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_AverageSharePriceThresholdIfNotMetAtWhichExchangeRatioIsAdjustedAndAdditionalConsiderationIsRequiredInDollarsPerShare">
+    <definition>Represents the threshold under which the average closing price is less, at which the exchange ratio will be adjusted. The average closing price, or average share price, of the Acquirer's common stock is determined by the 20 consecutive trading day period ending on (and including) the third trading day prior to the closing of the Merger. When the average share price is less than this threshold, the Acquirer must deliver, at its election, an additional amount of consideration.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToAcquireShortTermInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesAndStockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_NetUnrealizedLossesFromFuelHedgesNetOfTax">
+    <definition>Accumulated gains and losses from derivative instrument designated and qualifying as the effective portion of cash flow hedges, net of tax effect.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_IncreaseDecreaseInOtherCurrentOperatingAssets">
+    <definition>The net change during the reporting period in other current operating assets not otherwise defined in the taxonomy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToAcquirePropertyPlantAndEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestCostsCapitalized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_CurrentFiscalYearEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_GroundPropertyAndEquipment">
+    <definition>Carrying amount at the balance sheet date for long-lived physical assets used in the normal conduct of business and not intended for resale. This can include land, physical structures, machinery, vehicles, furniture, computer equipment, construction in progress, and similar items. Amount does not include depreciation, and excludes flight equipment.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_CashCollateralDueToCounterpartiesIfCreditRatingIsNonInvestmentGrade">
+    <definition>Amount of cash collateral that would have been required to be provided to counterparty if Southwest credit rating were non-investment grade, based on value of interest derivative instruments that were held with that counterparty at the end of the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestExpenseDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_DateOfHireForEligibleEmployees">
+    <definition>Represents the date before which employees must be hired, in order to be eligible to participate in the one-time voluntary early retirement program.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredCompensationCashBasedArrangementsLiabilityCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_DeferredGainsFromSaleAndLeasebackOfAircraft">
+    <definition>The carrying amount of gains realized from the sale and leaseback of flight equipment that have been previously deferred and are being amortized into earnings over the life of the associated flight equipment. Amounts are not expected to be recognized within one year (or the normal operating cycle, if longer).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_CollateralAlreadyPostedAggregateFairValueNoncurrent">
+    <definition>Total cash that is already posted, at the end of the reporting period, as noncurrent collateral for derivative instruments with credit-risk-related contingent features.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CargoAndFreightRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_OtherComprehensiveIncomeUnrealizedGainLossOnFuelDerivativesArisingDuringPeriodTax">
+    <definition>Tax effect on the change in accumulated gains and losses from fuel derivative instruments designated and qualifying as the effective portion of cash flow hedges. Includes an entity's share of an equity investee's increase (decrease) in deferred hedging gains or losses.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueMeasuredOnRecurringBasisUsTreasurySecurities">
+    <definition>This category includes information about debt securities issued by the United States Department of the Treasury and backed by the United States government. Such securities primarily consist of treasury bills (short-term maturities - one year or less), treasury notes (intermediate term maturities - two to ten years), and treasury bonds (long-term maturities - ten to thirty years).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityFilerCategory">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeLiabilityDesignatedAsHedgingInstrumentFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisNetAssetAndLiabilitySettlements">
+    <definition>This element represents settlements (net) which have taken place during the period in relation to net assets and liabilities measured at fair value on a recurring basis using unobservable inputs (Level 3).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_ScheduleOfFairValuesOfFuelDerivativesAmountsPostedAsCollateralAndCollateralPostingThresholdsTextBlock">
+    <definition>Disclosure of the agreements the Company had with counterparties in which cash deposits/receipts and/or pledged aircraft are required to be posted whenever the net fair value of derivatives associated with those counterparties exceeds specific thresholds. Includes the fair values of fuel derivatives, amounts posted as collateral, and applicable collateral posting threshold amounts at which such postings are triggered.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsAndHedgingActivitiesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherRestructuringCosts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_ParticipantsLastDayOfWorkLatest">
+    <definition>Represents the latest date of participants' last day of work, as per the one-time voluntary early retirement program.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_MergerAgreementTerminationFee">
+    <definition>The Merger Agreement provides that, upon termination of the Merger Agreement under specified circumstances, the subsidiary may be required to pay to the Company a termination fee.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_NumeratorOfExchangeRatioWhenAverageSharePriceThresholdIsNotMetAndAdditionalConsiderationIsRequiredInDollarsPerShare">
+    <definition>The adjusted numerator of the exchange ratio when the average share price threshold is not met. This numerator is divided by the average share price, rounded to the nearest thousandth, to determine the adjusted exchange ratio at which each outstanding share of the acquiree's common stock will be converted into the right to receive shares of the acquirer's common stock. When the average share price threshold is not met, the Acquirer must deliver, at its election, an additional amount of consideration.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredTaxLiabilitiesNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestRateDerivativeAssetsAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareDiluted">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_AmendmentFlag">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InvestmentIncomeInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_MinimumValuePerShareOfAirtranCommonStockProvidedByExchangeRatioAdjustmentMechanismInDollarsPerShare">
+    <definition>Represents the minimum value per share of the acquiree's common stock (based on the average share price of the Acquirer) provided by the exchange ratio adjustment mechanism.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_NotesDueForFairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption or as a parenthetical disclosure. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. The element may be used in both the balance sheet and disclosure in the same submission. Fair value of 10.5% Note due 2011 at the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_ParticipantsLastDayOrWorkEarliest">
+    <definition>Represents the earliest date of participants' last day of work, as per the one-time voluntary early retirement program.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsGainLossReclassifiedFromAccumulatedOCIIntoIncomeEffectivePortionNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_ChangeInAccountingEstimateFinancialEffectOnNetIncome">
+    <definition>Represents the decrease in net income, including the impact of profit sharing and income taxes, resulting from the change in the estimated residual values of the Company's remaining owned 737-300 and 737-500 aircraft.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccruedLiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_ResidualValuesPercentOfOriginalCostSubsequentToChange">
+    <definition>Represents the percent of original cost, subsequent to the change in estimate, on which the residual values of the Company's remaining owned 737-300 and 737-500 aircraft are based.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_AmortizationOfDeferredGainsOnSaleAndLeasebackOfAircraft">
+    <definition>The current period amortization of gains realized from the sale and leaseback of flight equipment. The gains have been previously deferred and are being amortized into earnings over the life of the associated flight equipment.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OperatingIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_GainLossOnPriceRiskHedgeIneffectivenessAndGainLossOnPriceRiskDerivativeInstrumentsNotDesignatedAsHedgingInstruments">
+    <definition>Cumulative net gain (loss) recognized in earnings during the reporting period due to the ineffectiveness on price risk cash flow and fair value hedges, plus the amount of gain (loss) recognized in earnings in the period from the increase (decrease) in fair value of price risk derivatives not designated as hedging instruments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_DebenturesDue2027FairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption or as a parenthetical disclosure. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. The element may be used in both the balance sheet and disclosure in the same submission. Fair value of 7.375% debentures due 2027 at the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromStockPlans">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_AuctionRateSecuritiesFailedAuction">
+    <definition>Securities that are debt instruments (corporate or municipal bonds) that typically have long-term nominal maturities for which the interest rate is reset through an auction process. This value is as of the first failed auctions beginning as of 1Q08.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_MaintenanceMaterialsAndRepairs">
+    <definition>Maintenance costs incurred and directly related to services rendered by an entity during the reporting period. Includes the cost of scheduled inspections and repairs and routine maintenance costs for all aircraft and engines.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentType">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_CashConsiderationPaidPerShareOfAcquireesStock">
+    <definition>The cash payment per share of the acquiree's common stock (including previously unvested restricted shares), without interest, as per the terms and conditions of the Merger Agreement. This payment is in addition to the right to receive shares of the Acquirer's common stock, for each outstanding share of the subsidiary's common stock, based on the defined conversion ratio.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeNetLiabilityPositionAggregateFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalPeriodFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfDerivativeInstrumentsInStatementOfFinancialPositionFairValueTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherSalesRevenueNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentGross">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeTaxesPaid">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueAssetsMeasuredOnRecurringBasisFuelDerivativesOptionContractsRecordedAsNetAsset">
+    <definition>The asset fair value of financial contracts between two parties, the buyer and the seller of the option, where the buyer has the right but not the obligation to buy/sell an agreed quantity of a particular commodity or financial instrument from the seller of the option at a certain time for a certain price. The seller is obligated to buy/sell the asset a the strike price if the buyer exercises the option. Recorded as a net asset in the Condensed Consolidated Balance Sheet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAirTrafficLiability">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsOfDividends">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PropertyPlantAndEquipmentNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FuelCosts">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeFairValueOfDerivativeLiability">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueMeasuredOnRecurringBasisCertificatesOfDeposit">
+    <definition>A certificate of deposit ("CD") is a short to medium-term, FDIC insured investment available at banks and savings and loan institutions. Customers agree to lend money to the institutions for a certain amount of time. In exchange for doing so, the customers is paid a predetermined rate of interest. Often, banks will charge a penalty fee if the money is withdrawn from the CD before it matures.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccountsPayableAndAccruedLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RestructuringAndRelatedActivitiesInitiationDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_InventoriesOfPartsAndSuppliesAtCost">
+    <definition>Inventories primarily consist of flight equipment expendable parts, materials, aircraft fuel, and supplies. All of these items are carried at average cost, less an allowance for obsolescence. These items are generally charged to expense when issued for use and excludes amounts expected to remain on hand past one year or one operating cycle, if longer.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_NonInvestmentGradeRatingFairValueOfFuelDerivativeLevelAtWhichCashIsReceived">
+    <definition>If credit rating is non-investment grade, description of the circumstances in which credit-risk-related contingent features (cash received from counterparty) could be triggered in derivative instruments that are in a net liability position at the end of the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisNetAssetAndLiabilityPurchases">
+    <definition>This element represents purchases which have taken place during the period in relation to net assets and liabilities measured at fair value on a recurring basis using unobservable inputs (Level 3).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetsCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInAccountsAndOtherReceivables">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_DueToThirdPartiesForSettledFuelContracts">
+    <definition>Amount due to third parties for settled fuel contracts as of the end of the period reported, recorded in Accrued liabilities on the balance sheet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeInstrumentsGainLossRecognizedInOtherComprehensiveIncomeEffectivePortionNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalYearFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_LeasebackTransactionGrossProceeds">
+    <definition>The gross proceeds received from the asset(s) sold in connection with the transaction involving the sale of property to another party and the lease back to the seller.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_NonInvestmentGradeRatingFairValueOfFuelDerivativeLevelAtWhichCashIsProvided">
+    <definition>If credit rating is non-investment grade, description of the circumstances in which credit-risk-related contingent features (cash provided to counterparty) could be triggered in derivative instruments that are in a net liability position at the end of the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_AverageSharePriceThresholdIfExceededAtWhichExchangeRatioIsAdjustedInDollarsPerShare">
+    <definition>Represents the threshold over which the average closing price is greater, at which the exchange ratio will be adjusted. The average closing price, or average share price, of the Acquirer's common stock is determined by the 20 consecutive trading day period ending on (and including) the third trading day prior to the closing of the Merger.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ConstructionInProgressGross">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestRateDerivativeLiabilitiesAtFairValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredAirTrafficRevenue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_NumeratorOfExchangeRatioWhenAverageSharePriceThresholdIsExceededInDollarsPerShare">
+    <definition>The adjusted numerator of the exchange ratio when the average share price threshold is exceeded. This numerator is divided by the average share price, rounded to the nearest thousandth, to determine the adjusted exchange ratio at which each outstanding share of the acquiree's common stock will be converted into the right to receive shares of the acquirer's common stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DerivativeFairValueOfDerivativeAsset">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ComprehensiveIncomeNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeLossNetOfTaxPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_AccumulatedOtherComprehensiveIncomeLossNetOfTaxTextBlock">
+    <definition>Represents the accumulated change in equity from transactions and other events and circumstances from non-owner sources, net of tax effect, at period end. Excludes Net Income (Loss), and accumulated changes in equity from transactions resulting from investments by owners and distributions to owners. Includes unrealized gains and losses on certain investments in debt and equity securities as well as changes in the fair value of derivatives related to the effective portion of a designated cash flow hedge.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueOfFinancialInstrumentsPolicyTextBlock">
+    <definition>Describes an entity's accounting policy for determining the fair value of its financial instruments.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_ComponentsOfComprehensiveIncomeTextBlock">
+    <definition>Disclosure of the components of comprehensive income</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfNewAccountingPronouncementsAndChangesInAccountingPrinciplesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherAssetsNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueLiabilitiesMeasuredOnRecurringBasisFuelDerivativesSwapContractsRecordedAsNetAsset">
+    <definition>The liability fair value of forward-based contracts in which two parties agree to swap streams of payments over a specified period. The payment streams are based on an agreed-upon (or notional) principal amount. Recorded as a net asset in the Condensed Consolidated Balance Sheet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_AccruedLiabilitiesDisclosureTextBlock">
+    <definition>Description and amounts of accrued liabilities disclosure at the end of the reporting period. This element may be used for the entire disclosure as a single block of text.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_OtherComprehensiveIncomeReclassificationAdjustmentToEarningsNetOfTax">
+    <definition>Net of tax effect of the reclassification adjustment for accumulated gains and losses from derivative instrument designated and qualifying as the effective portion of cash flow hedges included in accumulated comprehensive income that was realized in net income during the period. Also includes reclassification adjustments related to defined contribution plans and available for sale securities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FlightEquipment">
+    <definition>Long-lived, depreciable assets used in the Company's principle business operations. Includes aircraft owned and on capital lease, as well as all capitalized improvements. Amounts are stated at cost.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherCostAndExpenseOperating">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockDividendsPerShareDeclared">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccruedLiabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CustomerAdvancesAndDepositsCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityRegistrantName">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_MergerAgreementTerminationDate">
+    <definition>The Merger Agreement provides that if the merger is not consummated on or before this specified date, or extended by mutual agreement of both parties, the agreement is terminated.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueLiabilitiesMeasuredOnRecurringBasisFuelDerivativesOptionContractsRecordedAsNetLiability">
+    <definition>The liability fair value of financial contracts between two parties, the buyer and the seller of the option, where the buyer has the right but not the obligation to buy/sell an agreed quantity of a particular commodity or financial instrument from the seller of the option at a certain time for a certain price. The seller is obligated to buy/sell the asset a the strike price if the buyer exercises the option. Recorded as a net liability in the Condensed Consolidated Balance Sheet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestPaidNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ShortTermInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_AuctionRateSecuritiesClassifiedAsAvailableForSaleSecurities">
+    <definition>Securities that are debt instruments (corporate or municipal bonds) that typically have long-term nominal maturities for which the interest rate is reset through an auction process. It could also refer to a preferred stock for which the dividend is reset through the same type of auction process. Classified as available for sale securities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_AircraftRental">
+    <definition>Expense incurred related to the lease of aircraft from outside third parties that are used in the Company's business operations.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromSaleOfShortTermInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccruedRentCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueByBalanceSheetGroupingTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_ChangeInAccountingEstimateFinancialEffectOnDepreciationExpense">
+    <definition>Represents the increase in depreciation expense, excluding the impact of profit sharing and income taxes, resulting from the change in the estimated residual values of the Company's remaining owned 737-300 and 737-500 aircraft.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_TermLoanAgreementDue2019FairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption or as a parenthetical disclosure. This element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. The element may be used in both the balance sheet and disclosure in the same submission. Fair value of the term loan agreement due 2019, at 6.64%, at the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_FairValueAssetsMeasuredOnRecurringBasisCashAndCashEquivalents">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityWellKnownSeasonedIssuer">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherAccruedLiabilitiesCurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueAssetsMeasuredOnRecurringBasisFuelDerivativesSwapContractsRecordedAsNetLiability">
+    <definition>The asset fair value of forward-based contracts in which two parties agree to swap streams of payments over a specified period. The payment streams are based on an agreed-upon (or notional) principal amount. Recorded as a net liability in the Condensed Consolidated Balance Sheet.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RetainedEarningsAccumulatedDeficit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedDepreciationDepletionAndAmortizationPropertyPlantAndEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_StockConsiderationPaidPerShareOfAcquireesStock">
+    <definition>The ratio, as per the terms and conditions of the Merger Agreement, at which each outstanding share of the acquiree's common stock (including previously unvested restricted shares) will be converted into the right to receive shares of the acquirer's common stock, subject to certain adjustments (as defined in the Merger Agreement).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityVoluntaryFilers">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_AuctionRateSecuritiesHigherRemainingMaturityRange">
+    <definition>The high end of the range of time remaining until maturity for auction rate securities outstanding.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_NotesDue2017FairValueDisclosure">
+    <definition>This element represents the portion of the balance sheet assertion valued at fair value by the entity whether such amount is presented as a separate caption or as a parenthetical disclosure. Additionally, this element may be used in connection with the fair value disclosures required in the footnote disclosures to the financial statements. The element may be used in both the balance sheet and disclosure in the same submission. Fair value of 5.125% notes due 2017 at the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueMeasurementWithUnobservableInputsReconciliationRecurringBasisNetAssetAndLiabilityGainLossIncludedInEarnings">
+    <definition>This element represents total gains or losses for the period (realized and unrealized), arising from net assets and liabilities measured at fair value on a recurring basis using unobservable inputs (Level 3), which are included in earnings or resulted in a change in net asset value.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DeferredIncomeTaxExpenseBenefit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCommonStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_FairValueAssetsMeasuredOnRecurringBasisTotalAssets">
+    <definition>Total fair market value of securities investments classified as assets as of the balance sheet date.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_OtherComprehensiveIncomeUnrealizedGainLossOtherNetOfTax">
+    <definition>Change in accumulated gains and losses from sources other than the effective portion of cash flow hedges.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_OtherComprehensiveIncomeUnrealizedGainLossOtherTax">
+    <definition>For each period presented, the tax effect of the net gain or loss recognized in other comprehensive income from sources other than the effective portion of cash flow hedges.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="luv_InvestmentGradeRatingFairValueOfFuelDerivativeLevelAtWhichCashIsProvided">
+    <definition>If credit rating is investment grade, description of the circumstances in which credit-risk-related contingent features (cash provided to counterparty) could be triggered in derivative instruments that are in a net liability position at the end of the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+</DefinitionAndReference>

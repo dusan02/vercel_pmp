@@ -1,0 +1,948 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xbrl
+  xml:lang="en-US"
+  xmlns="http://www.xbrl.org/2003/instance"
+  xmlns:dei="http://xbrl.sec.gov/dei/2024"
+  xmlns:ecd="http://xbrl.sec.gov/ecd/2024"
+  xmlns:iso4217="http://www.xbrl.org/2003/iso4217"
+  xmlns:link="http://www.xbrl.org/2003/linkbase"
+  xmlns:npg="http://ir.paramount.com/20250630"
+  xmlns:srt="http://fasb.org/srt/2024"
+  xmlns:us-gaap="http://fasb.org/us-gaap/2024"
+  xmlns:xbrldi="http://xbrl.org/2006/xbrldi"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <link:schemaRef xlink:href="npg-20250630.xsd" xlink:type="simple"/>
+    <context id="c-1">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+        </entity>
+        <period>
+            <startDate>2025-01-01</startDate>
+            <endDate>2025-06-30</endDate>
+        </period>
+    </context>
+    <context id="c-2">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+        </entity>
+        <period>
+            <instant>2025-07-31</instant>
+        </period>
+    </context>
+    <context id="c-3">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+        </entity>
+        <period>
+            <startDate>2025-04-01</startDate>
+            <endDate>2025-06-30</endDate>
+        </period>
+    </context>
+    <context id="c-4">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+        </entity>
+        <period>
+            <startDate>2024-06-04</startDate>
+            <endDate>2024-06-30</endDate>
+        </period>
+    </context>
+    <context id="c-5">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+        </entity>
+        <period>
+            <instant>2025-06-30</instant>
+        </period>
+    </context>
+    <context id="c-6">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+        </entity>
+        <period>
+            <instant>2024-12-31</instant>
+        </period>
+    </context>
+    <context id="c-7">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+        </entity>
+        <period>
+            <instant>2024-06-03</instant>
+        </period>
+    </context>
+    <context id="c-8">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+        </entity>
+        <period>
+            <instant>2024-06-30</instant>
+        </period>
+    </context>
+    <context id="c-9">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:CommonStockMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-03-31</instant>
+        </period>
+    </context>
+    <context id="c-10">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:AdditionalPaidInCapitalMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-03-31</instant>
+        </period>
+    </context>
+    <context id="c-11">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:TreasuryStockCommonMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-03-31</instant>
+        </period>
+    </context>
+    <context id="c-12">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:ReceivablesFromStockholderMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-03-31</instant>
+        </period>
+    </context>
+    <context id="c-13">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:RetainedEarningsMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-03-31</instant>
+        </period>
+    </context>
+    <context id="c-14">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:AccumulatedOtherComprehensiveIncomeMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-03-31</instant>
+        </period>
+    </context>
+    <context id="c-15">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+        </entity>
+        <period>
+            <instant>2025-03-31</instant>
+        </period>
+    </context>
+    <context id="c-16">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:CommonStockMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-06-30</instant>
+        </period>
+    </context>
+    <context id="c-17">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:AdditionalPaidInCapitalMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-06-30</instant>
+        </period>
+    </context>
+    <context id="c-18">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:TreasuryStockCommonMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-06-30</instant>
+        </period>
+    </context>
+    <context id="c-19">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:ReceivablesFromStockholderMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-06-30</instant>
+        </period>
+    </context>
+    <context id="c-20">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:RetainedEarningsMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-06-30</instant>
+        </period>
+    </context>
+    <context id="c-21">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:AccumulatedOtherComprehensiveIncomeMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-06-30</instant>
+        </period>
+    </context>
+    <context id="c-22">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:CommonStockMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-12-31</instant>
+        </period>
+    </context>
+    <context id="c-23">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:AdditionalPaidInCapitalMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-12-31</instant>
+        </period>
+    </context>
+    <context id="c-24">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:TreasuryStockCommonMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-12-31</instant>
+        </period>
+    </context>
+    <context id="c-25">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:ReceivablesFromStockholderMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-12-31</instant>
+        </period>
+    </context>
+    <context id="c-26">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:RetainedEarningsMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-12-31</instant>
+        </period>
+    </context>
+    <context id="c-27">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:AccumulatedOtherComprehensiveIncomeMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-12-31</instant>
+        </period>
+    </context>
+    <context id="c-28">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:CommonStockMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-06-03</instant>
+        </period>
+    </context>
+    <context id="c-29">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:AdditionalPaidInCapitalMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-06-03</instant>
+        </period>
+    </context>
+    <context id="c-30">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:TreasuryStockCommonMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-06-03</instant>
+        </period>
+    </context>
+    <context id="c-31">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:ReceivablesFromStockholderMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-06-03</instant>
+        </period>
+    </context>
+    <context id="c-32">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:RetainedEarningsMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-06-03</instant>
+        </period>
+    </context>
+    <context id="c-33">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:AccumulatedOtherComprehensiveIncomeMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-06-03</instant>
+        </period>
+    </context>
+    <context id="c-34">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:CommonStockMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-06-30</instant>
+        </period>
+    </context>
+    <context id="c-35">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:AdditionalPaidInCapitalMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-06-30</instant>
+        </period>
+    </context>
+    <context id="c-36">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:TreasuryStockCommonMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-06-30</instant>
+        </period>
+    </context>
+    <context id="c-37">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:ReceivablesFromStockholderMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-06-30</instant>
+        </period>
+    </context>
+    <context id="c-38">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:RetainedEarningsMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-06-30</instant>
+        </period>
+    </context>
+    <context id="c-39">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:StatementEquityComponentsAxis">us-gaap:AccumulatedOtherComprehensiveIncomeMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2024-06-30</instant>
+        </period>
+    </context>
+    <context id="c-40">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="srt:StatementScenarioAxis">srt:ScenarioForecastMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-08-07</instant>
+        </period>
+    </context>
+    <context id="c-41">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="srt:CounterpartyNameAxis">npg:SkydanceInvestorGroupMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:StatementScenarioAxis">srt:ScenarioForecastMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <startDate>2025-08-07</startDate>
+            <endDate>2025-08-07</endDate>
+        </period>
+    </context>
+    <context id="c-42">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="srt:CounterpartyNameAxis">npg:SkydanceInvestorGroupMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:RangeAxis">srt:MaximumMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:StatementScenarioAxis">srt:ScenarioForecastMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">npg:NewParamountClassBCommonStockMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <startDate>2025-08-07</startDate>
+            <endDate>2025-08-07</endDate>
+        </period>
+    </context>
+    <context id="c-43">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="srt:CounterpartyNameAxis">npg:SkydanceInvestorGroupMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:StatementScenarioAxis">srt:ScenarioForecastMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">npg:NewParamountClassBCommonStockMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-08-07</instant>
+        </period>
+    </context>
+    <context id="c-44">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="srt:CounterpartyNameAxis">npg:SkydanceInvestorGroupMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:StatementScenarioAxis">srt:ScenarioForecastMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-08-07</instant>
+        </period>
+    </context>
+    <context id="c-45">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="srt:CounterpartyNameAxis">npg:SkydanceInvestorGroupMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:RangeAxis">srt:MaximumMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:StatementScenarioAxis">srt:ScenarioForecastMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-08-07</instant>
+        </period>
+    </context>
+    <context id="c-46">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="srt:CounterpartyNameAxis">npg:SkydanceInvestorGroupMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:StatementScenarioAxis">srt:ScenarioForecastMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">npg:NewParamountClassBCommonStockMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <startDate>2025-08-07</startDate>
+            <endDate>2025-08-07</endDate>
+        </period>
+    </context>
+    <context id="c-47">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="srt:CounterpartyNameAxis">npg:HoldersOfParamountClassASharesOtherThanNAIEquityInvestorsMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:StatementScenarioAxis">srt:ScenarioForecastMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">us-gaap:CommonClassAMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <startDate>2025-08-07</startDate>
+            <endDate>2025-08-07</endDate>
+        </period>
+    </context>
+    <context id="c-48">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="srt:CounterpartyNameAxis">npg:HoldersOfParamountClassASharesOtherThanNAIEquityInvestorsMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:StatementScenarioAxis">srt:ScenarioForecastMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">npg:NewParamountClassBCommonStockMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-08-07</instant>
+        </period>
+    </context>
+    <context id="c-49">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="srt:CounterpartyNameAxis">npg:HoldersOfParamountClassBSharesOtherThanNAIEquityInvestorsMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:StatementScenarioAxis">srt:ScenarioForecastMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">us-gaap:CommonClassBMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <startDate>2025-08-07</startDate>
+            <endDate>2025-08-07</endDate>
+        </period>
+    </context>
+    <context id="c-50">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="srt:CounterpartyNameAxis">npg:HoldersOfParamountClassBSharesOtherThanNAIEquityInvestorsMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:StatementScenarioAxis">srt:ScenarioForecastMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">npg:NewParamountClassBCommonStockMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-08-07</instant>
+        </period>
+    </context>
+    <context id="c-51">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="srt:CounterpartyNameAxis">npg:NationalAmusementsInc.NAIMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:StatementScenarioAxis">srt:ScenarioForecastMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">npg:NewParamountClassACommonStockMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-08-07</instant>
+        </period>
+    </context>
+    <context id="c-52">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="srt:CounterpartyNameAxis">npg:NationalAmusementsInc.NAIMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:StatementScenarioAxis">srt:ScenarioForecastMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="us-gaap:StatementClassOfStockAxis">npg:NewParamountClassACommonStockMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <startDate>2025-08-07</startDate>
+            <endDate>2025-08-07</endDate>
+        </period>
+    </context>
+    <context id="c-53">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="srt:CounterpartyNameAxis">npg:SkydanceMediaLLCMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="srt:StatementScenarioAxis">srt:ScenarioForecastMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="dei:LegalEntityAxis">npg:ParamountGlobalMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <startDate>2025-08-07</startDate>
+            <endDate>2025-08-07</endDate>
+        </period>
+    </context>
+    <context id="c-54">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">npg:SeniorNotesAndSeniorDebenturesMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="dei:LegalEntityAxis">npg:ParamountGlobalMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-06-30</instant>
+        </period>
+    </context>
+    <context id="c-55">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">npg:A625JuniorSubordinatedDebenturesDue205710YearHybridMember</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="dei:LegalEntityAxis">npg:ParamountGlobalMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-06-30</instant>
+        </period>
+    </context>
+    <context id="c-56">
+        <entity>
+            <identifier scheme="http://www.sec.gov/CIK">0002041610</identifier>
+            <segment>
+                <xbrldi:explicitMember dimension="us-gaap:DebtInstrumentAxis">npg:A6375JuniorSubordinatedDebenturesDue2062Member</xbrldi:explicitMember>
+                <xbrldi:explicitMember dimension="dei:LegalEntityAxis">npg:ParamountGlobalMember</xbrldi:explicitMember>
+            </segment>
+        </entity>
+        <period>
+            <instant>2025-06-30</instant>
+        </period>
+    </context>
+    <unit id="shares">
+        <measure>shares</measure>
+    </unit>
+    <unit id="usd">
+        <measure>iso4217:USD</measure>
+    </unit>
+    <unit id="usdPerShare">
+        <divide>
+            <unitNumerator>
+                <measure>iso4217:USD</measure>
+            </unitNumerator>
+            <unitDenominator>
+                <measure>shares</measure>
+            </unitDenominator>
+        </divide>
+    </unit>
+    <unit id="subsidiary">
+        <measure>npg:subsidiary</measure>
+    </unit>
+    <unit id="number">
+        <measure>pure</measure>
+    </unit>
+    <unit id="vote">
+        <measure>npg:vote</measure>
+    </unit>
+    <dei:EntityCentralIndexKey contextRef="c-1" id="f-23">0002041610</dei:EntityCentralIndexKey>
+    <dei:AmendmentFlag contextRef="c-1" id="f-24">false</dei:AmendmentFlag>
+    <dei:CurrentFiscalYearEndDate contextRef="c-1" id="f-25">--12-31</dei:CurrentFiscalYearEndDate>
+    <dei:DocumentFiscalYearFocus contextRef="c-1" id="f-26">2025</dei:DocumentFiscalYearFocus>
+    <dei:DocumentFiscalPeriodFocus contextRef="c-1" id="f-27">Q2</dei:DocumentFiscalPeriodFocus>
+    <ecd:NonRule10b51ArrTrmntdFlag contextRef="c-3" id="f-28">false</ecd:NonRule10b51ArrTrmntdFlag>
+    <ecd:Rule10b51ArrTrmntdFlag contextRef="c-3" id="f-29">false</ecd:Rule10b51ArrTrmntdFlag>
+    <ecd:NonRule10b51ArrAdoptedFlag contextRef="c-3" id="f-30">false</ecd:NonRule10b51ArrAdoptedFlag>
+    <ecd:Rule10b51ArrAdoptedFlag contextRef="c-3" id="f-31">false</ecd:Rule10b51ArrAdoptedFlag>
+    <dei:DocumentType contextRef="c-1" id="f-1">10-Q</dei:DocumentType>
+    <dei:DocumentQuarterlyReport contextRef="c-1" id="f-2">true</dei:DocumentQuarterlyReport>
+    <dei:DocumentPeriodEndDate contextRef="c-1" id="f-3">2025-06-30</dei:DocumentPeriodEndDate>
+    <dei:DocumentTransitionReport contextRef="c-1" id="f-4">false</dei:DocumentTransitionReport>
+    <dei:EntityFileNumber contextRef="c-1" id="f-5">333-282985</dei:EntityFileNumber>
+    <dei:EntityRegistrantName contextRef="c-1" id="f-6">New Pluto Global, Inc.</dei:EntityRegistrantName>
+    <dei:EntityIncorporationStateCountryCode contextRef="c-1" id="f-7">DE</dei:EntityIncorporationStateCountryCode>
+    <dei:EntityTaxIdentificationNumber contextRef="c-1" id="f-8">99-3917985</dei:EntityTaxIdentificationNumber>
+    <dei:EntityAddressAddressLine1 contextRef="c-1" id="f-9">1515 Broadway</dei:EntityAddressAddressLine1>
+    <dei:EntityAddressCityOrTown contextRef="c-1" id="f-10">New York,</dei:EntityAddressCityOrTown>
+    <dei:EntityAddressStateOrProvince contextRef="c-1" id="f-11">NY</dei:EntityAddressStateOrProvince>
+    <dei:EntityAddressPostalZipCode contextRef="c-1" id="f-12">10036</dei:EntityAddressPostalZipCode>
+    <dei:CityAreaCode contextRef="c-1" id="f-13">212</dei:CityAreaCode>
+    <dei:LocalPhoneNumber contextRef="c-1" id="f-14">258-6000</dei:LocalPhoneNumber>
+    <dei:EntityCurrentReportingStatus contextRef="c-1" id="f-15">Yes</dei:EntityCurrentReportingStatus>
+    <dei:EntityInteractiveDataCurrent contextRef="c-1" id="f-16">Yes</dei:EntityInteractiveDataCurrent>
+    <dei:EntityFilerCategory contextRef="c-1" id="f-17">Non-accelerated Filer</dei:EntityFilerCategory>
+    <dei:EntitySmallBusiness contextRef="c-1" id="f-18">false</dei:EntitySmallBusiness>
+    <dei:EntityEmergingGrowthCompany contextRef="c-1" id="f-19">true</dei:EntityEmergingGrowthCompany>
+    <dei:EntityExTransitionPeriod contextRef="c-1" id="f-20">false</dei:EntityExTransitionPeriod>
+    <dei:EntityShellCompany contextRef="c-1" id="f-21">true</dei:EntityShellCompany>
+    <dei:EntityCommonStockSharesOutstanding contextRef="c-2" decimals="0" id="f-22" unitRef="shares">1000</dei:EntityCommonStockSharesOutstanding>
+    <us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax contextRef="c-3" decimals="0" id="f-32" unitRef="usd">0</us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax>
+    <us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax contextRef="c-1" decimals="0" id="f-33" unitRef="usd">0</us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax>
+    <us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax contextRef="c-4" decimals="0" id="f-34" unitRef="usd">0</us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax>
+    <us-gaap:OperatingIncomeLoss contextRef="c-3" decimals="0" id="f-35" unitRef="usd">0</us-gaap:OperatingIncomeLoss>
+    <us-gaap:OperatingIncomeLoss contextRef="c-1" decimals="0" id="f-36" unitRef="usd">0</us-gaap:OperatingIncomeLoss>
+    <us-gaap:OperatingIncomeLoss contextRef="c-4" decimals="0" id="f-37" unitRef="usd">0</us-gaap:OperatingIncomeLoss>
+    <us-gaap:OtherNonoperatingIncomeExpense contextRef="c-3" decimals="0" id="f-38" unitRef="usd">0</us-gaap:OtherNonoperatingIncomeExpense>
+    <us-gaap:OtherNonoperatingIncomeExpense contextRef="c-1" decimals="0" id="f-39" unitRef="usd">0</us-gaap:OtherNonoperatingIncomeExpense>
+    <us-gaap:OtherNonoperatingIncomeExpense contextRef="c-4" decimals="0" id="f-40" unitRef="usd">0</us-gaap:OtherNonoperatingIncomeExpense>
+    <us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest contextRef="c-3" decimals="0" id="f-41" unitRef="usd">0</us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest>
+    <us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest contextRef="c-1" decimals="0" id="f-42" unitRef="usd">0</us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest>
+    <us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest contextRef="c-4" decimals="0" id="f-43" unitRef="usd">0</us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest>
+    <us-gaap:IncomeTaxExpenseBenefit contextRef="c-3" decimals="0" id="f-44" unitRef="usd">0</us-gaap:IncomeTaxExpenseBenefit>
+    <us-gaap:IncomeTaxExpenseBenefit contextRef="c-1" decimals="0" id="f-45" unitRef="usd">0</us-gaap:IncomeTaxExpenseBenefit>
+    <us-gaap:IncomeTaxExpenseBenefit contextRef="c-4" decimals="0" id="f-46" unitRef="usd">0</us-gaap:IncomeTaxExpenseBenefit>
+    <us-gaap:NetIncomeLoss contextRef="c-3" decimals="0" id="f-47" unitRef="usd">0</us-gaap:NetIncomeLoss>
+    <us-gaap:NetIncomeLoss contextRef="c-1" decimals="0" id="f-48" unitRef="usd">0</us-gaap:NetIncomeLoss>
+    <us-gaap:NetIncomeLoss contextRef="c-4" decimals="0" id="f-49" unitRef="usd">0</us-gaap:NetIncomeLoss>
+    <us-gaap:EarningsPerShareDiluted
+      contextRef="c-3"
+      decimals="2"
+      id="f-50"
+      unitRef="usdPerShare">0</us-gaap:EarningsPerShareDiluted>
+    <us-gaap:EarningsPerShareBasic
+      contextRef="c-3"
+      decimals="2"
+      id="f-51"
+      unitRef="usdPerShare">0</us-gaap:EarningsPerShareBasic>
+    <us-gaap:EarningsPerShareBasic
+      contextRef="c-1"
+      decimals="2"
+      id="f-52"
+      unitRef="usdPerShare">0</us-gaap:EarningsPerShareBasic>
+    <us-gaap:EarningsPerShareDiluted
+      contextRef="c-1"
+      decimals="2"
+      id="f-53"
+      unitRef="usdPerShare">0</us-gaap:EarningsPerShareDiluted>
+    <us-gaap:EarningsPerShareDiluted
+      contextRef="c-4"
+      decimals="2"
+      id="f-54"
+      unitRef="usdPerShare">0</us-gaap:EarningsPerShareDiluted>
+    <us-gaap:EarningsPerShareBasic
+      contextRef="c-4"
+      decimals="2"
+      id="f-55"
+      unitRef="usdPerShare">0</us-gaap:EarningsPerShareBasic>
+    <us-gaap:WeightedAverageNumberOfSharesOutstandingBasic contextRef="c-3" decimals="0" id="f-56" unitRef="shares">1000</us-gaap:WeightedAverageNumberOfSharesOutstandingBasic>
+    <us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding contextRef="c-3" decimals="0" id="f-57" unitRef="shares">1000</us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding>
+    <us-gaap:WeightedAverageNumberOfSharesOutstandingBasic contextRef="c-1" decimals="0" id="f-58" unitRef="shares">1000</us-gaap:WeightedAverageNumberOfSharesOutstandingBasic>
+    <us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding contextRef="c-1" decimals="0" id="f-59" unitRef="shares">1000</us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding>
+    <us-gaap:WeightedAverageNumberOfSharesOutstandingBasic contextRef="c-4" decimals="0" id="f-60" unitRef="shares">1000</us-gaap:WeightedAverageNumberOfSharesOutstandingBasic>
+    <us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding contextRef="c-4" decimals="0" id="f-61" unitRef="shares">1000</us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding>
+    <us-gaap:NetIncomeLoss contextRef="c-3" decimals="0" id="f-62" unitRef="usd">0</us-gaap:NetIncomeLoss>
+    <us-gaap:NetIncomeLoss contextRef="c-1" decimals="0" id="f-63" unitRef="usd">0</us-gaap:NetIncomeLoss>
+    <us-gaap:NetIncomeLoss contextRef="c-4" decimals="0" id="f-64" unitRef="usd">0</us-gaap:NetIncomeLoss>
+    <us-gaap:OtherComprehensiveIncomeLossBeforeTaxPortionAttributableToParent contextRef="c-3" decimals="0" id="f-65" unitRef="usd">0</us-gaap:OtherComprehensiveIncomeLossBeforeTaxPortionAttributableToParent>
+    <us-gaap:OtherComprehensiveIncomeLossBeforeTaxPortionAttributableToParent contextRef="c-1" decimals="0" id="f-66" unitRef="usd">0</us-gaap:OtherComprehensiveIncomeLossBeforeTaxPortionAttributableToParent>
+    <us-gaap:OtherComprehensiveIncomeLossBeforeTaxPortionAttributableToParent contextRef="c-4" decimals="0" id="f-67" unitRef="usd">0</us-gaap:OtherComprehensiveIncomeLossBeforeTaxPortionAttributableToParent>
+    <us-gaap:OtherComprehensiveIncomeLossTaxPortionAttributableToParent1 contextRef="c-3" decimals="0" id="f-68" unitRef="usd">0</us-gaap:OtherComprehensiveIncomeLossTaxPortionAttributableToParent1>
+    <us-gaap:OtherComprehensiveIncomeLossTaxPortionAttributableToParent1 contextRef="c-1" decimals="0" id="f-69" unitRef="usd">0</us-gaap:OtherComprehensiveIncomeLossTaxPortionAttributableToParent1>
+    <us-gaap:OtherComprehensiveIncomeLossTaxPortionAttributableToParent1 contextRef="c-4" decimals="0" id="f-70" unitRef="usd">0</us-gaap:OtherComprehensiveIncomeLossTaxPortionAttributableToParent1>
+    <us-gaap:ComprehensiveIncomeNetOfTax contextRef="c-3" decimals="0" id="f-71" unitRef="usd">0</us-gaap:ComprehensiveIncomeNetOfTax>
+    <us-gaap:ComprehensiveIncomeNetOfTax contextRef="c-1" decimals="0" id="f-72" unitRef="usd">0</us-gaap:ComprehensiveIncomeNetOfTax>
+    <us-gaap:ComprehensiveIncomeNetOfTax contextRef="c-4" decimals="0" id="f-73" unitRef="usd">0</us-gaap:ComprehensiveIncomeNetOfTax>
+    <us-gaap:AssetsCurrent contextRef="c-5" decimals="0" id="f-74" unitRef="usd">0</us-gaap:AssetsCurrent>
+    <us-gaap:AssetsCurrent contextRef="c-6" decimals="0" id="f-75" unitRef="usd">0</us-gaap:AssetsCurrent>
+    <us-gaap:OtherAssetsNoncurrent contextRef="c-5" decimals="0" id="f-76" unitRef="usd">0</us-gaap:OtherAssetsNoncurrent>
+    <us-gaap:OtherAssetsNoncurrent contextRef="c-6" decimals="0" id="f-77" unitRef="usd">0</us-gaap:OtherAssetsNoncurrent>
+    <us-gaap:Assets contextRef="c-5" decimals="0" id="f-78" unitRef="usd">0</us-gaap:Assets>
+    <us-gaap:Assets contextRef="c-6" decimals="0" id="f-79" unitRef="usd">0</us-gaap:Assets>
+    <us-gaap:LiabilitiesCurrent contextRef="c-5" decimals="0" id="f-80" unitRef="usd">0</us-gaap:LiabilitiesCurrent>
+    <us-gaap:LiabilitiesCurrent contextRef="c-6" decimals="0" id="f-81" unitRef="usd">0</us-gaap:LiabilitiesCurrent>
+    <us-gaap:OtherLiabilitiesNoncurrent contextRef="c-5" decimals="0" id="f-82" unitRef="usd">0</us-gaap:OtherLiabilitiesNoncurrent>
+    <us-gaap:OtherLiabilitiesNoncurrent contextRef="c-6" decimals="0" id="f-83" unitRef="usd">0</us-gaap:OtherLiabilitiesNoncurrent>
+    <us-gaap:CommitmentsAndContingencies contextRef="c-5" id="f-84" unitRef="usd" xsi:nil="true"/>
+    <us-gaap:CommitmentsAndContingencies contextRef="c-6" id="f-85" unitRef="usd" xsi:nil="true"/>
+    <us-gaap:CommonStockParOrStatedValuePerShare
+      contextRef="c-6"
+      decimals="INF"
+      id="f-86"
+      unitRef="usdPerShare">0.001</us-gaap:CommonStockParOrStatedValuePerShare>
+    <us-gaap:CommonStockParOrStatedValuePerShare
+      contextRef="c-5"
+      decimals="INF"
+      id="f-87"
+      unitRef="usdPerShare">0.001</us-gaap:CommonStockParOrStatedValuePerShare>
+    <us-gaap:CommonStockSharesAuthorized contextRef="c-6" decimals="INF" id="f-88" unitRef="shares">1000</us-gaap:CommonStockSharesAuthorized>
+    <us-gaap:CommonStockSharesAuthorized contextRef="c-5" decimals="INF" id="f-89" unitRef="shares">1000</us-gaap:CommonStockSharesAuthorized>
+    <us-gaap:CommonStockSharesIssued contextRef="c-5" decimals="INF" id="f-90" unitRef="shares">1000</us-gaap:CommonStockSharesIssued>
+    <us-gaap:CommonStockSharesIssued contextRef="c-6" decimals="INF" id="f-91" unitRef="shares">1000</us-gaap:CommonStockSharesIssued>
+    <us-gaap:CommonStockValue contextRef="c-5" decimals="0" id="f-92" unitRef="usd">1</us-gaap:CommonStockValue>
+    <us-gaap:CommonStockValue contextRef="c-6" decimals="0" id="f-93" unitRef="usd">1</us-gaap:CommonStockValue>
+    <us-gaap:AdditionalPaidInCapitalCommonStock contextRef="c-5" decimals="0" id="f-94" unitRef="usd">0</us-gaap:AdditionalPaidInCapitalCommonStock>
+    <us-gaap:AdditionalPaidInCapitalCommonStock contextRef="c-6" decimals="0" id="f-95" unitRef="usd">0</us-gaap:AdditionalPaidInCapitalCommonStock>
+    <us-gaap:ReceivableFromShareholdersOrAffiliatesForIssuanceOfCapitalStock contextRef="c-5" decimals="0" id="f-96" unitRef="usd">1</us-gaap:ReceivableFromShareholdersOrAffiliatesForIssuanceOfCapitalStock>
+    <us-gaap:ReceivableFromShareholdersOrAffiliatesForIssuanceOfCapitalStock contextRef="c-6" decimals="0" id="f-97" unitRef="usd">1</us-gaap:ReceivableFromShareholdersOrAffiliatesForIssuanceOfCapitalStock>
+    <us-gaap:RetainedEarningsAccumulatedDeficit contextRef="c-5" decimals="0" id="f-98" unitRef="usd">0</us-gaap:RetainedEarningsAccumulatedDeficit>
+    <us-gaap:RetainedEarningsAccumulatedDeficit contextRef="c-6" decimals="0" id="f-99" unitRef="usd">0</us-gaap:RetainedEarningsAccumulatedDeficit>
+    <us-gaap:AccumulatedOtherComprehensiveIncomeLossNetOfTax contextRef="c-5" decimals="0" id="f-100" unitRef="usd">0</us-gaap:AccumulatedOtherComprehensiveIncomeLossNetOfTax>
+    <us-gaap:AccumulatedOtherComprehensiveIncomeLossNetOfTax contextRef="c-6" decimals="0" id="f-101" unitRef="usd">0</us-gaap:AccumulatedOtherComprehensiveIncomeLossNetOfTax>
+    <us-gaap:StockholdersEquity contextRef="c-5" decimals="0" id="f-102" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-6" decimals="0" id="f-103" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:LiabilitiesAndStockholdersEquity contextRef="c-5" decimals="0" id="f-104" unitRef="usd">0</us-gaap:LiabilitiesAndStockholdersEquity>
+    <us-gaap:LiabilitiesAndStockholdersEquity contextRef="c-6" decimals="0" id="f-105" unitRef="usd">0</us-gaap:LiabilitiesAndStockholdersEquity>
+    <us-gaap:NetIncomeLoss contextRef="c-1" decimals="0" id="f-106" unitRef="usd">0</us-gaap:NetIncomeLoss>
+    <us-gaap:NetIncomeLoss contextRef="c-4" decimals="0" id="f-107" unitRef="usd">0</us-gaap:NetIncomeLoss>
+    <us-gaap:IncreaseDecreaseInOperatingCapital contextRef="c-1" decimals="0" id="f-108" unitRef="usd">0</us-gaap:IncreaseDecreaseInOperatingCapital>
+    <us-gaap:IncreaseDecreaseInOperatingCapital contextRef="c-4" decimals="0" id="f-109" unitRef="usd">0</us-gaap:IncreaseDecreaseInOperatingCapital>
+    <us-gaap:NetCashProvidedByUsedInOperatingActivities contextRef="c-1" decimals="0" id="f-110" unitRef="usd">0</us-gaap:NetCashProvidedByUsedInOperatingActivities>
+    <us-gaap:NetCashProvidedByUsedInOperatingActivities contextRef="c-4" decimals="0" id="f-111" unitRef="usd">0</us-gaap:NetCashProvidedByUsedInOperatingActivities>
+    <us-gaap:NetCashProvidedByUsedInInvestingActivities contextRef="c-1" decimals="0" id="f-112" unitRef="usd">0</us-gaap:NetCashProvidedByUsedInInvestingActivities>
+    <us-gaap:NetCashProvidedByUsedInInvestingActivities contextRef="c-4" decimals="0" id="f-113" unitRef="usd">0</us-gaap:NetCashProvidedByUsedInInvestingActivities>
+    <us-gaap:NetCashProvidedByUsedInFinancingActivities contextRef="c-1" decimals="0" id="f-114" unitRef="usd">0</us-gaap:NetCashProvidedByUsedInFinancingActivities>
+    <us-gaap:NetCashProvidedByUsedInFinancingActivities contextRef="c-4" decimals="0" id="f-115" unitRef="usd">0</us-gaap:NetCashProvidedByUsedInFinancingActivities>
+    <us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsPeriodIncreaseDecreaseIncludingExchangeRateEffect contextRef="c-1" decimals="0" id="f-116" unitRef="usd">0</us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsPeriodIncreaseDecreaseIncludingExchangeRateEffect>
+    <us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsPeriodIncreaseDecreaseIncludingExchangeRateEffect contextRef="c-4" decimals="0" id="f-117" unitRef="usd">0</us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsPeriodIncreaseDecreaseIncludingExchangeRateEffect>
+    <us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsIncludingDisposalGroupAndDiscontinuedOperations contextRef="c-6" decimals="0" id="f-118" unitRef="usd">0</us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsIncludingDisposalGroupAndDiscontinuedOperations>
+    <us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsIncludingDisposalGroupAndDiscontinuedOperations contextRef="c-7" decimals="0" id="f-119" unitRef="usd">0</us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsIncludingDisposalGroupAndDiscontinuedOperations>
+    <us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsIncludingDisposalGroupAndDiscontinuedOperations contextRef="c-5" decimals="0" id="f-120" unitRef="usd">0</us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsIncludingDisposalGroupAndDiscontinuedOperations>
+    <us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsIncludingDisposalGroupAndDiscontinuedOperations contextRef="c-8" decimals="0" id="f-121" unitRef="usd">0</us-gaap:CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalentsIncludingDisposalGroupAndDiscontinuedOperations>
+    <us-gaap:CommonStockSharesOutstanding contextRef="c-9" decimals="0" id="f-122" unitRef="shares">1000</us-gaap:CommonStockSharesOutstanding>
+    <us-gaap:StockholdersEquity contextRef="c-9" decimals="0" id="f-123" unitRef="usd">1</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-10" decimals="0" id="f-124" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-11" decimals="0" id="f-125" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-12" decimals="0" id="f-126" unitRef="usd">-1</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-13" decimals="0" id="f-127" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-14" decimals="0" id="f-128" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-15" decimals="0" id="f-129" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:NetIncomeLoss contextRef="c-3" decimals="0" id="f-130" unitRef="usd">0</us-gaap:NetIncomeLoss>
+    <us-gaap:OtherComprehensiveIncomeLossNetOfTaxPortionAttributableToParent contextRef="c-3" decimals="0" id="f-131" unitRef="usd">0</us-gaap:OtherComprehensiveIncomeLossNetOfTaxPortionAttributableToParent>
+    <us-gaap:CommonStockSharesOutstanding contextRef="c-16" decimals="0" id="f-132" unitRef="shares">1000</us-gaap:CommonStockSharesOutstanding>
+    <us-gaap:StockholdersEquity contextRef="c-16" decimals="0" id="f-133" unitRef="usd">1</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-17" decimals="0" id="f-134" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-18" decimals="0" id="f-135" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-19" decimals="0" id="f-136" unitRef="usd">-1</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-20" decimals="0" id="f-137" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-21" decimals="0" id="f-138" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-5" decimals="0" id="f-139" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:CommonStockSharesOutstanding contextRef="c-22" decimals="0" id="f-140" unitRef="shares">1000</us-gaap:CommonStockSharesOutstanding>
+    <us-gaap:StockholdersEquity contextRef="c-22" decimals="0" id="f-141" unitRef="usd">1</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-23" decimals="0" id="f-142" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-24" decimals="0" id="f-143" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-25" decimals="0" id="f-144" unitRef="usd">-1</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-26" decimals="0" id="f-145" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-27" decimals="0" id="f-146" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-6" decimals="0" id="f-147" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:NetIncomeLoss contextRef="c-1" decimals="0" id="f-148" unitRef="usd">0</us-gaap:NetIncomeLoss>
+    <us-gaap:OtherComprehensiveIncomeLossNetOfTaxPortionAttributableToParent contextRef="c-1" decimals="0" id="f-149" unitRef="usd">0</us-gaap:OtherComprehensiveIncomeLossNetOfTaxPortionAttributableToParent>
+    <us-gaap:CommonStockSharesOutstanding contextRef="c-16" decimals="0" id="f-150" unitRef="shares">1000</us-gaap:CommonStockSharesOutstanding>
+    <us-gaap:StockholdersEquity contextRef="c-16" decimals="0" id="f-151" unitRef="usd">1</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-17" decimals="0" id="f-152" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-18" decimals="0" id="f-153" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-19" decimals="0" id="f-154" unitRef="usd">-1</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-20" decimals="0" id="f-155" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-21" decimals="0" id="f-156" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-5" decimals="0" id="f-157" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:CommonStockSharesOutstanding contextRef="c-28" decimals="0" id="f-158" unitRef="shares">1000</us-gaap:CommonStockSharesOutstanding>
+    <us-gaap:StockholdersEquity contextRef="c-28" decimals="0" id="f-159" unitRef="usd">1</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-29" decimals="0" id="f-160" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-30" decimals="0" id="f-161" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-31" decimals="0" id="f-162" unitRef="usd">-1</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-32" decimals="0" id="f-163" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-33" decimals="0" id="f-164" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-7" decimals="0" id="f-165" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:NetIncomeLoss contextRef="c-4" decimals="0" id="f-166" unitRef="usd">0</us-gaap:NetIncomeLoss>
+    <us-gaap:OtherComprehensiveIncomeLossNetOfTaxPortionAttributableToParent contextRef="c-4" decimals="0" id="f-167" unitRef="usd">0</us-gaap:OtherComprehensiveIncomeLossNetOfTaxPortionAttributableToParent>
+    <us-gaap:CommonStockSharesOutstanding contextRef="c-34" decimals="0" id="f-168" unitRef="shares">1000</us-gaap:CommonStockSharesOutstanding>
+    <us-gaap:StockholdersEquity contextRef="c-34" decimals="0" id="f-169" unitRef="usd">1</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-35" decimals="0" id="f-170" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-36" decimals="0" id="f-171" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-37" decimals="0" id="f-172" unitRef="usd">-1</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-38" decimals="0" id="f-173" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-39" decimals="0" id="f-174" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="c-8" decimals="0" id="f-175" unitRef="usd">0</us-gaap:StockholdersEquity>
+    <us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureAndSignificantAccountingPoliciesTextBlock contextRef="c-1" id="f-176">BASIS OF PRESENTATION &lt;div&gt;&lt;span style="color:#000000;font-family:'Times New Roman',serif;font-size:11pt;font-style:italic;font-weight:400;line-height:120%"&gt;Description of Business&lt;/span&gt;&lt;span style="color:#000000;font-family:'Times New Roman',serif;font-size:11pt;font-weight:400;line-height:120%"&gt;&#x2014;New Pluto Global, Inc., a Delaware corporation, was formed on June 3, 2024 for purposes of consummating the Transactions described below and is a wholly-owned, direct subsidiary of Paramount Global (&#x201c;Paramount&#x201d;), a Delaware corporation. New Pluto Global, Inc. is referred to herein as &#x201c;New Paramount&#x201d; or the &#x201c;Company&#x201d;. The Company has three wholly-owned direct subsidiaries, Pluto Merger Sub, Inc. and Pluto Merger Sub II, Inc., both of which are Delaware corporations, and Sparrow Merger Sub, LLC, a California limited liability company. The Company has not commenced operations, has no assets or liabilities, and has not engaged in any significant activities other than those related to its formation from its incorporation on June 3, 2024 through June&#160;30, 2025.&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span&gt;&lt;br/&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style="color:#000000;font-family:'Times New Roman',serif;font-size:11pt;font-weight:400;line-height:120%"&gt;On February 13, 2025, the United States Securities and Exchange Commission (the &#x201c;SEC&#x201d;) declared effective the Registration Statement on Form S-4, as amended, of the Company to register shares of its common stock, par value $0.001 per share, that will be issued in connection with a transaction agreement (the &#x201c;Transaction Agreement&#x201d;) that the Company and Paramount entered into on July 7, 2024 with Skydance Media, LLC, a California limited liability company (&#x201c;Skydance&#x201d;), and other parties, pursuant to which Paramount and Skydance will become subsidiaries of New Paramount (the transactions contemplated by the Transaction Agreement, the &#x201c;Transactions&#x201d;). Immediately following the completion of the Transactions, New Paramount will be renamed Paramount Skydance Corporation.&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span&gt;&lt;br/&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style="color:#000000;font-family:'Times New Roman',serif;font-size:11pt;font-weight:400;line-height:120%"&gt;Concurrent with the execution of the Transaction Agreement, certain affiliates of existing investors of Skydance (the &#x201c;NAI Equity Investors&#x201d;), including entities controlled by members of the Ellison Family, and affiliates of RedBird Capital Partners, entered into an agreement with National Amusements, Inc. (&#x201c;NAI&#x201d;), the controlling stockholder of Paramount, to purchase all of the outstanding equity interests of NAI (the &#x201c;NAI Transaction&#x201d;). In addition, the NAI Equity Investors and certain other affiliates of investors of Skydance will make an investment of up to $6.0&#160;billion into New Paramount in exchange for up to 400&#160;million newly issued shares of Class B Common Stock of New Paramount (&#x201c;New Paramount Class B Common Stock&#x201d;), subject to ratable reduction, for a purchase price of $15.00 per share, and the NAI Equity Investors will also receive warrants to purchase 200&#160;million shares of New Paramount Class B Common Stock at an initial exercise price of $30.50 per share (subject to customary anti-dilution adjustments), which expire five years after issuance. Up to $4.5&#160;billion of the proceeds from this investment will be used to fund the cash-stock election discussed below and a minimum of $1.5&#160;billion of cash (less a subscription discount of 1.875%) will remain at New Paramount. If the cash-stock elections are undersubscribed, up to an additional $1.5&#160;billion (less a subscription discount of 1.875%) of the unused portion of the $4.5&#160;billion will also remain at New Paramount.&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span&gt;&lt;br/&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style="color:#000000;font-family:'Times New Roman',serif;font-size:11pt;font-weight:400;line-height:120%"&gt;The Transactions will also include: (1) a transaction pursuant to which existing Skydance investors will receive 317&#160;million shares of New Paramount Class B Common Stock, and (2) a cash-stock election pursuant to which (a) shares of Paramount&#x2019;s Class A Common Stock held by stockholders other than NAI will be converted, at the stockholders&#x2019; election, into the right to receive either $23.00 in cash or 1.5333 shares of New Paramount Class B Common Stock, and (b) shares of Paramount&#x2019;s Class B Common Stock held by stockholders other than NAI, the NAI Equity Investors and certain other affiliates of investors of Skydance referred to above will be converted, at the stockholders&#x2019; election, into the right to receive either $15.00 in cash (subject to proration) or one share of New Paramount Class B Common Stock. The shares that are settled in cash will cease to exist after the completion of the Transactions.&lt;/span&gt;&lt;/div&gt;&lt;div style="text-align:justify"&gt;&lt;span&gt;&lt;br/&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style="color:#000000;font-family:'Times New Roman',serif;font-size:11pt;font-weight:400;line-height:120%"&gt;At the closing of the Transactions, Paramount&#x2019;s voting Class A Common Stock and non-voting Class B Common Stock (currently listed and traded on The Nasdaq Stock Market LLC under the symbols &#x201c;PARAA&#x201d; and &#x201c;PARA,&#x201d; respectively) will cease to be listed. Following the closing of the Transactions shares of New Paramount Class B &lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style="color:#000000;font-family:'Times New Roman',serif;font-size:11pt;font-weight:400;line-height:120%"&gt;Common Stock, par value $0.001 are expected to begin trading on the Nasdaq Stock Market LLC under the ticker symbol &#x201c;PSKY&#x201d;. New Paramount Class A common stock will not be listed for trading on a stock exchange. New Paramount Class B Common Stock will not have any voting rights while shares of New Paramount Class A Common Stock (the &#x201c;New Paramount Class A Common Stock&#x201d; together with New Paramount Class B Common Stock, the &#x201c;New Paramount Common Stock&#x201d;) will be entitled to one vote per share with respect to all matters on which the holders of New Paramount Common Stock are entitled to vote. Following the Transactions, NAI and its applicable subsidiaries will hold 100% of the New Paramount Class A Common Stock.&lt;/span&gt;&lt;/div&gt;&lt;div style="text-align:justify"&gt;&lt;span&gt;&lt;br/&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style="color:#000000;font-family:'Times New Roman',serif;font-size:11pt;font-weight:400;line-height:120%"&gt;The Transactions are expected to close on August 7, 2025, subject to customary closing conditions. Consummation of the foregoing transactions is also subject to the contemporaneous consummation of each other transaction described above. In the event of a termination of the Transaction Agreement under certain specified circumstances, Paramount will be required to pay Skydance a termination fee in the amount of $400&#160;million.&lt;/span&gt;&lt;/div&gt;&lt;div style="text-align:justify"&gt;&lt;span&gt;&lt;br/&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style="color:#000000;font-family:'Times New Roman',serif;font-size:11pt;font-weight:400;line-height:120%"&gt;Following the closing of the Transactions, New Paramount intends to fully and unconditionally guarantee the senior and junior debt of Paramount. At June&#160;30, 2025, Paramount&#x2019;s senior notes and debentures had an aggregate face value of $13.33&#160;billion with maturity dates between 2026 and 2050, and its junior debt was comprised of $650&#160;million junior subordinated debentures due 2057 and $1.0&#160;billion junior subordinated debentures due 2062.&lt;/span&gt;&lt;/div&gt;&lt;span style="color:#000000;font-family:'Times New Roman',serif;font-size:11pt;font-style:italic;font-weight:400;line-height:120%"&gt;Use of Estimates&lt;/span&gt;&#x2014;The preparation of financial statements in conformity with accounting principles generally accepted in the United States (U.S. GAAP) requires management to make estimates, judgments and assumptions that affect the reported amounts of assets and liabilities and disclosure of contingent assets and liabilities at the date of the financial statements, and the reported amounts of revenues and expenses during the applicable periods presented. Actual results may vary from these estimates under different assumptions or conditions.</us-gaap:OrganizationConsolidationAndPresentationOfFinancialStatementsDisclosureAndSignificantAccountingPoliciesTextBlock>
+    <npg:NumberOfSubsidiaries
+      contextRef="c-5"
+      decimals="INF"
+      id="f-177"
+      unitRef="subsidiary">3</npg:NumberOfSubsidiaries>
+    <us-gaap:CommonStockParOrStatedValuePerShare
+      contextRef="c-40"
+      decimals="INF"
+      id="f-178"
+      unitRef="usdPerShare">0.001</us-gaap:CommonStockParOrStatedValuePerShare>
+    <npg:InvestmentByCertainAffiliatesOfExistingInvestors contextRef="c-41" decimals="-8" id="f-179" unitRef="usd">6000000000</npg:InvestmentByCertainAffiliatesOfExistingInvestors>
+    <us-gaap:StockIssuedDuringPeriodSharesNewIssues contextRef="c-42" decimals="-6" id="f-180" unitRef="shares">400000000</us-gaap:StockIssuedDuringPeriodSharesNewIssues>
+    <us-gaap:SharesIssuedPricePerShare
+      contextRef="c-43"
+      decimals="INF"
+      id="f-181"
+      unitRef="usdPerShare">15.00</us-gaap:SharesIssuedPricePerShare>
+    <us-gaap:ClassOfWarrantOrRightNumberOfSecuritiesCalledByWarrantsOrRights contextRef="c-43" decimals="-6" id="f-182" unitRef="shares">200000000</us-gaap:ClassOfWarrantOrRightNumberOfSecuritiesCalledByWarrantsOrRights>
+    <us-gaap:ClassOfWarrantOrRightExercisePriceOfWarrantsOrRights1
+      contextRef="c-43"
+      decimals="INF"
+      id="f-183"
+      unitRef="usdPerShare">30.50</us-gaap:ClassOfWarrantOrRightExercisePriceOfWarrantsOrRights1>
+    <us-gaap:WarrantsAndRightsOutstandingTerm contextRef="c-43" id="f-184">P5Y</us-gaap:WarrantsAndRightsOutstandingTerm>
+    <npg:InvestmentByCertainAffiliatesOfExistingInvestorsCashStockElection contextRef="c-41" decimals="-8" id="f-185" unitRef="usd">4500000000</npg:InvestmentByCertainAffiliatesOfExistingInvestorsCashStockElection>
+    <npg:InvestmentByCertainAffiliatesOfExistingInvestorsCash contextRef="c-41" decimals="-8" id="f-186" unitRef="usd">1500000000</npg:InvestmentByCertainAffiliatesOfExistingInvestorsCash>
+    <npg:InvestmentByCertainAffiliatesOfExistingInvestorsSubscriptionDiscount
+      contextRef="c-44"
+      decimals="INF"
+      id="f-187"
+      unitRef="number">0.01875</npg:InvestmentByCertainAffiliatesOfExistingInvestorsSubscriptionDiscount>
+    <npg:PotentialRemainderToBeContributed contextRef="c-45" decimals="-8" id="f-188" unitRef="usd">1500000000</npg:PotentialRemainderToBeContributed>
+    <npg:InvestmentByCertainAffiliatesOfExistingInvestorsSubscriptionDiscount
+      contextRef="c-44"
+      decimals="INF"
+      id="f-189"
+      unitRef="number">0.01875</npg:InvestmentByCertainAffiliatesOfExistingInvestorsSubscriptionDiscount>
+    <npg:InvestmentByCertainAffiliatesOfExistingInvestorsCashStockElection contextRef="c-41" decimals="-8" id="f-190" unitRef="usd">4500000000</npg:InvestmentByCertainAffiliatesOfExistingInvestorsCashStockElection>
+    <us-gaap:StockIssuedDuringPeriodSharesNewIssues contextRef="c-46" decimals="-6" id="f-191" unitRef="shares">317000000</us-gaap:StockIssuedDuringPeriodSharesNewIssues>
+    <npg:StockRepurchasedDuringPeriodPricePerShare
+      contextRef="c-47"
+      decimals="INF"
+      id="f-192"
+      unitRef="usdPerShare">23.00</npg:StockRepurchasedDuringPeriodPricePerShare>
+    <npg:ConversionOfStockSharesIssuedUponConversion contextRef="c-48" decimals="4" id="f-193" unitRef="shares">1.5333</npg:ConversionOfStockSharesIssuedUponConversion>
+    <npg:StockRepurchasedDuringPeriodPricePerShare
+      contextRef="c-49"
+      decimals="INF"
+      id="f-194"
+      unitRef="usdPerShare">15.00</npg:StockRepurchasedDuringPeriodPricePerShare>
+    <npg:ConversionOfStockSharesIssuedUponConversion
+      contextRef="c-50"
+      decimals="INF"
+      id="f-195"
+      unitRef="shares">1</npg:ConversionOfStockSharesIssuedUponConversion>
+    <npg:CommonStockNumberOfVotes contextRef="c-51" decimals="INF" id="f-196" unitRef="vote">1</npg:CommonStockNumberOfVotes>
+    <us-gaap:SaleOfStockPercentageOfOwnershipAfterTransaction contextRef="c-52" decimals="2" id="f-197" unitRef="number">1</us-gaap:SaleOfStockPercentageOfOwnershipAfterTransaction>
+    <npg:TerminationFeeUnderSpecifiedCircumstances contextRef="c-53" decimals="-6" id="f-198" unitRef="usd">400000000</npg:TerminationFeeUnderSpecifiedCircumstances>
+    <us-gaap:DebtInstrumentFaceAmount contextRef="c-54" decimals="-6" id="f-199" unitRef="usd">13330000000</us-gaap:DebtInstrumentFaceAmount>
+    <us-gaap:DebtInstrumentFaceAmount contextRef="c-55" decimals="-6" id="f-200" unitRef="usd">650000000</us-gaap:DebtInstrumentFaceAmount>
+    <us-gaap:DebtInstrumentFaceAmount contextRef="c-56" decimals="-6" id="f-201" unitRef="usd">1000000000</us-gaap:DebtInstrumentFaceAmount>
+    <us-gaap:UseOfEstimates contextRef="c-1" id="f-202">&lt;span style="color:#000000;font-family:'Times New Roman',serif;font-size:11pt;font-style:italic;font-weight:400;line-height:120%"&gt;Use of Estimates&lt;/span&gt;&#x2014;The preparation of financial statements in conformity with accounting principles generally accepted in the United States (U.S. GAAP) requires management to make estimates, judgments and assumptions that affect the reported amounts of assets and liabilities and disclosure of contingent assets and liabilities at the date of the financial statements, and the reported amounts of revenues and expenses during the applicable periods presented. Actual results may vary from these estimates under different assumptions or conditions.</us-gaap:UseOfEstimates>
+    <us-gaap:StockholdersEquityNoteDisclosureTextBlock contextRef="c-1" id="f-203">EQUITY &lt;div&gt;&lt;span style="color:#000000;font-family:'Times New Roman',serif;font-size:11pt;font-weight:400;line-height:120%"&gt;At June&#160;30, 2025, the Company was authorized to issue 1,000 shares of common stock, par value $0.001 per share. At June&#160;30, 2025, 1,000 shares of the Company&#x2019;s common stock were issued and outstanding. All such issued and outstanding shares were held by Paramount.&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span&gt;&lt;br/&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style="margin-bottom:12pt"&gt;&lt;span style="color:#000000;font-family:'Times New Roman',serif;font-size:11pt;font-weight:400;line-height:120%"&gt;&#x201c;Due from shareholder&#x201d; on the Consolidated Balance Sheet represents a receivable from Paramount of $1 in connection with the issuance of the Company&#x2019;s common stock.&lt;/span&gt;&lt;/div&gt;</us-gaap:StockholdersEquityNoteDisclosureTextBlock>
+    <us-gaap:CommonStockSharesAuthorized contextRef="c-5" decimals="INF" id="f-204" unitRef="shares">1000</us-gaap:CommonStockSharesAuthorized>
+    <us-gaap:CommonStockParOrStatedValuePerShare
+      contextRef="c-5"
+      decimals="INF"
+      id="f-205"
+      unitRef="usdPerShare">0.001</us-gaap:CommonStockParOrStatedValuePerShare>
+    <us-gaap:CommonStockSharesOutstanding contextRef="c-5" decimals="INF" id="f-206" unitRef="shares">1000</us-gaap:CommonStockSharesOutstanding>
+    <us-gaap:CommonStockSharesIssued contextRef="c-5" decimals="INF" id="f-207" unitRef="shares">1000</us-gaap:CommonStockSharesIssued>
+    <us-gaap:ReceivableFromShareholdersOrAffiliatesForIssuanceOfCapitalStock contextRef="c-5" decimals="INF" id="f-208" unitRef="usd">1</us-gaap:ReceivableFromShareholdersOrAffiliatesForIssuanceOfCapitalStock>
+</xbrl>

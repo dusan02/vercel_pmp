@@ -2,7 +2,7 @@
  * @jest-environment node
  *
  * P0 cron repair coverage:
- *   - gemini-1.5-flash is retired (404 NOT_FOUND) — both AI paths must call gemini-2.5-flash
+ *   - older flash models are retired (404) — both AI paths must call gemini-3.5-flash-lite
  *   - /api/cron/reset-movers clears moversReason/moversCategory/socialCopy so
  *     aiMoversService (!moversReason filter) can reprocess movers next day
  *   - movers-insights only processes tickers WITHOUT a reason; after reset the
@@ -59,7 +59,7 @@ const geminiOk = (text: string) => ({
     json: async () => ({ candidates: [{ content: { parts: [{ text }] } }] }),
 });
 
-describe('Gemini model — gemini-2.5-flash (1.5-flash is retired)', () => {
+describe('Gemini model — gemini-3.5-flash-lite (older flash models retired)', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         global.fetch = fetchMock;
@@ -72,24 +72,24 @@ describe('Gemini model — gemini-2.5-flash (1.5-flash is retired)', () => {
         delete process.env.GEMINI_MODEL;
     });
 
-    it('aiService calls generateContent on gemini-2.5-flash', async () => {
+    it('aiService calls generateContent on gemini-3.5-flash-lite', async () => {
         fetchMock.mockResolvedValueOnce(geminiOk('Solidný rast.'));
         const verdict = await aiService.generateInvestmentVerdict({ ticker: 'NVDA' });
         expect(verdict).toBe('Solidný rast.');
         const url = String(fetchMock.mock.calls[0][0]);
-        expect(url).toContain('/models/gemini-2.5-flash:generateContent');
+        expect(url).toContain('/models/gemini-3.5-flash-lite:generateContent');
         expect(url).toContain('key=test-gemini-key');
         expect(url).not.toContain('gemini-1.5');
     });
 
-    it('aiMoversService calls generateContent on gemini-2.5-flash', async () => {
+    it('aiMoversService calls generateContent on gemini-3.5-flash-lite', async () => {
         fetchMock.mockResolvedValueOnce(geminiOk(
             '{"reason":"r","category":"Technical","socialCopy":"s","isSbcAlert":false,"aiConfidence":80}'
         ));
         const insight = await (aiMoversService as any).callGemini('prompt', 'test-gemini-key');
         expect(insight?.reason).toBe('r');
         const url = String(fetchMock.mock.calls[0][0]);
-        expect(url).toContain('/models/gemini-2.5-flash:generateContent');
+        expect(url).toContain('/models/gemini-3.5-flash-lite:generateContent');
         expect(url).not.toContain('gemini-1.5');
     });
 

@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="US-ASCII" ?>
+    <!-- Field: Doc-Info; Name: Generator; Value: GoFiler Complete; Version: 3.3a -->
+    <!-- Field: Doc-Info; Name: VendorURI; Value: http://www.novaworks.co -->
+    <!-- Field: Doc-Info; Name: Source; Value: C:\Documents and Settings\Owner\My Documents\Jobs\10000\6302012.xfr; Date: 2012/07/24T19:02:59 -->
+    <!-- Field: Doc-Info; Name: Status; Value: 0x00000000 -->
+<xbrli:xbrl xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:link="http://www.xbrl.org/2003/linkbase" xmlns:xbrli="http://www.xbrl.org/2003/instance" xmlns:xbrldt="http://xbrl.org/2005/xbrldt" xmlns:xbrldi="http://xbrl.org/2006/xbrldi" xmlns:dei="http://xbrl.sec.gov/dei/2012-01-31" xmlns:ref="http://www.xbrl.org/2006/ref" xmlns:iso4217="http://www.xbrl.org/2003/iso4217" xmlns:utr="http://www.xbrl.org/2009/utr" xmlns:us-gaap="http://fasb.org/us-gaap/2012-01-31" xmlns:us-roles="http://fasb.org/us-roles/2012-01-31" xmlns:us-types="http://fasb.org/us-types/2012-01-31" xmlns:EMPR="http://EMPR/20120630">
+    <link:schemaRef xlink:href="empr-20120630.xsd" xlink:type="simple" />
+    <xbrli:context id="From2012-04-01to2012-06-30">
+      <xbrli:entity>
+        <xbrli:identifier scheme="http://www.sec.gov/CIK">0000887396</xbrli:identifier>
+      </xbrli:entity>
+      <xbrli:period>
+        <xbrli:startDate>2012-04-01</xbrli:startDate>
+        <xbrli:endDate>2012-06-30</xbrli:endDate>
+      </xbrli:period>
+    </xbrli:context>
+    <xbrli:context id="AsOf2012-06-30">
+      <xbrli:entity>
+        <xbrli:identifier scheme="http://www.sec.gov/CIK">0000887396</xbrli:identifier>
+      </xbrli:entity>
+      <xbrli:period>
+        <xbrli:instant>2012-06-30</xbrli:instant>
+      </xbrli:period>
+    </xbrli:context>
+    <xbrli:context id="AsOf2011-12-31">
+      <xbrli:entity>
+        <xbrli:identifier scheme="http://www.sec.gov/CIK">0000887396</xbrli:identifier>
+      </xbrli:entity>
+      <xbrli:period>
+        <xbrli:instant>2011-12-31</xbrli:instant>
+      </xbrli:period>
+    </xbrli:context>
+    <xbrli:context id="From2011-04-01to2011-06-30">
+      <xbrli:entity>
+        <xbrli:identifier scheme="http://www.sec.gov/CIK">0000887396</xbrli:identifier>
+      </xbrli:entity>
+      <xbrli:period>
+        <xbrli:startDate>2011-04-01</xbrli:startDate>
+        <xbrli:endDate>2011-06-30</xbrli:endDate>
+      </xbrli:period>
+    </xbrli:context>
+    <xbrli:context id="From2012-01-01to2012-06-30">
+      <xbrli:entity>
+        <xbrli:identifier scheme="http://www.sec.gov/CIK">0000887396</xbrli:identifier>
+      </xbrli:entity>
+      <xbrli:period>
+        <xbrli:startDate>2012-01-01</xbrli:startDate>
+        <xbrli:endDate>2012-06-30</xbrli:endDate>
+      </xbrli:period>
+    </xbrli:context>
+    <xbrli:context id="From2011-01-01to2011-06-30">
+      <xbrli:entity>
+        <xbrli:identifier scheme="http://www.sec.gov/CIK">0000887396</xbrli:identifier>
+      </xbrli:entity>
+      <xbrli:period>
+        <xbrli:startDate>2011-01-01</xbrli:startDate>
+        <xbrli:endDate>2011-06-30</xbrli:endDate>
+      </xbrli:period>
+    </xbrli:context>
+    <xbrli:unit id="USD">
+      <xbrli:measure>iso4217:USD</xbrli:measure>
+    </xbrli:unit>
+    <xbrli:unit id="Shares">
+      <xbrli:measure>xbrli:shares</xbrli:measure>
+    </xbrli:unit>
+    <xbrli:unit id="USDPShares">
+      <xbrli:divide>
+        <xbrli:unitNumerator>
+          <xbrli:measure>iso4217:USD</xbrli:measure>
+        </xbrli:unitNumerator>
+        <xbrli:unitDenominator>
+          <xbrli:measure>xbrli:shares</xbrli:measure>
+        </xbrli:unitDenominator>
+      </xbrli:divide>
+    </xbrli:unit>
+    <dei:EntityRegistrantName contextRef="From2012-04-01to2012-06-30">EMPIRE PETROLEUM CORPORATION</dei:EntityRegistrantName>
+    <dei:EntityCentralIndexKey contextRef="From2012-04-01to2012-06-30">0000887396</dei:EntityCentralIndexKey>
+    <dei:DocumentType contextRef="From2012-04-01to2012-06-30">10-Q</dei:DocumentType>
+    <dei:DocumentPeriodEndDate contextRef="From2012-04-01to2012-06-30">2012-06-30</dei:DocumentPeriodEndDate>
+    <dei:AmendmentFlag contextRef="From2012-04-01to2012-06-30">false</dei:AmendmentFlag>
+    <dei:CurrentFiscalYearEndDate contextRef="From2012-04-01to2012-06-30">--12-31</dei:CurrentFiscalYearEndDate>
+    <dei:EntityWellKnownSeasonedIssuer contextRef="From2012-04-01to2012-06-30">No</dei:EntityWellKnownSeasonedIssuer>
+    <dei:EntityVoluntaryFilers contextRef="From2012-04-01to2012-06-30">No</dei:EntityVoluntaryFilers>
+    <dei:EntityCurrentReportingStatus contextRef="From2012-04-01to2012-06-30">No</dei:EntityCurrentReportingStatus>
+    <dei:EntityFilerCategory contextRef="From2012-04-01to2012-06-30">Smaller Reporting Company</dei:EntityFilerCategory>
+    <dei:DocumentFiscalPeriodFocus contextRef="From2012-04-01to2012-06-30">Q2</dei:DocumentFiscalPeriodFocus>
+    <dei:DocumentFiscalYearFocus contextRef="From2012-04-01to2012-06-30">2012</dei:DocumentFiscalYearFocus>
+    <dei:EntityCommonStockSharesOutstanding contextRef="AsOf2012-06-30" unitRef="Shares" decimals="INF">85564235</dei:EntityCommonStockSharesOutstanding>
+    <us-gaap:CommonStockSharesOutstanding contextRef="AsOf2012-06-30" unitRef="Shares" decimals="INF">85564</us-gaap:CommonStockSharesOutstanding>
+    <us-gaap:CommonStockSharesOutstanding contextRef="AsOf2011-12-31" unitRef="Shares" decimals="INF">85564</us-gaap:CommonStockSharesOutstanding>
+    <us-gaap:LiabilitiesAndStockholdersEquity contextRef="AsOf2012-06-30" unitRef="USD" decimals="0">346316</us-gaap:LiabilitiesAndStockholdersEquity>
+    <us-gaap:LiabilitiesAndStockholdersEquity contextRef="AsOf2011-12-31" unitRef="USD" decimals="0">326930</us-gaap:LiabilitiesAndStockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="AsOf2012-06-30" unitRef="USD" decimals="0">98849</us-gaap:StockholdersEquity>
+    <us-gaap:StockholdersEquity contextRef="AsOf2011-12-31" unitRef="USD" decimals="0">215443</us-gaap:StockholdersEquity>
+    <us-gaap:RetainedEarningsAccumulatedDeficit contextRef="AsOf2012-06-30" unitRef="USD" decimals="0">-14148147</us-gaap:RetainedEarningsAccumulatedDeficit>
+    <us-gaap:RetainedEarningsAccumulatedDeficit contextRef="AsOf2011-12-31" unitRef="USD" decimals="0">-14006553</us-gaap:RetainedEarningsAccumulatedDeficit>
+    <us-gaap:LiabilitiesCurrent contextRef="AsOf2012-06-30" unitRef="USD" decimals="0">247467</us-gaap:LiabilitiesCurrent>
+    <us-gaap:LiabilitiesCurrent contextRef="AsOf2011-12-31" unitRef="USD" decimals="0">111487</us-gaap:LiabilitiesCurrent>
+    <us-gaap:NotesPayableRelatedPartiesCurrentAndNoncurrent contextRef="AsOf2012-06-30" unitRef="USD" decimals="0">233603</us-gaap:NotesPayableRelatedPartiesCurrentAndNoncurrent>
+    <us-gaap:NotesPayableRelatedPartiesCurrentAndNoncurrent contextRef="AsOf2011-12-31" unitRef="USD" decimals="0">100000</us-gaap:NotesPayableRelatedPartiesCurrentAndNoncurrent>
+    <us-gaap:AccountsPayableAndAccruedLiabilitiesCurrent contextRef="AsOf2012-06-30" unitRef="USD" decimals="0">13864</us-gaap:AccountsPayableAndAccruedLiabilitiesCurrent>
+    <us-gaap:AccountsPayableAndAccruedLiabilitiesCurrent contextRef="AsOf2011-12-31" unitRef="USD" decimals="0">2377</us-gaap:AccountsPayableAndAccruedLiabilitiesCurrent>
+    <us-gaap:Assets contextRef="AsOf2012-06-30" unitRef="USD" decimals="0">346316</us-gaap:Assets>
+    <us-gaap:Assets contextRef="AsOf2011-12-31" unitRef="USD" decimals="0">326930</us-gaap:Assets>
+    <us-gaap:OtherAssetsCurrent contextRef="AsOf2012-06-30" unitRef="USD" decimals="0">65637</us-gaap:OtherAssetsCurrent>
+    <us-gaap:OtherAssetsCurrent contextRef="AsOf2011-12-31" unitRef="USD" decimals="0">58442</us-gaap:OtherAssetsCurrent>
+    <us-gaap:PropertyPlantAndEquipmentNet contextRef="AsOf2012-06-30" unitRef="USD" decimals="0">255215</us-gaap:PropertyPlantAndEquipmentNet>
+    <us-gaap:PropertyPlantAndEquipmentNet contextRef="AsOf2011-12-31" unitRef="USD" decimals="0">255215</us-gaap:PropertyPlantAndEquipmentNet>
+    <us-gaap:AssetsCurrent contextRef="AsOf2012-06-30" unitRef="USD" decimals="0">25464</us-gaap:AssetsCurrent>
+    <us-gaap:AssetsCurrent contextRef="AsOf2011-12-31" unitRef="USD" decimals="0">13273</us-gaap:AssetsCurrent>
+    <us-gaap:PrepaidExpenseAndOtherAssetsCurrent contextRef="AsOf2012-06-30" unitRef="USD" decimals="0">2200</us-gaap:PrepaidExpenseAndOtherAssetsCurrent>
+    <us-gaap:PrepaidExpenseAndOtherAssetsCurrent contextRef="AsOf2011-12-31" unitRef="USD" decimals="0">1100</us-gaap:PrepaidExpenseAndOtherAssetsCurrent>
+    <us-gaap:AccountsReceivableNetCurrent contextRef="AsOf2012-06-30" unitRef="USD" decimals="0">2146</us-gaap:AccountsReceivableNetCurrent>
+    <us-gaap:AccountsReceivableNetCurrent contextRef="AsOf2011-12-31" unitRef="USD" decimals="0">7195</us-gaap:AccountsReceivableNetCurrent>
+    <us-gaap:CashAndCashEquivalentsAtCarryingValue contextRef="AsOf2012-06-30" unitRef="USD" decimals="0">21118</us-gaap:CashAndCashEquivalentsAtCarryingValue>
+    <us-gaap:CashAndCashEquivalentsAtCarryingValue contextRef="AsOf2011-12-31" unitRef="USD" decimals="0">4978</us-gaap:CashAndCashEquivalentsAtCarryingValue>
+    <us-gaap:AdditionalPaidInCapital contextRef="AsOf2012-06-30" unitRef="USD" decimals="0">14161432</us-gaap:AdditionalPaidInCapital>
+    <us-gaap:AdditionalPaidInCapital contextRef="AsOf2011-12-31" unitRef="USD" decimals="0">14136432</us-gaap:AdditionalPaidInCapital>
+    <us-gaap:OilAndGasSalesRevenue contextRef="From2012-04-01to2012-06-30" unitRef="USD" decimals="0">0</us-gaap:OilAndGasSalesRevenue>
+    <us-gaap:OilAndGasSalesRevenue contextRef="From2011-04-01to2011-06-30" unitRef="USD" decimals="0">0</us-gaap:OilAndGasSalesRevenue>
+    <us-gaap:OilAndGasSalesRevenue contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">0</us-gaap:OilAndGasSalesRevenue>
+    <us-gaap:OilAndGasSalesRevenue contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">0</us-gaap:OilAndGasSalesRevenue>
+    <us-gaap:OilAndGasProductionExpense contextRef="From2012-04-01to2012-06-30" unitRef="USD" decimals="0">84</us-gaap:OilAndGasProductionExpense>
+    <us-gaap:OilAndGasProductionExpense contextRef="From2011-04-01to2011-06-30" unitRef="USD" decimals="0">0</us-gaap:OilAndGasProductionExpense>
+    <us-gaap:OilAndGasProductionExpense contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">12245</us-gaap:OilAndGasProductionExpense>
+    <us-gaap:OilAndGasProductionExpense contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">-11279</us-gaap:OilAndGasProductionExpense>
+    <us-gaap:GeneralAndAdministrativeExpense contextRef="From2012-04-01to2012-06-30" unitRef="USD" decimals="0">58717</us-gaap:GeneralAndAdministrativeExpense>
+    <us-gaap:GeneralAndAdministrativeExpense contextRef="From2011-04-01to2011-06-30" unitRef="USD" decimals="0">56777</us-gaap:GeneralAndAdministrativeExpense>
+    <us-gaap:GeneralAndAdministrativeExpense contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">126013</us-gaap:GeneralAndAdministrativeExpense>
+    <us-gaap:GeneralAndAdministrativeExpense contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">137510</us-gaap:GeneralAndAdministrativeExpense>
+    <us-gaap:CostsAndExpenses contextRef="From2012-04-01to2012-06-30" unitRef="USD" decimals="0">58801</us-gaap:CostsAndExpenses>
+    <us-gaap:CostsAndExpenses contextRef="From2011-04-01to2011-06-30" unitRef="USD" decimals="0">56777</us-gaap:CostsAndExpenses>
+    <us-gaap:CostsAndExpenses contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">138258</us-gaap:CostsAndExpenses>
+    <us-gaap:CostsAndExpenses contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">126231</us-gaap:CostsAndExpenses>
+    <us-gaap:OperatingIncomeLoss contextRef="From2012-04-01to2012-06-30" unitRef="USD" decimals="0">-58801</us-gaap:OperatingIncomeLoss>
+    <us-gaap:OperatingIncomeLoss contextRef="From2011-04-01to2011-06-30" unitRef="USD" decimals="0">-56777</us-gaap:OperatingIncomeLoss>
+    <us-gaap:OperatingIncomeLoss contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">-138258</us-gaap:OperatingIncomeLoss>
+    <us-gaap:OperatingIncomeLoss contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">-123231</us-gaap:OperatingIncomeLoss>
+    <us-gaap:InterestAndOtherIncome contextRef="From2012-04-01to2012-06-30" unitRef="USD" decimals="0">0</us-gaap:InterestAndOtherIncome>
+    <us-gaap:InterestAndOtherIncome contextRef="From2011-04-01to2011-06-30" unitRef="USD" decimals="0">2</us-gaap:InterestAndOtherIncome>
+    <us-gaap:InterestAndOtherIncome contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">0</us-gaap:InterestAndOtherIncome>
+    <us-gaap:InterestAndOtherIncome contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">10</us-gaap:InterestAndOtherIncome>
+    <us-gaap:InterestExpense contextRef="From2012-04-01to2012-06-30" unitRef="USD" decimals="0">-2336</us-gaap:InterestExpense>
+    <us-gaap:InterestExpense contextRef="From2011-04-01to2011-06-30" unitRef="USD" decimals="0">-1000</us-gaap:InterestExpense>
+    <us-gaap:InterestExpense contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">-3336</us-gaap:InterestExpense>
+    <us-gaap:InterestExpense contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">-1250</us-gaap:InterestExpense>
+    <us-gaap:OtherOperatingIncomeExpenseNet contextRef="From2012-04-01to2012-06-30" unitRef="USD" decimals="0">-2336</us-gaap:OtherOperatingIncomeExpenseNet>
+    <us-gaap:OtherOperatingIncomeExpenseNet contextRef="From2011-04-01to2011-06-30" unitRef="USD" decimals="0">-998</us-gaap:OtherOperatingIncomeExpenseNet>
+    <us-gaap:OtherOperatingIncomeExpenseNet contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">-3336</us-gaap:OtherOperatingIncomeExpenseNet>
+    <us-gaap:OtherOperatingIncomeExpenseNet contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">-1240</us-gaap:OtherOperatingIncomeExpenseNet>
+    <us-gaap:NetIncomeLoss contextRef="From2012-04-01to2012-06-30" unitRef="USD" decimals="0">-61137</us-gaap:NetIncomeLoss>
+    <us-gaap:NetIncomeLoss contextRef="From2011-04-01to2011-06-30" unitRef="USD" decimals="0">-57775</us-gaap:NetIncomeLoss>
+    <us-gaap:NetIncomeLoss contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">-141594</us-gaap:NetIncomeLoss>
+    <us-gaap:NetIncomeLoss contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">-127471</us-gaap:NetIncomeLoss>
+    <us-gaap:EarningsPerShareBasicAndDiluted contextRef="From2012-04-01to2012-06-30" unitRef="USDPShares" decimals="INF">-0.00</us-gaap:EarningsPerShareBasicAndDiluted>
+    <us-gaap:EarningsPerShareBasicAndDiluted contextRef="From2011-04-01to2011-06-30" unitRef="USDPShares" decimals="INF">-0.00</us-gaap:EarningsPerShareBasicAndDiluted>
+    <us-gaap:EarningsPerShareBasicAndDiluted contextRef="From2012-01-01to2012-06-30" unitRef="USDPShares" decimals="INF">-0.00</us-gaap:EarningsPerShareBasicAndDiluted>
+    <us-gaap:EarningsPerShareBasicAndDiluted contextRef="From2011-01-01to2011-06-30" unitRef="USDPShares" decimals="INF">-0.00</us-gaap:EarningsPerShareBasicAndDiluted>
+    <us-gaap:WeightedAverageNumberOfShareOutstandingBasicAndDiluted contextRef="From2012-04-01to2012-06-30" unitRef="Shares" decimals="INF">85564235</us-gaap:WeightedAverageNumberOfShareOutstandingBasicAndDiluted>
+    <us-gaap:WeightedAverageNumberOfShareOutstandingBasicAndDiluted contextRef="From2011-04-01to2011-06-30" unitRef="Shares" decimals="INF">83564235</us-gaap:WeightedAverageNumberOfShareOutstandingBasicAndDiluted>
+    <us-gaap:WeightedAverageNumberOfShareOutstandingBasicAndDiluted contextRef="From2012-01-01to2012-06-30" unitRef="Shares" decimals="INF">85564235</us-gaap:WeightedAverageNumberOfShareOutstandingBasicAndDiluted>
+    <us-gaap:WeightedAverageNumberOfShareOutstandingBasicAndDiluted contextRef="From2011-01-01to2011-06-30" unitRef="Shares" decimals="INF">83342735</us-gaap:WeightedAverageNumberOfShareOutstandingBasicAndDiluted>
+    <us-gaap:IncreaseDecreaseInAccruedSalaries contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">25000</us-gaap:IncreaseDecreaseInAccruedSalaries>
+    <us-gaap:IncreaseDecreaseInAccruedSalaries contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">25000</us-gaap:IncreaseDecreaseInAccruedSalaries>
+    <us-gaap:StockOptionPlanExpense contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">0</us-gaap:StockOptionPlanExpense>
+    <us-gaap:StockOptionPlanExpense contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">11294</us-gaap:StockOptionPlanExpense>
+    <us-gaap:IncreaseDecreaseInAccountsReceivableAndOtherOperatingAssets contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">-2146</us-gaap:IncreaseDecreaseInAccountsReceivableAndOtherOperatingAssets>
+    <us-gaap:IncreaseDecreaseInAccountsReceivableAndOtherOperatingAssets contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">0</us-gaap:IncreaseDecreaseInAccountsReceivableAndOtherOperatingAssets>
+    <us-gaap:IncreaseDecreaseInPrepaidExpense contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">-1100</us-gaap:IncreaseDecreaseInPrepaidExpense>
+    <us-gaap:IncreaseDecreaseInPrepaidExpense contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">6236</us-gaap:IncreaseDecreaseInPrepaidExpense>
+    <us-gaap:NetCashProvidedByUsedInOperatingActivities contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">-117463</us-gaap:NetCashProvidedByUsedInOperatingActivities>
+    <us-gaap:NetCashProvidedByUsedInOperatingActivities contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">-153268</us-gaap:NetCashProvidedByUsedInOperatingActivities>
+    <us-gaap:PaymentsForProceedsFromInvestments contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">133603</us-gaap:PaymentsForProceedsFromInvestments>
+    <us-gaap:PaymentsForProceedsFromInvestments contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">100000</us-gaap:PaymentsForProceedsFromInvestments>
+    <us-gaap:CashAndCashEquivalentsPeriodIncreaseDecrease contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">16140</us-gaap:CashAndCashEquivalentsPeriodIncreaseDecrease>
+    <us-gaap:CashAndCashEquivalentsPeriodIncreaseDecrease contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">-53268</us-gaap:CashAndCashEquivalentsPeriodIncreaseDecrease>
+    <us-gaap:StockholdersEquityNoteDisclosureTextBlock contextRef="From2012-04-01to2012-06-30">&lt;p style="margin: 0pt"&gt;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;4. &amp;#9;EQUITY&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;Diluted EPS (Earnings per Share) gives effect&#13;to all dilutive potential common shares outstanding during the period. The computation of Diluted EPS does not assume conversion,&#13;exercise or contingent exercise of securities that would have an anti-dilutive effect on losses. As a result, if there is a loss&#13;from continuing operations, Diluted EPS is computed in the same manner as Basic EPS. At June 30, 2012 and 2011, the Company had&#13;1,245,000 options outstanding, that were not included in the calculation of earnings per share for the periods then ended. Such&#13;financial instruments may become dilutive and would then need to be included in future calculations of Diluted EPS. At June 30,&#13;2012 and 2011, the outstanding options were considered anti-dilutive since the strike prices were above the market price and since&#13;the Company has incurred losses year to date.&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;On August 24, 2011, Albert E. Whitehead, the&#13;Company&amp;#146;s Chief Executive Officer, was issued 2,000,000 shares of the Company&amp;#146;s common stock for a purchase price of&#13;$.05 per share for a total investment of $100,000.&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;On May 31, 2012, at an Annual Meeting of Stockholders,&#13;the stockholders approved an increase of the Company&amp;#146;s authorized shares of common stock by 50,000,000 to 150,000,000.&lt;/p&gt;&#13;&#13;&#13;&#13;&lt;p style="margin: 0pt"&gt;&lt;/p&gt;</us-gaap:StockholdersEquityNoteDisclosureTextBlock>
+    <us-gaap:StockholdersEquityNoteDisclosureTextBlock contextRef="From2012-01-01to2012-06-30">0</us-gaap:StockholdersEquityNoteDisclosureTextBlock>
+    <us-gaap:StockholdersEquityNoteDisclosureTextBlock contextRef="From2011-01-01to2011-06-30">73,490</us-gaap:StockholdersEquityNoteDisclosureTextBlock>
+    <us-gaap:IncreaseDecreaseInAccountsPayable contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">2377</us-gaap:IncreaseDecreaseInAccountsPayable>
+    <us-gaap:IncreaseDecreaseInAccountsPayable contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">-68327</us-gaap:IncreaseDecreaseInAccountsPayable>
+    <us-gaap:NetCashProvidedByUsedInContinuingOperations contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">4978</us-gaap:NetCashProvidedByUsedInContinuingOperations>
+    <us-gaap:NetCashProvidedByUsedInContinuingOperations contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">68689</us-gaap:NetCashProvidedByUsedInContinuingOperations>
+    <us-gaap:IncreaseDecreaseInDeposits contextRef="From2012-01-01to2012-06-30" unitRef="USD" decimals="0">21118</us-gaap:IncreaseDecreaseInDeposits>
+    <us-gaap:IncreaseDecreaseInDeposits contextRef="From2011-01-01to2011-06-30" unitRef="USD" decimals="0">15421</us-gaap:IncreaseDecreaseInDeposits>
+    <us-gaap:BasisOfPresentationAndSignificantAccountingPoliciesTextBlock contextRef="From2012-04-01to2012-06-30">&lt;p style="margin: 0pt"&gt;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;1. &amp;#9;BASIS OF PRESENTATION AND SIGNIFICANT&#13;ACCOUNTING POLICIES:&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;The accompanying unaudited financial statements&#13;of Empire Petroleum Corporation (&amp;#34;Empire&amp;#34; or the &amp;#34;Company&amp;#34;) have been prepared in accordance with United States&#13;generally accepted accounting principles for interim financial information and the instructions to Form 10-Q. Accordingly, they&#13;do not include all of the information and footnotes required by United States generally accepted accounting principles for complete&#13;financial statements. In the opinion of management, all adjustments considered necessary for a fair presentation of the Company's&#13;financial position, the results of operations, and the cash flows for the interim period are included. All adjustments are of a&#13;normal, recurring nature. Operating results for the interim period are not necessarily indicative of the results that may be expected&#13;for the year ending December 31, 2012.&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;The information contained in this Form 10-Q&#13;should be read in conjunction with the audited financial statements and related notes for the year ended December 31, 2011 which&#13;are contained in the Company's Annual Report on Form 10-K filed with the Securities and Exchange Commission (the &amp;#34;SEC&amp;#34;)&#13;on March 21, 2012.&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;The Company has incurred significant losses&#13;in recent years. The continuation of the Company as a going concern is dependent upon the ability of the Company to attain future&#13;profitable operations and/or additional debt or equity financing until profitable operations are achieved. These financial statements&#13;have been prepared on the basis of United States generally accepted accounting principles applicable to a company with continuing&#13;operations, which assume that the Company will continue in operation for the foreseeable future and will be able to realize its&#13;assets and discharge its obligations in the normal course of operations. Management believes the going concern assumption to be&#13;appropriate for these financial statements. If the going concern assumption were not appropriate for these financial statements,&#13;then adjustments might be necessary to adjust the carrying value of assets and liabilities and reported expenses.&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;The Company continues to seek partners to help&#13;it explore and develop its oil and gas interests. The ultimate recoverability of the Company's investment in its oil and gas interests&#13;is dependent upon the existence and discovery of economically recoverable oil and gas reserves, confirmation of the Company's interest&#13;in the oil and gas interests, the ability of the Company to obtain necessary financing to further develop the interests, and the&#13;ability of the Company to attain future profitable production.&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;As of June 30, 2012, the Company had $21,118&#13;of cash on hand. In order to sustain the Company's operations on a long-term basis, the Company continues to look for merger opportunities&#13;and consider public or private financings.&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;Compensation of Officers and Employees&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;The Company's only executive officer serves&#13;without pay or other compensation. The fair value of these services is estimated by management and is recognized as a capital contribution.&#13;For the six months ended June 30, 2012, the Company recorded $25,000 as a capital contribution by its executive officer.&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;Fair Value Measurements&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;The Financial Accounting Standards Board (&amp;#34;FASB&amp;#34;)&#13;fair value measurement standards define fair value, establish a consistent framework for measuring fair value and establish a fair&#13;value hierarchy based on the observability of inputs used to measure fair value. The Company's primary marketable asset is cash,&#13;and it owns no marketable securities.&lt;/p&gt;&#13;&#13;&#13;&#13;&lt;p style="margin: 0pt"&gt;&lt;/p&gt;</us-gaap:BasisOfPresentationAndSignificantAccountingPoliciesTextBlock>
+    <us-gaap:PropertyPlantAndEquipmentDisclosureTextBlock contextRef="From2012-04-01to2012-06-30">&lt;p style="margin: 0pt"&gt;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;2. &amp;#9;PROPERTY AND EQUIPMENT:&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;GABBS VALLEY PROSPECT&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;As of June 30, 2012, the Company's leasehold&#13;acreage in the Gabbs Valley Prospect consisted of 34,186 gross acres and the Company&amp;#146;s ownership in such leasehold acreage&#13;is 50%.&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;As of December 31, 2005, there had been no&#13;wells drilled on the Gabbs Valley Prospect. However, in November 2005, the Company received the results of a 19-mile 2-D swath&#13;seismograph survey conducted on the prospect and, based on the results of the survey, the Company and its partners determined that&#13;a test well should be drilled on the prospect.&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;The Company drilled its first test well on&#13;this prospect in 2006. After reaching 5,195 feet in connection with drilling this well (the Empire Cobble Cuesta 1-12), the Company&#13;and its partners elected to suspend operations on the well, and released the drilling rig and associated equipment. Company personnel&#13;and consultants then evaluated the drilling and logging data and after the study was completed, Empire and its partners decided&#13;to conduct a thorough testing program on the well. The Company re-entered the well on April 17, 2007 and conducted a series of&#13;drill stem tests and recovered only drilling mud. It was then determined after considerable study that the formation is likely&#13;very sensitive to mud and water used in drilling which may have caused clays in the formation to swell preventing any oil that&#13;might be present to flow into the well bore.&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;In 2008, the Company and its partners engaged&#13;W. L. Gore and Associates to carry out an Amplified Geochemical Imaging Survey which covered approximately sixteen square miles.&#13;The survey was concentrated along the apex of the large Cobble Cuesta structure which included the areas around the Empire Cobble&#13;Cuesta 1-12 exploratory test and the other test well drilled in the immediate area. Both of these tests encountered oil shows and&#13;the geochemical survey indicated potential hydrocarbons beyond the two well bores. Thereafter, a new Federal drilling unit was&#13;formed and approved by the Bureau of Land Management. This unit was known as the Paradise Drilling Unit.&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;In July 2010, the Company entered into a farm-in&#13;agreement with its joint lease holders holding a 41% working interest in the 40,073 acre Paradise Unit. On July 19, 2010, the Company&#13;commenced drilling a test well in the Paradise Unit on the Gabbs Valley Prospect in Nevada. The Company drilled the Paradise Unit&#13;2-12 test well to a depth of 4,250 feet before drilling problems caused the Company to cease drilling. The Company tested the well&#13;between 3,700 feet and 3,782 feet where oil shows were found. The Company recovered small amounts of oil containing paraffin, which&#13;may have been restricting the oil flow. However, swab tests failed to increase the oil flow and the Company has suspended operations&#13;on the well and assigned the lease and the 1-12 and 2-12 wells to the other leasehold owners from which the&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;Company had taken a farmout. The new owners&#13;are performing further testing on the 2-12 well and assumed liabilities associated with the lease and both the 1-12 and 2-12 wells.&#13;The Company has utilized the results to date of the testing and other factors to determine its next action with respect to the&#13;Gabbs Valley leasehold. The Company is now looking for an industry partner to take a farmout on approximately 25,000 acres with&#13;the obligation to drill a test well to a depth of 7,000 feet or 500 feet into the Triassic formation, whichever first occurs.&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;SOUTH OKIE PROSPECT&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;In 2009, the Company purchased 2,630 net acres&#13;of oil and gas leases known as the South Okie Prospect in Natrona County, Wyoming. The Tensleep Sand at depths from 3,300 feet&#13;to 4,500 feet is the primary target. As of December 31, 2009, the Company acquired 11 miles of seismic data and studies of this&#13;data were completed in early January 2010. An additional geological study was also completed in early January 2010. Subject to&#13;securing additional financing and/or engaging an industry partner, the Company plans to drill or cause to be drilled a test well.&lt;/p&gt;&#13;&#13;&#13;&#13;&lt;p style="margin: 0pt"&gt;&lt;/p&gt;</us-gaap:PropertyPlantAndEquipmentDisclosureTextBlock>
+    <us-gaap:RelatedPartyTransactionsDisclosureTextBlock contextRef="From2012-04-01to2012-06-30">&lt;p style="margin: 0pt"&gt;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;3. &amp;#9;NOTE PAYABLE - RELATED PARTY&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;On February 1, 2011, The Albert E. Whitehead&#13;Living Trust, under the terms of a convertible note, advanced $100,000 to the Company. The note has a term of one (1) year and&#13;accrues interest at the rate of four percent (4%) per annum. No principal or interest has been paid on the note. At June 30, 2012,&#13;$6,586 of interest had accrued. The principal and interest owed under the note may be converted by the holder into common stock&#13;at the conversion price of $0.10 per share. The maturity date of the note has been extended to August 1, 2012. In January 2012,&#13;The Albert E. Whitehead Living Trust advanced an additional $33,603 to the Company.&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;&amp;#160;&lt;/p&gt;&#13;&#13;&lt;p style="font: 10pt Times New Roman, Times, Serif; margin: 0; text-align: justify"&gt;In April 2012, the Company executed another&#13;convertible note in favor of The Albert E. Whitehead Living Trust for the January 2012 advance of $33,603 and an additional $100,000&#13;of proceeds. The note is due in April 2013 and accrues interest at the rate of four percent (4%) per annum. The principal and interest&#13;owed under the note may be converted by the holder into common stock at the conversion price of $0.05 per share.&lt;/p&gt;&#13;&#13;&#13;&#13;&lt;p style="margin: 0pt"&gt;&lt;/p&gt;</us-gaap:RelatedPartyTransactionsDisclosureTextBlock>
+</xbrli:xbrl>

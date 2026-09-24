@@ -1,0 +1,622 @@
+<DefinitionAndReference>
+  <Element Id="psa_PreferredShareholdersBasedOnDistributionsPaid">
+    <definition>Income allocation based on the amount of dividends declared or paid in the period to preferred shareholders, or the amount for which the obligation to pay them dividends arose in the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_NetIncomePerBasicEquityShareBasicAndDiluted">
+    <definition>The amount of net income or loss for the period per each share of Equity Shares (basic and dilutive) equivalents outstanding during the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PreferredStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DueFromRelatedParties">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_GainOnDispositionOfRealEstateInvestments">
+    <definition>This item represents the gain or loss realized during the period from the sale of real estate facilities or investments in real estate entities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_WeightedAverageSharesOfEquitySharesSeriesBasicAndDiluted">
+    <definition>The weighted average number of Equity Shares issued and outstanding, (basic and diluted).</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockDividendsPerShareDeclared">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_EquitySharesSeriesCalledForRedemptionbs">
+    <definition>The redemption (or callable) amount of currently redeemable equity stock.  Includes amounts representing dividends not currently declared or paid but which will be payable under the redemption features or for which ultimate payment is solely within the control of the issuer.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NotesPayable">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesIssued">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_DistributionsPaidToRedeemableNoncontrollingInterests">
+    <definition>Distributions paid to redeemable noncontrolling interests.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_DepreciationAndAmortizationIncludingAmountsInDiscontinuedOperations">
+    <definition>The current period expense charged against earnings on long-lived, physical assets not used in production, and which are not intended for resale, to allocate or recognize the cost of such assets over their useful lives; or to record the reduction in book value of an intangible asset over the benefit period of such asset; or to reflect consumption during the period of an asset that is not used in production. Includes amounts in discontinued operations.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityPublicFloat">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInFinancingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AssetImpairmentCharges">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToMinorityShareholders">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_ProceedsFromSalesOfOtherRealEstateInvestments">
+    <definition>The cash inflow associated with the sale of other real estate or real estate investments held for investment not otherwise defined in the taxonomy.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterestInNetIncomeLossOtherMinorityInterests">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DebtDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_SharesOutstanding">
+    <definition>Total number of equity shares held by shareholders. May be all or portion of the number of equity shares authorized. These shares represent the ownership interest of the equity shares. Excludes equity shares repurchased by the entity and held as Treasury shares. Shares outstanding equals shares issued minus shares held in treasury. Does not include equity shares that have been repurchased</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InvestmentIncomeNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherComprehensiveIncomeForeignCurrencyTransactionAndTranslationGainLossArisingDuringPeriodNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DisclosureOfCompensationRelatedCostsShareBasedPaymentsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_Netincomeallocatedfromtononcontrollingequitybaseduponincomeoftheconsolidatedentities">
+    <definition>Income allocation based on the amount of income from the consolidated entities, excluding the amounts related to redemptions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_RedeemableNoncontrollingInterestsNc">
+    <definition>The carrying value (book value) of an entity's issued and outstanding stock which is not included within permanent equity in Stockholders Equity. Temporary equity is a security with redemption features that are outside the control of the issuer, is not classified as an asset or liability in conformity with GAAP, and is not mandatorily redeemable. Includes any type of security that is redeemable at a fixed or determinable price or on a fixed or determinable date or dates, is redeemable at the option of the holder, or has conditions for redemption which are not solely within the control of the issuer. If convertible, the issuer does not control the actions or events necessary to issue the maximum number of shares that could be required to be delivered under the conversion option if the holder exercises the option to convert the stock to another class of equity. If the security is a warrant or a rights issue, the warrant or rights issue is considered to be temporary equity if the issuer cannot demonstrate that it would be able to deliver upon the exercise of the option by the holder in all cases. Includes stock with a put option held by an ESOP and stock redeemable by a holder only in the event of a change in control of the issuer.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PreferredStockSharesIssued">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_TemporaryEquityCarryingAmount">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_StockBasedCompensationExpenseNote10">
+    <definition>This element represents the amount of recognized share-based compensation during the period, that is, the amount recognized as expense in the income statement (or as asset if compensation is capitalized), less cash paid in lieu of shares issued for emoployee taxes with respect to vested restricted stock units.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityVoluntaryFilers">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_AccumulatedOtherComprehensiveLossIncome">
+    <definition>Increases or decreases in accumulated other comprehensive (loss) income due to the impact of changing exchange rates, resulting in an unrealized foreign currency translation gain or loss.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RealEstateDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquityNoteDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RealEstateRevenueNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_CommonShareholders">
+    <definition>Remaining net income, which is allocated to common shareholders.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DevelopmentInProcess">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DividendsCommonStockCash">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ForeignCurrencyTransactionGainLossUnrealized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NatureOfOperations">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_ParValue">
+    <definition>Face amount or stated value of equity share; generally not indicative of the fair market value per share.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_InvestmentInRealEstateEntities">
+    <definition>The net carrying value of our investments in entities for which we account for using the Equity Method.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCentralIndexKey">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DepreciationAndAmortization">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_UnvestedRestrictedStock">
+    <definition>Common stock cash dividend declared and paid to holders of unvested restricted share units.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetIncomeLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_RedeemableNoncontrollingInterestsInSubsidiaries">
+    <definition>This element represents the income allocated to redeemable noncontrolling interests.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_EquitySharesSeriesCalledForRedemption">
+    <definition>The aggregate redemption amount of Equity Shares, Series A.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ScheduleOfSubsequentEventsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherNonoperatingExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromContinuingOperationsIncludingPortionAttributableToNoncontrollingInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PreferredStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_EquitySharesSeriesBasedOnRedemptions">
+    <definition>Income allocation in the period to holders of Equity Shares based on redemptions.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_NetIncomePerCommonShareDilutedTotal">
+    <definition>The amount of net income or loss for the period per each share of common stock and dilutive common stock equivalents outstanding during the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsOfCapitalDistribution">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommitmentsAndContingenciesDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdjustmentsToReconcileNetIncomeLossToCashProvidedByUsedInOperatingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Land">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccountsPayableAndAccruedLiabilitiesCurrentAndNoncurrent">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockIssuedDuringPeriodSharesShareBasedCompensation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PreferredStockParOrStatedValuePerShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_EquitySharesSeries">
+    <definition>Income allocation in the form of dividends declared or paid in the period to holders of Equity Shares.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_RealEstateFacilitiesNetOfAccumulatedDepreciationfc">
+    <definition>Increases or decreases in real estate facilities, net of accumulated depreciation due to the impact of changing exchange rates, resulting in an unrealized foreign currency translation gain or loss.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AccumulatedOtherComprehensiveIncomeLossNetOfTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_BasedUponRedemptionsOfPreferredPartnershipUnits">
+    <definition>The excess of (1) fair value of the consideration transferred to the holders of the preferred unitholders over (2) the carrying amount of the preferred unitholders in the registrant's balance sheet, during the accounting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IntangibleAssetsNetExcludingGoodwill">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_AmendmentFlag">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsAtCarryingValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityRegistrantName">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RelatedPartyTransactionsDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockSharesAuthorized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterestDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_RealEstateFacilitesNet">
+    <definition>The net book value of real estate property held for investment purposes.  Excludes (1) construction in process and (2) development in process.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_RetainedDeficitNc">
+    <definition>The cumulative amount of the reporting entity's undistributed earnings or deficit.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SegmentReportingDisclosureTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarlyRepaymentOfSeniorDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Goodwill">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Liabilities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EquityMethodInvestmentsTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForRepurchaseOfPreferredStockAndPreferenceStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DirectCostsOfLeasedAndRentedPropertyOrEquipment">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_AdditionalPaidInCapital">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_DividendsPreferredStockCash">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Revenues">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_Gainondipositionofrealestateinvestments">
+    <definition>This item represents the gain or loss realized during the period from the sale of real estate facilities or investments in real estate entities.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_AssetImpairmentChargescf">
+    <definition>The charge against earnings resulting from the aggregate write down of all assets from their carrying value to their fair value.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInOperatingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCommonStockSharesOutstanding">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_DiscontinuedOperationsbasic">
+    <definition>The amount of income (loss) from discontinued operations, net of related tax effect, per each share of common stock outstanding during the reporting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromEquityMethodInvestments">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForConstructionInProcess">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EarningsPerShareDiluted">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_PaidInCapitalcf">
+    <definition>Excess of issue price over par or stated value of the entity's capital stock and amounts received from other transactions involving the entity's stock or stockholders. Includes adjustments to additional paid in capital. Some examples of such adjustments include recording the issuance of debt with a beneficial conversion feature and certain tax consequences of equity instruments awarded to employees. Use this element for the aggregate amount of APIC associated with common AND preferred stock. For APIC associated with only common stock, use the element Additional Paid In Capital, Common Stock. For APIC associated with only preferred stock, use the element Additional Paid In Capital, Preferred Stock.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncreaseDecreaseInOtherOperatingCapitalNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_BuildingsAndImprovementsGross">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_OtherNonoperatingIncome">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_Incomefromcontinuingoperationsbeforeequityinearningsofrealestateentitiesgainloss">
+    <definition>Income (loss) from continuing operations before equity in earnings of real estate entities, gain (loss) on disposition of real estate investments, gain on early retirement of debt, and foreign currency exchange (loss) gain.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_PrincipalPaymentsOnNotesPayable">
+    <definition>The net cash outflow from scheduled principal payments on notes payable.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromContinuingOperationsPerDilutedShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CashAndCashEquivalentsPeriodIncreaseDecrease">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterest">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalPeriodFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_PreferredShareholdersBasedOnRedemptions">
+    <definition>The excess of (1) fair value of the consideration transferred to the holders of the preferred stock over (2) the carrying amount of the preferred stock in the registrant's balance sheet, during the accounting period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_WeightedAverageNumberOfSharesOutstandingBasic">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_LoanReceivableFromShurgardEuropecf">
+    <definition>Increases or decreases in loan receivable from Shurgard Europe due to the impact of changing exchange rates, resulting in an unrealized foreign currency translation gain or loss.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_IncomeLossFromContinuingOperationsPerBasicShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_CurrentFiscalYearEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_MinorityInterestDecreaseFromDistributionsToNoncontrollingInterestHolders">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityFilerCategory">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_InterestExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_EffectOfExchangeRateOnCashAndCashEquivalents">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsToAcquireHeldToMaturitySecurities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_DistributionsPaidToPermanentNoncontrollingEquityInterests">
+    <definition>Distributions paid to permanent noncontrolling equity interests.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentFiscalYearFocus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForCapitalImprovements">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PrepaidExpenseAndOtherAssets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockValue">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RetainedEarningsAccumulatedDeficit">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_EquitySharesSeriesDepositaryShares">
+    <definition>Equity Shares, Series A, depositary shares</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ForeignCurrencyTransactionGainLossBeforeTax">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_NetCashProvidedByUsedInInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_EquitySharesSeries1225PerDepositaryShare">
+    <definition>Equity shares cash dividend declared by an entity during the period. This element includes paid and unpaid dividends declared during the period.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_RestrictedShareUnits">
+    <definition>Income allocation to holders of restricted share units.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_Assets">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityWellKnownSeasonedIssuer">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_InvestmentInRealEstateEntitiescf">
+    <definition>Increases or decreases in investment in real estate entities due to the impact of changing exchange rates, resulting in an unrealized foreign currency translation gain or loss.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentType">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_EquitySharesValue">
+    <definition>Dollar value of depositary shares. Equity Shares rank on parity with our common shares and junior to the Preferred Shares with respect to general preference rights and have limits to liquidation and distribution amounts.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_TotalExpenses">
+    <definition>Total costs associated with ongoing operations. Includes depreciation, amortization, interest, and general and administrative expenses.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_SharesIssuedparen">
+    <definition>Total number of equity shares of an entity that have been sold or granted to shareholders (includes equityshares that were issued, repurchased and remain in the treasury). These shares represent capital invested by the firm's shareholders and owners, and may be all or only a portion of the number of shares authorized. Shares issued include shares outstanding and shares held in the treasury.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_CommitmentsAndContingenciesNote12">
+    <definition>Represents the caption on the face of the balance sheet to indicate that the entity has entered into (1) purchase or supply arrangements that will require expending a portion of its resources to meet the terms thereof, and (2) is exposed to potential losses or, less frequently, gains, arising from (a) possible claims against a company's resources due to future performance under contract terms, and (b) possible losses or likely gains from uncertainties that will ultimately be resolved when one or more future events that are deemed likely to occur do occur or fail to occur. This caption alerts the reader that one or more notes to the financial statements disclose pertinent information about the entity's commitments and contingencies.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_SharesAuthorized">
+    <definition>The maximum number of equity shares permitted to be issued by an entity's charter and bylaws.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_DiscontinuedOperations">
+    <definition>Overall income (loss) from a disposal group that is classified as a component of the entity, before income tax, reported as a separate component of income before extraordinary items and the cumulative effect of accounting changes. Includes the following (before income tax): gain (loss) on disposal, provision (or any reversals of earlier provisions) for loss on disposal, impairment charges, and adjustments of a prior period gain (loss) on disposal.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_Distributionsreceivedfromrealestateentitiesinexcessofotherequityinearnings">
+    <definition>This item represents disclosure of the amount of dividends or other distributions received from equity method investees in excess of equity income (excluding pro-rata share of benefits or charges related to preferred redemptions) recognized</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProfitLoss">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_EntityCurrentReportingStatus">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_ProceedsFromIssuanceOfCommonStock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GeneralAndAdministrativeExpense">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_StockIssuedDuringPeriodValueShareBasedCompensation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PreferredStockSharesAuthorized">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_PaymentsForProceedsFromOtherInvestingActivities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RealEstateInvestmentPropertyNet">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RealEstateInvestmentPropertyAccumulatedDepreciation">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_AdjustmentsOfPermanentNoncontrollingInterestsInSubsidiariesToLiquidationValueNote7">
+    <definition>This element represents the adjustments to state redeemable noncontrolling interest in subsidiaries at estimated liquidation amount.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_LiabilitiesAndStockholdersEquity">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_RealEstateInvestmentPropertyAtCost">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="psa_EquitySharesSeriesCalledForRedemptionNote7">
+    <definition>Redemption of Equity Shares, Series A</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_GainsLossesOnExtinguishmentOfDebt">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_HeldToMaturitySecurities">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_CommonStockParOrStatedValuePerShare">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="dei_DocumentPeriodEndDate">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+  <Element Id="us-gaap_SignificantAccountingPoliciesTextBlock">
+    <definition>No authoritative reference available.</definition>
+    <reference>No authoritative reference available.</reference>
+  </Element>
+</DefinitionAndReference>
