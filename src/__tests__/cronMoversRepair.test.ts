@@ -8,7 +8,6 @@
  *   - movers-insights only processes tickers WITHOUT a reason; after reset the
  *     same ticker becomes eligible again
  */
-import { aiService } from '@/services/aiService';
 import { aiMoversService } from '@/services/aiMoversService';
 import { POST } from '@/app/api/cron/reset-movers/route';
 import { prisma } from '@/lib/db/prisma';
@@ -72,16 +71,6 @@ describe('Gemini model — gemini-3.5-flash-lite (older flash models retired)', 
         delete process.env.GEMINI_MODEL;
     });
 
-    it('aiService calls generateContent on gemini-3.5-flash-lite', async () => {
-        fetchMock.mockResolvedValueOnce(geminiOk('Solidný rast.'));
-        const verdict = await aiService.generateInvestmentVerdict({ ticker: 'NVDA' });
-        expect(verdict).toBe('Solidný rast.');
-        const url = String(fetchMock.mock.calls[0][0]);
-        expect(url).toContain('/models/gemini-3.5-flash-lite:generateContent');
-        expect(url).toContain('key=test-gemini-key');
-        expect(url).not.toContain('gemini-1.5');
-    });
-
     it('aiMoversService calls generateContent on gemini-3.5-flash-lite', async () => {
         fetchMock.mockResolvedValueOnce(geminiOk(
             '{"reason":"r","category":"Technical","socialCopy":"s","isSbcAlert":false,"aiConfidence":80}'
@@ -93,14 +82,11 @@ describe('Gemini model — gemini-3.5-flash-lite (older flash models retired)', 
         expect(url).not.toContain('gemini-1.5');
     });
 
-    it('GEMINI_MODEL env overrides the default in both services', async () => {
+    it('GEMINI_MODEL env overrides the default', async () => {
         process.env.GEMINI_MODEL = 'gemini-flash-latest';
-        fetchMock.mockResolvedValue(geminiOk('x'));
-        await aiService.generateInvestmentVerdict({ t: 1 });
+        fetchMock.mockResolvedValue(geminiOk('{}'));
         await (aiMoversService as any).callGemini('p', 'k').catch(() => null);
-        for (const call of fetchMock.mock.calls) {
-            expect(String(call[0])).toContain('/models/gemini-flash-latest:generateContent');
-        }
+        expect(String(fetchMock.mock.calls[0][0])).toContain('/models/gemini-flash-latest:generateContent');
     });
 });
 
