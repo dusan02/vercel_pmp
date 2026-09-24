@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import AnalysisTab from '../company/AnalysisTab';
 import { IntradayChart } from '../company/IntradayChart';
+import { AnalysisStockSearch } from '../AnalysisStockSearch';
 import { Search, ExternalLink, ArrowRight } from 'lucide-react';
 import { SectionIcon } from '../SectionIcon';
 import { formatPrice, formatPercent, formatMarketCap } from '@/lib/utils/format';
@@ -26,9 +27,15 @@ interface TickerHeaderData {
     industry: string | null;
 }
 
+interface PeerChip {
+    symbol: string;
+    name: string | null;
+    lastChangePct: number | null;
+}
+
 export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeAnalysisProps) {
-    // Input field state (what's in the text box)
-    const [inputValue, setInputValue] = useState<string>('');
+    // Same-sector competitors for the active ticker (clickable chips)
+    const [peers, setPeers] = useState<PeerChip[]>([]);
 
     // Company header data (name, logo context, price) for the active ticker
     const [headerData, setHeaderData] = useState<TickerHeaderData | null>(null);
@@ -56,6 +63,17 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
         return () => { cancelled = true; };
     }, [activeTicker]);
 
+    // Competitor chips — cheap lookup, refetched per ticker switch
+    useEffect(() => {
+        if (!activeTicker) { setPeers([]); return; }
+        let cancelled = false;
+        fetch(`/api/analysis/peers?symbol=${encodeURIComponent(activeTicker)}`)
+            .then(r => r.json())
+            .then(d => { if (!cancelled) setPeers(Array.isArray(d?.peers) ? d.peers : []); })
+            .catch(() => { if (!cancelled) setPeers([]); });
+        return () => { cancelled = true; };
+    }, [activeTicker]);
+
     const setTicker = useCallback((t: string) => {
         if (!t) return;
         if (onTickerChange) onTickerChange(t);
@@ -66,15 +84,6 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
             }));
         }
     }, [onTickerChange]);
-
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        const t = inputValue.toUpperCase().trim();
-        if (t) {
-            setTicker(t);
-            setInputValue('');
-        }
-    };
 
     const trendingTickers = ['NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMD', 'META'];
 
@@ -104,40 +113,53 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                         </h2>
                     </div>
 
-                    {/* Inline Search */}
-                    <form onSubmit={handleSearch} className="relative flex-1 min-w-0">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
-                        <input
-                            type="text"
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value.toUpperCase())}
-                            placeholder="Search Ticker (e.g. MSFT)"
-                            className="w-full h-10 pl-9 pr-28 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-medium"
-                        />
-                        <button
-                            type="submit"
-                            className="absolute right-1.5 top-1.5 bottom-1.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm transition-all"
-                        >
-                            Analyze
-                        </button>
-                    </form>
+                    {/* Inline Search — autocomplete over symbol + company name */}
+                    <AnalysisStockSearch
+                        onSelect={setTicker}
+                        placeholder="Search ticker or company (e.g. MSFT)"
+                        className="flex-1 min-w-0"
+                    />
                 </div>
 
-                {/* Trending Pills */}
+                {/* Pills: same-sector competitors once a ticker is selected,
+                    generic trending list on the empty state */}
                 <div className="flex flex-wrap items-center gap-2 mt-3">
-                    <span className="text-xs text-gray-400 mr-1">Trending:</span>
-                    {trendingTickers.map(t => (
-                        <button
-                            key={t}
-                            onClick={() => setTicker(t)}
-                            className={`text-xs px-3 py-1 rounded-full border transition-all ${activeTicker === t
-                                ? 'bg-blue-600 border-blue-600 text-white'
-                                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-400'
-                                }`}
-                        >
-                            {t}
-                        </button>
-                    ))}
+                    {activeTicker && peers.length > 0 ? (
+                        <>
+                            <span className="text-xs text-gray-400 mr-1">Competitors:</span>
+                            {peers.map(p => (
+                                <button
+                                    key={p.symbol}
+                                    onClick={() => setTicker(p.symbol)}
+                                    title={p.name ?? p.symbol}
+                                    className="text-xs px-3 py-1 rounded-full border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-400 transition-all"
+                                >
+                                    {p.symbol}
+                                    {p.lastChangePct != null && (
+                                        <span className={`ml-1 tabular-nums font-semibold ${p.lastChangePct > 0 ? 'text-emerald-600 dark:text-emerald-400' : p.lastChangePct < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500'}`}>
+                                            {p.lastChangePct > 0 ? '+' : ''}{p.lastChangePct.toFixed(1)}%
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </>
+                    ) : (
+                        <>
+                            <span className="text-xs text-gray-400 mr-1">Trending:</span>
+                            {trendingTickers.map(t => (
+                                <button
+                                    key={t}
+                                    onClick={() => setTicker(t)}
+                                    className={`text-xs px-3 py-1 rounded-full border transition-all ${activeTicker === t
+                                        ? 'bg-blue-600 border-blue-600 text-white'
+                                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-400'
+                                        }`}
+                                >
+                                    {t}
+                                </button>
+                            ))}
+                        </>
+                    )}
                 </div>
             </div>
 

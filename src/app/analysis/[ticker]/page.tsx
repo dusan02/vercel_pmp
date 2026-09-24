@@ -36,6 +36,7 @@ import { KeyMetricsTable } from '@/components/company/analysis/KeyMetricsTable';
 import { AnalysisFaqSection, buildAnalysisFaq, buildFaqSchema } from '@/components/company/analysis/sections/AnalysisFaqSection';
 import { AnalysisCrossLinks } from '@/components/company/analysis/sections/AnalysisCrossLinks';
 import { SeoTextSection } from '@/components/company/SeoTextSection';
+import { AnalysisStockSearch } from '@/components/AnalysisStockSearch';
 
 // Lazy client chunks — keeps recharts/finnhub-fetch code out of the initial bundle
 const IntradayChart = dynamic(() => import('@/components/company/IntradayChart').then((m) => m.IntradayChart));
@@ -220,14 +221,17 @@ export default async function AnalysisPage({ params }: PageProps) {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Breadcrumb */}
         <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700" aria-label="Breadcrumb">
-          <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <ol className="flex items-center space-x-2 text-sm">
+          <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-4">
+            <ol className="flex items-center space-x-2 text-sm min-w-0">
               <li><Link href="/" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Home</Link></li>
               <li className="text-gray-500" aria-hidden="true">/</li>
               <li><Link href="/stocks" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Stocks</Link></li>
               <li className="text-gray-500" aria-hidden="true">/</li>
               <li className="text-gray-900 dark:text-gray-100 font-medium" aria-current="page">{tickerUpper}</li>
             </ol>
+            <div className="ml-auto w-full max-w-xs shrink-0">
+              <AnalysisStockSearch placeholder="Analyze another stock…" />
+            </div>
           </div>
         </nav>
 
