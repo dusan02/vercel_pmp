@@ -36,6 +36,7 @@
 ## Analytika (GSC/GA4) a traffic
 
 - **Report skripty**: `scripts/gsc-report.ts` a `scripts/ga4-report.ts` cez SA kľúč `~/.config/pmp/gcp-service-account.json` (env `GOOGLE_APPLICATION_CREDENTIALS`). GA4 `PROPERTY_ID=517675266` (measurement `G-VQ1P6MDRRW`, v `.env.local` ako `GA4_PROPERTY_ID`). GA4 Admin API je v GCP projekte `47392532694` disabled — property ID sa nedá vylistovať programovo
+- **Denný digest**: `npm run traffic` (`scripts/traffic-report.ts`, `--days N`, `--skip-nginx`) — kombinuje GA4 sources/countries/pages s nginx browser-IP countom cez SSH na VPS (IP, ktorá stiahla HTML + `_next` JS = renderujúci browser, zachytí aj adblock userov). Farm odhad: Singapore + `(not set)`/`(data not available)` sources
 - **GA4 reserved-param pasca (fixnuté 2026-09-20)**: parametre `source`/`medium`/`campaign` v `event()` prepisujú atribúciu celej session (164 sess/28d spadlo do "Unassigned" ako `heatmap / (not set)`). V eventoch používame `click_source` — pri pridávaní nových eventov nikdy neposielať rezervované názvy
 - **~76 % GA4 "traffic" je scraping farma** (audit 2026-09-20): Singapore/Čína, `(direct)/(none)`, sessions bez pageviews — headless browseri + priame hity na `/api/stocks`, `/api/heatmap`, `/api/indices/*` (replayujú frontend cally, vidno v nginx access logu). Reálna návštevnosť ~30–40 sess/deň; hlavný organický zdroj = **Bing ~4× Google** (GSC ~8 klikov/28d, pos ~66); AI referrers (chatgpt/copilot/perplexity) ~70 sess/28d. Čitateľ GA4 reportov má vždy kontrolovať krajinu/pageviews, nie raw sessions
 
