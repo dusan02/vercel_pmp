@@ -25,6 +25,14 @@ interface AnalysisHeroProps {
   /** 52-week closing range (daily regularClose min/max) */
   week52Low?: number | null;
   week52High?: number | null;
+  /** P/E vs own multi-year history (percentile tooltip data) — hero chip */
+  peHistory?: {
+    current: number | null;
+    min: number | null;
+    max: number | null;
+    percentile: number | null;
+    years: number | null;
+  } | null;
   /** Next earnings date (YYYY-MM-DD) + days until it */
   earningsDate?: string | null;
   earningsDays?: number | null;
@@ -65,6 +73,7 @@ export function AnalysisHero({
   roe,
   week52Low,
   week52High,
+  peHistory,
   earningsDate,
   earningsDays,
   verdict,
@@ -155,6 +164,33 @@ export function AnalysisHero({
           </>
         )}
       </div>
+      {/* P/E vs own history — the "cheap or expensive vs itself" answer at
+          a glance; the full percentiles live in Key Metrics tooltips. */}
+      {peHistory?.current != null && peHistory?.percentile != null && (
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 flex flex-wrap items-center gap-x-1.5">
+          <span className="font-semibold text-gray-700 dark:text-gray-300">P/E {formatPrice(peHistory.current)}×</span>
+          {peHistory.min != null && peHistory.max != null && (
+            <span>
+              · {peHistory.years != null ? `${Math.round(peHistory.years)}Y` : 'hist.'} range {formatPrice(peHistory.min)}–{formatPrice(peHistory.max)}×
+            </span>
+          )}
+          <span
+            className={
+              peHistory.percentile <= 25
+                ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
+                : peHistory.percentile >= 80
+                  ? 'text-red-600 dark:text-red-400 font-semibold'
+                  : ''
+            }
+          >
+            · {peHistory.percentile <= 25
+              ? `bottom ${Math.round(peHistory.percentile)}% of history`
+              : peHistory.percentile >= 80
+                ? `top ${Math.round(100 - peHistory.percentile)}% of history`
+                : `${Math.round(peHistory.percentile)}th percentile of history`}
+          </span>
+        </p>
+      )}
       {/* Sector + Industry + analyst consensus strip — one row; the strip
           fills the empty space right of the sector line. */}
       <div className="mt-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">

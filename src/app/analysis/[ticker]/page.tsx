@@ -37,6 +37,7 @@ import { AnalysisFaqSection, buildAnalysisFaq, buildFaqSchema } from '@/componen
 import { AnalysisCrossLinks } from '@/components/company/analysis/sections/AnalysisCrossLinks';
 import { SeoTextSection } from '@/components/company/SeoTextSection';
 import { AnalysisStockSearch } from '@/components/AnalysisStockSearch';
+import { ThesisCard } from '@/components/company/analysis/sections/ThesisCard';
 
 // Lazy client chunks — keeps recharts/finnhub-fetch code out of the initial bundle
 const IntradayChart = dynamic(() => import('@/components/company/IntradayChart').then((m) => m.IntradayChart));
@@ -263,6 +264,7 @@ export default async function AnalysisPage({ params }: PageProps) {
                 marketSession={marketSession}
                 prevClose={lastSessionPrevClose}
                 peRatio={displayPeRatio}
+                peHistory={analysisData?.valuationHistoryStats?.pe ?? null}
                 dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
                 roe={roeStat}
                 week52Low={week52?.low ?? null}
@@ -282,6 +284,14 @@ export default async function AnalysisPage({ params }: PageProps) {
                   <PillarChips pillars={analysisData!.pillars!} />
                 </div>
               )}
+              {/* Thesis on one screen — threshold-rule bull/bear evidence
+                  surfaced before the scroll stack; null renders nothing
+                  when no rule fires. */}
+              <ThesisCard
+                analysisData={analysisData}
+                cache={data?.analysisCache ?? null}
+                roe={roeStat}
+              />
               <MoverInsightSection
                 ticker={tickerUpper}
                 moversReason={data?.moversReason ?? null}
