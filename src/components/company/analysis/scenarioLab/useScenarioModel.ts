@@ -260,28 +260,30 @@ export function useScenarioModel({
                 }
                 projPoints.push({ date: label, timestamp: futureDate.getTime(), historical: null as any, projection: priceAtYear, bear: null, base: null, bull: null, projected: true });
             } else {
-                // EPS at chart year y: forward base already covers year 1
-                const gy = Math.max(0, y - ddGrowthLag);
-                const bearEpsAtYear = ddBaseEps * Math.pow(1 + bearGrowth / 100, gy);
-                const baseEpsAtYear = ddBaseEps * Math.pow(1 + baseGrowth / 100, gy);
-                const bullEpsAtYear = ddBaseEps * Math.pow(1 + bullGrowth / 100, gy);
-                // Glide the multiple from today's P/E to the scenario exit P/E
-                // across the horizon — applying the exit multiple at year 1
-                // produced a visible jump off the last historical point.
-                const glidePe = (exit: number | null) => {
-                    if (!exit || exit <= 0) return null;
-                    const start = currentPe > 0 ? currentPe : exit;
-                    return start + (exit - start) * (y / activeYears);
+                // Glide each scenario GEOMETRICALLY from the current price to
+                // its horizon target: currentPrice × (target/currentPrice)^(y/N).
+                // Composing year-1 forward EPS with today's trailing multiple
+                // mixed valuation bases — for stocks where forward EPS is well
+                // above TTM (AMD), the first projected point visibly jumped
+                // above the last historical price. The geometric path is
+                // continuous by construction: y→0 is exactly the current price
+                // and y=N matches the table's target price.
+                const glidePrice = (target: number | null): number | null => {
+                    if (target === null || target <= 0) return null;
+                    if (currentPrice > 0) {
+                        return currentPrice * Math.pow(target / currentPrice, y / activeYears);
+                    }
+                    return target;
                 };
-                const bearP = (() => { const pe = glidePe(effectiveBearPe); return pe !== null ? bearEpsAtYear * pe : null; })();
-                const baseP = (() => { const pe = glidePe(effectiveBasePe); return pe !== null ? baseEpsAtYear * pe : null; })();
-                const bullP = (() => { const pe = glidePe(effectiveBullPe); return pe !== null ? bullEpsAtYear * pe : null; })();
+                const bearP = glidePrice(bearPrice);
+                const baseP = glidePrice(basePrice);
+                const bullP = glidePrice(bullPrice);
                 projPoints.push({ date: label, timestamp: futureDate.getTime(), historical: null as any, projection: null, bear: bearP, base: baseP, bull: bullP, projected: true });
             }
         }
 
         return [...hist, ...projPoints];
-    }, [priceHistory, currentPrice, mode, years, ddYears, currentPe, baseEps, exitPe, epsGrowth, targetPrice, ddBaseEps, ddGrowthLag, bearGrowth, baseGrowth, bullGrowth, effectiveBearPe, effectiveBasePe, effectiveBullPe]);
+    }, [priceHistory, currentPrice, mode, years, ddYears, currentPe, baseEps, exitPe, epsGrowth, targetPrice, bearPrice, basePrice, bullPrice]);
 
     return {
         mode, setMode,
