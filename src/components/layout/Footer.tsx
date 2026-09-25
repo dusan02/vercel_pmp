@@ -185,17 +185,13 @@ function FooterContent() {
               href="https://www.producthunt.com/products/premarketprice?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-premarketprice"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-5 inline-block"
+              aria-label="PreMarketPrice on Product Hunt"
+              className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:border-orange-400/60 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                alt="PreMarketPrice — Premarket movers ranked by statistical unusualness | Product Hunt"
-                width="250"
-                height="54"
-                loading="lazy"
-                className="w-44 h-auto opacity-90 hover:opacity-100 transition-opacity"
-                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1257969&theme=neutral"
-              />
+              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0 text-orange-500" aria-hidden="true">
+                <path d="M12 2.5l7.5 9h-4.5V21.5h-6V11.5H4.5z" />
+              </svg>
+              Featured on Product Hunt
             </a>
           </div>
         </div>
