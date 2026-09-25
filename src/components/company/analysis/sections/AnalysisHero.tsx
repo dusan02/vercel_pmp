@@ -121,15 +121,18 @@ export function AnalysisHero({
         </div>
       </div>
       {/* Price line — separate row */}
-      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex flex-wrap items-center gap-x-1">
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
         {price != null && (
           <>
-            Price: ${formatPrice(price)}
+            <span className="text-sm text-gray-500 dark:text-gray-400">Price:</span>
+            <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+              ${formatPrice(price)}
+            </span>
           </>
         )}
         {isClosed && (
           <span
-            className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+            className="self-center ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
             title="Market is closed — showing the last completed session"
           >
             Market Closed
@@ -137,22 +140,21 @@ export function AnalysisHero({
         )}
         {displayPct != null && (
           <>
-            {' · '}
             <span
-              className={
+              className={`text-lg font-bold tabular-nums ${
                 displayPct > 0
                   ? 'text-green-600 dark:text-green-400'
                   : displayPct < 0
                     ? 'text-red-600 dark:text-red-400'
                     : 'text-gray-500 dark:text-gray-400'
-              }
+              }`}
             >
               {formatPercent(displayPct)}
-              {isClosed && <span className="text-gray-500 dark:text-gray-500"> at last close</span>}
             </span>
+            {isClosed && <span className="text-sm text-gray-500 dark:text-gray-500">at last close</span>}
           </>
         )}
-      </p>
+      </div>
       {/* Sector + Industry + analyst consensus strip — one row; the strip
           fills the empty space right of the sector line. */}
       <div className="mt-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
