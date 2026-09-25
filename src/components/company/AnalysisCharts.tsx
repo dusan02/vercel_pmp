@@ -189,8 +189,8 @@ export function AnalysisCharts({ ticker, data, flowPeriods }: AnalysisChartsProp
                 <ChartSection
                     iconBgClass="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
                     icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18" /></svg>}
-                    title="Correlation Analysis"
-                    subtitle="Price vs Revenue / Price vs EPS (GuruFocus-style)"
+                    title="Price vs Fundamentals"
+                    subtitle="Co-movement of price with revenue- and EPS-implied value — multiple re-rating view, not fair value"
                     hasData={!!(data.priceHistory && data.priceHistory.length > 0)}
                     emptyMessage="No price history available for correlation analysis"
                 >

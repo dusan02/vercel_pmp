@@ -58,8 +58,8 @@ function CustomTooltip({ active, payload, label }: any) {
         </div>
       )}
       {diff !== null && (
-        <div className={`mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-700 font-semibold ${diff > 0 ? 'text-red-500' : 'text-green-500'}`}>
-          {diff > 0 ? 'Overvalued' : 'Undervalued'} by {Math.abs(diff).toFixed(1)}%
+        <div className={`mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-700 font-semibold ${diff > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}`}>
+          Price {diff > 0 ? 'above' : 'below'} implied by {Math.abs(diff).toFixed(1)}% ({diff > 0 ? 'multiple expansion' : 'multiple compression'})
         </div>
       )}
     </div>
@@ -205,8 +205,9 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
       <ChartFootnote>
         {/* Explanation */}
         <p className="text-[10px] text-gray-500 dark:text-gray-500 leading-relaxed">
-          Compares actual price to <strong>implied price</strong> — what the stock <em>should</em> trade at based on {mode === 'ps' ? 'revenue per share × median P/S multiple' : 'EPS × median P/E multiple'}.
-          Both rebased to <strong>100</strong> at period start — actual above implied = <span className="text-red-500">overvalued</span>, below = <span className="text-green-500">undervalued</span>. Hover for raw $ values.
+          Compares actual price to an <strong>implied price</strong> — {mode === 'ps' ? 'revenue per share' : 'EPS'} × this stock's <strong>median {mode === 'ps' ? 'P/S' : 'P/E'} multiple</strong> over the period, both rebased to 100 at start.
+          A widening gap is <span className="text-amber-600">multiple expansion</span> — the market paying more per ${mode === 'ps' ? 'of revenue' : 'of earnings'} than its own median; a narrowing gap is compression.
+          Re-ratings often reflect genuine changes in business quality and margins, so this chart describes <em>co-movement</em>, not fair value — for price-vs-own-history context see the Valuation percentile tooltips and Scenario Lab.
         </p>
         {/* Negative correlation warning */}
         {correlation !== null && correlation < -0.4 && (
