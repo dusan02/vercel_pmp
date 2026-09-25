@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { RatioStats } from '../types';
-import { clamp, GROWTH_CAP, PE_ABSOLUTE_CAP, PE_DERATING_THRESHOLD, PE_DERATING_PREMIUM } from './format';
+import { clamp, GROWTH_CAP, GROWTH_FLOOR, PE_ABSOLUTE_CAP, PE_DERATING_THRESHOLD, PE_DERATING_PREMIUM } from './format';
 import { fmtPe } from './format';
 
 /** Format a raw growth number for flag text (null-safe). */
@@ -71,7 +71,7 @@ export function useScenarioModel({
 
     const defaultBearGrowth = clamp(
         Math.min(rawGrowth3y ?? normalizedBaseGrowth, rawGrowth5y ?? normalizedBaseGrowth),
-        0, GROWTH_CAP
+        GROWTH_FLOOR, GROWTH_CAP
     );
     const defaultBaseGrowth = normalizedBaseGrowth;
     const defaultBullGrowth = clamp(
@@ -136,13 +136,14 @@ export function useScenarioModel({
         : currentEps;
 
     // ── Manual mode calculations ──
-    const projectedEps = baseEps * Math.pow(1 + epsGrowth / 100, years);
-    const targetPrice = projectedEps * exitPe;
-    let manualCagr = 0;
-    if (currentPrice > 0 && targetPrice > 0) {
-        manualCagr = (Math.pow(targetPrice / currentPrice, 1 / years) - 1) * 100;
-    }
-    const isMarketBeating = manualCagr > 15;
+    // Loss-making base EPS makes a compounded projection meaningless —
+    // report null rather than a negative target price.
+    const projectedEps = baseEps > 0 ? baseEps * Math.pow(1 + epsGrowth / 100, years) : null;
+    const targetPrice = projectedEps !== null ? projectedEps * exitPe : null;
+    const manualCagr = (currentPrice > 0 && targetPrice !== null && targetPrice > 0)
+        ? (Math.pow(targetPrice / currentPrice, 1 / years) - 1) * 100
+        : null;
+    const isMarketBeating = manualCagr !== null && manualCagr > 15;
 
     // ── Data-Driven: P/E normalization ──
     const rawBearPe = peStats?.p25 ?? null;
@@ -152,11 +153,17 @@ export function useScenarioModel({
     const isDerating = !!(forwardPe && forwardPe > 0 && rawBasePe && rawBasePe > forwardPe * PE_DERATING_THRESHOLD);
     const peWasNormalized = isDerating;
 
+    // Proportional de-rating: scale the whole p25/median/p75 distribution so
+    // the median lands at forwardP/E × premium. A flat min(cap) would collapse
+    // all three scenarios onto the same multiple — the spread carries signal.
+    const peDeratingScale = (isDerating && forwardPe && forwardPe > 0 && rawBasePe)
+        ? (forwardPe * PE_DERATING_PREMIUM) / rawBasePe
+        : null;
+
     function normalizePe(rawPe: number | null): number | null {
         if (rawPe === null) return null;
-        if (isDerating && forwardPe && forwardPe > 0) {
-            const reverted = forwardPe * PE_DERATING_PREMIUM;
-            return Math.min(rawPe, reverted, PE_ABSOLUTE_CAP);
+        if (peDeratingScale !== null) {
+            return Math.min(rawPe * peDeratingScale, PE_ABSOLUTE_CAP);
         }
         return Math.min(rawPe, PE_ABSOLUTE_CAP);
     }
@@ -165,11 +172,17 @@ export function useScenarioModel({
     const effectiveBasePe = normalizePe(rawBasePe) ?? currentPe ?? null;
     const effectiveBullPe = normalizePe(rawBullPe) ?? (currentPe > 0 ? currentPe * 1.2 : null);
 
-    const ddBaseEps = (forwardEps && forwardEps > 0) ? forwardEps : baseEps;
+    // Forward EPS is a NEXT-year estimate — it already embeds one year of
+    // growth, so projecting it N years forward double-counts year one.
+    // ddGrowthLag removes that extra year from the compounding exponent.
+    const ddBaseIsForward = !!(forwardEps && forwardEps > 0);
+    const ddBaseEps = ddBaseIsForward ? forwardEps : baseEps;
+    const ddGrowthLag = ddBaseIsForward ? 1 : 0;
+    const ddGrowthYears = Math.max(0, ddYears - ddGrowthLag);
 
-    const bearProjEps = ddBaseEps * Math.pow(1 + bearGrowth / 100, ddYears);
-    const baseProjEps = ddBaseEps * Math.pow(1 + baseGrowth / 100, ddYears);
-    const bullProjEps = ddBaseEps * Math.pow(1 + bullGrowth / 100, ddYears);
+    const bearProjEps = ddBaseEps * Math.pow(1 + bearGrowth / 100, ddGrowthYears);
+    const baseProjEps = ddBaseEps * Math.pow(1 + baseGrowth / 100, ddGrowthYears);
+    const bullProjEps = ddBaseEps * Math.pow(1 + bullGrowth / 100, ddGrowthYears);
 
     const bearPrice = (effectiveBearPe && effectiveBearPe > 0) ? bearProjEps * effectiveBearPe : null;
     const basePrice = (effectiveBasePe && effectiveBasePe > 0) ? baseProjEps * effectiveBasePe : null;
@@ -236,27 +249,39 @@ export function useScenarioModel({
             const label = futureDate.toISOString().slice(0, 10);
 
             if (mode === 'manual') {
-                let priceAtYear: number;
+                let priceAtYear: number | null;
                 if (currentPe > 0 && baseEps > 0) {
                     const peAtYear = currentPe + (exitPe - currentPe) * (y / activeYears);
                     priceAtYear = baseEps * Math.pow(1 + epsGrowth / 100, y) * peAtYear;
-                } else {
+                } else if (targetPrice !== null) {
                     priceAtYear = currentPrice + (targetPrice - currentPrice) * (y / activeYears);
+                } else {
+                    priceAtYear = null; // loss-making EPS — no meaningful projection
                 }
                 projPoints.push({ date: label, timestamp: futureDate.getTime(), historical: null as any, projection: priceAtYear, bear: null, base: null, bull: null, projected: true });
             } else {
-                const bearEpsAtYear = ddBaseEps * Math.pow(1 + bearGrowth / 100, y);
-                const baseEpsAtYear = ddBaseEps * Math.pow(1 + baseGrowth / 100, y);
-                const bullEpsAtYear = ddBaseEps * Math.pow(1 + bullGrowth / 100, y);
-                const bearP = (effectiveBearPe && effectiveBearPe > 0) ? bearEpsAtYear * effectiveBearPe : null;
-                const baseP = (effectiveBasePe && effectiveBasePe > 0) ? baseEpsAtYear * effectiveBasePe : null;
-                const bullP = (effectiveBullPe && effectiveBullPe > 0) ? bullEpsAtYear * effectiveBullPe : null;
+                // EPS at chart year y: forward base already covers year 1
+                const gy = Math.max(0, y - ddGrowthLag);
+                const bearEpsAtYear = ddBaseEps * Math.pow(1 + bearGrowth / 100, gy);
+                const baseEpsAtYear = ddBaseEps * Math.pow(1 + baseGrowth / 100, gy);
+                const bullEpsAtYear = ddBaseEps * Math.pow(1 + bullGrowth / 100, gy);
+                // Glide the multiple from today's P/E to the scenario exit P/E
+                // across the horizon — applying the exit multiple at year 1
+                // produced a visible jump off the last historical point.
+                const glidePe = (exit: number | null) => {
+                    if (!exit || exit <= 0) return null;
+                    const start = currentPe > 0 ? currentPe : exit;
+                    return start + (exit - start) * (y / activeYears);
+                };
+                const bearP = (() => { const pe = glidePe(effectiveBearPe); return pe !== null ? bearEpsAtYear * pe : null; })();
+                const baseP = (() => { const pe = glidePe(effectiveBasePe); return pe !== null ? baseEpsAtYear * pe : null; })();
+                const bullP = (() => { const pe = glidePe(effectiveBullPe); return pe !== null ? bullEpsAtYear * pe : null; })();
                 projPoints.push({ date: label, timestamp: futureDate.getTime(), historical: null as any, projection: null, bear: bearP, base: baseP, bull: bullP, projected: true });
             }
         }
 
         return [...hist, ...projPoints];
-    }, [priceHistory, currentPrice, mode, years, ddYears, currentPe, baseEps, exitPe, epsGrowth, targetPrice, ddBaseEps, bearGrowth, baseGrowth, bullGrowth, effectiveBearPe, effectiveBasePe, effectiveBullPe]);
+    }, [priceHistory, currentPrice, mode, years, ddYears, currentPe, baseEps, exitPe, epsGrowth, targetPrice, ddBaseEps, ddGrowthLag, bearGrowth, baseGrowth, bullGrowth, effectiveBearPe, effectiveBasePe, effectiveBullPe]);
 
     return {
         mode, setMode,
@@ -277,7 +302,7 @@ export function useScenarioModel({
         isNegativePe,
         effectiveBearPe, effectiveBasePe, effectiveBullPe,
         rawBearPe, rawBasePe, rawBullPe,
-        rawGrowth3y, rawGrowth5y, fwdImplied,
+        rawGrowth3y, rawGrowth5y, fwdImplied, cappedRawGrowth, ddBaseIsForward,
         growthWasCapped, peWasNormalized, isHighGrowth,
         confidenceFlags, hasConfidenceWarning,
         chartData,

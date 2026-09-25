@@ -139,7 +139,7 @@ export function ScenarioLab({
                             </div>
                         )}
                         <p className="text-xs text-gray-500 dark:text-gray-500">
-                            Based on {forwardEps ? 'forward EPS' : 'current EPS'}, scenario-based EPS growth, and
+                            Based on {m.ddBaseIsForward ? 'forward EPS (next-year estimate)' : 'current EPS'}, scenario-based EPS growth, and
                             {m.peWasNormalized ? ' mean-reverted' : ' 5Y historical'} P/E distribution
                         </p>
                         <button
@@ -170,11 +170,11 @@ export function ScenarioLab({
                                 <div className="grid grid-cols-3 gap-2.5 mb-3">
                                     <StatCard label="Historical 3Y CAGR" value={m.rawGrowth3y != null ? fmtPct(m.rawGrowth3y) : 'N/A'} />
                                     <StatCard label="Historical 5Y CAGR" value={m.rawGrowth5y != null ? fmtPct(m.rawGrowth5y) : 'N/A'} />
-                                    <StatCard label="Forward Implied (1Y)" value={m.fwdImplied != null ? fmtPct(m.fwdImplied) : 'N/A'} />
+                                    <StatCard label="Market-Implied 1Y (context)" value={m.fwdImplied != null ? fmtPct(m.fwdImplied) : 'N/A'} />
                                 </div>
                                 {m.growthWasCapped && (
                                     <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
-                                        ⚠ Historical growth ({fmtPct(m.rawGrowth5y)}) exceeds {GROWTH_CAP}% cap — sustained growth at this rate over 5 years is economically unrealistic. Base scenario uses {GROWTH_CAP}%.
+                                        ⚠ Historical growth ({fmtPct(m.cappedRawGrowth)}) exceeds {GROWTH_CAP}% cap — sustained growth at this rate over 5 years is economically unrealistic. Base scenario uses {GROWTH_CAP}%.
                                     </p>
                                 )}
                             </div>
@@ -374,7 +374,7 @@ export function ScenarioLab({
                             </div>
                             <div className="flex justify-between items-center mt-3">
                                 <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Annual Return (CAGR)</p>
-                                <p className={`text-xl sm:text-2xl font-bold flex items-center gap-2 tabular-nums ${m.manualCagr > 15 ? 'text-green-500' : m.manualCagr > 0 ? 'text-blue-500' : 'text-red-500'}`}>
+                                <p className={`text-xl sm:text-2xl font-bold flex items-center gap-2 tabular-nums ${m.manualCagr === null ? 'text-gray-500' : m.manualCagr > 15 ? 'text-green-500' : m.manualCagr > 0 ? 'text-blue-500' : 'text-red-500'}`}>
                                     {fmtPct(m.manualCagr, 2)}
                                     {m.isMarketBeating && (
                                         <span className="text-[10px] uppercase tracking-wider bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-semibold">
