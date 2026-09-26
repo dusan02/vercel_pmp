@@ -13,9 +13,11 @@ interface ChartTooltipProps {
     metrics: readonly MetricDef[];
     multiplier?: number;
     prefix?: string;
+    /** dataKeys rendered as plain percentages (e.g. margin lines) — skips prefix/multiplier */
+    percentKeys?: readonly string[];
 }
 
-export function ChartTooltip({ active, payload, label, metrics, multiplier = 1e6, prefix = '$' }: ChartTooltipProps) {
+export function ChartTooltip({ active, payload, label, metrics, multiplier = 1e6, prefix = '$', percentKeys }: ChartTooltipProps) {
     if (!active || !payload?.length) return null;
     return (
         <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg text-sm max-w-xs">
@@ -28,7 +30,9 @@ export function ChartTooltip({ active, payload, label, metrics, multiplier = 1e6
                         <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: entry.color }} />
                         <span className="text-gray-600 dark:text-gray-300 truncate">{metric?.label ?? entry.name}:</span>
                         <span className="font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                            {prefix}{new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(entry.value * multiplier)}
+                            {percentKeys?.includes(entry.dataKey)
+                                ? `${entry.value.toFixed(1)}%`
+                                : `${prefix}${new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(entry.value * multiplier)}`}
                         </span>
                     </div>
                 );

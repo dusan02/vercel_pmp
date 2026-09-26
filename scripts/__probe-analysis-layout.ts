@@ -8,6 +8,7 @@ import { chromium } from '@playwright/test';
 import config from '../tailwind.config';
 import { KeyMetricsTable } from '../src/components/company/analysis/KeyMetricsTable';
 import { InsiderTransactionsSection } from '../src/components/company/analysis/sections/InsiderTransactionsSection';
+import { FinancialSnapshot } from '../src/components/company/analysis/sections/FinancialSnapshot';
 import { computePillars } from '../src/services/analysis/pillars';
 import type { AnalysisData } from '../src/components/company/analysis/types';
 
@@ -22,8 +23,13 @@ const data = {
   finnhub: { forwardPe: 6.5, peRatio: 24.6, priceFreeCashFlow: 46.5, beta: 1.9, quickRatio: 1.79, dividendYield: 0.05, payoutRatio: 6.1 },
   valuationHistoryStats: { pe: { current: 24.6, min: 10, max: 60, percentile: 71, years: 10, sampleSize: 2200 } },
   statements: [
-    { fiscalPeriod: 'FY', fiscalYear: 2025, endDate: '2025-12-31', netIncome: 100 },
-    { fiscalPeriod: 'FY', fiscalYear: 2024, endDate: '2024-12-31', netIncome: -100 },
+    // Quarterly YTD-cumulative rows + FY rows — enough for computeTTM
+    // (latestQ + matchingFY − prevYearSameQ) and the YoY-ago TTM.
+    { fiscalPeriod: 'Q2', fiscalYear: 2026, endDate: '2026-06-30', revenue: 60e9, netIncome: 26e9, ebit: 30e9, operatingCashFlow: 16e9, capex: -1.6e9, sharesOutstanding: 4.2e9 },
+    { fiscalPeriod: 'Q1', fiscalYear: 2026, endDate: '2026-03-31', revenue: 29e9, netIncome: 12.5e9, ebit: 14.5e9, operatingCashFlow: 7.8e9, capex: -0.8e9, sharesOutstanding: 4.2e9 },
+    { fiscalPeriod: 'FY', fiscalYear: 2025, endDate: '2025-12-31', revenue: 90e9, netIncome: 50e9, ebit: 59e9, operatingCashFlow: 29e9, capex: -3e9, sharesOutstanding: 4.3e9 },
+    { fiscalPeriod: 'Q2', fiscalYear: 2025, endDate: '2025-06-30', revenue: 46e9, netIncome: 24e9, ebit: 28e9, operatingCashFlow: 14e9, capex: -1.5e9, sharesOutstanding: 4.3e9 },
+    { fiscalPeriod: 'FY', fiscalYear: 2024, endDate: '2024-12-31', revenue: 80e9, netIncome: 44e9, ebit: 50e9, operatingCashFlow: 25e9, capex: -2.6e9, sharesOutstanding: 4.4e9 },
   ],
   pillars: computePillars({ pePercentile: 71, fcfYield: 0.021, psRatio: 13.58, evEbit: 20.4, revenueCagr: 7.8, netIncomeCagr: 9.9,
     epsCagr5y: 10.3, forwardImpliedGrowth: 45, roic: 0.58, roe: 0.5, netMargin: 0.55, operatingMargin: 0.65,
@@ -36,6 +42,8 @@ const transactions = Array.from({ length: 8 }, (_, i) => ({
 }));
 const markup = renderToStaticMarkup(React.createElement('main', { className: 'max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4' },
   React.createElement(KeyMetricsTable, { data }),
+  React.createElement('section', { className: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5' },
+    React.createElement(FinancialSnapshot, { statements: data.statements })),
   // Paired insights + insider row as rendered on /analysis/[ticker]
   React.createElement('div', { className: 'grid gap-6 grid-cols-1 xl:grid-cols-[repeat(auto-fit,minmax(min(100%,36rem),1fr))] items-start' },
     React.createElement('section', { className: 'mb-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5' },
