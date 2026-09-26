@@ -473,13 +473,6 @@ export function ValuationHistoryChart({
             />
           </ComposedChart>
         </ResponsiveContainer>
-
-        {/* End-of-chart floating labels */}
-        <EndLabels
-          intrinsicValue={last?.intrinsic ?? 0}
-          priceValue={last?.price ?? 0}
-          undervaluationPct={currentUv}
-        />
       </ChartPlot>
 
       <ChartFootnote>
@@ -499,6 +492,16 @@ export function ValuationHistoryChart({
 
         {/* Summary badges — compact single row */}
         <div className="flex flex-wrap gap-1.5">
+          <Badge compact
+            label="Intrinsic"
+            value={fmtDollar(last?.intrinsic)}
+            color="gray"
+          />
+          <Badge compact
+            label="Price"
+            value={fmtDollar(last?.price)}
+            color={isUndervalued ? 'green' : isFairValue ? 'gray' : 'amber'}
+          />
           <Badge compact
             label="History"
             value={verdict}
@@ -533,51 +536,6 @@ export function ValuationHistoryChart({
         )}
       </ChartFootnote>
     </ChartBody>
-  );
-}
-
-// ── Floating end labels (absolute positioned) ──────────────────────────────
-function EndLabels({
-  intrinsicValue,
-  priceValue,
-  undervaluationPct,
-}: {
-  intrinsicValue: number;
-  priceValue: number;
-  undervaluationPct: number | null;
-}) {
-  const isUnder = undervaluationPct != null && undervaluationPct > 0;
-  const isNa = undervaluationPct == null;
-  const isSigOver = undervaluationPct != null && undervaluationPct <= -50;
-  return (
-    <div className="absolute right-1 top-4 flex flex-col gap-1.5 items-end pointer-events-none">
-      {/* Intrinsic Value label */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">Intrinsic Value</span>
-        <span className="bg-gray-700 dark:bg-gray-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
-          {fmtDollar(intrinsicValue)}
-        </span>
-      </div>
-      {/* Price label */}
-      <div className="flex items-center gap-1.5">
-        <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">Price</span>
-        <span className={`text-white text-[10px] font-bold px-2 py-0.5 rounded-md ${isNa ? 'bg-gray-400' : isUnder ? 'bg-emerald-500' : isSigOver ? 'bg-red-700' : 'bg-red-500'}`}>
-          {fmtDollar(priceValue)}
-        </span>
-      </div>
-      {/* Undervaluation badge */}
-      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
-        isNa
-          ? 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
-          : isUnder
-          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-          : isSigOver
-          ? 'bg-red-200 text-red-800 dark:bg-red-900/60 dark:text-red-300'
-          : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
-      }`}>
-        {isNa ? 'N/A' : `${Math.abs(undervaluationPct!).toFixed(0)}% ${isUnder ? 'undervalued' : isSigOver ? 'significantly overvalued' : 'overvalued'}`}
-      </span>
-    </div>
   );
 }
 
