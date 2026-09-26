@@ -21,7 +21,14 @@ const baseUrl = 'https://premarketprice.com';
 export const metadata: Metadata = {
   title: 'Premarket Movers — Live Pre-Market Prices | PreMarketPrice',
   description: 'Track live pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 1,000+ US stocks on NYSE and NASDAQ.',
-  alternates: { canonical: baseUrl },
+  alternates: {
+    canonical: baseUrl,
+    languages: {
+      en: baseUrl,
+      'zh-CN': `${baseUrl}/zh`,
+      'x-default': baseUrl,
+    },
+  },
   openGraph: {
     title: 'PreMarketPrice — Live Pre-Market Stock Prices & Market Data',
     description: 'Track live pre-market stock prices, market movers, earnings calendar, and interactive heatmap for 1,000+ US stocks on NYSE and NASDAQ.',

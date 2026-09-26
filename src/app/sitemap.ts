@@ -27,6 +27,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: currentDate,
       changeFrequency: 'hourly',
       priority: 1.0,
+      alternates: {
+        languages: {
+          en: baseUrl,
+          'zh-CN': `${baseUrl}/zh`,
+          'x-default': baseUrl,
+        },
+      },
     },
     {
       url: `${baseUrl}/heatmap`,
@@ -51,6 +58,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: currentDate,
       changeFrequency: 'hourly',
       priority: 0.9,
+      alternates: {
+        languages: {
+          en: `${baseUrl}/premarket-movers`,
+          'zh-CN': `${baseUrl}/zh/premarket-movers`,
+          'x-default': `${baseUrl}/premarket-movers`,
+        },
+      },
     },
     {
       url: `${baseUrl}/premarket-movers/weekly`,
@@ -143,12 +157,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: currentDate,
       changeFrequency: 'daily',
       priority: 0.7,
+      alternates: {
+        languages: {
+          en: baseUrl,
+          'zh-CN': `${baseUrl}/zh`,
+          'x-default': baseUrl,
+        },
+      },
     },
     {
       url: `${baseUrl}/zh/premarket-movers`,
       lastModified: currentDate,
       changeFrequency: 'hourly',
       priority: 0.8,
+      alternates: {
+        languages: {
+          en: `${baseUrl}/premarket-movers`,
+          'zh-CN': `${baseUrl}/zh/premarket-movers`,
+          'x-default': `${baseUrl}/premarket-movers`,
+        },
+      },
     },
   ];
 
