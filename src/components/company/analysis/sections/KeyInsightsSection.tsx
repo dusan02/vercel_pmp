@@ -29,6 +29,10 @@ interface KeyInsightsSectionProps {
   earningsDays: number | null;
   moversReason: string | null;
   moversCategory: string | null;
+  /** Card spans the full page width — split prose and bullets into two
+      columns so the right half doesn't sit empty. Ignored when the card
+      shares a row (paired layout already fills its width). */
+  wide?: boolean;
 }
 
 function num(v: number | null | undefined): v is number {
@@ -55,6 +59,7 @@ export function KeyInsightsSection({
   earningsDays,
   moversReason,
   moversCategory,
+  wide = false,
 }: KeyInsightsSectionProps) {
   const insights: string[] = [];
 
@@ -234,19 +239,23 @@ export function KeyInsightsSection({
   const paragraph = insights.slice(0, midpoint).join(' ');
   const bullets = insights.slice(midpoint);
 
+  const twoCol = wide && bullets.length > 0;
+
   return (
     <section className="mb-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
         Key Insights: {companyName} ({ticker})
       </h2>
-      <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-prose">{paragraph}</p>
-      {bullets.length > 0 && (
-        <ul className="mt-3 list-disc pl-5 space-y-1.5 text-sm text-gray-600 dark:text-gray-400 max-w-prose">
-          {bullets.map((s) => (
-            <li key={s.slice(0, 40)}>{s}</li>
-          ))}
-        </ul>
-      )}
+      <div className={twoCol ? 'grid gap-x-10 gap-y-3 lg:grid-cols-2' : undefined}>
+        <p className={`text-sm text-gray-600 dark:text-gray-400 leading-relaxed ${twoCol ? '' : 'max-w-prose'}`}>{paragraph}</p>
+        {bullets.length > 0 && (
+          <ul className={`list-disc pl-5 space-y-1.5 text-sm text-gray-600 dark:text-gray-400 ${twoCol ? '' : 'mt-3 max-w-prose'}`}>
+            {bullets.map((s) => (
+              <li key={s.slice(0, 40)}>{s}</li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }

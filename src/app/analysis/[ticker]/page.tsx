@@ -336,34 +336,35 @@ export default async function AnalysisPage({ params }: PageProps) {
             </div>
           )}
 
-          {/* Data-driven prose unique per ticker — sits directly under Key
-              Metrics so mobile readers hit "why it matters" before the long
-              interactive deep-dive (charts push it ~10k px down otherwise). */}
-          <KeyInsightsSection
-            ticker={tickerUpper}
-            companyName={companyName}
-            changePct={displayChangePct}
-            marketSession={marketSession}
-            cache={insightsCache}
-            lossHistory={summarizeLossYears(analysisData?.statements ?? [])}
-            peRatio={displayPeRatio}
-            roe={roeStat}
-            dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
-            earningsDays={earningsDays}
-            moversReason={data?.moversReason ?? null}
-            moversCategory={data?.moversCategory ?? null}
-          />
-
-          {/* Insider transactions get a full-width row — the compact table
-              follows the financial snapshot and its insights, with remaining
-              filings available through an inline disclosure. */}
-          {data.finnhubInsiderTransactions.length > 0 && (
-            <div className="mb-6">
-              <InsiderTransactionsSection
-                transactions={data.finnhubInsiderTransactions}
-              />
-            </div>
-          )}
+          {/* Insights + insider filings share one row once each card gets
+              enough room (auto-fit minmax, ~36rem+) — a lone prose card at
+              full width leaves its right half empty, and a lone insider
+              table stretches fine. Insights switches to an internal
+              two-column split when it spans the page by itself. */}
+          <div className="grid gap-6 grid-cols-1 xl:grid-cols-[repeat(auto-fit,minmax(min(100%,36rem),1fr))] items-start">
+            <KeyInsightsSection
+              ticker={tickerUpper}
+              companyName={companyName}
+              changePct={displayChangePct}
+              marketSession={marketSession}
+              cache={insightsCache}
+              lossHistory={summarizeLossYears(analysisData?.statements ?? [])}
+              peRatio={displayPeRatio}
+              roe={roeStat}
+              dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
+              earningsDays={earningsDays}
+              moversReason={data?.moversReason ?? null}
+              moversCategory={data?.moversCategory ?? null}
+              wide={data.finnhubInsiderTransactions.length === 0}
+            />
+            {data.finnhubInsiderTransactions.length > 0 && (
+              <div className="mb-6">
+                <InsiderTransactionsSection
+                  transactions={data.finnhubInsiderTransactions}
+                />
+              </div>
+            )}
+          </div>
 
           {/* Full interactive analysis — financial statement pairs
               (history bar + structure sankey), valuation, health table */}
@@ -382,9 +383,13 @@ export default async function AnalysisPage({ params }: PageProps) {
             {' '}— top 50 capital spenders compared.
           </p>
 
-          <EarningsSection upcoming={earningsData.upcoming} recent={earningsData.recent} />
-
-          <RecentMovesSection ticker={tickerUpper} moves={recentMoves} />
+          {/* Two thin data rows side by side when there's room — auto-fit
+              keeps a lone card full width instead of leaving a dead
+              column when one of them renders nothing. */}
+          <div className="grid gap-6 grid-cols-1 lg:grid-cols-[repeat(auto-fit,minmax(min(100%,32rem),1fr))] items-start">
+            <EarningsSection upcoming={earningsData.upcoming} recent={earningsData.recent} />
+            <RecentMovesSection ticker={tickerUpper} moves={recentMoves} />
+          </div>
 
           {/* FAQ — visible Q&As mirrored by the FAQPage JSON-LD above */}
           <AnalysisFaqSection items={faqItems} ticker={tickerUpper} />

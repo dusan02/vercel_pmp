@@ -35,7 +35,17 @@ const transactions = Array.from({ length: 8 }, (_, i) => ({
   change: i === 0 ? 1285000 : -351 - i, transactionDate: '2026-08-21', filingDate: '2026-08-25', transactionCode: i === 0 ? 'P' : 'S',
 }));
 const markup = renderToStaticMarkup(React.createElement('main', { className: 'max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4' },
-  React.createElement(KeyMetricsTable, { data }), React.createElement(InsiderTransactionsSection, { transactions })));
+  React.createElement(KeyMetricsTable, { data }),
+  // Paired insights + insider row as rendered on /analysis/[ticker]
+  React.createElement('div', { className: 'grid gap-6 grid-cols-1 xl:grid-cols-[repeat(auto-fit,minmax(min(100%,36rem),1fr))] items-start' },
+    React.createElement('section', { className: 'mb-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5' },
+      React.createElement('h2', { className: 'text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3' }, 'Key Insights'),
+      React.createElement('div', { className: 'grid gap-x-10 gap-y-3 lg:grid-cols-2' },
+        React.createElement('p', { className: 'text-sm text-gray-600 dark:text-gray-400 leading-relaxed' }, 'ADBE is down 1.45% at the last close. Altman Z-Score of 6.23 sits comfortably in the safe zone, indicating low bankruptcy risk.'),
+        React.createElement('ul', { className: 'list-disc pl-5 space-y-1.5 text-sm text-gray-600 dark:text-gray-400' },
+          React.createElement('li', null, 'Adobe Inc. converts about 41% of revenue into free cash flow — strong cash generation.'),
+          React.createElement('li', null, 'Return on equity of 62.8% is well above the market average.')))),
+    React.createElement('div', { className: 'mb-6' }, React.createElement(InsiderTransactionsSection, { transactions })))));
 const globals = await readFile(new URL('../src/app/globals.css', import.meta.url), 'utf8');
 const { css } = await postcss([tailwind({ ...config, content: [{ raw: markup, extension: 'html' }] })]).process(globals, { from: undefined });
 const browser = await chromium.launch({ headless: true });

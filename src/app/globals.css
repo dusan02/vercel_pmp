@@ -93,7 +93,11 @@
 
   body {
     height: 100%;
-    overflow-x: hidden;
+    /* No overflow-x on body — clipping overflow here turns <body> into
+       the page's scroll container (a second scroller next to the root),
+       which breaks window.scrollY, anchor scrolling, hit-testing and
+       scroll-driven features. Horizontal overflow is already clipped at
+       the viewport by html's overflow-x: hidden above. */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.2s ease, color 0.2s ease;
