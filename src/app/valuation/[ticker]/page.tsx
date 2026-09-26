@@ -86,6 +86,13 @@ function formatRatio(value: number | null | undefined): string {
   return value.toFixed(2);
 }
 
+// fcfYield / dividendYield are stored as fractions (0.03 = 3%), not ratios —
+// render them as percents so the stats table doesn't show bare decimals.
+function formatYield(value: number | null | undefined): string {
+  if (value == null || !isFinite(value)) return 'N/A';
+  return `${(value * 100).toFixed(2)}%`;
+}
+
 function valuationLabel(percentile: number): string {
   if (percentile >= 80) return 'expensive relative to its history';
   if (percentile >= 60) return 'above its historical average';
@@ -342,10 +349,10 @@ export default async function ValuationPage({ params }: PageProps) {
                     <ValuationRow label="EV/EBITDA" stats={evEbitdaStats} />
                   )}
                   {fcfYieldStats && (
-                    <ValuationRow label="FCF Yield" stats={fcfYieldStats} invertPercentile />
+                    <ValuationRow label="FCF Yield" stats={fcfYieldStats} invertPercentile isYield />
                   )}
                   {dividendYieldStats && dividendYieldStats.count > 0 && (
-                    <ValuationRow label="Dividend Yield" stats={dividendYieldStats} invertPercentile />
+                    <ValuationRow label="Dividend Yield" stats={dividendYieldStats} invertPercentile isYield />
                   )}
                 </tbody>
               </table>
@@ -428,23 +435,26 @@ function ValuationRow({
   label,
   stats,
   invertPercentile = false,
+  isYield = false,
 }: {
   label: string;
   stats: NonNullable<ReturnType<typeof computeStats>>;
   invertPercentile?: boolean;
+  isYield?: boolean;
 }) {
   // For FCF Yield and Dividend Yield, higher = cheaper (better value)
   // So invert the percentile for assessment
   const assessmentPercentile = invertPercentile ? 100 - stats.currentPercentile : stats.currentPercentile;
   const assessment = valuationLabel(assessmentPercentile);
+  const fmt = isYield ? formatYield : formatRatio;
 
   return (
     <tr className="border-b border-gray-100 dark:border-gray-700/50">
       <td className="py-2 pr-4 text-gray-600 dark:text-gray-400 font-medium">{label}</td>
-      <td className="py-2 pr-4 tabular-nums text-gray-900 dark:text-gray-100 font-semibold text-right">{formatRatio(stats.current)}</td>
-      <td className="py-2 pr-4 tabular-nums text-gray-500 dark:text-gray-500 text-right">{formatRatio(stats.min)}</td>
-      <td className="py-2 pr-4 tabular-nums text-gray-700 dark:text-gray-300 text-right">{formatRatio(stats.median)}</td>
-      <td className="py-2 pr-4 tabular-nums text-gray-500 dark:text-gray-500 text-right">{formatRatio(stats.max)}</td>
+      <td className="py-2 pr-4 tabular-nums text-gray-900 dark:text-gray-100 font-semibold text-right">{fmt(stats.current)}</td>
+      <td className="py-2 pr-4 tabular-nums text-gray-500 dark:text-gray-500 text-right">{fmt(stats.min)}</td>
+      <td className="py-2 pr-4 tabular-nums text-gray-700 dark:text-gray-300 text-right">{fmt(stats.median)}</td>
+      <td className="py-2 pr-4 tabular-nums text-gray-500 dark:text-gray-500 text-right">{fmt(stats.max)}</td>
       <td className="py-2 pr-4 tabular-nums text-gray-900 dark:text-gray-100 font-semibold text-right">{stats.currentPercentile}th</td>
       <td className="py-2 text-xs text-gray-500 dark:text-gray-500 italic">{assessment}</td>
     </tr>
