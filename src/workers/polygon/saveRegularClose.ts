@@ -76,11 +76,14 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
       return;
     }
 
-    // Per-ticker idempotency: only process tickers without regularClose
+    // Per-ticker idempotency: only process tickers without regularClose.
+    // Filter by date only — `symbol: { in: ~1k }` combined with `not: null`
+    // hits Prisma's SQLite "negation filters prevent splitting" error once
+    // the universe crosses the variable limit. ~1k rows/day is cheap; the
+    // universe intersect happens in JS below.
     const existingRegularCloses = await prisma.dailyRef.findMany({
       where: {
         date: todayTradingDay,
-        symbol: { in: tickers },
         regularClose: { not: null }
       },
       select: { symbol: true }
