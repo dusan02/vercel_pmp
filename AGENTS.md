@@ -25,6 +25,10 @@
 - Sitemap aj blog majú ISR (`revalidate`) — po pridaní nových URL type over, či sitemap nie je statická
 - Docs-only push: pridaj `[skip ci]` do commit message, inak spustí plný rebuild na VPS
 
+- **Polygon aggs = cudzí instrument pri ticker reuse (opravené 2026-09-26)** — `syncValuationHistory` ťahá históriu pod AKTUÁLNYM tickerom; pri renamoch (FB→META, FISV→FI, BK→BNY, IIVI→COHR, GOLD→B, SSUN→QXO) vracia Polygon za staré dátumy ceny iného instrumentu (META malo 2021–22 ceny ~$15 Metaverse ETF → PE~1, skok $12→$184). Oprava: `scripts/repair-renamed-ticker-history.ts --symbol=X --source=OLD_TICKER --from --to` (rewrite z reálnych closes + TTM násobky) alebo `--delete` (FIG/SAIL/SPCX nemajú starý ticker). Stray-delete ponecháva riadky na dátumoch, ktoré zdroj pokryl. Na prod aplikované: META, FI, BNY, COHR, B, FIG, SAIL, SPCX, QXO. Pri rebuild `DailyValuationHistory` od nuly sa kolízie vrátia — script treba zopakovať. Detektor: skoky >2.5× v `closePrice` medzi susednými riadkami (pozor — reálne crashe UPST −56 %, MDGL +268 % sú OK; renany spoznáš podľa dátumu zmeny tickera)
+
+- **Redis je na porte 6380, nie 6379** — `redis-cli` bez `-p` cieli na prázdnu inštanciu a `DEL` "skončí" bez efektu. Cache flush po dátových opravách: `redis-cli -p 6380 DEL analysis:history:v2:SYM` (+ `analysis:cache:SYM`, `candles:SYM`, `prevClose:*:SYM`)
+
 ## Server hardening (89.185.250.213, Debian 12)
 
 - **fail2ban aktívny** (od 2026-09-13): sshd jail, systemd backend, `banaction = ufw`, maxretry 5 / findtime 10 m / bantime 1 h. Config: `/etc/fail2ban/jail.local`. Whitelist: `95.102.193.78` (userova dynamic IP — pri zmene IP sa ban self-heals po 1 h). Status: `fail2ban-client status sshd`
