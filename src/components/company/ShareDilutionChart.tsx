@@ -95,8 +95,17 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
         );
     }
 
-    const maxBuyback = Math.max(...chartData.map(d => d.buybackRatio != null ? Math.abs(d.buybackRatio) : 0), 1);
-    const buybackDomain = [-maxBuyback * 1.2, maxBuyback * 1.2];
+    // Domain hugs the data instead of forcing symmetry — an all-buyback
+    // series kept half the axis dead below zero. Bounds keep a small pad on
+    // the empty side so the zero line stays readable.
+    const ratioVals = chartData.map(d => d.buybackRatio).filter((v): v is number => v != null);
+    const rMax = Math.max(0, ...ratioVals);
+    const rMin = Math.min(0, ...ratioVals);
+    const pad = Math.max(rMax - rMin, 1) * 0.15;
+    const buybackDomain: [number, number] = [
+        rMin < 0 ? Math.floor((rMin - pad) * 10) / 10 : -pad,
+        Math.ceil((rMax + pad) * 10) / 10,
+    ];
 
     const firstShares = chartData[0]?.shares;
     const lastShares = chartData[chartData.length - 1]?.shares;
@@ -109,14 +118,14 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
             <ChartControls className="justify-between">
                 <ChartViewToggle viewMode={viewMode} onChange={setViewMode} />
                 <div className="flex gap-1.5 sm:gap-2">
-                    <button onClick={() => setShowShares(!showShares)}
+                    <button onClick={() => setShowShares(showBuyback ? !showShares : true)}
                         className={`text-[10px] px-2 py-1 rounded font-medium transition-all ${showShares ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'}`}
                         style={{ backgroundColor: showShares ? '#3B82F6' : undefined }}>
                         Shares Outstanding{showShares && <span className="ml-1">✓</span>}
                     </button>
-                    <button onClick={() => setShowBuyback(!showBuyback)}
+                    <button onClick={() => setShowBuyback(showShares ? !showBuyback : true)}
                         className={`text-[10px] px-2 py-1 rounded font-medium transition-all ${showBuyback ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'}`}
-                        style={{ backgroundColor: showBuyback ? '#F59E0B' : undefined }}>
+                        style={{ backgroundColor: showBuyback ? '#EA580C' : undefined }}>
                         Buyback Ratio %{showBuyback && <span className="ml-1">✓</span>}
                     </button>
                 </div>
@@ -131,14 +140,25 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
                         {showShares && <YAxis yAxisId="left" tickFormatter={formatSharesAxis} tick={{ fontSize: CHART_FONT.axis, fill: '#6B7280' }} axisLine={false} tickLine={false} width={55} />}
                         {showBuyback && (
                             <YAxis yAxisId="right" orientation="right" tickFormatter={(v: number) => `${v.toFixed(1)}%`}
-                                tick={{ fontSize: CHART_FONT.axis, fill: '#F59E0B' }} axisLine={false} tickLine={false} width={45} domain={buybackDomain} />
+                                tick={{ fontSize: CHART_FONT.axis, fill: '#EA580C' }} axisLine={false} tickLine={false} width={45} domain={buybackDomain} />
                         )}
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.05)' }} />
                         {showShares && <ReferenceLine yAxisId="left" y={0} stroke="#9CA3AF" />}
+                        {/* Zero line on the ratio axis — boundary between buyback
+                            years (above) and dilution years (below) */}
+                        {showBuyback && <ReferenceLine yAxisId="right" y={0} stroke="#EA580C" strokeDasharray="4 4" strokeOpacity={0.5} />}
                         {showShares && <Bar yAxisId="left" dataKey="shares" name="Shares Outstanding" fill="#3B82F6" radius={[2, 2, 0, 0]} maxBarSize={40} isAnimationActive={false} />}
                         {showBuyback && (
                             <Line yAxisId="right" type="monotone" dataKey="buybackRatio" name="Buyback Ratio %"
-                                stroke="#F59E0B" strokeWidth={2} dot={{ r: 3, fill: '#F59E0B' }} activeDot={{ r: 5 }} isAnimationActive={false} />
+                                stroke="#EA580C" strokeWidth={2.5} isAnimationActive={false}
+                                dot={(props: any) => {
+                                    const v = props.payload?.buybackRatio;
+                                    if (v == null) return <circle key={props.key} r={0} fill="none" />;
+                                    // Sign-colored dots: emerald = net buyback, red = dilution
+                                    return <circle key={props.key} cx={props.cx} cy={props.cy} r={3.5}
+                                        fill={v >= 0 ? '#059669' : '#DC2626'} stroke="none" />;
+                                }}
+                                activeDot={{ r: 5 }} />
                         )}
                     </ComposedChart>
                 </ResponsiveContainer>
