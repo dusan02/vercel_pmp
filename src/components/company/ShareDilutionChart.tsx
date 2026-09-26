@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
     ComposedChart,
     Bar,
+    Cell,
     Line,
     XAxis,
     YAxis,
@@ -21,40 +22,51 @@ interface ShareDilutionChartProps {
     statements: FinancialStatement[];
 }
 
-function formatSharesAxis(value: number): string {
-    if (value === 0) return '0';
-    const abs = Math.abs(value);
-    if (abs >= 1000) return `${(value / 1000).toFixed(1)}B`;
-    if (abs >= 1) return `${value.toFixed(0)}M`;
-    if (abs >= 0.001) return `${(value * 1000).toFixed(0)}K`;
-    return value.toFixed(2);
+const BUYBACK_GREEN = '#059669';
+const DILUTION_RED = '#DC2626';
+const CUMULATIVE_SLATE = '#334155';
+
+function formatSharesCompact(valueMillions: number): string {
+    return new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(valueMillions * 1e6);
 }
 
 function CustomTooltip({ active, payload, label }: any) {
     if (!active || !payload?.length) return null;
+    const point = payload[0]?.payload;
     return (
         <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg text-sm">
             <p className="font-bold text-gray-900 dark:text-gray-100 mb-2">{label}</p>
             {payload.map((entry: any, i: number) => (
                 <div key={i} className="flex items-center gap-2 mb-1">
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: entry.color ?? entry.stroke ?? entry.fill }} />
                     <span className="text-gray-600 dark:text-gray-300">{entry.name}:</span>
                     <span className="font-semibold text-gray-900 dark:text-gray-100">
-                        {entry.dataKey === 'buybackRatio'
-                            ? `${entry.value.toFixed(2)}%`
-                            : new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(entry.value * 1e6)
-                        }
+                        {entry.value != null ? `${entry.value > 0 ? '+' : ''}${entry.value.toFixed(1)}%` : '—'}
                     </span>
                 </div>
             ))}
+            {point?.shares != null && (
+                <div className="mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400">
+                    Shares: {formatSharesCompact(point.shares)}
+                </div>
+            )}
         </div>
     );
 }
 
+/**
+ * Single-axis redesign: the question this chart answers is "diluting or
+ * buying back, and how fast?" — i.e. the RATE, not absolute counts. YoY %
+ * bars carry the per-period story (green = buyback, red = dilution), the
+ * cumulative % line shows where the share count actually ended up. Both
+ * series are % so a single zero-centered axis suffices — no dual-axis
+ * mapping between bars (B) and a line (%). Absolute share counts live in
+ * the tooltip + footnote.
+ */
 export default function ShareDilutionChart({ statements }: ShareDilutionChartProps) {
     const [viewMode, setViewMode] = useState<'annual' | 'quarterly'>('annual');
-    const [showShares, setShowShares]   = useState(true);
-    const [showBuyback, setShowBuyback] = useState(true);
+    const [showYoy, setShowYoy] = useState(true);
+    const [showCumulative, setShowCumulative] = useState(true);
 
     const chartData = useMemo(() => {
         if (!statements || statements.length === 0) return [];
@@ -64,7 +76,8 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
             .filter(s => s.sharesOutstanding !== null && s.sharesOutstanding > 0)
             .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
 
-        return sorted.map((s, idx) => {
+        const base = sorted.length > 0 ? sorted[0]!.sharesOutstanding! / 1e6 : null;
+        return sorted.map((s) => {
             const shares = (s.sharesOutstanding ?? 0) / 1e6; // in millions
             // Find same period one year earlier for YoY comparison
             const prevYear = sorted.find(prev =>
@@ -74,15 +87,19 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
             const prevShares = prevYear?.sharesOutstanding
                 ? prevYear.sharesOutstanding / 1e6
                 : null;
-            // Buyback ratio: positive = shares decreased (buyback), negative = dilution.
+            // Positive = shares decreased (buyback), negative = dilution.
             // null when no prior-year comparison exists — 0 would fake "no change".
+            // Same sign convention for cumulative: + = net buyback since start.
             // NOTE: ratios are NOT split-adjusted; a stock split shows as a large
             // false dilution spike (backend split-adjusted counts are a known gap).
             const buybackRatio = prevShares && prevShares > 0
                 ? ((prevShares - shares) / prevShares) * 100
                 : null;
+            const cumulative = base && base > 0
+                ? ((base - shares) / base) * 100
+                : null;
             const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);
-            return { name: label, date: label, shares, buybackRatio };
+            return { name: label, date: label, shares, buybackRatio, cumulative };
         });
     }, [statements, viewMode]);
 
@@ -95,17 +112,11 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
         );
     }
 
-    // Domain hugs the data instead of forcing symmetry — an all-buyback
-    // series kept half the axis dead below zero. Bounds keep a small pad on
-    // the empty side so the zero line stays readable.
-    const ratioVals = chartData.map(d => d.buybackRatio).filter((v): v is number => v != null);
-    const rMax = Math.max(0, ...ratioVals);
-    const rMin = Math.min(0, ...ratioVals);
-    const pad = Math.max(rMax - rMin, 1) * 0.15;
-    const buybackDomain: [number, number] = [
-        rMin < 0 ? Math.floor((rMin - pad) * 10) / 10 : -pad,
-        Math.ceil((rMax + pad) * 10) / 10,
-    ];
+    const allVals = chartData.flatMap(d => [d.buybackRatio, d.cumulative]).filter((v): v is number => v != null);
+    const vMax = Math.max(0, ...allVals);
+    const vMin = Math.min(0, ...allVals);
+    const pad = Math.max(vMax - vMin, 1) * 0.15;
+    const domain: [number, number] = [Math.floor((vMin - pad) * 10) / 10, Math.ceil((vMax + pad) * 10) / 10];
 
     const firstShares = chartData[0]?.shares;
     const lastShares = chartData[chartData.length - 1]?.shares;
@@ -118,47 +129,41 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
             <ChartControls className="justify-between">
                 <ChartViewToggle viewMode={viewMode} onChange={setViewMode} />
                 <div className="flex gap-1.5 sm:gap-2">
-                    <button onClick={() => setShowShares(showBuyback ? !showShares : true)}
-                        className={`text-[10px] px-2 py-1 rounded font-medium transition-all ${showShares ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'}`}
-                        style={{ backgroundColor: showShares ? '#3B82F6' : undefined }}>
-                        Shares Outstanding{showShares && <span className="ml-1">✓</span>}
+                    <button onClick={() => setShowYoy(showCumulative ? !showYoy : true)}
+                        className={`text-[10px] px-2 py-1 rounded font-medium transition-all ${showYoy ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'}`}
+                        style={{ backgroundColor: showYoy ? BUYBACK_GREEN : undefined }}>
+                        YoY %{showYoy && <span className="ml-1">✓</span>}
                     </button>
-                    <button onClick={() => setShowBuyback(showShares ? !showBuyback : true)}
-                        className={`text-[10px] px-2 py-1 rounded font-medium transition-all ${showBuyback ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'}`}
-                        style={{ backgroundColor: showBuyback ? '#EA580C' : undefined }}>
-                        Buyback Ratio %{showBuyback && <span className="ml-1">✓</span>}
+                    <button onClick={() => setShowCumulative(showYoy ? !showCumulative : true)}
+                        className={`text-[10px] px-2 py-1 rounded font-medium transition-all ${showCumulative ? 'text-white shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'}`}
+                        style={{ backgroundColor: showCumulative ? CUMULATIVE_SLATE : undefined }}>
+                        Cumulative %{showCumulative && <span className="ml-1">✓</span>}
                     </button>
                 </div>
             </ChartControls>
             <ChartPlot>
                 <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={chartData} margin={{ top: 10, right: showBuyback ? 50 : 10, left: 10, bottom: viewMode === 'quarterly' ? 8 : 5 }}>
+                    <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: viewMode === 'quarterly' ? 8 : 5 }} barCategoryGap="30%">
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700" />
                         <XAxis dataKey="date"
                             tick={viewMode === 'quarterly' ? <ChartQuarterTick chartData={chartData} /> : { fontSize: CHART_FONT.axis, fill: '#6B7280', fontWeight: 500 }}
                             axisLine={false} tickLine={false} interval="preserveStartEnd" dy={viewMode === 'annual' ? 6 : 0} height={viewMode === 'quarterly' ? 44 : 24} />
-                        {showShares && <YAxis yAxisId="left" tickFormatter={formatSharesAxis} tick={{ fontSize: CHART_FONT.axis, fill: '#6B7280' }} axisLine={false} tickLine={false} width={55} />}
-                        {showBuyback && (
-                            <YAxis yAxisId="right" orientation="right" tickFormatter={(v: number) => `${v.toFixed(1)}%`}
-                                tick={{ fontSize: CHART_FONT.axis, fill: '#EA580C' }} axisLine={false} tickLine={false} width={45} domain={buybackDomain} />
-                        )}
+                        <YAxis tickFormatter={(v: number) => `${v.toFixed(0)}%`} tick={{ fontSize: CHART_FONT.axis, fill: '#6B7280' }}
+                            axisLine={false} tickLine={false} width={42} domain={domain} />
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(107, 114, 128, 0.05)' }} />
-                        {showShares && <ReferenceLine yAxisId="left" y={0} stroke="#9CA3AF" />}
-                        {/* Zero line on the ratio axis — boundary between buyback
-                            years (above) and dilution years (below) */}
-                        {showBuyback && <ReferenceLine yAxisId="right" y={0} stroke="#EA580C" strokeDasharray="4 4" strokeOpacity={0.5} />}
-                        {showShares && <Bar yAxisId="left" dataKey="shares" name="Shares Outstanding" fill="#3B82F6" radius={[2, 2, 0, 0]} maxBarSize={40} isAnimationActive={false} />}
-                        {showBuyback && (
-                            <Line yAxisId="right" type="monotone" dataKey="buybackRatio" name="Buyback Ratio %"
-                                stroke="#EA580C" strokeWidth={2.5} isAnimationActive={false}
-                                dot={(props: any) => {
-                                    const v = props.payload?.buybackRatio;
-                                    if (v == null) return <circle key={props.key} r={0} fill="none" />;
-                                    // Sign-colored dots: emerald = net buyback, red = dilution
-                                    return <circle key={props.key} cx={props.cx} cy={props.cy} r={3.5}
-                                        fill={v >= 0 ? '#059669' : '#DC2626'} stroke="none" />;
-                                }}
-                                activeDot={{ r: 5 }} />
+                        {/* Zero = buyback/dilution boundary for both series */}
+                        <ReferenceLine y={0} stroke="#6B7280" strokeOpacity={0.6} />
+                        {showYoy && (
+                            <Bar dataKey="buybackRatio" name="YoY Change" maxBarSize={36} isAnimationActive={false}>
+                                {chartData.map((d, i) => (
+                                    <Cell key={i} fill={d.buybackRatio == null ? 'transparent' : d.buybackRatio >= 0 ? BUYBACK_GREEN : DILUTION_RED} />
+                                ))}
+                            </Bar>
+                        )}
+                        {showCumulative && (
+                            <Line type="monotone" dataKey="cumulative" name="Cumulative"
+                                stroke={CUMULATIVE_SLATE} strokeWidth={2}
+                                dot={{ r: 2.5, fill: CUMULATIVE_SLATE }} activeDot={{ r: 4 }} isAnimationActive={false} />
                         )}
                     </ComposedChart>
                 </ResponsiveContainer>
@@ -166,10 +171,10 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
             <ChartFootnote>
                 {sharesDelta != null && (
                     <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                        Share count {sharesDelta > 0 ? 'up' : 'down'}{' '}
-                        <span className={`font-semibold ${sharesDelta > 0 ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                        Share count {firstShares != null ? formatSharesCompact(firstShares) : '—'} → {lastShares != null ? formatSharesCompact(lastShares) : '—'}{' '}
+                        (<span className={`font-semibold ${sharesDelta > 0 ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
                             {sharesDelta > 0 ? '+' : ''}{sharesDelta.toFixed(1)}%
-                        </span>{' '}
+                        </span>){' '}
                         since {chartData[0]!.date} — {sharesDelta > 0 ? 'net dilution' : 'net buybacks'} over the shown period
                     </p>
                 )}

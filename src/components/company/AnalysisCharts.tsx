@@ -148,7 +148,7 @@ export function AnalysisCharts({ ticker, data, flowPeriods }: AnalysisChartsProp
                     iconBgClass="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
                     icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
                     title="Shares Outstanding & Buybacks"
-                    subtitle="Share Count History & Buyback/Dilution Ratio"
+                    subtitle="YoY change % per period (bars) & cumulative drift (line)"
                     hasData={hasStatements}
                     emptyMessage="No share data available. Click Refresh Analysis to fetch data."
                 >

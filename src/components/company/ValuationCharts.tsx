@@ -276,6 +276,13 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
                             <ReferenceLine y={stats.p10} stroke="#10b981" strokeWidth={1} strokeDasharray="4 2"
                                 label={{ value: `P10 ${stats.p10.toFixed(1)}×`, position: 'right', fontSize: CHART_FONT.annotation, fill: '#10b981' }} />
                         )}
+                        {/* Current — where the multiple sits vs its own percentile
+                            bands. The headline "where are we now" the band chart
+                            was missing (previously only in the footnote). */}
+                        {current != null && current > 0 && (
+                            <ReferenceLine y={current} stroke={cfg.color} strokeWidth={2} strokeDasharray="1 0"
+                                label={{ value: `Now ${current.toFixed(1)}×`, position: 'insideTopRight', fontSize: CHART_FONT.annotation, fill: cfg.color, fontWeight: 700 }} />
+                        )}
 
                         {/* Filled area + line */}
                         <Area
