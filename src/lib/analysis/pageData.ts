@@ -100,6 +100,7 @@ export const getTickerData = cache(async function getTickerData(symbol: string) 
           orderBy: { transactionDate: 'desc' },
           take: 8,
           select: {
+            name: true,
             change: true,
             filingDate: true,
             transactionDate: true,

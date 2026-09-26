@@ -16,6 +16,7 @@ import { useAnalysis } from '@/hooks/useAnalysis';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { KeyMetricsTable, buildMetrics } from '@/components/company/analysis/KeyMetricsTable';
 import { computePillars } from '@/services/analysis/pillars';
+import { InsiderTransactionsSection } from '@/components/company/analysis/sections/InsiderTransactionsSection';
 import type { AnalysisData } from '@/components/company/analysis/types';
 
 function fixture(overrides: Partial<AnalysisData> = {}): AnalysisData {
@@ -172,5 +173,75 @@ describe('Key Metrics — pillar layout', () => {
         const html = render(fixture({ pillars: null }));
         expect(html).toContain('>Valuation<');
         expect(html).not.toContain('/100');
+    });
+
+    it('uses a full-width valuation snapshot followed by four equally sized pillar cards', () => {
+        const doc = new DOMParser().parseFromString(render(fixture()), 'text/html');
+        const headings = Array.from(doc.querySelectorAll('h3'));
+        const valuation = headings.find(h => h.textContent?.trim() === 'Valuation')!.parentElement!.parentElement!;
+        expect(valuation.classList.contains('col-span-full')).toBe(true);
+        expect(valuation.querySelector('.xl\\:grid-cols-4')).not.toBeNull();
+        const profitability = headings.find(h => h.textContent?.trim() === 'Profitability')!.parentElement!.parentElement!;
+        const group = profitability.parentElement!;
+        expect(group.classList.contains('xl:grid-cols-4')).toBe(true);
+        expect(Array.from(group.querySelectorAll('h3')).map(h => h.textContent?.trim()))
+            .toEqual(['Profitability', 'Growth', 'Financial Health', 'Quality']);
+    });
+
+    it('keeps every metric and its tap explanation, including the additional context', () => {
+        const data = fixture();
+        const doc = new DOMParser().parseFromString(render(data), 'text/html');
+        const metrics = buildMetrics(data);
+        for (const metric of [...metrics.valuation, ...metrics.profitability, ...metrics.growth,
+            ...metrics.solvency, ...metrics.quality, ...metrics.balanceSheet, ...metrics.perShare, ...metrics.market]) {
+            const disclosure = Array.from(doc.querySelectorAll('details')).find(el => el.getAttribute('title') === metric.hint);
+            expect(disclosure?.querySelector('summary')?.textContent).toContain(metric.label);
+            expect(disclosure?.querySelector('p')?.textContent).toContain(metric.hint);
+        }
+    });
+});
+
+describe('Insider transactions — compact table', () => {
+    const transactions = Array.from({ length: 8 }, (_, i) => ({
+        name: i === 0 ? 'Alex Shareholder' : null,
+        change: i === 0 ? 258 : -351,
+        filingDate: '2026-08-25',
+        transactionDate: `2026-08-${String(21 - i).padStart(2, '0')}`,
+        transactionCode: i === 0 ? 'P' : 'S',
+    }));
+    const renderTransactions = (rows = transactions) => new DOMParser().parseFromString(
+        renderToStaticMarkup(React.createElement(InsiderTransactionsSection, { transactions: rows })), 'text/html'
+    );
+
+    it('shows labeled table columns and five initial filings in input order', () => {
+        const doc = renderTransactions();
+        const table = doc.querySelector('table')!;
+        expect(table).not.toBeNull();
+        expect(Array.from(table.querySelectorAll('thead th')).map(h => h.textContent?.trim()))
+            .toEqual(['Transaction date', 'Insider', 'Transaction', 'Shares', 'Filed']);
+        const rows = table.querySelectorAll('tbody tr');
+        expect(rows).toHaveLength(5);
+        expect(rows[0]!.textContent).toContain('Alex Shareholder');
+        expect(rows[0]!.textContent).toContain('+258');
+        expect(rows[0]!.textContent).toContain('Open market buy');
+        expect(rows[1]!.textContent).toContain('-351');
+        expect(rows[1]!.textContent).toContain('2026-08-20');
+        expect(rows[1]!.textContent).toContain('2026-08-25');
+        expect(rows[1]!.textContent).toContain('—');
+    });
+
+    it('makes the remaining filings accessible through a collapsed disclosure', () => {
+        const doc = renderTransactions();
+        const disclosure = doc.querySelector('details')!;
+        expect(disclosure).not.toBeNull();
+        expect(disclosure.hasAttribute('open')).toBe(false);
+        expect(disclosure.querySelector('summary')?.textContent).toContain('Show 3 more filings');
+        expect(disclosure.querySelectorAll('tbody tr')).toHaveLength(3);
+        expect(doc.querySelectorAll('tbody tr')).toHaveLength(8);
+    });
+
+    it('omits the disclosure for short lists and hides the entire section when empty', () => {
+        expect(renderTransactions(transactions.slice(0, 2)).querySelector('details')).toBeNull();
+        expect(renderToStaticMarkup(React.createElement(InsiderTransactionsSection, { transactions: [] }))).toBe('');
     });
 });

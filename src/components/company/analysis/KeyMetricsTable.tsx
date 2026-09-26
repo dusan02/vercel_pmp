@@ -295,8 +295,8 @@ function Cell({ m }: { m: MetricCardDef }) {
     const cellCls = `px-3 py-1.5 min-w-0 ${m.primary ? 'bg-blue-50/60 dark:bg-blue-900/10' : ''}`;
     const row = (
         <>
-            <span className={`flex items-center gap-1 min-w-0 text-[10px] uppercase tracking-wide ${m.primary ? 'font-semibold text-gray-600 dark:text-gray-300' : 'font-medium text-gray-500 dark:text-gray-400'}`}>
-                <span className="truncate">{m.label}</span>
+            <span className={`flex items-center gap-1 min-w-0 text-xs leading-4 ${m.primary ? 'font-semibold text-gray-700 dark:text-gray-200' : 'font-medium text-gray-600 dark:text-gray-400'}`}>
+                <span>{m.label}</span>
                 {m.hint && (
                     <svg className="w-3 h-3 shrink-0 text-gray-300 dark:text-gray-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
@@ -304,8 +304,8 @@ function Cell({ m }: { m: MetricCardDef }) {
                 )}
             </span>
             <span aria-hidden="true" className="hidden sm:block flex-1 min-w-2 mx-1 border-b border-dotted border-gray-300 dark:border-gray-600 -translate-y-[3px]" />
-            <span className="flex items-baseline justify-end gap-1.5 shrink-0">
-                <span className={`text-[13px] ${m.primary ? 'font-bold' : 'font-semibold'} tabular-nums text-right ${missing ? 'text-gray-400 dark:text-gray-500' : VALUE_COLORS[m.statusType]}`}>
+            <span className="flex items-center justify-end gap-1.5 shrink-0">
+                <span className={`text-sm font-semibold tabular-nums text-right ${missing ? 'text-gray-400 dark:text-gray-500' : VALUE_COLORS[m.statusType]}`}>
                     {missing ? '—' : m.value}
                 </span>
                 {/* Fixed-width grade chip = uniform right edge; word status
@@ -325,7 +325,7 @@ function Cell({ m }: { m: MetricCardDef }) {
     }
     return (
         <details className={`${cellCls} group`} title={m.hint}>
-            <summary className="flex items-baseline justify-between gap-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+            <summary className="flex items-center justify-between gap-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                 {row}
             </summary>
             <p className="mt-1.5 text-[10px] leading-snug text-gray-500 dark:text-gray-400 normal-case tracking-normal">
@@ -349,35 +349,38 @@ function scoreColor(score: number): string {
     return 'text-rose-600 dark:text-rose-400';
 }
 
-// ── Valuation tile — used only inside the large Valuation card. Number is
-// dominant, status is a muted caption (no badge chrome). ────────────────────
+// ── Valuation tile — uses the same label, value and grade sizes as rows.
+// Mobile stacks the label over its value; wider screens align them inline. ──
 function Tile({ m }: { m: MetricCardDef }) {
     const missing = m.value === 'N/A';
     const inner = (
         <>
-            <span className="flex items-center gap-1 text-[9px] uppercase tracking-wide font-medium text-gray-500 dark:text-gray-400 min-w-0">
-                <span className="truncate">{m.label}</span>
+            <span className="flex items-center gap-1 text-xs leading-4 font-medium text-gray-600 dark:text-gray-400 min-w-0">
+                <span>{m.label}</span>
                 {m.hint && (
                     <svg className="w-3 h-3 shrink-0 text-gray-300 dark:text-gray-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                     </svg>
                 )}
             </span>
-            <span className="mt-1 flex items-baseline gap-1.5">
-                <span className={`text-[15px] font-bold tabular-nums leading-tight ${missing ? 'text-gray-400 dark:text-gray-500' : VALUE_COLORS[m.statusType]}`}>
+            <span className="flex items-center justify-end gap-1.5 shrink-0">
+                <span className={`text-sm font-semibold tabular-nums ${missing ? 'text-gray-400 dark:text-gray-500' : VALUE_COLORS[m.statusType]}`}>
                     {missing ? '—' : m.value}
                 </span>
-                {m.statusLabel !== '-' && (
+                {m.statusLabel !== '-' ? (
                     <GradeChip grade={statusGrade(m.statusType)} cls={GRADE_STYLES[statusGrade(m.statusType)]} title={m.statusLabel} />
+                ) : (
+                    <span className="w-5 h-5 shrink-0" aria-hidden="true" />
                 )}
             </span>
         </>
     );
-    const cls = 'px-3 py-2 flex flex-col items-start min-w-0 bg-white dark:bg-[#15171e]';
-    if (!m.hint) return <div className={cls}>{inner}</div>;
+    const cls = 'px-3 py-1.5 min-w-0 bg-white dark:bg-gray-800';
+    const rowCls = 'flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2';
+    if (!m.hint) return <div className={`${cls} ${rowCls}`}>{inner}</div>;
     return (
         <details className={`${cls} group`} title={m.hint}>
-            <summary className="flex flex-col items-start cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden w-full">
+            <summary className={`${rowCls} cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden w-full rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500`}>
                 {inner}
             </summary>
             <p className="mt-1 text-[10px] leading-snug text-gray-500 dark:text-gray-400 normal-case tracking-normal">
@@ -402,7 +405,7 @@ function HistBar({ stat }: { stat: ValuationHistoryStat | undefined }) {
     const pctText = p >= 99 ? 'highest in history' : p <= 1 ? 'lowest in history' : `${ordinalSuffix(Math.round(p))} pct`;
     return (
         <div className="mt-2 px-3 pb-2">
-            <div className="flex items-baseline justify-between gap-2 text-[9px] uppercase tracking-wide font-medium text-gray-500 dark:text-gray-400">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-[11px] font-medium text-gray-500 dark:text-gray-400">
                 <span>P/E vs own {yrs} history</span>
                 <span className="text-gray-600 dark:text-gray-300">{label} · {pctText}</span>
             </div>
@@ -416,13 +419,12 @@ function HistBar({ stat }: { stat: ValuationHistoryStat | undefined }) {
 function PillarCard({ title, score, metrics, children }: { title: string; score?: number | null; metrics: MetricCardDef[]; children?: React.ReactNode }) {
     if (!metrics.length) return null;
     return (
-        <div className="rounded-xl border border-gray-200/80 dark:border-gray-800/80 overflow-hidden">
+        <div className="min-w-0 rounded-xl border border-gray-200/80 dark:border-gray-700 overflow-hidden">
             <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50/90 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800/60">
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                     {title}
                 </h3>
-                <span className="flex items-center gap-1.5">
-                    {children}
+                <span className="flex items-center gap-1.5 shrink-0">
                     {score != null && (
                         <span className="flex items-center gap-1" aria-label={`${title} score ${score} out of 100, grade ${scoreToGrade(score)}`}>
                             <span className={`text-[11px] font-semibold tabular-nums ${scoreColor(score)}`}>{score}</span>
@@ -434,6 +436,7 @@ function PillarCard({ title, score, metrics, children }: { title: string; score?
             <div className="divide-y divide-gray-100 dark:divide-gray-800/60">
                 {metrics.map((m) => <Cell key={m.label} m={m} />)}
             </div>
+            {children && <div className="px-3 py-2 border-t border-gray-100 dark:border-gray-700">{children}</div>}
         </div>
     );
 }
@@ -449,7 +452,7 @@ export function KeyMetricsTable({ data }: Props) {
     return (
         <section
             aria-label="Key financial metrics"
-            className="bg-white dark:bg-[#15171e] rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-gray-100 dark:border-gray-800/80 p-4 sm:p-5"
+            className="min-w-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5"
         >
             <div className="flex items-center gap-2.5 mb-3">
                 <div className="p-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-lg flex-shrink-0">
@@ -459,20 +462,20 @@ export function KeyMetricsTable({ data }: Props) {
                 </div>
                 <div>
                     <h2 className="text-base font-bold text-gray-900 dark:text-white tracking-tight">Key Metrics</h2>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400">Financial snapshot — pillar inputs plus per-share and market context</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Financial snapshot · Tap any metric for its definition and grade</p>
                 </div>
             </div>
 
-            {/* Financial-snapshot dashboard — masonry-style proportions:
-                Valuation is the biggest block (2/3 width, metric tiles + P/E
-                history bar) sharing row one with Profitability. The other
-                pillar cards form the second tier and the per-share /
-                balance-sheet / market context cards the small third tier. */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 items-start">
-                {/* ── Large: Valuation (2/3 width) ─────────────────────── */}
-                <div className="sm:col-span-2 rounded-xl border border-gray-200/80 dark:border-gray-800/80 overflow-hidden">
+            {/* Financial-snapshot dashboard — compact, consistent groups:
+                Valuation spans the first row with metric tiles and a P/E
+                history bar. Four equal pillar cards follow below, keeping
+                comparable rows aligned; per-share / balance-sheet / market
+                context stays available in the additional-metrics disclosure. */}
+            <div className="grid gap-3 items-start">
+                {/* ── Full-width valuation snapshot ─────────────────────── */}
+                <div className="col-span-full min-w-0 rounded-xl border border-gray-200/80 dark:border-gray-800/80 overflow-hidden">
                     <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50/90 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800/60">
-                        <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-300">
+                        <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                             Valuation
                         </h3>
                         {data.pillars?.valuation.score != null && (
@@ -482,28 +485,30 @@ export function KeyMetricsTable({ data }: Props) {
                             </span>
                         )}
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-gray-100 dark:bg-gray-800/60">
+                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-px bg-gray-100 dark:bg-gray-800/60">
                         {valuation.map((m) => <Tile key={m.label} m={m} />)}
                     </div>
                     <HistBar stat={peStat} />
                 </div>
 
                 {/* ── Medium: remaining pillar cards ───────────────────── */}
-                <PillarCard title="Profitability" score={data.pillars?.profitability.score ?? null} metrics={profitability} />
-                <PillarCard title="Financial Health" score={data.pillars?.health.score ?? null} metrics={solvency} />
-                <PillarCard title="Growth" score={data.pillars?.growth.score ?? null} metrics={growth} />
-                <PillarCard title="Quality" score={data.pillars?.quality.score ?? null} metrics={quality}>
-                    {lossYears > 0 && (
-                        <span title={`Completed fiscal years ${lossHistory.firstYear}–${lossHistory.lastYear}`}>
-                            <StatusBadge label={`${lossYears}/${lossHistory.reportedYears} Loss Years`} type={lossYears <= 2 ? 'warn' : 'bad'} />
-                        </span>
-                    )}
-                </PillarCard>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
+                    <PillarCard title="Profitability" score={data.pillars?.profitability.score ?? null} metrics={profitability} />
+                    <PillarCard title="Growth" score={data.pillars?.growth.score ?? null} metrics={growth} />
+                    <PillarCard title="Financial Health" score={data.pillars?.health.score ?? null} metrics={solvency} />
+                    <PillarCard title="Quality" score={data.pillars?.quality.score ?? null} metrics={quality}>
+                        {lossYears > 0 && (
+                            <span title={`Completed fiscal years ${lossHistory.firstYear}–${lossHistory.lastYear}`}>
+                                <StatusBadge label={`${lossYears}/${lossHistory.reportedYears} Loss Years`} type={lossYears <= 2 ? 'warn' : 'bad'} />
+                            </span>
+                        )}
+                    </PillarCard>
+                </div>
 
                 {/* ── Small: context cards — collapsed by default so the page
                     doesn't read as a wall of numbers; power users expand. ─── */}
                 {(perShare.length > 0 || balanceSheet.length > 0 || market.length > 0) && (
-                    <details className="sm:col-span-2 lg:col-span-3 group/more">
+                    <details className="col-span-full group/more">
                         <summary className="flex items-center justify-center gap-1.5 py-1.5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden text-[11px] font-medium text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
                             <svg className="w-3 h-3 transition-transform group-open/more:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
@@ -511,7 +516,7 @@ export function KeyMetricsTable({ data }: Props) {
                             <span className="group-open/more:hidden">More metrics — Per Share, Balance Sheet, Market</span>
                             <span className="hidden group-open/more:inline">Hide additional metrics</span>
                         </summary>
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 items-start">
+                        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
                             <PillarCard title="Per Share" metrics={perShare} />
                             <PillarCard title="Balance Sheet" metrics={balanceSheet} />
                             <PillarCard title="Market" metrics={market} />

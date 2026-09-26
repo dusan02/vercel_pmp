@@ -326,15 +326,6 @@ export default async function AnalysisPage({ params }: PageProps) {
             </div>
           </div>
 
-          {/* Insider transactions get a full-width row — the filing list is
-              the tallest card, so pairing it with anything leaves dead space
-              under the shorter neighbour. */}
-          <div className="mb-6">
-            <InsiderTransactionsSection
-              transactions={data?.finnhubInsiderTransactions ?? []}
-            />
-          </div>
-
           {/* Key metrics — rendered at page level (not inside the ssr:false
               tab) so the numbers land in SSR HTML for crawlers AND sit
               directly under the Price History chart. When the SSR prefetch
@@ -362,6 +353,17 @@ export default async function AnalysisPage({ params }: PageProps) {
             moversReason={data?.moversReason ?? null}
             moversCategory={data?.moversCategory ?? null}
           />
+
+          {/* Insider transactions get a full-width row — the compact table
+              follows the financial snapshot and its insights, with remaining
+              filings available through an inline disclosure. */}
+          {data.finnhubInsiderTransactions.length > 0 && (
+            <div className="mb-6">
+              <InsiderTransactionsSection
+                transactions={data.finnhubInsiderTransactions}
+              />
+            </div>
+          )}
 
           {/* Full interactive analysis — financial statement pairs
               (history bar + structure sankey), valuation, health table */}
