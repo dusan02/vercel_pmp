@@ -38,7 +38,7 @@ function TransactionsTable({ transactions, label }: InsiderTransactionsSectionPr
       </colgroup>
       <thead className="bg-gray-50 dark:bg-gray-900/40 text-[11px] text-gray-500 dark:text-gray-400">
         <tr className="border-b border-gray-100 dark:border-gray-700">
-          <th scope="col" className="px-3 py-2 font-medium">Transaction date</th>
+          <th scope="col" className="px-3 py-2 font-medium whitespace-nowrap">Trade date</th>
           <th scope="col" className="hidden md:table-cell px-3 py-2 font-medium">Insider</th>
           <th scope="col" className="px-3 py-2 font-medium">Transaction</th>
           <th scope="col" className="px-3 py-2 font-medium text-right">Shares</th>
