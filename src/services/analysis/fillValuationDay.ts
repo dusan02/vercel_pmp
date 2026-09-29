@@ -17,11 +17,23 @@ import { prisma } from '@/lib/db/prisma';
 import { computeTTMAtDate } from '@/lib/utils/ttm';
 import { dbWriteRetry as dbWrite } from '@/lib/db/writeRetry';
 
+interface ValuationRow {
+    symbol: string;
+    date: Date;
+    closePrice: number;
+    marketCap: number | null;
+    peRatio: number | null;
+    psRatio: number | null;
+    evEbitda: number | null;
+    fcfYield: number | null;
+}
+
 export interface FillValuationDayResult {
     day: string;
     closes: number;
-    alreadyPresent: number;
     filled: number;
+    updated: number;
+    unchanged: number;
     failed: number;
     priceOnly: number;
 }
@@ -40,8 +52,9 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
     const result: FillValuationDayResult = {
         day: dateET,
         closes: refs.length,
-        alreadyPresent: 0,
         filled: 0,
+        updated: 0,
+        unchanged: 0,
         failed: 0,
         priceOnly: 0,
     };
@@ -52,13 +65,14 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
 
     const existing = await prisma.dailyValuationHistory.findMany({
         where: { date: dayInstant },
-        select: { symbol: true },
+        select: {
+            symbol: true, closePrice: true, marketCap: true,
+            peRatio: true, psRatio: true, evEbitda: true, fcfYield: true,
+        },
     });
-    const have = new Set(existing.map(r => r.symbol));
-    result.alreadyPresent = have.size;
+    const have = new Map(existing.map(r => [r.symbol, r]));
 
-    const targets = dayRefs.filter(r => !have.has(r.symbol));
-    if (targets.length === 0) return result;
+    const targets = dayRefs;
 
     // Bulk-load statements for all targets in chunks — a single `in` query for
     // ~1k symbols is fine for Prisma's auto-split, but chunking keeps the bound
@@ -77,16 +91,8 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
         }
     }
 
-    const inserts: {
-        symbol: string;
-        date: Date;
-        closePrice: number;
-        marketCap: number | null;
-        peRatio: number | null;
-        psRatio: number | null;
-        evEbitda: number | null;
-        fcfYield: number | null;
-    }[] = [];
+    const inserts: ValuationRow[] = [];
+    const updates: ValuationRow[] = [];
 
     for (const ref of targets) {
         const closePrice = ref.regularClose!;
@@ -126,8 +132,23 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
             }
 
             if (peRatio === null && psRatio === null) result.priceOnly++;
-            inserts.push({ symbol: ref.symbol, date: ref.date, closePrice, marketCap, peRatio, psRatio, evEbitda, fcfYield });
-            result.filled++;
+
+            const row = { symbol: ref.symbol, date: ref.date, closePrice, marketCap, peRatio, psRatio, evEbitda, fcfYield };
+            const prev = have.get(ref.symbol);
+
+            if (!prev) {
+                inserts.push(row);
+                result.filled++;
+            } else {
+                // Existing row may hold a mid-session partial close (lazy syncs
+                // run before 16:00 ET) — overwrite with the official close.
+                const same = prev.closePrice === row.closePrice && prev.marketCap === row.marketCap
+                    && prev.peRatio === row.peRatio && prev.psRatio === row.psRatio
+                    && prev.evEbitda === row.evEbitda && prev.fcfYield === row.fcfYield;
+                if (same) { result.unchanged++; continue; }
+                updates.push(row);
+                result.updated++;
+            }
         } catch (err) {
             console.error(`[fillValuationDay] ${ref.symbol}:`, err);
             result.failed++;
@@ -139,6 +160,17 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
         await dbWrite(() => prisma.dailyValuationHistory.createMany({
             data: inserts.slice(i, i + writeChunk),
         }), 'fillValuationDay.createMany');
+    }
+    for (let i = 0; i < updates.length; i += writeChunk) {
+        await dbWrite(() => prisma.$transaction(
+            updates.slice(i, i + writeChunk).map(u => prisma.dailyValuationHistory.update({
+                where: { symbol_date: { symbol: u.symbol, date: u.date } },
+                data: {
+                    closePrice: u.closePrice, marketCap: u.marketCap, peRatio: u.peRatio,
+                    psRatio: u.psRatio, evEbitda: u.evEbitda, fcfYield: u.fcfYield,
+                },
+            }))
+        ), 'fillValuationDay.update');
     }
 
     return result;

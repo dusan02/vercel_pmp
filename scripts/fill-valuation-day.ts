@@ -37,7 +37,7 @@ async function main() {
     }
 
     const result = await fillValuationDay(dateET);
-    console.log(`[fill] ${result.day}: ${result.closes} closes, ${result.alreadyPresent} present, ${result.filled} filled (${result.priceOnly} price-only), ${result.failed} failed`);
+    console.log(`[fill] ${result.day}: ${result.closes} closes → ${result.filled} created, ${result.updated} corrected, ${result.unchanged} unchanged (${result.priceOnly} price-only), ${result.failed} failed`);
 }
 
 main().catch(e => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());

@@ -53,7 +53,7 @@ async function runPostMarketReset(): Promise<NextResponse> {
     let valuationFill = 'skipped';
     try {
         const fill = await fillValuationDay(calendarDateETStr);
-        valuationFill = `filled:${fill.filled} present:${fill.alreadyPresent} failed:${fill.failed}`;
+        valuationFill = `created:${fill.filled} corrected:${fill.updated} unchanged:${fill.unchanged} failed:${fill.failed}`;
         console.log(`📈 fillValuationDay ${calendarDateETStr}: ${valuationFill}`);
     } catch (e) {
         valuationFill = `error:${e instanceof Error ? e.message : String(e)}`;
