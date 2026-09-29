@@ -105,6 +105,14 @@ curl -s https://premarketprice.com/analysis/AAPL | grep -c FinancialProduct  # �
 - `metrics.evEbit` = vlastné EV/TTM-EBIT (D&A nemáme → EBIT, nie EBITDA); tabuľka labeluje `EV/EBIT`, Finnhub `evEbitda` ostáva fallback pod vlastným labelom
 - `metrics.fcfYield` = vlastné TTM FCF/mcap (predtým annual snapshot — LLY: 0.3% → 1.2%)
 
+**Denný valuation fill + freshness monitoring (2026-09-29)**:
+
+- `post-market-reset` po `saveRegularClose` volá `fillValuationDay()` (`src/services/analysis/fillValuationDay.ts`) — lokálny fill nového trading-day riadku (DailyRef.regularClose + TTM statements, žiadne API). Bez neho pokrytie nového dňa čakalo na lazy per-ticker sync — incident 28.9.: len 16/995 riadkov. Repair/historický fill: `npx tsx scripts/fill-valuation-day.ts --date=YYYY-MM-DD`
+- `/api/health/data` — data-freshness endpoint (vždy 200, status v JSON): DailyRef rows/close coverage, valuation coverage, stale ticker prices, AnalysisCache age vs `getExpectedCompletedSession` (víkendy/holidays/preco-cutoff handled). `pmp-health-monitor` ho fetchuje a alertuje na degraded/unhealthy
+- `DailyValuationHistory.date` aj `DailyRef.date` = **ET-midnight instant** (04:00/05:00 UTC podľa DST), nie UTC-midnight — pri SQL repairoch brať hodnotu z DB, nie `strftime('%s', date)`
+- Foreign ADR tickery (TSM/ASML/BABA/SAP/NVO/RY…) majú **0 FinancialStatement riadkov** (Finnhub nepokrýva) → `calculateScores` zlyháva, AnalysisCache zamrzne na starej hodnote; valuation riadky sa píšu price-only
+- 6 mŕtvych tickerov bez lastPrice: FI, BK, QUALCOMM (má byť QCOM), MESSO, CELLDEX — universe-expansion stragglers, kandidáti na cleanup
+
 ## Pillar skóre (radar, 2026-09)
 
 - **`src/services/analysis/pillars.ts` = jediná definícia** všetkých 5 osí (4 legs × 25): Valuation, Growth, Profitability, Health, Quality. Zdieľajú ju `scoreCalculator` (zapisuje stored `healthScore`/`profitabilityScore`/`valuationScore` do `AnalysisCache`) aj `computeMetrics` (read-time `pillars` v `/api/analysis` response — radar vždy na jednom as-of snapshotte)
