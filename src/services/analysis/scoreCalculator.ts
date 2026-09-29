@@ -44,7 +44,26 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     });
 
     const latestStmt = stmts[0];
-    if (!latestStmt) return;
+    if (!latestStmt) {
+        // No financial statements (foreign ADRs Finnhub doesn't cover — TSM,
+        // ASML, BABA...) — a silent return froze the last written score forever
+        // (TSM kept healthScore=100 with zero statements). Write an explicit
+        // insufficient-data row instead: null scores + fresh updatedAt.
+        await prisma.analysisCache.upsert({
+            where: { symbol },
+            update: {
+                healthScore: null, profitabilityScore: null, valuationScore: null,
+                growthScore: null, qualityScore: null, overallScore: null,
+                verdictText: null, piotroskiScore: null, beneishScore: null,
+                interestCoverage: null, revenueCagr: null, netIncomeCagr: null,
+                altmanZ: null, debtRepaymentYears: null, fcfConversion: null,
+                fcfMargin: null, humanDebtInfo: null, humanPeInfo: null,
+                marginStability: null, negativeNiYears: null,
+            },
+            create: { symbol },
+        });
+        return;
+    }
     const annualStmts = stmts.filter(s => s.fiscalPeriod === 'FY');
     
     // TTM via shared utility
