@@ -218,7 +218,7 @@ describe('Insider transactions — compact table', () => {
         const table = doc.querySelector('table')!;
         expect(table).not.toBeNull();
         expect(Array.from(table.querySelectorAll('thead th')).map(h => h.textContent?.trim()))
-            .toEqual(['Transaction date', 'Insider', 'Transaction', 'Shares', 'Filed']);
+            .toEqual(['Trade date', 'Insider', 'Transaction', 'Shares', 'Filed']);
         const rows = table.querySelectorAll('tbody tr');
         expect(rows).toHaveLength(5);
         expect(rows[0]!.textContent).toContain('Alex Shareholder');

@@ -131,21 +131,24 @@ async function main() {
   const canaryUrl = `${BASE_URL}/api/health`;
   const workerUrl = `${BASE_URL}/api/health/worker`;
   const redisUrl = `${BASE_URL}/api/health/redis`;
+  const dataUrl = `${BASE_URL}/api/health/data`;
 
   let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
   let details: string[] = [];
 
   try {
-    const [health, worker, redis, canary] = await Promise.all([
+    const [health, worker, redis, canary, data] = await Promise.all([
       fetchJson(healthUrl, { timeoutMs: 2500 }),
       fetchJson(workerUrl, { timeoutMs: 2500 }),
       fetchJson(redisUrl, { timeoutMs: 2500 }),
       fetchJson(canaryUrl, { timeoutMs: 2500 }),
+      fetchJson(dataUrl, { timeoutMs: 4000 }),
     ]);
 
     const healthStatus = (health.json as HealthResponse | null)?.status;
     const workerStatus = (worker.json as HealthResponse | null)?.status;
     const redisStatus = (redis.json as HealthResponse | null)?.status;
+    const dataStatus = (data.json as HealthResponse | null)?.status;
     const canaryStatus =
       (canary.json as any)?.canary?.status ?? (canary.json as HealthResponse | null)?.status;
 
@@ -165,6 +168,26 @@ async function main() {
     if (redis.ok === false) {
       status = status === 'unhealthy' ? 'unhealthy' : 'degraded';
       details.push(`redis:${redis.status}`);
+    }
+
+    // Data-pipeline freshness: closed-session coverage of DailyRef closes,
+    // DailyValuationHistory rows, ticker price staleness, AnalysisCache age.
+    // 'unhealthy' here means the pipeline actually broke (e.g. the 2026-09-28
+    // valuation gap at 16/995 rows) — alert on it like a real incident.
+    if (data.error) {
+      details.push(`dataErr:${data.error}`);
+      status = status === 'unhealthy' ? 'unhealthy' : 'degraded';
+    } else if (data.ok === false) {
+      details.push(`data:${data.status}`);
+      status = status === 'unhealthy' ? 'unhealthy' : 'degraded';
+    } else if (dataStatus === 'unhealthy' || dataStatus === 'degraded') {
+      const failing = ((data.json?.checks ?? []) as Array<{ name: string; status: string; detail: string }>)
+        .filter(c => c.status !== 'ok')
+        .map(c => `${c.name}=${c.detail}`)
+        .join('; ');
+      details.push(`data[${data.json?.expectedSession ?? '?'}]:${failing || dataStatus}`);
+      if (dataStatus === 'unhealthy') status = 'unhealthy';
+      else status = status === 'unhealthy' ? 'unhealthy' : 'degraded';
     }
 
     // If endpoints responded but report degraded/unhealthy, treat as incident.

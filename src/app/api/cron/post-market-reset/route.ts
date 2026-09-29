@@ -3,6 +3,7 @@ import { verifyCronAuth, verifyCronAuthOptional, withCronLock } from '@/lib/util
 import { handleCronError, createCronSuccessResponse } from '@/lib/utils/cronErrorHandler';
 import { saveRegularClose } from '@/workers/polygonWorker';
 import { getDateET } from '@/lib/utils/dateET';
+import { fillValuationDay } from '@/services/analysis/fillValuationDay';
 
 /**
  * Post-Market Reset Route
@@ -45,6 +46,20 @@ async function runPostMarketReset(): Promise<NextResponse> {
 
     await saveRegularClose(apiKey, calendarDateETStr, runId);
 
+    // Fill today's DailyValuationHistory rows from the just-saved closes so the
+    // newest trading day doesn't wait for lazy per-ticker syncs or the weekly
+    // refresh-all (the 2026-09-28 gap: only 16/995 rows). Non-fatal — a failure
+    // here must not fail the close-handover itself.
+    let valuationFill = 'skipped';
+    try {
+        const fill = await fillValuationDay(calendarDateETStr);
+        valuationFill = `filled:${fill.filled} present:${fill.alreadyPresent} failed:${fill.failed}`;
+        console.log(`📈 fillValuationDay ${calendarDateETStr}: ${valuationFill}`);
+    } catch (e) {
+        valuationFill = `error:${e instanceof Error ? e.message : String(e)}`;
+        console.error('⚠️ fillValuationDay failed (non-fatal):', e);
+    }
+
     const duration = Date.now() - startTime;
     console.log(`✅ Post-market reset completed in ${(duration / 1000).toFixed(2)}s`);
 
@@ -52,6 +67,7 @@ async function runPostMarketReset(): Promise<NextResponse> {
         message: 'Post-market reset: regular close saved successfully',
         summary: {
             duration: `${(duration / 1000).toFixed(2)}s`,
+            valuationFill,
         },
     });
 }
