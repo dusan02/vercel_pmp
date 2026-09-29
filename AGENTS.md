@@ -110,8 +110,9 @@ curl -s https://premarketprice.com/analysis/AAPL | grep -c FinancialProduct  # �
 - `post-market-reset` po `saveRegularClose` volá `fillValuationDay()` (`src/services/analysis/fillValuationDay.ts`) — lokálny fill nového trading-day riadku (DailyRef.regularClose + TTM statements, žiadne API). Bez neho pokrytie nového dňa čakalo na lazy per-ticker sync — incident 28.9.: len 16/995 riadkov. Repair/historický fill: `npx tsx scripts/fill-valuation-day.ts --date=YYYY-MM-DD`
 - `/api/health/data` — data-freshness endpoint (vždy 200, status v JSON): DailyRef rows/close coverage, valuation coverage, stale ticker prices, AnalysisCache age vs `getExpectedCompletedSession` (víkendy/holidays/preco-cutoff handled). `pmp-health-monitor` ho fetchuje a alertuje na degraded/unhealthy
 - `DailyValuationHistory.date` aj `DailyRef.date` = **ET-midnight instant** (04:00/05:00 UTC podľa DST), nie UTC-midnight — pri SQL repairoch brať hodnotu z DB, nie `strftime('%s', date)`
-- Foreign ADR tickery (TSM/ASML/BABA/SAP/NVO/RY…) majú **0 FinancialStatement riadkov** (Finnhub nepokrýva) → `calculateScores` zlyháva, AnalysisCache zamrzne na starej hodnote; valuation riadky sa píšu price-only
-- 6 mŕtvych tickerov bez lastPrice: FI, BK, QUALCOMM (má byť QCOM), MESSO, CELLDEX — universe-expansion stragglers, kandidáti na cleanup
+- Foreign ADR tickery (TSM/ASML/BABA/SAP/NVO/RY…) majú **0 FinancialStatement riadkov** (Finnhub nepokrýva) → `calculateScores` píše explicitný insufficient-data row (null scores + fresh updatedAt) — predtým tichý return zamrazil posledný score naveky (TSM:100 bez fundamentov); valuation riadky sa píšu price-only
+- Mŕtve tickery vyčistené 2026-09-29: zmazané FI (dead dup — live je FISV), BK (rename → BNY už existoval; jeho 38 statements zmigrované SQL UPDATE na BNY), QUALCOMM/MESSO/CELLDEX (zombie bez Polygon dát). Rename: `scripts/rename-ticker.ts` (FK `on_update: CASCADE` migruje children automaticky), delete: `scripts/delete-dead-tickers.ts` (`on_delete: CASCADE`). DOMO zostáva — reálny low-volume ticker
+- **BNY ticker-collision pozor**: Polygon vracia pod `BNY` za obdobie do ~2026-05 cudzí ~$10 fond — BNY valuation riadky 2021→2026-05 sú už opravené z BK histórie; pri `syncValuationHistory('BNY')` full refetche sa kolízia vráti (incremental OK — lastRecord je aktuálny)
 
 ## Pillar skóre (radar, 2026-09)
 
