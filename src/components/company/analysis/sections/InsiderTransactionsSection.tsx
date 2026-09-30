@@ -92,11 +92,33 @@ function TransactionsTable({ transactions, label }: InsiderTransactionsSectionPr
   );
 }
 
-export function InsiderTransactionsSection({ transactions }: InsiderTransactionsSectionProps) {
-  if (transactions.length === 0) return null;
-
+/** Table + "show more" disclosure without the section card chrome — lets
+ *  Key Metrics embed insider filings as one of its own sub-blocks. */
+export function InsiderTransactionsBody({ transactions }: InsiderTransactionsSectionProps) {
   const visible = transactions.slice(0, MAX_ROWS);
   const remaining = transactions.length - visible.length;
+
+  return (
+    <>
+      <TransactionsTable transactions={visible} label="Recent insider transactions" />
+      {remaining > 0 && (
+        <details className="group/filings border-t border-gray-100 dark:border-gray-700">
+          <summary className="flex min-h-10 items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-900/40 cursor-pointer list-none [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500">
+            <span className="group-open/filings:hidden">Show {remaining} more {remaining === 1 ? 'filing' : 'filings'}</span>
+            <span className="hidden group-open/filings:inline">Show fewer filings</span>
+            <svg className="w-3.5 h-3.5 transition-transform group-open/filings:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+            </svg>
+          </summary>
+          <TransactionsTable transactions={transactions.slice(MAX_ROWS)} label="Additional recent insider transactions" />
+        </details>
+      )}
+    </>
+  );
+}
+
+export function InsiderTransactionsSection({ transactions }: InsiderTransactionsSectionProps) {
+  if (transactions.length === 0) return null;
 
   return (
     <section aria-label="Insider transactions" className="min-w-0 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-5">
@@ -108,19 +130,7 @@ export function InsiderTransactionsSection({ transactions }: InsiderTransactions
           share counts together; mobile rows stack secondary details rather
           than spreading each transaction across half the page. */}
       <div className="overflow-hidden rounded-xl border border-gray-200/80 dark:border-gray-700">
-        <TransactionsTable transactions={visible} label="Recent insider transactions" />
-        {remaining > 0 && (
-          <details className="group/filings border-t border-gray-100 dark:border-gray-700">
-            <summary className="flex min-h-10 items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-900/40 cursor-pointer list-none [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500">
-              <span className="group-open/filings:hidden">Show {remaining} more {remaining === 1 ? 'filing' : 'filings'}</span>
-              <span className="hidden group-open/filings:inline">Show fewer filings</span>
-              <svg className="w-3.5 h-3.5 transition-transform group-open/filings:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-              </svg>
-            </summary>
-            <TransactionsTable transactions={transactions.slice(MAX_ROWS)} label="Additional recent insider transactions" />
-          </details>
-        )}
+        <InsiderTransactionsBody transactions={transactions} />
       </div>
     </section>
   );

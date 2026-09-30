@@ -4,6 +4,8 @@ import React, { useMemo } from 'react';
 import { AnalysisData, ValuationHistoryStat } from './types';
 import { MetricCardDef, StatusType, StatusBadge, VALUE_COLORS } from '../shared/MetricCard';
 import { summarizeLossYears } from '@/lib/utils/analysisMath';
+import { buildSnapshotCells } from './sections/FinancialSnapshot';
+import { InsiderTransactionsBody, type InsiderTransactionData } from './sections/InsiderTransactionsSection';
 
 function ordinalSuffix(n: number): string {
     const s = ['th', 'st', 'nd', 'rd'];
@@ -25,6 +27,7 @@ function histTip(stat: ValuationHistoryStat | undefined, unit: 'x' | '%'): strin
 
 interface Props {
     data: AnalysisData;
+    insiderTransactions?: InsiderTransactionData[];
 }
 
 // ── Build all metrics — every flow metric shares the same TTM as-of period ───
@@ -442,11 +445,13 @@ function PillarCard({ title, score, metrics, children }: { title: string; score?
 }
 
 // ── Main export ──────────────────────────────────────────────────────────────
-export function KeyMetricsTable({ data }: Props) {
+export function KeyMetricsTable({ data, insiderTransactions }: Props) {
     const { valuation, profitability, growth, solvency, quality, balanceSheet, market, perShare, lossYears, lossHistory } = useMemo(
         () => buildMetrics(data),
         [data]
     );
+    const snapshotCells = useMemo(() => buildSnapshotCells(data.statements), [data.statements]);
+    const insiderTxs = insiderTransactions ?? [];
     const peStat = data.valuationHistoryStats?.pe;
 
     return (
@@ -472,6 +477,40 @@ export function KeyMetricsTable({ data }: Props) {
                 comparable rows aligned; per-share / balance-sheet / market
                 context stays available in the additional-metrics disclosure. */}
             <div className="grid gap-3 items-start">
+                {/* ── TTM snapshot — headline absolute amounts with YoY chips;
+                    the strip that used to sit alone above the chart grid now
+                    opens this table so ratios below share one as-of period ── */}
+                {snapshotCells && (
+                    <div className="col-span-full min-w-0 rounded-xl border border-gray-200/80 dark:border-gray-800/80 overflow-hidden">
+                        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50/90 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800/60">
+                            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
+                                TTM Snapshot
+                            </h3>
+                            <span className="text-[10px] text-gray-400 dark:text-gray-500">trailing twelve months · YoY</span>
+                        </div>
+                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-px bg-gray-100 dark:bg-gray-800/60">
+                            {snapshotCells.map((c) => (
+                                <div key={c.label} className="px-3 py-2 bg-white dark:bg-gray-800 min-w-0">
+                                    <div className="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400 truncate">
+                                        {c.label}
+                                    </div>
+                                    <div className="mt-0.5 flex items-baseline justify-between gap-1">
+                                        <span className="text-sm font-bold tabular-nums text-gray-900 dark:text-white leading-tight">
+                                            {c.main}
+                                            {c.suffix && <span className="text-[11px] font-semibold text-blue-500 dark:text-blue-400">{c.suffix}</span>}
+                                        </span>
+                                        {c.yoy != null && (
+                                            <span className={`text-[10px] font-semibold tabular-nums ${c.yoy > 0 ? 'text-emerald-600 dark:text-emerald-400' : c.yoy < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                                                {c.yoy > 0 ? '+' : ''}{c.yoy.toFixed(0)}%
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* ── Full-width valuation snapshot ─────────────────────── */}
                 <div className="col-span-full min-w-0 rounded-xl border border-gray-200/80 dark:border-gray-800/80 overflow-hidden">
                     <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50/90 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800/60">
@@ -504,6 +543,20 @@ export function KeyMetricsTable({ data }: Props) {
                         )}
                     </PillarCard>
                 </div>
+
+                {/* ── Insider filings — SEC Form 4 table folded into the same
+                    card instead of a third table on the page ─────────────── */}
+                {insiderTxs.length > 0 && (
+                    <div className="col-span-full min-w-0 rounded-xl border border-gray-200/80 dark:border-gray-800/80 overflow-hidden">
+                        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50/90 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800/60">
+                            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
+                                Insider Transactions
+                            </h3>
+                            <span className="text-[10px] text-gray-400 dark:text-gray-500">SEC Form 4 · {insiderTxs.length} records</span>
+                        </div>
+                        <InsiderTransactionsBody transactions={insiderTxs} />
+                    </div>
+                )}
 
                 {/* ── Small: context cards — collapsed by default so the page
                     doesn't read as a wall of numbers; power users expand. ─── */}

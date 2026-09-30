@@ -11,7 +11,6 @@ import { ScenarioLab } from './analysis/ScenarioLab';
 import { ChartSection } from './shared/ChartSection';
 import { ChartErrorBoundary } from './shared/ChartErrorBoundary';
 import { SankeyCell } from './analysis/sections/FinancialFlowsClient';
-import { FinancialSnapshot } from './analysis/sections/FinancialSnapshot';
 import type { FlowPeriods } from './analysis/sections/FinancialFlowsSection';
 import type { AnalysisData } from './analysis/types';
 
@@ -42,22 +41,6 @@ export function AnalysisCharts({ ticker, data, flowPeriods }: AnalysisChartsProp
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            {/* Headline TTM strip — instant scan before the trend charts */}
-            <ChartErrorBoundary>
-                <div className="lg:col-span-2">
-                <ChartSection
-                    iconBgClass="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-6a2 2 0 012-2h2a2 2 0 012 2v6m-6 0h6M9 17h6m-9 4h12a2 2 0 002-2V5a2 2 0 00-2-2H6a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>}
-                    title="Financial Snapshot"
-                    subtitle="TTM values & year-over-year change"
-                    hasData={hasStatements}
-                    emptyMessage="No financial statement data available for this ticker."
-                >
-                    <FinancialSnapshot statements={data.statements ?? []} />
-                </ChartSection>
-                </div>
-            </ChartErrorBoundary>
-
             {/* Income Statement History */}
             <ChartErrorBoundary>
                 <ChartSection

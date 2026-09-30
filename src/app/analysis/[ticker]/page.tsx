@@ -25,7 +25,6 @@ import { TrackPageEvent } from '@/components/analytics/TrackPageEvent';
 import { CompanyOverviewSection } from '@/components/company/analysis/sections/CompanyOverviewSection';
 import { KeyInsightsSection } from '@/components/company/analysis/sections/KeyInsightsSection';
 import { MoverInsightSection } from '@/components/company/analysis/sections/MoverInsightSection';
-import { InsiderTransactionsSection } from '@/components/company/analysis/sections/InsiderTransactionsSection';
 import PillarsRadar, { PillarChips } from '@/components/company/analysis/PillarsRadar';
 import { EarningsSection } from '@/components/company/analysis/sections/EarningsSection';
 import { EarningsBanner } from '@/components/company/analysis/sections/EarningsBanner';
@@ -332,16 +331,13 @@ export default async function AnalysisPage({ params }: PageProps) {
               failed, the client tab renders its own copy after fetching. */}
           {analysisData && (
             <div className="mb-6">
-              <KeyMetricsTable data={analysisData} />
+              <KeyMetricsTable data={analysisData} insiderTransactions={data.finnhubInsiderTransactions} />
             </div>
           )}
 
-          {/* Insights + insider filings share one row once each card gets
-              enough room (auto-fit minmax, ~36rem+) — a lone prose card at
-              full width leaves its right half empty, and a lone insider
-              table stretches fine. Insights switches to an internal
-              two-column split when it spans the page by itself. */}
-          <div className="grid gap-6 grid-cols-1 xl:grid-cols-[repeat(auto-fit,minmax(min(100%,36rem),1fr))] items-start">
+          {/* Insights sits alone — insider filings moved into Key Metrics so
+              the page keeps a single table surface. */}
+          <div className="grid gap-6 grid-cols-1 items-start">
             <KeyInsightsSection
               ticker={tickerUpper}
               companyName={companyName}
@@ -355,15 +351,8 @@ export default async function AnalysisPage({ params }: PageProps) {
               earningsDays={earningsDays}
               moversReason={data?.moversReason ?? null}
               moversCategory={data?.moversCategory ?? null}
-              wide={data.finnhubInsiderTransactions.length === 0}
+              wide
             />
-            {data.finnhubInsiderTransactions.length > 0 && (
-              <div className="mb-6">
-                <InsiderTransactionsSection
-                  transactions={data.finnhubInsiderTransactions}
-                />
-              </div>
-            )}
           </div>
 
           {/* Full interactive analysis — financial statement pairs

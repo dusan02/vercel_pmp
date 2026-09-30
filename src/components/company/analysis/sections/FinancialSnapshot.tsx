@@ -13,7 +13,7 @@
 import { computeTTM, computeTTMAtDate } from '@/lib/utils/ttm';
 import type { FinancialStatement } from '../types';
 
-interface Cell {
+export interface Cell {
     label: string;
     main: string;
     suffix: string;
@@ -49,7 +49,7 @@ function latestShares(stmts: FinancialStatement[], before?: number): number | nu
     return null;
 }
 
-export function FinancialSnapshot({ statements }: { statements: FinancialStatement[] }) {
+export function buildSnapshotCells(statements: FinancialStatement[] | undefined): Cell[] | null {
     if (!statements?.length) return null;
 
     const sorted = [...statements].sort(
@@ -101,7 +101,12 @@ export function FinancialSnapshot({ statements }: { statements: FinancialStateme
         return cell ? [{ ...cell, label }] : [];
     });
 
-    if (!cells.length) return null;
+    return cells.length ? cells : null;
+}
+
+export function FinancialSnapshot({ statements }: { statements: FinancialStatement[] }) {
+    const cells = buildSnapshotCells(statements);
+    if (!cells) return null;
 
     return (
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
