@@ -1,5 +1,5 @@
 /**
- * Financial Snapshot — headline strip above the chart grid.
+ * TTM Snapshot cells — headline strip at the top of Key Metrics.
  *
  * One row of TTM values (Revenue / Operating Income / Net Income / EPS /
  * Operating CF / Free CF) with year-over-year chips. Gives the instant-scan
@@ -102,50 +102,4 @@ export function buildSnapshotCells(statements: FinancialStatement[] | undefined)
     });
 
     return cells.length ? cells : null;
-}
-
-export function FinancialSnapshot({ statements }: { statements: FinancialStatement[] }) {
-    const cells = buildSnapshotCells(statements);
-    if (!cells) return null;
-
-    return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-            {cells.map((c) => (
-                <div
-                    key={c.label}
-                    className="rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/40 px-4 py-3"
-                >
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-[10px] uppercase tracking-widest font-semibold text-gray-500 dark:text-gray-400 truncate">
-                            {c.label}
-                        </span>
-                        {c.yoy != null && (
-                            <span
-                                className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border flex-shrink-0 ${
-                                    c.yoy > 0
-                                        ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
-                                        : c.yoy < 0
-                                          ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
-                                          : 'bg-gray-50 text-gray-500 border-gray-200 dark:bg-gray-700/30 dark:text-gray-400 dark:border-gray-600'
-                                }`}
-                            >
-                                {c.yoy > 0 ? '+' : ''}{c.yoy.toFixed(0)}%
-                            </span>
-                        )}
-                    </div>
-                    <div className="leading-none">
-                        <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-                            {c.main}
-                        </span>
-                        {c.suffix && (
-                            <span className="text-sm font-semibold text-blue-500 dark:text-blue-400 ml-0.5">
-                                {c.suffix}
-                            </span>
-                        )}
-                    </div>
-                    <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">TTM</div>
-                </div>
-            ))}
-        </div>
-    );
 }

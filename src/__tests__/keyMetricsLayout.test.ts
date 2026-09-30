@@ -244,4 +244,29 @@ describe('Insider transactions — compact table', () => {
         expect(renderTransactions(transactions.slice(0, 2)).querySelector('details')).toBeNull();
         expect(renderToStaticMarkup(React.createElement(InsiderTransactionsSection, { transactions: [] }))).toBe('');
     });
+
+    it('badges neutral Form 4 codes by code, not by share-delta sign', () => {
+        const doc = renderTransactions([
+            { name: 'Amy Grant', change: 6500, filingDate: '2026-08-25', transactionDate: '2026-08-20', transactionCode: 'A' },
+            { name: 'Bob Withheld', change: -36, filingDate: '2026-08-25', transactionDate: '2026-08-19', transactionCode: 'F' },
+            { name: 'Cara Seller', change: -1200, filingDate: '2026-08-25', transactionDate: '2026-08-18', transactionCode: 'S' },
+            { name: 'Dan Unknown', change: 500, filingDate: '2026-08-25', transactionDate: '2026-08-17', transactionCode: 'J' },
+        ]);
+        const badges = Array.from(doc.querySelectorAll('span.inline-flex'));
+        const badge = (needle: string) => badges.find(b => b.textContent === needle)!;
+
+        // Grant (+6.5K) and tax withholding (−36) must stay neutral — the
+        // share-delta sign must not turn them into Buy/Sell signals.
+        expect(badge('Grant / award').className).toContain('bg-gray-100');
+        expect(badge('Tax withholding').className).toContain('bg-gray-100');
+        expect(badge('Sell').className).toContain('bg-rose-100');
+        // Unknown codes fall back to the delta sign.
+        expect(badge('Buy').className).toContain('bg-emerald-100');
+
+        // Shares column follows badge direction, not the raw delta sign.
+        const rows = Array.from(doc.querySelectorAll('tbody tr'));
+        expect(rows[0]!.querySelector('td:nth-child(4)')!.className).not.toContain('text-emerald-600');
+        expect(rows[1]!.querySelector('td:nth-child(4)')!.className).not.toContain('text-rose-600');
+        expect(rows[2]!.querySelector('td:nth-child(4)')!.className).toContain('text-rose-600');
+    });
 });
