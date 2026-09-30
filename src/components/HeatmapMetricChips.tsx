@@ -40,7 +40,7 @@ export function HeatmapMetricChips({
   // Render placeholder during SSR to avoid hydration mismatch
   if (!mounted) {
     return (
-      <div className={`h-7 rounded-lg animate-pulse ${isDark ? 'bg-slate-800/60' : 'bg-slate-200'} ${className}`} aria-hidden="true" />
+      <div className={`h-7 rounded-lg animate-pulse ${isDark ? 'bg-slate-800/60' : 'bg-slate-200 dark:bg-slate-800/60'} ${className}`} aria-hidden="true" />
     );
   }
 
@@ -77,7 +77,9 @@ export function HeatmapMetricChips({
                     ? 'bg-green-600 border-green-600 text-white'
                     : isDark
                       ? 'border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white bg-transparent'
-                      : 'border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900 bg-white'
+                      // 'light' follows the site theme — white chips look fine
+                      // on a light surface but must not stay white in dark mode.
+                      : 'border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900 bg-white dark:bg-transparent dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-400 dark:hover:text-white'
                 }`}
               >
                 {m.label}
