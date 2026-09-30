@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
 
     // 3. Compute date boundaries
     const now = new Date();
-    const { todayYMD, today, tomorrow, oneWeekAgo, dayAgo } = computeDateBoundaries(now);
+    const { todayYMD, today, tomorrow, oneWeekAgo, weekRefLookback, dayAgo } = computeDateBoundaries(now);
 
     // 4. Fast path check
     const FAST_PATH_MIN_FRESH = 100;
@@ -171,11 +171,11 @@ export async function GET(request: NextRequest) {
       slimWeekRefs,
       perfRefs
     ] = await Promise.all([
-      fetchPriceData(tickerSymbols, canUseFastPath, timeframe, dayAgo, tomorrow, oneWeekAgo, today),
+      fetchPriceData(tickerSymbols, canUseFastPath, timeframe, dayAgo, tomorrow, weekRefLookback, today),
       fetchCachedStockData(tickerSymbols, tickerMap),
       // Fast path skips the full DailyRef query — fetch a slim week-reference
       // projection so the 'week' metric still has data.
-      canUseFastPath ? fetchWeekRefCloses(tickerSymbols, oneWeekAgo, today) : Promise.resolve(null),
+      canUseFastPath ? fetchWeekRefCloses(tickerSymbols, weekRefLookback, today) : Promise.resolve(null),
       // Longer-term perf refs (1M/YTD/1Y) from DailyValuationHistory — always
       // fetched (3 small windowed queries) so the shared cache payload carries
       // all metrics regardless of which one the requesting client selected.

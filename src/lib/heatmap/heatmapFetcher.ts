@@ -376,9 +376,14 @@ export function computeDateBoundaries(now: Date) {
   const today = createETDate(todayYMD);
   const tomorrow = createETDate(tomorrowYMD);
   const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  // Week-reference closes need a wider window: with only 7d, the sliding
+  // 168h edge clips the oldest trading day mid-morning (ref.date is an
+  // ET-midnight instant), silently shifting the '1 week' baseline one
+  // session nearer — and holiday weeks only contain 4 sessions anyway.
+  const weekRefLookback = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
   const dayAgo = getLastTradingDay(now);
 
-  return { todayYMD, today, tomorrow, oneWeekAgo, dayAgo };
+  return { todayYMD, today, tomorrow, oneWeekAgo, weekRefLookback, dayAgo };
 }
 
 /**
