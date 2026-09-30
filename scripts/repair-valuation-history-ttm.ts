@@ -9,6 +9,11 @@
  * - This script recomputes all four multiples per stored row using
  *   computeTTMAtDate against local FinancialStatement data. No API calls —
  *   closePrice/marketCap are already stored; only derived columns change.
+ * - Split contamination: pre-split statements store pre-split shares while
+ *   closePrice is split-adjusted → old peRatio/psRatio read ~10× too low
+ *   (AVGO 2021–23 showed 2–5×, GOOGL 2021 1.4×). Statements are normalized
+ *   in-memory via applySplitAdjustments (Polygon splits) with a consecutive-
+ *   statement jump fallback before recomputing.
  *
  * Usage:
  *   npx tsx scripts/repair-valuation-history-ttm.ts [--dry-run] [--symbol=MU] [--limit=50]
@@ -19,6 +24,7 @@ loadEnvFromFiles();
 
 import { prisma } from '../src/lib/db/prisma';
 import { computeTTMAtDate } from '../src/lib/utils/ttm';
+import { applySplitAdjustments, applyPostSplitAdjustment, findNearestSplit } from '../src/lib/utils/splitAdjustment';
 import { dbWriteRetry as dbWrite } from '../src/lib/db/writeRetry';
 
 const dryRun = process.argv.includes('--dry-run');
@@ -48,12 +54,53 @@ async function main() {
         s.n++; s.sumAbsDelta += d; s.maxAbsDelta = Math.max(s.maxAbsDelta, d);
     };
 
+    const tenYearsAgo = new Date();
+    tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+
     for (const { symbol } of symbols) {
         const stmts = await prisma.financialStatement.findMany({
             where: { symbol },
             orderBy: { endDate: 'desc' },
         });
         if (stmts.length === 0) { console.log(`  ${symbol}: no statements, skip`); continue; }
+
+        // Split-normalize shares in-memory before recomputing multiples.
+        // Polygon splits are authoritative; fall back to consecutive-statement
+        // jumps when Polygon returns nothing (mirrors the history route).
+        let splitEvents = await applySplitAdjustments(stmts, symbol, tenYearsAgo);
+        if (splitEvents.length === 0) {
+            const quarterly = stmts
+                .filter(s => s.fiscalPeriod && s.fiscalPeriod !== 'FY')
+                .sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
+            for (let i = 1; i < quarterly.length; i++) {
+                const prev = quarterly[i - 1]!;
+                const curr = quarterly[i]!;
+                if (prev.sharesOutstanding && prev.sharesOutstanding > 0 &&
+                    curr.sharesOutstanding && curr.sharesOutstanding > 0) {
+                    const ratio = curr.sharesOutstanding / prev.sharesOutstanding;
+                    if (ratio > 1.5) {
+                        const nearest = findNearestSplit(ratio);
+                        if (Math.abs(ratio - nearest) / nearest <= 0.15) {
+                            splitEvents.push({ date: curr.endDate, ratio: nearest });
+                        }
+                    }
+                }
+            }
+            for (const split of splitEvents) {
+                for (const s of stmts) {
+                    if (s.endDate.getTime() < split.date.getTime() &&
+                        s.sharesOutstanding && s.sharesOutstanding > 0) {
+                        s.sharesOutstanding = s.sharesOutstanding * split.ratio;
+                    }
+                }
+            }
+        }
+        const tickerInfo = await prisma.ticker.findUnique({
+            where: { symbol },
+            select: { sharesOutstanding: true },
+        });
+        applyPostSplitAdjustment(stmts, tickerInfo?.sharesOutstanding ?? null);
+        const normalized = splitEvents.length > 0;
 
         const rows = await prisma.dailyValuationHistory.findMany({
             where: { symbol },
@@ -122,7 +169,7 @@ async function main() {
                 ));
             }
         }
-        console.log(`  ${symbol}: ${rows.length} rows, ${updates.length} changed`);
+        console.log(`  ${symbol}: ${rows.length} rows, ${updates.length} changed${normalized ? ` [split-normalized ×${splitEvents.map(s => s.ratio).join('/')}]` : ''}`);
     }
 
     console.log(`\n[repair] done: ${totalRows} rows scanned, ${totalChanged} updated ${dryRun ? '(dry-run — nothing written)' : ''}`);
