@@ -49,11 +49,15 @@ function TransactionsTable({ transactions, label }: InsiderTransactionsSectionPr
         {transactions.map((tx, i) => {
           // Keep desktop columns aligned across the initial and expanded rows.
           // On mobile, insider and filing date stack under the transaction date.
-          const meta = CODE_LABELS[tx.transactionCode] ?? { label: tx.transactionCode, direction: 'neutral' as const };
-          // Fall back to the sign of `change` when the code is unknown.
-          const direction = meta.direction !== 'neutral'
+          const meta = CODE_LABELS[tx.transactionCode];
+          // Known neutral codes (grant, option exercise, tax withholding,
+          // gift) keep the neutral badge even when the share delta is
+          // non-zero — withholding shares isn't an open-market sale.
+          // The `change` sign is only a fallback for codes we don't know.
+          const direction = meta
             ? meta.direction
             : tx.change > 0 ? 'buy' : tx.change < 0 ? 'sell' : 'neutral';
+          const label = meta?.label ?? tx.transactionCode;
           const badge =
             direction === 'buy'
               ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
@@ -73,12 +77,14 @@ function TransactionsTable({ transactions, label }: InsiderTransactionsSectionPr
               <td className="px-3 py-2 align-top md:align-middle">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] leading-4 font-semibold uppercase ${badge}`}>
-                    {direction === 'buy' ? 'Buy' : direction === 'sell' ? 'Sell' : meta.label}
+                    {direction === 'buy' ? 'Buy' : direction === 'sell' ? 'Sell' : label}
                   </span>
-                  <span className="text-[11px] text-gray-500 dark:text-gray-400">{meta.label}</span>
+                  {direction !== 'neutral' && (
+                    <span className="text-[11px] text-gray-500 dark:text-gray-400">{label}</span>
+                  )}
                 </div>
               </td>
-              <td className={`px-3 py-2 align-top md:align-middle text-right whitespace-nowrap font-semibold tabular-nums ${tx.change > 0 ? 'text-emerald-600 dark:text-emerald-400' : tx.change < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-gray-600 dark:text-gray-300'}`}>
+              <td className={`px-3 py-2 align-top md:align-middle text-right whitespace-nowrap font-semibold tabular-nums ${direction === 'buy' ? 'text-emerald-600 dark:text-emerald-400' : direction === 'sell' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-600 dark:text-gray-300'}`}>
                 {tx.change > 0 ? '+' : ''}{formatCompactNumber(tx.change)}
               </td>
               <td className="hidden md:table-cell px-3 py-2 text-right text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">
