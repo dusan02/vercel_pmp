@@ -14,7 +14,7 @@ import { getUniverse, getPrevClose } from '@/lib/redis/operations';
 import { redisClient } from '@/lib/redis';
 import { recordSuccess } from '../healthMonitor';
 import { isMarketHoliday, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
-import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
+import { getDateET, createETDate, toET, nsToMs } from '@/lib/utils/dateET';
 import { withRetry } from '@/lib/api/rateLimiter';
 import { polygonCircuitBreaker, __IS_TEST__, sleep, PolygonSnapshot } from './shared';
 import { fetchPolygonSnapshot } from './core';
@@ -71,7 +71,14 @@ export async function bootstrapPreviousCloses(
 
       const snapshot = snapshotMap.get(symbol);
       let rawPrevDayClose = 0;
-      if (snapshot?.prevDay?.c && snapshot.prevDay.c > 0) {
+      // Post-close, Polygon rolls snapshot.prevDay forward to today's bar —
+      // trusting prevDay.c then writes today's close as its own prevClose
+      // (Sep 30 incident: DailyRef.previousClose=739.77 instead of D-1=737.93).
+      // Accept it only when the bar's own date matches the expected previous
+      // trading day; otherwise fall back to the dated aggregates fetch.
+      const prevDayTs = snapshot?.prevDay?.t;
+      const prevDayYMD = prevDayTs ? getDateET(new Date(nsToMs(prevDayTs))) : null;
+      if (snapshot?.prevDay?.c && snapshot.prevDay.c > 0 && prevDayYMD === expectedPrevYMD) {
         rawPrevDayClose = snapshot.prevDay.c;
       }
       if (snapshot?.day?.c && snapshot.day.c > 0) {

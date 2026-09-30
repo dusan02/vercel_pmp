@@ -52,6 +52,7 @@ interface PolygonSnapshot {
   };
   prevDay?: {
     c: number; // previous close
+    t?: number; // ms timestamp of the prevDay bar — rolls to today's date post-close
   };
   min?: {
     av: number; // average price
