@@ -102,9 +102,11 @@ export function MarketIndices() {
         percentChg: number | null;
         pts: { ts: string; price: number }[];
         isIndex?: boolean;
+        /** Post-close: live after-hours price drifting off the pinned close */
+        ah?: { price: number; pct: number } | null;
     };
 
-    const renderCard = ({ label, price, dollarChg, percentChg, pts, isIndex }: CardProps) => {
+    const renderCard = ({ label, price, dollarChg, percentChg, pts, isIndex, ah }: CardProps) => {
         const isPositive = (percentChg ?? 0) >= 0;
         const hasData = price != null && price > 0;
 
@@ -166,12 +168,19 @@ export function MarketIndices() {
                     )}
                 </div>
 
-                {/* ── Row 3: price ── */}
+                {/* ── Row 3: price (+ after-hours drift once the day result is pinned) ── */}
                 {loading && !hasData ? (
                     <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-5 w-20 rounded" />
                 ) : (
-                    <span className="text-base font-bold text-gray-900 dark:text-white font-mono tabular-nums leading-tight">
-                        {isIndex ? formatPrice(price) : `$${formatPrice(price)}`}
+                    <span className="flex items-baseline gap-1.5 leading-tight">
+                        <span className="text-base font-bold text-gray-900 dark:text-white font-mono tabular-nums">
+                            {isIndex ? formatPrice(price) : `$${formatPrice(price)}`}
+                        </span>
+                        {ah && (
+                            <span className={`text-[10px] font-medium tabular-nums ${ah.pct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                                AH {ah.pct >= 0 ? '+' : ''}{ah.pct.toFixed(2)}%
+                            </span>
+                        )}
                     </span>
                 )}
             </div>
@@ -183,12 +192,31 @@ export function MarketIndices() {
             {ETF_INDICES.map(({ ticker, label }) => {
                 const stock = data[ticker];
                 const price = stock?.currentPrice ?? null;
-                const close = stock?.closePrice ?? null;
-                const change = stock?.percentChange ?? null;
+                const close = stock?.closePrice ?? null;          // D-1 close
+                const regClose = stock?.regularClose ?? null;     // today's official close (post-close only)
+                const dayPct = stock?.dayChangePct ?? null;       // pinned close→close result
+                const livePct = stock?.percentChange ?? null;     // live price vs D-1
                 const pts = history[ticker] ?? [];
-                const dollarChg = (price != null && close != null) ? price - close : null;
 
-                return renderCard({ label, price, dollarChg, percentChg: change, pts });
+                // Post-close: pin headline to the official day result (Finviz
+                // parity) — the live/AH price drifts off on a small AH chip.
+                const pinned = dayPct != null && regClose != null;
+                const displayPrice = pinned ? regClose : price;
+                const dollarChg = (pinned && close != null && regClose != null)
+                    ? regClose - close
+                    : (price != null && close != null ? price - close : null);
+                const ah = (pinned && price != null && regClose != null && Math.abs(price - regClose) / regClose >= 0.0005)
+                    ? { price, pct: (price / regClose - 1) * 100 }
+                    : null;
+
+                return renderCard({
+                    label,
+                    price: displayPrice,
+                    dollarChg,
+                    percentChg: pinned ? dayPct : livePct,
+                    pts,
+                    ah
+                });
             })}
 
             {renderCard({

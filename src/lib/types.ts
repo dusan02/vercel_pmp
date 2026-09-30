@@ -66,6 +66,11 @@ export interface StockData {
   referencePrice?: number | null;
   isFrozen?: boolean;
   isStale?: boolean;
+  /** Official regular-session close for the current trading day (post-close). */
+  regularClose?: number | null;
+  /** Pinned close→close day result: regularClose / prevTradingDayClose − 1.
+   *  Unlike percentChange it never drifts with after-hours ticks. */
+  dayChangePct?: number | null;
 }
 
 // Price data structure for Redis/cache

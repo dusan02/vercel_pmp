@@ -3,6 +3,7 @@ import { computeMarketCap, computeMarketCapDiff, computePercentChange, getShares
 import { detectSession, getLastTradingDay } from '@/lib/utils/timeUtils';
 import { nowET, getDateET, createETDate } from '@/lib/utils/dateET';
 import { getPricingState } from '@/lib/utils/pricingStateMachine';
+import { getPrevCloseRefDay } from '@/lib/utils/prevCloseDates';
 import { calculatePercentChange } from '@/lib/utils/priceResolver';
 
 import { StockData } from '@/lib/types';
@@ -228,25 +229,35 @@ export async function getStocksList(options: {
 
     const regularCloseBySymbol = new Map<string, number>();
     const prevCloseBySymbol = new Map<string, number>();
+    // D-1 close derived from the PREVIOUS trading day's regularClose — that
+    // field is written once by saveRegularClose and never rolls. Today's row
+    // `previousClose` gets overwritten with today's own close by post-close
+    // ingest (Polygon prevDay rolls at EOD), so it cannot be trusted as D-1
+    // after the close.
+    const prevTradingDayObj = getPrevCloseRefDay(getDateET(etNow));
+    const prevDayCloseBySymbol = new Map<string, number>();
     const dateET = getDateET(etNow);
     const todayDateObj = createETDate(dateET);
     const lastTradingDayForQuery = getLastTradingDay(todayDateObj);
 
     if (!isLargeQuery) {
       const dailyRefs = await prisma.dailyRef.findMany({
-        where: { symbol: { in: stocks.map(s => s.symbol) }, date: todayDateObj },
+        where: { symbol: { in: stocks.map(s => s.symbol) }, date: { in: [todayDateObj, prevTradingDayObj] } },
         select: { symbol: true, regularClose: true, previousClose: true, date: true }
       });
       dailyRefs.forEach(r => {
-        if (new Date(r.date).getTime() === todayDateObj.getTime()) {
+        const rTime = new Date(r.date).getTime();
+        if (rTime === todayDateObj.getTime()) {
           if (r.regularClose && r.regularClose > 0) regularCloseBySymbol.set(r.symbol, r.regularClose);
           if (r.previousClose && r.previousClose > 0) prevCloseBySymbol.set(r.symbol, r.previousClose);
+        } else if (rTime === prevTradingDayObj.getTime()) {
+          if (r.regularClose && r.regularClose > 0) prevDayCloseBySymbol.set(r.symbol, r.regularClose);
         }
       });
     }
 
     const tickersNeedingPrevClose = stocks.filter(s => {
-      if ((priceBySymbol.get(s.symbol) || 0) === 0 || (prevCloseBySymbol.get(s.symbol) || 0) > 0) return false;
+      if ((priceBySymbol.get(s.symbol) || 0) === 0 || (prevCloseBySymbol.get(s.symbol) || 0) > 0 || (prevDayCloseBySymbol.get(s.symbol) || 0) > 0) return false;
       if ((s.latestPrevClose || 0) === 0 || !s.latestPrevCloseDate) return true;
       return s.latestPrevCloseDate.getTime() < lastTradingDayForQuery.getTime();
     }).map(s => s.symbol);
@@ -315,7 +326,7 @@ export async function getStocksList(options: {
         }
       }
 
-      let previousClose = onDemandPrev > 0 ? onDemandPrev : dailyRefPrev > 0 ? dailyRefPrev : latestPrevCloseSafe;
+      let previousClose = prevDayCloseBySymbol.get(s.symbol) || onDemandPrev || dailyRefPrev || latestPrevCloseSafe;
       const sharesOutstanding = onDemandSharesMap.get(s.symbol) || (s.sharesOutstanding || 0);
       const regularClose = regularCloseBySymbol.get(s.symbol) || 0;
       const lastTs = best?.ts || (s.lastPriceUpdated || s.updatedAt);
@@ -357,6 +368,12 @@ export async function getStocksList(options: {
       }
 
       const _ov = SECTOR_INDUSTRY_OVERRIDES[s.symbol];
+      // Pinned official day result (post-close): regularClose vs true D-1
+      // close. Unlike percentChange (live price vs D-1), this never drifts
+      // with after-hours ticks — the index strip / Finviz-parity display.
+      const dayChangePct = (regularClose > 0 && previousClose > 0)
+        ? ((regularClose / previousClose) - 1) * 100
+        : null;
       return {
         ticker: s.symbol,
         companyName: _ov?.name || s.name || '',
@@ -365,7 +382,9 @@ export async function getStocksList(options: {
         logoUrl: s.logoUrl || `/logos/${s.symbol.toLowerCase()}-32.webp`,
         currentPrice, closePrice: previousClose, percentChange, marketCap, marketCapDiff,
         lastUpdated, volume: s.lastVolume || 0, referenceUsed: pct.reference.used,
-        referencePrice: pct.reference.price, isFrozen, isStale
+        referencePrice: pct.reference.price, isFrozen, isStale,
+        regularClose: regularClose > 0 ? regularClose : null,
+        dayChangePct
       };
     });
 
