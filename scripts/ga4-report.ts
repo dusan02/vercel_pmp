@@ -42,7 +42,7 @@ async function funnel(propertyId: string, days: number) {
   const pages = await runReport(token, propertyId, {
     dateRanges: [range],
     dimensions: [{ name: 'pagePath' }],
-    metrics: [{ name: 'sessions' }, { name: 'engagedSessions' }],
+    metrics: [{ name: 'sessions' }, { name: 'engagedSessions' }, { name: 'totalUsers' }],
     orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
     limit: 1000,
   });
@@ -56,30 +56,31 @@ async function funnel(propertyId: string, days: number) {
     ['Blog', /^\/blog/],
     ['Chinese locale', /^\/zh/],
   ];
-  const counts = new Map<string, { s: number; e: number }>();
-  let other = { s: 0, e: 0 };
+  const counts = new Map<string, { s: number; e: number; u: number }>();
+  let other = { s: 0, e: 0, u: 0 };
   for (const r of pages.rows ?? []) {
     const path = r.dimensionValues?.[0]?.value ?? '';
     const s = parseInt(r.metricValues?.[0]?.value ?? '0', 10);
     const e = parseInt(r.metricValues?.[1]?.value ?? '0', 10);
+    const u = parseInt(r.metricValues?.[2]?.value ?? '0', 10);
     const hit = buckets.find(([, re]) => re.test(path));
     if (hit) {
-      const c = counts.get(hit[0]) ?? { s: 0, e: 0 };
-      c.s += s; c.e += e;
+      const c = counts.get(hit[0]) ?? { s: 0, e: 0, u: 0 };
+      c.s += s; c.e += e; c.u += u;
       counts.set(hit[0], c);
     } else {
-      other.s += s; other.e += e;
+      other.s += s; other.e += e; other.u += u;
     }
   }
 
   console.log(`\n=== GA4 funnel — last ${days} days ===\n`);
-  console.log('PAGE STAGES'.padEnd(62) + 'sessions  engaged');
-  console.log('-'.repeat(80));
+  console.log('PAGE STAGES'.padEnd(62) + 'sessions  engaged  users');
+  console.log('-'.repeat(88));
   for (const [label] of buckets) {
     const c = counts.get(label);
-    if (c) console.log(label.padEnd(62) + String(c.s).padStart(8) + String(c.e).padStart(8));
+    if (c) console.log(label.padEnd(62) + String(c.s).padStart(8) + String(c.e).padStart(8) + String(c.u).padStart(7));
   }
-  console.log('(other)'.padEnd(62) + String(other.s).padStart(8) + String(other.e).padStart(8));
+  console.log('(other)'.padEnd(62) + String(other.s).padStart(8) + String(other.e).padStart(8) + String(other.u).padStart(7));
 
   // Events
   const events = await runReport(token, propertyId, {
@@ -90,7 +91,7 @@ async function funnel(propertyId: string, days: number) {
       filter: {
         fieldName: 'eventName',
         inListFilter: {
-          values: ['view_item', 'subscribe_alert', 'unsubscribe_alert', 'push_return', 'heatmap_change', 'ticker_click', 'favorite_toggle'],
+          values: ['view_item', 'subscribe_alert', 'unsubscribe_alert', 'push_return', 'heatmap_change', 'ticker_click', 'favorite_toggle', 'movers_view', 'movers_filter', 'analysis_view'],
         },
       },
     },
@@ -99,13 +100,28 @@ async function funnel(propertyId: string, days: number) {
 
   console.log('\nFUNNEL EVENTS'.padEnd(40) + 'count  users');
   console.log('-'.repeat(55));
+  const evUsers = new Map<string, { count: number; users: number }>();
   for (const r of events.rows ?? []) {
-    console.log(
-      (r.dimensionValues?.[0]?.value ?? '').padEnd(40) +
-      String(r.metricValues?.[0]?.value ?? '0').padStart(6) +
-      String(r.metricValues?.[1]?.value ?? '0').padStart(7)
-    );
+    const name = r.dimensionValues?.[0]?.value ?? '';
+    const cnt = parseInt(r.metricValues?.[0]?.value ?? '0', 10);
+    const usr = parseInt(r.metricValues?.[1]?.value ?? '0', 10);
+    evUsers.set(name, { count: cnt, users: usr });
+    console.log(name.padEnd(40) + String(cnt).padStart(6) + String(usr).padStart(7));
   }
+
+  // Movers→Analysis CTR (metric #0 of feature freeze):
+  //   clickers = users who fired ticker_click
+  //   viewers  = users who saw Heatmap or Movers pages (top-of-funnel surfaces)
+  const viewers =
+    (counts.get('Heatmap')?.u ?? 0) + (counts.get('Movers/gainers/losers')?.u ?? 0);
+  const clickers = evUsers.get('ticker_click')?.users ?? 0;
+  const ctr = viewers > 0 ? ((clickers / viewers) * 100).toFixed(1) : '—';
+  console.log('\nMOVERS→ANALYSIS CTR (metric #0)');
+  console.log('-'.repeat(55));
+  console.log(`  viewers (heatmap+movers pages, users): ${viewers}`);
+  console.log(`  clickers (ticker_click, users):        ${clickers}`);
+  console.log(`  CTR (users):                         ${ctr}%`);
+  console.log('  note: users-basis; page_view counts only hydrated loads — farm excluded by hydration');
   console.log('');
 }
 

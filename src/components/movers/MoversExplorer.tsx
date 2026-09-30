@@ -203,7 +203,11 @@ function PillarDetail({ mover }: { mover: MoverRecord }) {
           <span className="font-semibold text-slate-700 dark:text-slate-300">{Math.round(p.ewScore)}/{Math.round(p.ewMaxPossible)}</span>
         </span>
       )}
-      <Link href={`/analysis/${mover.symbol}`} className="ml-auto text-blue-500 hover:underline">
+      <Link
+        href={`/analysis/${mover.symbol}`}
+        className="ml-auto text-blue-500 hover:underline"
+        onClick={() => event('ticker_click', { ticker: mover.symbol, click_source: 'movers' })}
+      >
         Full analysis →
       </Link>
     </div>
@@ -262,7 +266,11 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
                     <div className="flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100 leading-tight">
                       <CompanyLogo ticker={r.symbol} size={22} className="rounded" />
                       {eligibleAnalysis.has(r.symbol) ? (
-                        <Link className="hover:underline" href={`/analysis/${r.symbol}`}>
+                        <Link
+                          className="hover:underline"
+                          href={`/analysis/${r.symbol}`}
+                          onClick={() => event('ticker_click', { ticker: r.symbol, click_source: 'movers' })}
+                        >
                           {r.symbol}
                         </Link>
                       ) : (
