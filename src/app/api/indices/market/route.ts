@@ -13,8 +13,13 @@ export const dynamic = 'force-dynamic';
  * is simply omitted and the client falls back to the ETF strip.
  */
 
-const UA =
+// Yahoo rate-limits specific browser UA fingerprints (the Chrome UA used for
+// TradingView is already burned — returns 429 while a plain UA passes), so
+// the two legs keep separate agents. The Windows UA matches the proven
+// /api/indices/djia route.
+const TV_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
+const YAHOO_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36';
 
 const INDEX_DEFS = [
   { key: 'SPX', tv: 'SP:SPX', yahoo: '%5EGSPC' },
@@ -28,7 +33,7 @@ type YahooChart = { intraday: { ts: string; price: number }[]; regularMarketPric
 async function fetchTvQuotes(): Promise<Map<string, TvQuote>> {
   const res = await fetch('https://scanner.tradingview.com/america/scan', {
     method: 'POST',
-    headers: { 'User-Agent': UA, 'Content-Type': 'application/json' },
+    headers: { 'User-Agent': TV_UA, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       symbols: { tickers: INDEX_DEFS.map(i => i.tv), query: { types: [] } },
       columns: ['name', 'close', 'change', 'change_abs'],
@@ -58,7 +63,7 @@ async function fetchYahooChart(symbol: string): Promise<YahooChart | null> {
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=5m&range=1d`;
     const res = await fetch(url, {
-      headers: { 'User-Agent': UA },
+      headers: { 'User-Agent': YAHOO_UA },
       cache: 'no-store',
       signal: AbortSignal.timeout(15000),
     });
