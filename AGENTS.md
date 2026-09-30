@@ -100,7 +100,7 @@ curl -s https://premarketprice.com/analysis/AAPL | grep -c FinancialProduct  # �
 **Historická valuation vrstva**:
 
 - `computeTTMAtDate` vracia TTM pre všetky polia (NI, rev, EBIT, OCF, CapEx) — `syncValuationHistory` píše všetky 4 násobky na TTM báze
-- **PO DEPLOYI spustiť na prod**: `npx tsx scripts/repair-valuation-history-ttm.ts` — prepočíta existujúce riadky na TTM (čistý lokálny recompute, žiadne API). Bez toho percentily pre evEbit/fcfYield rankujú TTM-current voči annual-histórii (mierne skreslené)
+- `repair-valuation-history-ttm.ts` — lokálny recompute všetkých 4 násobkov na TTM báze. **Od 2026-09-30 aj split-normalizácia**: pre-split éra peRatio/psRatio bola ~10-20× podhodnotená (pre-split shares vs post-split ceny — AVGO medián 5.2→52, implied 31→312). Script najprv in-memory normalizuje statements cez `applySplitAdjustments` (Polygon) + consecutive-jump fallback + `applyPostSplitAdjustment`. Po repair-e treba flushnúť Redis `analysis:history:*` + `analysis:cache:*`, ináč sa servuje stale. Reziduum: riadky staršie ako coverage `FinancialStatement` (napr. GOOGL 2021 ~P/E 1.4) sú nenapraviteľné lokálne
 - Percentilový kontext je v metric tooltipoch (`histTip`), nie v layoute — žiadny UI redesign
 - `metrics.evEbit` = vlastné EV/TTM-EBIT (D&A nemáme → EBIT, nie EBITDA); tabuľka labeluje `EV/EBIT`, Finnhub `evEbitda` ostáva fallback pod vlastným labelom
 - `metrics.fcfYield` = vlastné TTM FCF/mcap (predtým annual snapshot — LLY: 0.3% → 1.2%)
