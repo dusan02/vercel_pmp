@@ -128,6 +128,24 @@ export default function EarningsDayExplorer({
   const [sortKey, setSortKey] = useState<SortKey>('marketCap');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
+  const fetchDay = useCallback(async (date: string, silent = false) => {
+    if (!silent) { setLoading(true); setError(null); }
+    try {
+      const res = await fetch(`/api/earnings/day?date=${date}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.success) {
+        setRowsByDate(prev => ({ ...prev, [date]: json.data.rows }));
+      } else {
+        throw new Error('API error');
+      }
+    } catch {
+      if (!silent) setError('Failed to load earnings for this date');
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, []);
+
   // Fetch rows for non-SSR dates
   useEffect(() => {
     if (rowsByDate[selectedDate]) return;
@@ -152,6 +170,16 @@ export default function EarningsDayExplorer({
     })();
     return () => { cancelled = true; };
   }, [selectedDate, rowsByDate]);
+
+  // Live refresh: the Price column should track the market — re-pull the
+  // selected day every 60s while the tab is visible (today's prices drift
+  // post-earnings; SSR rows would otherwise freeze at generation time).
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') fetchDay(selectedDate, true);
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [selectedDate, fetchDay]);
 
   const allRows = rowsByDate[selectedDate] ?? [];
 
