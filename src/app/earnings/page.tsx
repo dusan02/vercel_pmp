@@ -2,7 +2,6 @@ import { Metadata } from 'next';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { StructuredData } from '@/components/StructuredData';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { getEarningsRange, type EarningsSSRRow, type EarningsSSRGroup } from '@/lib/seo/earningsSSR';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { getDateET } from '@/lib/utils/dateET';
@@ -11,14 +10,9 @@ import { toJsonLd } from '@/lib/seo/jsonLd';
 import {
   formatEps, formatRevenue, formatMcap, timeLabel, timeColor, FeaturedEarningsCard,
 } from '@/components/earnings/EarningsShared';
-import MonthCalendar from '@/components/MonthCalendar';
+import EarningsDayExplorer from '@/components/earnings/EarningsDayExplorer';
 
 const baseUrl = 'https://premarketprice.com';
-
-const WeeklyEarningsCalendar = dynamic(
-  () => import('@/components/WeeklyEarningsCalendar'),
-  { loading: () => <div className="p-4">Loading weekly calendar...</div> }
-);
 
 export const revalidate = 300; // 5 min - SSR earnings content
 
@@ -139,16 +133,10 @@ export default async function EarningsPage() {
   end.setUTCDate(end.getUTCDate() + 7);
   const endStr = end.toISOString().split('T')[0] ?? '';
 
-  // Monday of the current ET week — deterministic noon-UTC math (DST-safe)
-  const dow = todayNoonUTC.getUTCDay(); // 0=Sun..6=Sat
-  const weekStart = new Date(todayNoonUTC);
-  weekStart.setUTCDate(todayNoonUTC.getUTCDate() + (dow === 0 ? -6 : 1 - dow));
-  const weekStartStr = weekStart.toISOString().split('T')[0] ?? '';
-
-  // Parallel SSR fetch: DB earnings + API endpoints for client components
-  const [groups, dateCountsData, weeklyData, eligibleSet] = await Promise.all([
+  // Parallel SSR fetch: DB earnings + date counts for the calendar rail
+  const [groups, dateCountsData, eligibleSet] = await Promise.all([
     getEarningsRange(todayStr, endStr, { enrich: true }),
-    // SSR pre-fetch for MonthCalendar — date counts
+    // SSR pre-fetch for the explorer's MonthCalendar — date counts
     (async () => {
       try {
         const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/earnings/dates`, { signal: AbortSignal.timeout(3000) });
@@ -157,17 +145,11 @@ export default async function EarningsPage() {
         return json.success ? json.data : null;
       } catch { return null; }
     })(),
-    // SSR pre-fetch for WeeklyEarningsCalendar — weekly data
-    (async () => {
-      try {
-        const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/earnings/week?start=${weekStartStr}`, { signal: AbortSignal.timeout(3000) });
-        if (!res.ok) return null;
-        const json = await res.json();
-        return json.success ? json.data : null;
-      } catch { return null; }
-    })(),
     getEligibleAnalysisSet(),
   ]);
+  const todayRows = groups[0]?.date === todayStr
+    ? [...groups[0].preMarket, ...groups[0].afterMarket, ...groups[0].timeTbd]
+    : [];
   const totalEarnings = groups.reduce((sum, g) => sum + g.total, 0);
   const reportedCount = groups.reduce(
     (sum, g) => sum + [...g.preMarket, ...g.afterMarket, ...g.timeTbd].filter((r) => r.hasReported).length,
@@ -230,23 +212,13 @@ export default async function EarningsPage() {
           )}
         </div>
 
-        {/* Month Calendar + Weekly Calendar side by side on desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          {/* Month Calendar (left sidebar on desktop) */}
-          <div className="lg:col-span-1">
-            <MonthCalendar initialDateCounts={dateCountsData} />
-          </div>
-
-          {/* Interactive weekly calendar (right, wider) */}
-          <div className="lg:col-span-2">
-            <WeeklyEarningsCalendar
-              initialWeekData={weeklyData}
-              todayStr={todayStr}
-              initialWeekStartStr={weekStartStr}
-              eligibleTickers={eligibleSet}
-            />
-          </div>
-        </div>
+        {/* ET-style explorer: month calendar rail + compact day table */}
+        <EarningsDayExplorer
+          initialDate={todayStr}
+          initialRows={todayRows}
+          dateCounts={dateCountsData}
+          eligibleTickers={eligibleSet}
+        />
 
         {/* Featured earnings — largest reports this week */}
         {featured.length > 0 && (featured[0]?.marketCap ?? 0) >= 1e9 && (

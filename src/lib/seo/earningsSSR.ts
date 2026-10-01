@@ -15,6 +15,12 @@ export interface EarningsSSRRow {
   marketCap: number | null;
   percentChange: number | null;
   hasReported: boolean;
+  // Live snapshot from Ticker (enrich only): current price, day % move and
+  // market-cap delta in dollars. For reported rows the % shown should prefer
+  // earningsDayMovePct — the earnings-day reaction, not today's drift.
+  price: number | null;
+  priceChangePct: number | null;
+  marketCapDiff: number | null;
   // Enriched at read time (join Ticker/AnalysisCache/EwScoreSnapshot/DailyRef).
   // EarningsCalendar.marketCap/.percentChange columns are never written by
   // the Finnhub sync — these fields are the live replacements.
@@ -76,6 +82,9 @@ function rowFromDB(e: {
     marketCap: e.marketCap ?? null,
     percentChange: e.percentChange ?? null,
     hasReported: e.epsActual != null || e.revenueActual != null,
+    price: null,
+    priceChangePct: null,
+    marketCapDiff: null,
     sector: null,
     stdDev20d: null,
     earningsDayMovePct: null,
@@ -116,7 +125,7 @@ async function enrichEarningsRows(
   const [tickers, mcaps, caches, ews, dailyRefs] = await Promise.all([
     prisma.ticker.findMany({
       where: { symbol: { in: symbols } },
-      select: { symbol: true, sector: true, stdDevReturn20d: true },
+      select: { symbol: true, sector: true, stdDevReturn20d: true, lastPrice: true, lastChangePct: true, lastMarketCapDiff: true },
     }),
     // DailyValuationHistory is the live market-cap source (Ticker.lastMarketCap
     // and EarningsCalendar.marketCap are both unpopulated).
@@ -172,6 +181,9 @@ async function enrichEarningsRows(
     if (t) {
       row.sector = t.sector;
       row.stdDev20d = t.stdDevReturn20d;
+      row.price = t.lastPrice;
+      // Ticker.lastMarketCapDiff is stored in $B — scale to dollars.
+      row.marketCapDiff = t.lastMarketCapDiff !== null ? t.lastMarketCapDiff * 1e9 : null;
     }
     row.marketCap = row.marketCap ?? mcapBy.get(row.ticker) ?? null;
     const c = cacheBy.get(row.ticker);
@@ -203,6 +215,10 @@ async function enrichEarningsRows(
         }
       }
     }
+
+    // Reported rows show the earnings-day reaction; upcoming rows show the
+    // live day move from Ticker.
+    row.priceChangePct = (row.hasReported ? (row.earningsDayMovePct ?? t?.lastChangePct) : t?.lastChangePct) ?? null;
   }
 }
 
