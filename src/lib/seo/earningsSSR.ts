@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/db/prisma';
 import { getDateET } from '@/lib/utils/dateET';
+import { getCachedData, setCachedData } from '@/lib/redis/operations';
+import { getPreviousClose } from '@/lib/utils/marketCapUtils';
 
 export interface EarningsSSRRow {
   ticker: string;
@@ -220,6 +222,62 @@ async function enrichEarningsRows(
     // live day move from Ticker.
     row.priceChangePct = (row.hasReported ? (row.earningsDayMovePct ?? t?.lastChangePct) : t?.lastChangePct) ?? null;
   }
+
+  // Last resort for symbols outside the tracked universe (CEFs, small caps):
+  // Polygon ticker-details + snapshot, Redis-cached — fills marketCap/price.
+  await backfillEarningsMarketData(rows).catch((e) =>
+    console.warn('[earningsSSR] polygon backfill failed:', e)
+  );
+}
+
+/**
+ * Polygon backfill for tickers outside our tracked universe (closed-end
+ * funds, small caps not in Ticker). Without it the day table shows '—' for
+ * most non-S&P reporters. Ticker-details gives market_cap (or shares to
+ * derive it); snapshot gives a ~15min-delayed price; prevClose goes through
+ * the dated-agg getPreviousClose — snapshot.prevDay.c rolls to today's close
+ * post-market and would corrupt the % (Sep-30 incident). Redis-cached 6h.
+ */
+async function backfillEarningsMarketData(rows: EarningsSSRRow[]): Promise<void> {
+  const missing = rows.filter((r) => r.marketCap == null || r.price == null).map((r) => r.ticker);
+  if (missing.length === 0) return;
+  const apiKey = process.env.POLYGON_API_KEY;
+  if (!apiKey) return;
+
+  interface ExtData { mcap: number | null; price: number | null; pct: number | null }
+  await Promise.allSettled(missing.slice(0, 40).map(async (sym) => {
+    const cacheKey = `earnings:ext:${sym}`;
+    let data: ExtData | null = null;
+    try { data = (await getCachedData(cacheKey)) as ExtData | null; } catch {}
+
+    if (!data) {
+      const [detRes, snapRes] = await Promise.all([
+        fetch(`https://api.polygon.io/v3/reference/tickers/${sym}?apiKey=${apiKey}`, { signal: AbortSignal.timeout(8000) })
+          .then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch(`https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/${sym}?apiKey=${apiKey}`, { signal: AbortSignal.timeout(8000) })
+          .then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      ]);
+      const det = detRes?.results;
+      const snap = snapRes?.ticker;
+      const price = snap?.day?.c ?? snap?.lastTrade?.p ?? null;
+      let mcap: number | null = typeof det?.market_cap === 'number' ? det.market_cap : null;
+      const shares = det?.weighted_shares_outstanding ?? det?.share_class_shares_outstanding;
+      if (mcap == null && price != null && typeof shares === 'number') mcap = price * shares;
+      const prevClose = price != null ? await getPreviousClose(sym).catch(() => 0) : 0;
+      const pct = price != null && prevClose > 0 ? (price / prevClose - 1) * 100 : null;
+      data = { mcap, price, pct };
+      try { await setCachedData(cacheKey, data, 6 * 3600); } catch {}
+    }
+
+    const row = rows.find((r) => r.ticker === sym);
+    if (!row || !data) return;
+    row.marketCap = row.marketCap ?? data.mcap;
+    row.price = row.price ?? data.price;
+    row.priceChangePct = row.priceChangePct ?? data.pct;
+    if (row.marketCapDiff == null && data.mcap != null && data.pct != null) {
+      row.marketCapDiff = data.mcap - data.mcap / (1 + data.pct / 100);
+    }
+  }));
 }
 
 export interface EarningsWeekDay {
