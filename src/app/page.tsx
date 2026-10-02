@@ -214,7 +214,7 @@ export default async function Page() {
       </nav>
       {/* Hero positioning text — single hairline strip; H1 stays first for SEO */}
       <section className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex items-baseline gap-x-3 flex-wrap">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex items-baseline justify-center gap-x-3 flex-wrap text-center">
           <h1 className="text-sm font-bold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">
             Track US Stocks Before the Market Opens
           </h1>

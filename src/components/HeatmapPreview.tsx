@@ -60,20 +60,21 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHo
           Search + fullscreen live in the nav row (PageHeader toolbar). */}
       <h2 className="sr-only">Market Heatmap</h2>
 
-      {/* Metric chips — horizontal row above the map (desktop) */}
+      {/* Metric chips — single scrollable row above the map (desktop) */}
       {isDesktop && (
-        <div className="px-4 mb-2">
+        <div className="px-4 mb-1.5">
           <HeatmapMetricChips metric={metric} onMetricChange={setMetric} orientation="horizontal" />
         </div>
       )}
 
-      {/* Map — full width, keeps full 600px height */}
+      {/* Map — full width; height clamps so the whole map fits above the fold
+          (≈190px of header/nav/chips chrome above it), capped at 600px */}
       <div className={isDesktop ? '' : 'flex-1 flex flex-col'}>
       {/* Content Wrapper - simplified: removed unnecessary inner div */}
       <div
-        className={`relative w-full bg-black overflow-hidden group heatmap-preview-container border-none outline-none ${isDesktop ? 'heatmap-preview-desktop h-[600px]' : 'flex-1'
+        className={`relative w-full bg-black overflow-hidden group heatmap-preview-container border-none outline-none ${isDesktop ? 'heatmap-preview-desktop' : 'flex-1'
           }`}
-        style={isDesktop ? { cursor: 'pointer', border: 'none', outline: 'none' } : { cursor: 'pointer', border: 'none', outline: 'none' }}
+        style={isDesktop ? { cursor: 'pointer', border: 'none', outline: 'none', height: 'clamp(480px, calc(100vh - 190px), 600px)' } : { cursor: 'pointer', border: 'none', outline: 'none' }}
         onClick={handleBackgroundClick}
       >
         <ResponsiveMarketHeatmap

@@ -46,8 +46,8 @@ export function PageHeader({ navigation, toolbar, onLogoClick, statusBadge }: Pa
         <div className="hidden lg:flex flex-col w-full gap-2">
           {/* TOP ROW: Brand | Indices | Sign In */}
           <div className="flex items-center justify-between w-full border-b border-[var(--clr-border-subtle)] pb-2">
-            {/* Branding */}
-            <div className="flex-none min-w-[200px] flex items-center">
+            {/* Branding + session badge (reads "PreMarket Price ●PRE-MARKET") */}
+            <div className="flex-none flex items-center gap-3">
               <div
                 className="flex flex-col justify-center cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={onLogoClick}
@@ -61,8 +61,8 @@ export function PageHeader({ navigation, toolbar, onLogoClick, statusBadge }: Pa
                     </span>
                   </div>
                 </div>
-                
               </div>
+              {statusBadge}
             </div>
 
             {/* Indices */}
@@ -70,9 +70,8 @@ export function PageHeader({ navigation, toolbar, onLogoClick, statusBadge }: Pa
               <MarketIndices />
             </div>
 
-            {/* Session badge + Login & Theme */}
+            {/* Login & Theme */}
             <div className="flex-none flex items-center justify-end gap-2">
-              {statusBadge}
               <ThemeToggle />
               <LoginButton />
             </div>
