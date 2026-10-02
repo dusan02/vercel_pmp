@@ -84,17 +84,18 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHo
         </div>
       )}
 
-      {/* Content row — left metric rail (desktop) + map keeps full 600px height */}
-      <div className={isDesktop ? 'flex items-stretch' : 'flex-1 flex flex-col'}>
-        {isDesktop && (
-          <aside className="w-48 shrink-0 pl-4 pr-2 py-1 overflow-y-auto max-h-[600px] scrollbar-thin">
-            <HeatmapMetricChips metric={metric} onMetricChange={setMetric} orientation="vertical" />
-          </aside>
-        )}
+      {/* Metric chips — horizontal row above the map (desktop) */}
+      {isDesktop && (
+        <div className="px-4 mb-2">
+          <HeatmapMetricChips metric={metric} onMetricChange={setMetric} orientation="horizontal" />
+        </div>
+      )}
 
+      {/* Map — full width, keeps full 600px height */}
+      <div className={isDesktop ? '' : 'flex-1 flex flex-col'}>
       {/* Content Wrapper - simplified: removed unnecessary inner div */}
       <div
-        className={`relative ${isDesktop ? 'flex-1' : 'w-full'} bg-black overflow-hidden group heatmap-preview-container border-none outline-none ${isDesktop ? 'heatmap-preview-desktop h-[600px]' : 'flex-1'
+        className={`relative w-full bg-black overflow-hidden group heatmap-preview-container border-none outline-none ${isDesktop ? 'heatmap-preview-desktop h-[600px]' : 'flex-1'
           }`}
         style={isDesktop ? { cursor: 'pointer', border: 'none', outline: 'none' } : { cursor: 'pointer', border: 'none', outline: 'none' }}
         onClick={handleBackgroundClick}
