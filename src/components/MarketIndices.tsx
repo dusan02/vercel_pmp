@@ -160,8 +160,9 @@ export function MarketIndices() {
                     )}
                 </div>
 
-                {/* Middle: sparkline fills remaining width */}
-                <div className="flex-1 h-9 min-w-[40px]">
+                {/* Middle: sparkline fills remaining width — hidden below xl so
+                    narrow headers never push the % chip into the auth cluster */}
+                <div className="hidden xl:block flex-1 h-9 min-w-[40px]">
                     {pts.length > 0 ? (
                         <MiniIntradayChart
                             points={pts}

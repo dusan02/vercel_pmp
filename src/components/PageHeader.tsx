@@ -46,8 +46,8 @@ export function PageHeader({ navigation, toolbar, onLogoClick, statusBadge }: Pa
         <div className="hidden lg:flex flex-col w-full gap-2">
           {/* TOP ROW: Brand | Indices | Sign In */}
           <div className="flex items-center justify-between w-full border-b border-[var(--clr-border-subtle)] pb-2">
-            {/* Branding + session badge (reads "PreMarket Price ●PRE-MARKET") */}
-            <div className="flex-none flex items-center gap-3">
+            {/* Branding */}
+            <div className="flex-none min-w-[200px] flex items-center">
               <div
                 className="flex flex-col justify-center cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={onLogoClick}
@@ -62,7 +62,6 @@ export function PageHeader({ navigation, toolbar, onLogoClick, statusBadge }: Pa
                   </div>
                 </div>
               </div>
-              {statusBadge}
             </div>
 
             {/* Indices */}
@@ -77,9 +76,10 @@ export function PageHeader({ navigation, toolbar, onLogoClick, statusBadge }: Pa
             </div>
           </div>
 
-          {/* BOTTOM ROW: Navigation | search + fullscreen toolbar */}
+          {/* BOTTOM ROW: session badge | navigation | search + fullscreen */}
           <div className="flex items-center justify-between w-full pt-1 gap-3">
-            <div className="min-w-0">
+            {statusBadge && <div className="shrink-0">{statusBadge}</div>}
+            <div className="min-w-0 flex-1 overflow-x-auto scrollbar-none">
               {navigation}
             </div>
             {toolbar && (

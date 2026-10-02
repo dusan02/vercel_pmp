@@ -74,7 +74,7 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHo
       <div
         className={`relative w-full bg-black overflow-hidden group heatmap-preview-container border-none outline-none ${isDesktop ? 'heatmap-preview-desktop' : 'flex-1'
           }`}
-        style={isDesktop ? { cursor: 'pointer', border: 'none', outline: 'none', height: 'clamp(480px, calc(100vh - 190px), 600px)' } : { cursor: 'pointer', border: 'none', outline: 'none' }}
+        style={isDesktop ? { cursor: 'pointer', border: 'none', outline: 'none', height: 'clamp(420px, calc(100vh - 235px), 600px)' } : { cursor: 'pointer', border: 'none', outline: 'none' }}
         onClick={handleBackgroundClick}
       >
         <ResponsiveMarketHeatmap

@@ -50,6 +50,8 @@ export function SectionNavigation({ onTabChange }: SectionNavigationProps) {
 
   return (
     <nav className="w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800" aria-label="Section navigation">
+      {/* Tabs use natural width (shrink-0) — the wrapper scrolls horizontally
+          when the toolbar crowds them, instead of labels bleeding outside. */}
       <div className="flex flex-row">
         {TABS.map((tab) => {
           const isActive = activeId === tab.id;
@@ -68,7 +70,7 @@ export function SectionNavigation({ onTabChange }: SectionNavigationProps) {
                 }
               }}
               className={`
-                flex-1 flex items-center justify-center gap-1.5 px-2 py-3 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors relative
+                flex-none flex items-center justify-center gap-1.5 px-3 py-3 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors relative
                 ${isActive
                   ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'

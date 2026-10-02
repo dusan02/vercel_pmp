@@ -54,9 +54,7 @@ export function HeatmapMetricChips({
     <div
       className={isVertical
         ? `flex flex-col gap-3 ${className}`
-        // Single scrollable row everywhere — wrapping into 3 rows pushed the
-        // map below the fold on the homepage.
-        : `flex items-center gap-x-3 overflow-x-auto whitespace-nowrap scrollbar-none ${className}`}
+        : `flex items-center gap-x-3 gap-y-1 overflow-x-auto whitespace-nowrap scrollbar-none md:flex-wrap md:overflow-visible ${className}`}
       role="group"
       aria-label="Heatmap metric"
     >
