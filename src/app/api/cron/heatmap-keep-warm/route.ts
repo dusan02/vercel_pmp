@@ -1,3 +1,4 @@
+import { serverLog } from '@/lib/utils/serverLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronAuth } from '@/lib/utils/cronAuth';
 
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     try {
         const startTime = Date.now();
-        console.log('🔄 Heatmap Keep-Warm Cron: Starting cache refresh...');
+        serverLog('🔄 Heatmap Keep-Warm Cron: Starting cache refresh...');
 
         // Call the heatmap API internally with force=true to bypass cache and regenerate
         // We use the internal URL structure
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
 
         const apiUrl = `${proto}://${host}/api/heatmap?force=true`;
 
-        console.log(`Asking ${apiUrl} to refresh...`);
+        serverLog(`Asking ${apiUrl} to refresh...`);
 
         // Helper to fetch for a specific timeframe to warm up the most popular one
         const warmUp = async (timeframe: string) => {
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
         const resultDay = await warmUp('day');
 
         const duration = Date.now() - startTime;
-        console.log(`✅ Heatmap Keep-Warm Cron: Finished in ${duration}ms`, resultDay);
+        serverLog(`✅ Heatmap Keep-Warm Cron: Finished in ${duration}ms`, resultDay);
 
         return NextResponse.json({
             success: true,

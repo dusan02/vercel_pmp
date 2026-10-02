@@ -110,6 +110,10 @@ export function useHomeNavigation({ isMounted }: UseHomeNavigationOptions) {
       if (ticker && tab === 'analysis') url.searchParams.set('ticker', ticker.toUpperCase());
       else if (tab !== 'analysis') url.searchParams.delete('ticker');
       window.history.pushState({}, '', url.toString());
+      // Keep-alive tab switches don't reset scroll — without this a click
+      // near the bottom (e.g. "All movers" below the 600px heatmap) lands
+      // on the footer of the newly revealed tab.
+      window.scrollTo({ top: 0 });
     };
     window.addEventListener('mobile-nav-change', handleNavChange as EventListener);
     return () => window.removeEventListener('mobile-nav-change', handleNavChange as EventListener);
@@ -132,6 +136,7 @@ export function useHomeNavigation({ isMounted }: UseHomeNavigationOptions) {
     url.searchParams.set('tab', section);
     url.searchParams.delete('ticker');
     window.history.pushState({}, '', url.toString());
+    window.scrollTo({ top: 0 });
   }, [router]);
 
   return {

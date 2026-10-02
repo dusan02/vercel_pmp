@@ -1,3 +1,4 @@
+import { serverLog } from '@/lib/utils/serverLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronAuth, withCronLock } from '@/lib/utils/cronAuth';
 import { prisma } from '@/lib/db/prisma';
@@ -49,9 +50,9 @@ async function runRefreshAll(): Promise<NextResponse> {
 
     // ─── Before stats ──────────────────────────────────────────────
     const beforeStats = await getFieldStats();
-    console.log(`[cron/refresh-all] Before: ${beforeStats.total} statements`);
+    serverLog(`[cron/refresh-all] Before: ${beforeStats.total} statements`);
     for (const [field, s] of Object.entries(beforeStats.stats)) {
-        console.log(`  ${field}: ${s.filled} filled, ${s.nulls} nulls (${s.pct.toFixed(1)}%)`);
+        serverLog(`  ${field}: ${s.filled} filled, ${s.nulls} nulls (${s.pct.toFixed(1)}%)`);
     }
 
     // ─── Step 1: Refresh analysis for all cached tickers ──────────
@@ -60,7 +61,7 @@ async function runRefreshAll(): Promise<NextResponse> {
         orderBy: { updatedAt: 'asc' },
     });
 
-    console.log(`[cron/refresh-all] Step 1: Refresh analysis for ${cached.length} tickers`);
+    serverLog(`[cron/refresh-all] Step 1: Refresh analysis for ${cached.length} tickers`);
 
     const results = await processBatch(
         cached.map(c => c.symbol),
@@ -82,7 +83,7 @@ async function runRefreshAll(): Promise<NextResponse> {
     );
 
     const step1Ms = Date.now() - startedAt;
-    console.log(`[cron/refresh-all] Step 1 done: ${results.success} ok, ${results.failed} failed (${step1Ms}ms)`);
+    serverLog(`[cron/refresh-all] Step 1 done: ${results.success} ok, ${results.failed} failed (${step1Ms}ms)`);
 
     // ─── Step 2: Fill financial data gaps ──────────────────────────
     // Find tickers with ANY null field across all tracked fields
@@ -91,7 +92,7 @@ async function runRefreshAll(): Promise<NextResponse> {
         `SELECT DISTINCT symbol FROM "FinancialStatement" WHERE ${nullCondition}`
     ) as { symbol: string }[];
 
-    console.log(`[cron/refresh-all] Step 2: Fill data gaps for ${gapTickers.length} tickers`);
+    serverLog(`[cron/refresh-all] Step 2: Fill data gaps for ${gapTickers.length} tickers`);
 
     const gapResults = await processBatch(
         gapTickers.map(t => t.symbol),
@@ -110,20 +111,20 @@ async function runRefreshAll(): Promise<NextResponse> {
         5000  // interBatchDelay — 5s between batches
     );
 
-    console.log(`[cron/refresh-all] Step 2 done: ${gapResults.success} ok, ${gapResults.failed} failed`);
+    serverLog(`[cron/refresh-all] Step 2 done: ${gapResults.success} ok, ${gapResults.failed} failed`);
 
     // ─── After stats ───────────────────────────────────────────────
     const afterStats = await getFieldStats();
-    console.log(`[cron/refresh-all] After: ${afterStats.total} statements`);
+    serverLog(`[cron/refresh-all] After: ${afterStats.total} statements`);
     for (const [field, s] of Object.entries(afterStats.stats)) {
         const before = beforeStats.stats[field]!;
         const delta = s.nulls - before.nulls;
         const deltaStr = delta !== 0 ? ` (${delta > 0 ? '+' : ''}${delta})` : '';
-        console.log(`  ${field}: ${s.filled} filled, ${s.nulls} nulls (${s.pct.toFixed(1)}%)${deltaStr}`);
+        serverLog(`  ${field}: ${s.filled} filled, ${s.nulls} nulls (${s.pct.toFixed(1)}%)${deltaStr}`);
     }
 
     const totalMs = Date.now() - startedAt;
-    console.log(`[cron/refresh-all] All done. Total: ${totalMs}ms`);
+    serverLog(`[cron/refresh-all] All done. Total: ${totalMs}ms`);
 
     return NextResponse.json({
         step1: {

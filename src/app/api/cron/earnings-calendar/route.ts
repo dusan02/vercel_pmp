@@ -1,4 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
+import { serverLog } from '@/lib/utils/serverLog';
 import { checkEarningsForOurTickers } from '@/lib/clients/yahooFinanceScraper';
 import { prisma } from '@/lib/db/prisma';
 import { DEFAULT_TICKERS } from '@/data/defaultTickers';
@@ -54,7 +55,7 @@ function getAllTickers(): string[] {
 async function clearEarningsCalendar(date: string): Promise<void> {
   const prismaClient = prisma;
   if (!prismaClient) {
-    console.log('⚠️ Prisma not available, skipping database clear');
+    serverLog('⚠️ Prisma not available, skipping database clear');
     return;
   }
 
@@ -68,7 +69,7 @@ async function clearEarningsCalendar(date: string): Promise<void> {
       }
     });
 
-    console.log(`🗑️ Cleared ${deleteCount.count} earnings records for ${date}`);
+    serverLog(`🗑️ Cleared ${deleteCount.count} earnings records for ${date}`);
   } catch (error) {
     console.error('❌ Error clearing earnings calendar:', error);
   }
@@ -80,7 +81,7 @@ async function clearEarningsCalendar(date: string): Promise<void> {
 async function saveEarningsToDatabase(earningsData: EarningsData[], date: string): Promise<void> {
   const prismaClient = prisma;
   if (!prismaClient) {
-    console.log('⚠️ Prisma not available, skipping database save');
+    serverLog('⚠️ Prisma not available, skipping database save');
     return;
   }
 
@@ -123,7 +124,7 @@ async function saveEarningsToDatabase(earningsData: EarningsData[], date: string
       }
     }
 
-    console.log(`✅ Saved ${records.length} earnings records to database for ${date}`);
+    serverLog(`✅ Saved ${records.length} earnings records to database for ${date}`);
   } catch (error) {
     console.error('❌ Error saving earnings to database:', error);
     throw error;
@@ -168,7 +169,7 @@ async function fetchEarningsFromFinnhub(date: string): Promise<EarningsData[]> {
       };
     });
 
-    console.log(`✅ Finnhub: Found ${earningsData.length} earnings records for ${date}`);
+    serverLog(`✅ Finnhub: Found ${earningsData.length} earnings records for ${date}`);
     return earningsData;
   } catch (error) {
     console.error(`❌ Error fetching from Finnhub for ${date}:`, error);
@@ -181,12 +182,12 @@ async function fetchEarningsFromFinnhub(date: string): Promise<EarningsData[]> {
  */
 async function fetchEarningsFromYahoo(date: string): Promise<EarningsData[]> {
   try {
-    console.log(`🔍 Fetching earnings data for ${date}...`);
+    serverLog(`🔍 Fetching earnings data for ${date}...`);
 
     const yahooResult = await checkEarningsForOurTickers(date, 'all');
 
     if (yahooResult.totalFound === 0) {
-      console.log(`⚠️ No earnings found for ${date}`);
+      serverLog(`⚠️ No earnings found for ${date}`);
       return [];
     }
 
@@ -216,7 +217,7 @@ async function fetchEarningsFromYahoo(date: string): Promise<EarningsData[]> {
           revenueSurprisePercent,
         };
       });
-      console.log(`✅ Found ${earningsData.length} earnings records for ${date} (with EPS data)`);
+      serverLog(`✅ Found ${earningsData.length} earnings records for ${date} (with EPS data)`);
       return earningsData;
     }
 
@@ -243,7 +244,7 @@ async function fetchEarningsFromYahoo(date: string): Promise<EarningsData[]> {
       });
     }
 
-    console.log(`✅ Found ${earningsData.length} earnings records for ${date} (fallback, no EPS data)`);
+    serverLog(`✅ Found ${earningsData.length} earnings records for ${date} (fallback, no EPS data)`);
     return earningsData;
 
   } catch (error) {
@@ -270,7 +271,7 @@ export async function POST(request: NextRequest) {
 
 async function runEarningsCalendarUpdate(manual: boolean): Promise<NextResponse> {
   try {
-    console.log(`${manual ? '🔧 Manual' : '🚀 Starting daily'} earnings calendar update for extended range (-3 to +7 days)`);
+    serverLog(`${manual ? '🔧 Manual' : '🚀 Starting daily'} earnings calendar update for extended range (-3 to +7 days)`);
     let totalProcessed = 0;
     const today = new Date();
 
@@ -282,7 +283,7 @@ async function runEarningsCalendarUpdate(manual: boolean): Promise<NextResponse>
     const fromStr = fromDate.toISOString().split('T')[0] ?? '';
     const toStr = toDate.toISOString().split('T')[0] ?? '';
 
-    console.log(`📅 Fetching Finnhub earnings batch: ${fromStr} to ${toStr}`);
+    serverLog(`📅 Fetching Finnhub earnings batch: ${fromStr} to ${toStr}`);
     const finnhubAll: EarningsData[] = [];
     try {
       const url = `https://finnhub.io/api/v1/calendar/earnings?from=${fromStr}&to=${toStr}&token=${FINNHUB_KEY}`;
@@ -311,7 +312,7 @@ async function runEarningsCalendarUpdate(manual: boolean): Promise<NextResponse>
             revenueSurprisePercent,
           });
         }
-        console.log(`✅ Finnhub batch: ${finnhubAll.length} total earnings for ${fromStr} to ${toStr}`);
+        serverLog(`✅ Finnhub batch: ${finnhubAll.length} total earnings for ${fromStr} to ${toStr}`);
       } else {
         console.warn(`⚠️ Finnhub batch returned ${res.status}`);
       }
@@ -334,7 +335,7 @@ async function runEarningsCalendarUpdate(manual: boolean): Promise<NextResponse>
 
       if (!dateStr) continue;
 
-      console.log(`\n--- Processing date: ${dateStr} ---`);
+      serverLog(`\n--- Processing date: ${dateStr} ---`);
 
       // 1. Vyčisti existujúce záznamy pre tento dátum
       await clearEarningsCalendar(dateStr);

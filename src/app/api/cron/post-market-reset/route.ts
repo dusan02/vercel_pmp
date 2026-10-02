@@ -1,3 +1,4 @@
+import { serverLog } from '@/lib/utils/serverLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronAuth, verifyCronAuthOptional, withCronLock } from '@/lib/utils/cronAuth';
 import { handleCronError, createCronSuccessResponse } from '@/lib/utils/cronErrorHandler';
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
 async function runPostMarketReset(): Promise<NextResponse> {
     const startTime = Date.now();
 
-    console.log('🚀 Starting Post-Market Reset (saveRegularClose)...');
+    serverLog('🚀 Starting Post-Market Reset (saveRegularClose)...');
 
     const apiKey = process.env.POLYGON_API_KEY;
     if (!apiKey) {
@@ -57,7 +58,7 @@ async function runPostMarketReset(): Promise<NextResponse> {
     try {
         const fill = await fillValuationDay(calendarDateETStr);
         valuationFill = `created:${fill.filled} corrected:${fill.updated} unchanged:${fill.unchanged} failed:${fill.failed}`;
-        console.log(`📈 fillValuationDay ${calendarDateETStr}: ${valuationFill}`);
+        serverLog(`📈 fillValuationDay ${calendarDateETStr}: ${valuationFill}`);
     } catch (e) {
         valuationFill = `error:${e instanceof Error ? e.message : String(e)}`;
         console.error('⚠️ fillValuationDay failed (non-fatal):', e);
@@ -70,7 +71,7 @@ async function runPostMarketReset(): Promise<NextResponse> {
         return handleCronError(new Error(`regular close save failed: ${saveResult.error}`), 'post_market_reset cron job');
     }
 
-    console.log(`✅ Post-market reset completed in ${(duration / 1000).toFixed(2)}s`);
+    serverLog(`✅ Post-market reset completed in ${(duration / 1000).toFixed(2)}s`);
 
     return createCronSuccessResponse({
         message: saveResult.status === 'skipped'

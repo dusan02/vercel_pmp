@@ -10,6 +10,7 @@
  * Authorization: Bearer token with CRON_SECRET_KEY
  */
 
+import { serverLog } from '@/lib/utils/serverLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { detectSession, getLastTradingDay } from '@/lib/utils/timeUtils';
@@ -215,7 +216,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log('🔍 Starting pre-market movement check...');
+    serverLog('🔍 Starting pre-market movement check...');
 
     const apiKey = process.env.POLYGON_API_KEY;
     if (!apiKey) {
@@ -230,7 +231,7 @@ export async function POST(request: NextRequest) {
     const allTickers = await getAllTrackedTickers();
     const tickersToCheck = allTickers.slice(0, MAX_TICKERS_TO_CHECK);
     
-    console.log(`📊 Checking ${tickersToCheck.length} tickers for pre-market movements > ±${MOVEMENT_THRESHOLD}%...`);
+    serverLog(`📊 Checking ${tickersToCheck.length} tickers for pre-market movements > ±${MOVEMENT_THRESHOLD}%...`);
 
     const today = getDateET(etNow);
     const todayTradingDay = getLastTradingDay(createETDate(today));
@@ -247,7 +248,7 @@ export async function POST(request: NextRequest) {
         
         // If movement exceeds threshold, verify price
         if (result.needsVerification) {
-          console.log(`⚠️  Large movement detected for ${ticker}: ${result.percentChange.toFixed(2)}% - verifying price...`);
+          serverLog(`⚠️  Large movement detected for ${ticker}: ${result.percentChange.toFixed(2)}% - verifying price...`);
           const verification = await verifyTickerPrice(ticker, apiKey, todayTradingDateStr);
           verificationResults.push({
             ticker,
@@ -257,7 +258,7 @@ export async function POST(request: NextRequest) {
           if (verification.issues.length > 0) {
             console.warn(`❌ ${ticker} verification issues:`, verification.issues);
           } else {
-            console.log(`✅ ${ticker} price verified OK`);
+            serverLog(`✅ ${ticker} price verified OK`);
           }
 
           // Rate limiting
@@ -277,11 +278,11 @@ export async function POST(request: NextRequest) {
 
     const duration = Date.now() - startTime;
 
-    console.log(`✅ Pre-market movement check complete:`);
-    console.log(`   - Checked: ${movementResults.length} tickers`);
-    console.log(`   - Large movements (>±${MOVEMENT_THRESHOLD}%): ${largeMovements.length}`);
-    console.log(`   - Verified OK: ${verified.length}`);
-    console.log(`   - With issues: ${withIssues.length}`);
+    serverLog(`✅ Pre-market movement check complete:`);
+    serverLog(`   - Checked: ${movementResults.length} tickers`);
+    serverLog(`   - Large movements (>±${MOVEMENT_THRESHOLD}%): ${largeMovements.length}`);
+    serverLog(`   - Verified OK: ${verified.length}`);
+    serverLog(`   - With issues: ${withIssues.length}`);
 
     return NextResponse.json({
       success: true,

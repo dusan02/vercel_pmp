@@ -1,3 +1,4 @@
+import { serverLog } from '@/lib/utils/serverLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronAuth, verifyCronAuthOptional, withCronLock } from '@/lib/utils/cronAuth';
 import { handleCronError, createCronSuccessResponse } from '@/lib/utils/cronErrorHandler';
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function runResetMovers(): Promise<NextResponse> {
-    console.log('🧹 Resetting Movers AI fields...');
+    serverLog('🧹 Resetting Movers AI fields...');
 
     const updated = await prisma.ticker.updateMany({
         where: {
@@ -68,7 +69,7 @@ async function runResetMovers(): Promise<NextResponse> {
         }
     }
 
-    console.log(`✅ Cleared movers AI fields for ${updated.count} DB rows, ${redisCleared} Redis keys.`);
+    serverLog(`✅ Cleared movers AI fields for ${updated.count} DB rows, ${redisCleared} Redis keys.`);
 
     return createCronSuccessResponse({
         message: 'Movers AI fields reset successfully',

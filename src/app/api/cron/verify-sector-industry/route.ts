@@ -1,3 +1,4 @@
+import { serverLog } from '@/lib/utils/serverLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { validateSectorIndustry, normalizeIndustry } from '@/lib/utils/sectorIndustryValidator';
@@ -70,7 +71,7 @@ const incorrectPatterns = [
 ];
 
 async function verifyAndFixSectorIndustry() {
-  console.log('🔍 Starting daily sector/industry verification and fix...\n');
+  serverLog('🔍 Starting daily sector/industry verification and fix...\n');
 
   try {
     // Get all tickers with sector/industry
@@ -92,7 +93,7 @@ async function verifyAndFixSectorIndustry() {
       }
     });
 
-    console.log(`📊 Found ${allTickers.length} tickers with sector/industry data\n`);
+    serverLog(`📊 Found ${allTickers.length} tickers with sector/industry data\n`);
 
     let fixed = 0;
     const errors: Array<{ ticker: string; current: string; fixed: string; method: 'knownMapping' | 'validationRules' | 'normalizedOnly' }> = [];
@@ -114,10 +115,10 @@ async function verifyAndFixSectorIndustry() {
         const correct = knownCorrectMappings[symbol];
 
         if (currentSector !== correct.sector || currentIndustry !== correct.industry || !isValid) {
-          console.log(`❌ ${symbol} (${ticker.name || 'N/A'}):`);
-          console.log(`   Current: ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'} ${!isValid ? '(INVALID)' : ''}`);
-          console.log(`   Should be: ${correct.sector} / ${correct.industry}`);
-          console.log(`   🔴 HIGH IMPORTANCE: Fixed by known mapping (upstream taxonomy may have changed)`);
+          serverLog(`❌ ${symbol} (${ticker.name || 'N/A'}):`);
+          serverLog(`   Current: ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'} ${!isValid ? '(INVALID)' : ''}`);
+          serverLog(`   Should be: ${correct.sector} / ${correct.industry}`);
+          serverLog(`   🔴 HIGH IMPORTANCE: Fixed by known mapping (upstream taxonomy may have changed)`);
 
           // Normalize industry
           const normalizedIndustry = normalizeIndustry(correct.sector, correct.industry);
@@ -141,7 +142,7 @@ async function verifyAndFixSectorIndustry() {
 
           fixed++;
           fixedByKnownMapping++;
-          console.log(`   ✅ Fixed by known mapping!\n`);
+          serverLog(`   ✅ Fixed by known mapping!\n`);
         } else {
           verified++;
         }
@@ -159,9 +160,9 @@ async function verifyAndFixSectorIndustry() {
         }
 
         if (needsFix && fixData) {
-          console.log(`❌ ${symbol} (${ticker.name || 'N/A'}):`);
-          console.log(`   Current: ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'} (INVALID)`);
-          console.log(`   Fixed by validation rules: ${fixData.sector} / ${fixData.industry}`);
+          serverLog(`❌ ${symbol} (${ticker.name || 'N/A'}):`);
+          serverLog(`   Current: ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'} (INVALID)`);
+          serverLog(`   Fixed by validation rules: ${fixData.sector} / ${fixData.industry}`);
 
           const normalizedIndustry = normalizeIndustry(fixData.sector, fixData.industry);
 
@@ -183,10 +184,10 @@ async function verifyAndFixSectorIndustry() {
 
           fixed++;
           fixedByValidationRules++;
-          console.log(`   ✅ Fixed by validation rules!\n`);
+          serverLog(`   ✅ Fixed by validation rules!\n`);
         } else {
           // Invalid but no fix available - log warning
-          console.log(`⚠️  ${symbol} (${ticker.name || 'N/A'}): Invalid combination - ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`);
+          serverLog(`⚠️  ${symbol} (${ticker.name || 'N/A'}): Invalid combination - ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`);
           // Don't fix automatically without known mapping, but log it
           errors.push({
             ticker: symbol,
@@ -210,9 +211,9 @@ async function verifyAndFixSectorIndustry() {
         }
 
         if (needsFix && fixData) {
-          console.log(`❌ ${symbol} (${ticker.name || 'N/A'}):`);
-          console.log(`   Current: ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`);
-          console.log(`   Should be: ${fixData.sector} / ${fixData.industry}`);
+          serverLog(`❌ ${symbol} (${ticker.name || 'N/A'}):`);
+          serverLog(`   Current: ${currentSector || 'NULL'} / ${currentIndustry || 'NULL'}`);
+          serverLog(`   Should be: ${fixData.sector} / ${fixData.industry}`);
 
           const normalizedIndustry = normalizeIndustry(fixData.sector, fixData.industry);
 
@@ -234,7 +235,7 @@ async function verifyAndFixSectorIndustry() {
 
           fixed++;
           fixedByValidationRules++;
-          console.log(`   ✅ Fixed by validation rules!\n`);
+          serverLog(`   ✅ Fixed by validation rules!\n`);
         } else {
           verified++;
         }
@@ -252,12 +253,12 @@ async function verifyAndFixSectorIndustry() {
       }))
     };
 
-    console.log('\n' + '='.repeat(60));
-    console.log('📊 Summary:');
-    console.log(`   Total tickers checked: ${allTickers.length}`);
-    console.log(`   Verified correct: ${verified}`);
-    console.log(`   Fixed: ${fixed}`);
-    console.log('='.repeat(60));
+    serverLog('\n' + '='.repeat(60));
+    serverLog('📊 Summary:');
+    serverLog(`   Total tickers checked: ${allTickers.length}`);
+    serverLog(`   Verified correct: ${verified}`);
+    serverLog(`   Fixed: ${fixed}`);
+    serverLog('='.repeat(60));
 
     return summary;
 
@@ -276,7 +277,7 @@ export async function POST(request: NextRequest) {
     const authError = verifyCronAuth(request);
     if (authError) return authError;
 
-    console.log(`🚀 Starting daily sector/industry verification...`);
+    serverLog(`🚀 Starting daily sector/industry verification...`);
 
     const summary = await verifyAndFixSectorIndustry();
 
@@ -302,7 +303,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // Pre GET endpoint nevyžadujeme autorizáciu (len pre testovanie)
-    console.log(`🔍 Manual sector/industry verification triggered...`);
+    serverLog(`🔍 Manual sector/industry verification triggered...`);
 
     const summary = await verifyAndFixSectorIndustry();
 

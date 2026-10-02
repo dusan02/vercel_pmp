@@ -1,3 +1,4 @@
+import { serverLog } from '@/lib/utils/serverLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getEarningsRange } from '@/lib/seo/earningsSSR';
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log(`[Earnings Blog] Generated weekly earnings blog for ${weekStart} → ${weekEnd}: ${totalEarnings} earnings`);
+    serverLog(`[Earnings Blog] Generated weekly earnings blog for ${weekStart} → ${weekEnd}: ${totalEarnings} earnings`);
 
     return NextResponse.json({
       success: true,

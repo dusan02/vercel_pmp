@@ -6,6 +6,7 @@
  * Called by: /api/cron/post-market-reset (daily after 16:00 ET)
  */
 
+import { serverLog } from '@/lib/utils/serverLog';
 import { getUniverse } from '@/lib/redis/operations';
 import { redisClient } from '@/lib/redis';
 import { recordSuccess, recordFailure } from '../healthMonitor';
@@ -51,7 +52,7 @@ async function fetchGroupedCloses(dateStr: string, apiKey: string): Promise<Map<
 export async function saveRegularClose(apiKey: string, date: string, runId?: string): Promise<SaveRegularCloseResult> {
   const correlationId = runId || Date.now().toString(36);
   try {
-    console.log(`💾 [runId:${correlationId}] Starting regular close save...`);
+    serverLog(`💾 [runId:${correlationId}] Starting regular close save...`);
 
     const calendarDateETStr = getDateET();
     const calendarDateET = createETDate(calendarDateETStr);
@@ -73,7 +74,7 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
     const isPostClose = calendarDateETStr === tradingDayStr && minutesET >= 16 * 60 + 15;
     if (!isLaterCalendarDay && !isPostClose) {
       const reason = `trading day ${tradingDayStr} not closed yet (ET ${String(etHour).padStart(2, '0')}:${String(etMinute).padStart(2, '0')})`;
-      console.log(`⏸️  [runId:${correlationId}] Skipping regular close save — ${reason}`);
+      serverLog(`⏸️  [runId:${correlationId}] Skipping regular close save — ${reason}`);
       return { status: 'skipped', reason };
     }
 
@@ -99,18 +100,18 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
     const tickersToSave = tickers.filter(t => !alreadySavedSymbols.has(t));
 
     if (tickersToSave.length === 0) {
-      console.log(`⏭️  [runId:${correlationId}] All ${tickers.length} tickers already saved for ${getDateET(todayTradingDay)}`);
+      serverLog(`⏭️  [runId:${correlationId}] All ${tickers.length} tickers already saved for ${getDateET(todayTradingDay)}`);
       return { status: 'skipped', reason: `all ${tickers.length} tickers already saved` };
     }
 
-    console.log(`📊 [runId:${correlationId}] ${tickersToSave.length}/${tickers.length} tickers need regular close (already saved: ${alreadySavedSymbols.size})`);
+    serverLog(`📊 [runId:${correlationId}] ${tickersToSave.length}/${tickers.length} tickers need regular close (already saved: ${alreadySavedSymbols.size})`);
 
     // Grouped daily aggs: ONE request returns the official close for every
     // US ticker for this specific trading day — simpler and more reliable
     // than ~9 batched snapshot calls, and unambiguous about which session
     // the close belongs to (snapshot.day.c is whatever session is current).
     const closeByTicker = await fetchGroupedCloses(tradingDayStr, apiKey);
-    console.log(`✅ [runId:${correlationId}] Grouped aggs returned ${closeByTicker.size} closes for ${tradingDayStr}`);
+    serverLog(`✅ [runId:${correlationId}] Grouped aggs returned ${closeByTicker.size} closes for ${tradingDayStr}`);
     if (closeByTicker.size === 0) {
       throw new Error(`Grouped aggs returned no data for ${tradingDayStr}`);
     }
@@ -186,8 +187,8 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
       // non-fatal: coverage metric only
     }
 
-    console.log(`✅ [runId:${correlationId}] Saved regular close for ${saved}/${tickersToSave.length} tickers`);
-    console.log(`✅ [runId:${correlationId}] Updated previousClose for ${prevCloseUpdated} tickers (nextTradingDay: ${nextTradingDateStr}, todayTradingDay: ${getDateET(todayTradingDay)})`);
+    serverLog(`✅ [runId:${correlationId}] Saved regular close for ${saved}/${tickersToSave.length} tickers`);
+    serverLog(`✅ [runId:${correlationId}] Updated previousClose for ${prevCloseUpdated} tickers (nextTradingDay: ${nextTradingDateStr}, todayTradingDay: ${getDateET(todayTradingDay)})`);
 
     const expectedKeys = Math.floor(tickersToSave.length * 0.95);
     if (tickersToSave.length > 0 && nextDayKeyCount < expectedKeys) {

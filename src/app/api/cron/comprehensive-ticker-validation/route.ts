@@ -1,3 +1,4 @@
+import { serverLog } from '@/lib/utils/serverLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronAuth } from '@/lib/utils/cronAuth';
 import { handleCronError, createCronSuccessResponse } from '@/lib/utils/cronErrorHandler';
@@ -16,8 +17,8 @@ export async function POST(request: NextRequest) {
         const authError = verifyCronAuth(request);
         if (authError) return authError;
 
-        console.log('🧪 Starting Comprehensive Ticker Validation Tests...');
-        console.log('📊 Testing ALL tickers in database (not just SP500)');
+        serverLog('🧪 Starting Comprehensive Ticker Validation Tests...');
+        serverLog('📊 Testing ALL tickers in database (not just SP500)');
 
         // Get ALL tickers from database
         const allTickers = await prisma.ticker.findMany({
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
             orderBy: { lastMarketCap: 'desc' }
         });
 
-        console.log(`📊 Found ${allTickers.length} tickers in database`);
+        serverLog(`📊 Found ${allTickers.length} tickers in database`);
 
         // Run comprehensive validations
         const results = {
@@ -48,8 +49,8 @@ export async function POST(request: NextRequest) {
         // Generate comprehensive summary
         const summary = generateComprehensiveSummary(results);
 
-        console.log('✅ Comprehensive Ticker Validation Tests Completed');
-        console.log('📊 Summary:', JSON.stringify(summary, null, 2));
+        serverLog('✅ Comprehensive Ticker Validation Tests Completed');
+        serverLog('📊 Summary:', JSON.stringify(summary, null, 2));
 
         return createCronSuccessResponse({
             message: 'Comprehensive ticker validation completed',

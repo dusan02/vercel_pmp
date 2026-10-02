@@ -1,3 +1,4 @@
+import { serverLog } from '@/lib/utils/serverLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronAuth, verifyCronAuthOptional, withCronLock } from '@/lib/utils/cronAuth';
 import { handleCronError, createCronSuccessResponse } from '@/lib/utils/cronErrorHandler';
@@ -33,10 +34,10 @@ export async function POST(request: NextRequest) {
 }
 
 async function runPostMarketSync(startTime: number): Promise<NextResponse> {
-    console.log('🔄 Starting post-market data sync...');
+    serverLog('🔄 Starting post-market data sync...');
 
     // 1. UPDATE SHARES OUTSTANDING
-    console.log('\n📝 Step 1: Updating sharesOutstanding...');
+    serverLog('\n📝 Step 1: Updating sharesOutstanding...');
     const allTickers = await getAllTrackedTickers();
     const sharesResults = await processBatch(
         allTickers,
@@ -44,10 +45,10 @@ async function runPostMarketSync(startTime: number): Promise<NextResponse> {
         BATCH_SIZE,
         CONCURRENCY_LIMIT
     );
-    console.log(`✅ SharesOutstanding: ${sharesResults.success} updated, ${sharesResults.failed} failed`);
+    serverLog(`✅ SharesOutstanding: ${sharesResults.success} updated, ${sharesResults.failed} failed`);
 
     // 2. RECOMPUTE ANALYSIS FOR ALL TRACKED TICKERS
-    console.log('\n📝 Step 2: Recomputing analysis for all tracked tickers...');
+    serverLog('\n📝 Step 2: Recomputing analysis for all tracked tickers...');
     const trackedTickers = await getAllTrackedTickers();
     const analysisResults = await processBatch(
         trackedTickers,
@@ -64,12 +65,12 @@ async function runPostMarketSync(startTime: number): Promise<NextResponse> {
         undefined,
         5000  // interBatchDelay — 5s between batches to avoid Finnhub 429
     );
-    console.log(`✅ Analysis Sync Complete: ${analysisResults.success} updated, ${analysisResults.failed} failed`);
+    serverLog(`✅ Analysis Sync Complete: ${analysisResults.success} updated, ${analysisResults.failed} failed`);
 
     await updateCronStatus('post_market_reset');
 
     const duration = Date.now() - startTime;
-    console.log(`✅ Post-market data sync completed in ${(duration / 1000).toFixed(2)}s`);
+    serverLog(`✅ Post-market data sync completed in ${(duration / 1000).toFixed(2)}s`);
 
     return createCronSuccessResponse({
         message: 'Post-market data sync completed successfully',

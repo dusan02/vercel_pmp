@@ -1,3 +1,4 @@
+import { serverLog } from '@/lib/utils/serverLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronAuth } from '@/lib/utils/cronAuth';
 import { handleCronError, createCronSuccessResponse } from '@/lib/utils/cronErrorHandler';
@@ -74,8 +75,8 @@ export async function POST(request: NextRequest) {
         const authError = verifyCronAuth(request);
         if (authError) return authError;
 
-        console.log('🧪 Starting SP500 Categorization Tests...');
-        console.log(`📊 Testing against ${OFFICIAL_SP500_TICKERS.length} official SP500 tickers`);
+        serverLog('🧪 Starting SP500 Categorization Tests...');
+        serverLog(`📊 Testing against ${OFFICIAL_SP500_TICKERS.length} official SP500 tickers`);
 
         // Get all tickers from database
         const allTickers = await prisma.ticker.findMany({
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
             orderBy: { lastMarketCap: 'desc' }
         });
 
-        console.log(`📊 Found ${allTickers.length} tickers in database`);
+        serverLog(`📊 Found ${allTickers.length} tickers in database`);
 
         // Run comprehensive categorization tests
         const results = {
@@ -104,8 +105,8 @@ export async function POST(request: NextRequest) {
         // Generate summary
         const summary = generateCategorizationSummary(results);
 
-        console.log('✅ SP500 Categorization Tests Completed');
-        console.log('📊 Summary:', JSON.stringify(summary, null, 2));
+        serverLog('✅ SP500 Categorization Tests Completed');
+        serverLog('📊 Summary:', JSON.stringify(summary, null, 2));
 
         return createCronSuccessResponse({
             message: 'SP500 categorization validation completed',

@@ -14,6 +14,7 @@
  * - dryRun: If true, only report issues without fixing (default: false)
  */
 
+import { serverLog } from '@/lib/utils/serverLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getPreviousClose } from '@/lib/utils/marketCapUtils';
@@ -106,7 +107,7 @@ async function runVerifyPrevClose(request: NextRequest): Promise<NextResponse> {
     const limit = limitParam ? parseInt(limitParam, 10) : undefined; // undefined = no limit
     const dryRun = url.searchParams.get('dryRun') === 'true';
 
-    console.log(`🔍 Starting previousClose verification (limit: ${limit || 'unlimited'}, dryRun: ${dryRun})...`);
+    serverLog(`🔍 Starting previousClose verification (limit: ${limit || 'unlimited'}, dryRun: ${dryRun})...`);
 
     // CRITICAL: Use trading date (ET), not UTC calendar date
     // Model A: prevCloseKey(todayTradingDay) = close(yesterdayTradingDay)
@@ -184,7 +185,7 @@ async function runVerifyPrevClose(request: NextRequest): Promise<NextResponse> {
     }
 
     const tickers = [...staleTickers, ...freshSample];
-    console.log(`📊 Found ${tickers.length} tickers to verify (stale: ${staleTickers.length}, fresh sample: ${freshSample.length}/${freshTickers.length})`);
+    serverLog(`📊 Found ${tickers.length} tickers to verify (stale: ${staleTickers.length}, fresh sample: ${freshSample.length}/${freshTickers.length})`);
 
     const result: VerifyResult = {
       checked: 0,
@@ -203,8 +204,8 @@ async function runVerifyPrevClose(request: NextRequest): Promise<NextResponse> {
     // Log context for debugging
     const session = detectSession(etNow);
     const isTradingDay = getDateET(getTradingDay(calendarDateET)) === calendarDateETStr;
-    console.log(`📅 verify-prevclose context: calendarET=${calendarDateETStr}, prevCloseRefDayET=${prevCloseRefDateStr}, nextTradingDayET=${nextTradingDateStr}, isTradingDay=${isTradingDay}, session=${session}`);
-    console.log(`📅 verify-prevclose target: prevClose(${calendarDateETStr}) = close(${prevCloseRefDateStr}), will NOT touch prevClose(${nextTradingDateStr})`);
+    serverLog(`📅 verify-prevclose context: calendarET=${calendarDateETStr}, prevCloseRefDayET=${prevCloseRefDateStr}, nextTradingDayET=${nextTradingDateStr}, isTradingDay=${isTradingDay}, session=${session}`);
+    serverLog(`📅 verify-prevclose target: prevClose(${calendarDateETStr}) = close(${prevCloseRefDateStr}), will NOT touch prevClose(${nextTradingDateStr})`);
 
     // Process in batches with rate limiting
     for (let i = 0; i < tickers.length; i += MAX_CONCURRENT) {
@@ -253,7 +254,7 @@ async function runVerifyPrevClose(request: NextRequest): Promise<NextResponse> {
 
     const duration = Date.now() - startTime;
 
-    console.log(`✅ Verification complete: ${result.checked} checked, ${result.needsFix} need fix, ${result.fixed} fixed`);
+    serverLog(`✅ Verification complete: ${result.checked} checked, ${result.needsFix} need fix, ${result.fixed} fixed`);
 
     return NextResponse.json({
       success: true,
@@ -290,7 +291,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(url.searchParams.get('limit') || '10', 10);
     const dryRun = url.searchParams.get('dryRun') !== 'false'; // Default to dry run for GET
 
-    console.log(`🧪 Testing verify-prevclose with ${limit} tickers (dryRun: ${dryRun})...`);
+    serverLog(`🧪 Testing verify-prevclose with ${limit} tickers (dryRun: ${dryRun})...`);
 
     // Use POST handler logic but with test limit
     const mockRequest = new NextRequest(request.url, {

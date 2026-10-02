@@ -1,3 +1,4 @@
+import { serverLog } from '@/lib/utils/serverLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronAuth } from '@/lib/utils/cronAuth';
 import { handleCronError, createCronSuccessResponse } from '@/lib/utils/cronErrorHandler';
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
         const authError = verifyCronAuth(request);
         if (authError) return authError;
 
-        console.log('🔍 Starting Database Table Integrity Check...');
+        serverLog('🔍 Starting Database Table Integrity Check...');
 
         const results = {
             tickerTable: await checkTickerTable(),
@@ -34,8 +35,8 @@ export async function POST(request: NextRequest) {
         // Generate summary
         const summary = generateIntegritySummary(results);
 
-        console.log('✅ Database Integrity Check Completed');
-        console.log('📊 Summary:', JSON.stringify(summary, null, 2));
+        serverLog('✅ Database Integrity Check Completed');
+        serverLog('📊 Summary:', JSON.stringify(summary, null, 2));
 
         return createCronSuccessResponse({
             message: 'Database integrity check completed',
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
  * Check Ticker table integrity
  */
 async function checkTickerTable() {
-    console.log('📋 Checking Ticker table...');
+    serverLog('📋 Checking Ticker table...');
     
     const totalTickers = await prisma.ticker.count();
     const tickersWithName = await prisma.ticker.count({
@@ -145,7 +146,7 @@ async function checkTickerTable() {
  * Check SessionPrice table integrity
  */
 async function checkSessionPriceTable() {
-    console.log('📈 Checking SessionPrice table...');
+    serverLog('📈 Checking SessionPrice table...');
     
     const totalSessionPrices = await prisma.sessionPrice.count();
     
@@ -189,7 +190,7 @@ async function checkSessionPriceTable() {
  * Check DailyRef table integrity
  */
 async function checkDailyRefTable() {
-    console.log('📅 Checking DailyRef table...');
+    serverLog('📅 Checking DailyRef table...');
     
     const totalDailyRefs = await prisma.dailyRef.count();
     
@@ -244,7 +245,7 @@ async function checkDailyRefTable() {
  * Check data relationships between tables
  */
 async function checkDataRelationships() {
-    console.log('🔗 Checking data relationships...');
+    serverLog('🔗 Checking data relationships...');
     
     // Check if SessionPrice symbols exist in Ticker table
     const orphanedSessionPrices = await prisma.$queryRaw`
@@ -283,7 +284,7 @@ async function checkDataRelationships() {
  * Check data freshness across tables
  */
 async function checkDataFreshness() {
-    console.log('🕐 Checking data freshness...');
+    serverLog('🕐 Checking data freshness...');
     
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
@@ -334,7 +335,7 @@ async function checkDataFreshness() {
  * Get table sizes and statistics
  */
 async function getTableSizes() {
-    console.log('📊 Getting table sizes...');
+    serverLog('📊 Getting table sizes...');
     
     try {
         const tickerCount = await prisma.ticker.count();
