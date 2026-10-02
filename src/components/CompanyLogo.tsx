@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 interface CompanyLogoProps {
   ticker: string;
-  logoUrl?: string | null;
+  logoUrl?: string | null | undefined;
   size?: number;
   width?: number;
   height?: number;
