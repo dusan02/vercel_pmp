@@ -51,7 +51,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const limitParam = request.nextUrl.searchParams.get('limit');
-    const requestedLimit = limitParam ? Math.max(1, Math.min(3000, Number(limitParam))) : null;
+    const parsedLimit = limitParam ? Number(limitParam) : NaN;
+    // NaN (non-numeric ?limit=) must not reach prisma.take — it 500s.
+    const requestedLimit = isFinite(parsedLimit) ? Math.max(1, Math.min(3000, parsedLimit)) : null;
     const timeframe = request.nextUrl.searchParams.get('timeframe') || 'day';
     const forceRefresh = request.nextUrl.searchParams.get('force') === 'true';
     const debug = request.nextUrl.searchParams.get('debug') === 'true';

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DEFAULT_TICKERS } from '@/data/defaultTickers';
+import { getDateET } from '@/lib/utils/dateET';
 
 // Create a Set for O(1) lookup performance - ALL 360 TICKERS FROM ALL TIERS
 const allTickers = [
@@ -195,7 +196,7 @@ function processEarningsData(rawData: PolygonEarningsData[]): EarningsCalendar {
     console.error('❌ Error processing earnings data:', error);
     // Return empty result if processing fails
     return {
-      date: new Date().toISOString().split('T')[0]!,
+      date: getDateET(),
       preMarket: [],
       afterMarket: [],
       message: 'Error processing earnings data'
@@ -203,7 +204,7 @@ function processEarningsData(rawData: PolygonEarningsData[]): EarningsCalendar {
   }
   
   return {
-    date: rawData[0]?.report_date || new Date().toISOString().split('T')[0]!,
+    date: rawData[0]?.report_date || getDateET(),
     preMarket,
     afterMarket
   };
@@ -218,11 +219,9 @@ export async function GET(request: NextRequest) {
     
     console.log('🔍 Date parameter:', date);
     
-    // Validate and format date
+    // Validate and format date — ET calendar day
     if (!date) {
-      const now = new Date();
-      const easternTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
-      date = easternTime.toISOString().split('T')[0]!;
+      date = getDateET();
     } else {
       // Validate date format (YYYY-MM-DD)
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;

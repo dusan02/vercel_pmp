@@ -15,37 +15,53 @@ const SCREENER_CACHE_TTL = 600; // 10 minutes
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
 
+    // NaN-safe param parsing — `?minHealth=abc` must not leak NaN into
+    // Prisma filters (it would throw / return garbage instead of ignoring
+    // the filter).
+    const num = (key: string): number | undefined => {
+        const v = searchParams.get(key);
+        if (!v) return undefined;
+        const n = parseFloat(v);
+        return isFinite(n) ? n : undefined;
+    };
+    const int = (key: string): number | undefined => {
+        const v = searchParams.get(key);
+        if (!v) return undefined;
+        const n = parseInt(v, 10);
+        return isFinite(n) ? n : undefined;
+    };
+
     // Score filters (min/max)
-    const minHealth = searchParams.get('minHealth') ? parseFloat(searchParams.get('minHealth')!) : undefined;
-    const minProfitability = searchParams.get('minProfitability') ? parseFloat(searchParams.get('minProfitability')!) : undefined;
-    const minValuation = searchParams.get('minValuation') ? parseFloat(searchParams.get('minValuation')!) : undefined;
-    const minAltman = searchParams.get('minAltman') ? parseFloat(searchParams.get('minAltman')!) : undefined;
-    const minPiotroski = searchParams.get('minPiotroski') ? parseInt(searchParams.get('minPiotroski')!, 10) : undefined;
+    const minHealth = num('minHealth');
+    const minProfitability = num('minProfitability');
+    const minValuation = num('minValuation');
+    const minAltman = num('minAltman');
+    const minPiotroski = int('minPiotroski');
     // Beneish: lower = better. maxBeneish filters "at most this manipulation risk"
-    const maxBeneish = searchParams.get('maxBeneish') ? parseFloat(searchParams.get('maxBeneish')!) : undefined;
-    const minFcfMargin = searchParams.get('minFcfMargin') ? parseFloat(searchParams.get('minFcfMargin')!) : undefined;
+    const maxBeneish = num('maxBeneish');
+    const minFcfMargin = num('minFcfMargin');
     // Debt repayment: lower = better. maxDebtRepayment filters "at most this many years"
-    const maxDebtRepayment = searchParams.get('maxDebtRepayment') ? parseFloat(searchParams.get('maxDebtRepayment')!) : undefined;
-    const maxHealth = searchParams.get('maxHealth') ? parseFloat(searchParams.get('maxHealth')!) : undefined;
-    const maxProfitability = searchParams.get('maxProfitability') ? parseFloat(searchParams.get('maxProfitability')!) : undefined;
-    const maxValuation = searchParams.get('maxValuation') ? parseFloat(searchParams.get('maxValuation')!) : undefined;
-    const minGrowth = searchParams.get('minGrowth') ? parseFloat(searchParams.get('minGrowth')!) : undefined;
-    const maxGrowth = searchParams.get('maxGrowth') ? parseFloat(searchParams.get('maxGrowth')!) : undefined;
-    const minQuality = searchParams.get('minQuality') ? parseFloat(searchParams.get('minQuality')!) : undefined;
-    const maxQuality = searchParams.get('maxQuality') ? parseFloat(searchParams.get('maxQuality')!) : undefined;
-    const minOverall = searchParams.get('minOverall') ? parseFloat(searchParams.get('minOverall')!) : undefined;
-    const maxOverall = searchParams.get('maxOverall') ? parseFloat(searchParams.get('maxOverall')!) : undefined;
+    const maxDebtRepayment = num('maxDebtRepayment');
+    const maxHealth = num('maxHealth');
+    const maxProfitability = num('maxProfitability');
+    const maxValuation = num('maxValuation');
+    const minGrowth = num('minGrowth');
+    const maxGrowth = num('maxGrowth');
+    const minQuality = num('minQuality');
+    const maxQuality = num('maxQuality');
+    const minOverall = num('minOverall');
+    const maxOverall = num('maxOverall');
     const sector = searchParams.get('sector') || undefined;
     const industry = searchParams.get('industry') || undefined;
     // Search: symbol or company name (case-insensitive contains)
     const q = searchParams.get('q')?.trim() || undefined;
     // Market Cap filter (in billions)
-    const minMarketCap = searchParams.get('minMarketCap') ? parseFloat(searchParams.get('minMarketCap')!) : undefined;
-    const maxMarketCap = searchParams.get('maxMarketCap') ? parseFloat(searchParams.get('maxMarketCap')!) : undefined;
+    const minMarketCap = num('minMarketCap');
+    const maxMarketCap = num('maxMarketCap');
 
-    // Pagination & Sorting
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    // Pagination & Sorting — clamp NaN/negative/oversized values
+    const page = Math.max(1, int('page') ?? 1);
+    const limit = Math.min(200, Math.max(1, int('limit') ?? 50));
     const sortParams = searchParams.get('sort') || 'ticker.lastMarketCap:desc';
     const parts = sortParams.split(':');
     const sortField = parts[0] || 'ticker.lastMarketCap';
@@ -132,12 +148,22 @@ export async function GET(request: Request) {
         const SCORE_FIELDS = new Set(['healthScore', 'profitabilityScore', 'valuationScore', 'growthScore', 'qualityScore', 'overallScore', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'debtRepaymentYears']);
         // Insider aggregate sort fields (insider.<field> → insiderAggregate rel)
         const INSIDER_FIELDS = new Set(['netBuyPct90d', 'netBuyValue90d', 'largestBuyValue90d', 'largestSellValue90d', 'uniqueBuyers14d', 'uniqueSellers14d']);
+        // Whitelist of sortable Ticker columns — an arbitrary `sort=ticker.X`
+        // value would otherwise reach Prisma orderBy and 500 on unknown fields.
+        const TICKER_FIELDS = new Set(['symbol', 'name', 'sector', 'industry', 'lastPrice', 'lastChangePct', 'lastMarketCap', 'lastPriceUpdated']);
 
         let orderBy: any;
-        if (sortField.startsWith('ticker.')) {
+        if (sortField === 'ticker.lastMarketCapDiff') {
+            // marketCapDiff is a derived field (mcap·pct/(100+pct)) — not a DB
+            // column. Closest DB-expressible approximation is lastChangePct
+            // ordering (large-cap weighting can't be expressed in orderBy).
+            orderBy = { lastChangePct: { sort: sortOrder, nulls: 'last' } };
+        } else if (sortField.startsWith('ticker.')) {
             const field = sortField.slice('ticker.'.length);
             // Base query is ticker.findMany — ticker fields are direct columns
-            orderBy = { [field]: { sort: sortOrder, nulls: 'last' } };
+            orderBy = TICKER_FIELDS.has(field)
+                ? { [field]: { sort: sortOrder, nulls: 'last' } }
+                : { lastMarketCap: { sort: 'desc', nulls: 'last' } };
         } else if (sortField.startsWith('insider.')) {
             const field = sortField.slice('insider.'.length);
             orderBy = INSIDER_FIELDS.has(field)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEarningsForDate } from '@/services/earningsService';
+import { getDateET } from '@/lib/utils/dateET';
 
 // Cache for 60 seconds (ISR / route handler caching).
 // NOTE: Do not combine `dynamic = 'force-dynamic'` with `revalidate`,
@@ -9,7 +10,7 @@ export const revalidate = 60;
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const dateParam = searchParams.get('date');
-  const date = (dateParam || new Date().toISOString().split('T')[0]) as string;
+  const date = (dateParam || getDateET()) as string;
   const refresh = searchParams.get('refresh') === 'true';
 
   try {

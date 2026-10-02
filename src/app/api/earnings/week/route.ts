@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getEarningsForDate } from '@/services/earningsService';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { prisma } from '@/lib/db/prisma';
+import { getDateET } from '@/lib/utils/dateET';
 
 export const revalidate = 60; // 1 min cache
 
@@ -11,27 +12,23 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const startParam = searchParams.get('start');
   
-  // Base date calculation
-  let baseDate: Date;
-  if (startParam) {
-    baseDate = new Date(startParam);
-  } else {
-    // Current date ET
-    const now = new Date();
-    const easternTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
-    baseDate = easternTime;
-  }
-  
+  // Base date — noon-UTC anchored so all getUTC*/setUTC* math is
+  // timezone-immune (the previous local-field math only worked because
+  // the prod server happens to run in UTC).
+  const baseStr = startParam ?? getDateET();
+  const baseDate = new Date(`${baseStr}T12:00:00Z`);
+
   // Calculate Monday of the week
-  const day = baseDate.getDay();
-  const diff = baseDate.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-  const monday = new Date(baseDate.setDate(diff));
-  
+  const day = baseDate.getUTCDay();
+  const diff = baseDate.getUTCDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+  const monday = new Date(baseDate);
+  monday.setUTCDate(diff);
+
   // Generate 7 days (Monday to Sunday)
   const weekDates: string[] = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+    d.setUTCDate(monday.getUTCDate() + i);
     weekDates.push(d.toISOString().slice(0, 10));
   }
   
@@ -131,9 +128,9 @@ export async function GET(request: NextRequest) {
             hasReported: e.epsActual != null || e.revenueActual != null,
           });
 
-          const preMarket = allEarnings.filter(e => e.time === 'bmo').map(toRow);
+          const preMarket = allEarnings.filter(e => e.time === 'bmo' || e.time === 'before').map(toRow);
           const afterMarket = allEarnings.filter(e => e.time === 'amc' || e.time === 'after').map(toRow);
-          const timeTbd = allEarnings.filter(e => e.time !== 'bmo' && e.time !== 'amc' && e.time !== 'after').map(toRow);
+          const timeTbd = allEarnings.filter(e => e.time !== 'bmo' && e.time !== 'before' && e.time !== 'amc' && e.time !== 'after').map(toRow);
           
           return {
             date,

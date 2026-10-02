@@ -64,7 +64,7 @@ async function clearEarningsCalendar(date: string): Promise<void> {
       where: {
         date: {
           gte: new Date(date + 'T00:00:00Z'),
-          lt: new Date(date + 'T23:59:59Z')
+          lt: new Date(date + 'T24:00:00Z')
         }
       }
     });
@@ -273,74 +273,22 @@ async function runEarningsCalendarUpdate(manual: boolean): Promise<NextResponse>
   try {
     serverLog(`${manual ? '🔧 Manual' : '🚀 Starting daily'} earnings calendar update for extended range (-3 to +7 days)`);
     let totalProcessed = 0;
-    const today = new Date();
-
-    // Fetch ALL earnings from Finnhub in one batch (much faster than per-day)
-    const fromDate = new Date(today);
-    fromDate.setDate(today.getDate() - 3);
-    const toDate = new Date(today);
-    toDate.setDate(today.getDate() + 7);
-    const fromStr = fromDate.toISOString().split('T')[0] ?? '';
-    const toStr = toDate.toISOString().split('T')[0] ?? '';
-
-    serverLog(`📅 Fetching Finnhub earnings batch: ${fromStr} to ${toStr}`);
-    const finnhubAll: EarningsData[] = [];
-    try {
-      const url = `https://finnhub.io/api/v1/calendar/earnings?from=${fromStr}&to=${toStr}&token=${FINNHUB_KEY}`;
-      const res = await fetch(url, { next: { revalidate: 0 } });
-      if (res.ok) {
-        const data = await res.json();
-        const cal = data.earningsCalendar ?? [];
-        for (const e of cal) {
-          let epsSurprisePercent: number | undefined = undefined;
-          if (e.epsActual != null && e.epsEstimate != null && e.epsEstimate !== 0) {
-            epsSurprisePercent = ((e.epsActual - e.epsEstimate) / Math.abs(e.epsEstimate)) * 100;
-          }
-          let revenueSurprisePercent: number | undefined = undefined;
-          if (e.revenueActual != null && e.revenueEstimate != null && e.revenueEstimate !== 0) {
-            revenueSurprisePercent = ((e.revenueActual - e.revenueEstimate) / Math.abs(e.revenueEstimate)) * 100;
-          }
-          finnhubAll.push({
-            ticker: e.symbol,
-            companyName: e.company ?? e.symbol,
-            time: e.hour === 'bmo' ? 'bmo' : e.hour === 'amc' ? 'amc' : e.hour === 'dmh' ? 'dmh' : 'tbd',
-            epsEstimate: e.epsEstimate ?? undefined,
-            epsActual: e.epsActual ?? undefined,
-            revenueEstimate: e.revenueEstimate ?? undefined,
-            revenueActual: e.revenueActual ?? undefined,
-            epsSurprisePercent,
-            revenueSurprisePercent,
-          });
-        }
-        serverLog(`✅ Finnhub batch: ${finnhubAll.length} total earnings for ${fromStr} to ${toStr}`);
-      } else {
-        console.warn(`⚠️ Finnhub batch returned ${res.status}`);
-      }
-    } catch (err) {
-      console.error('❌ Finnhub batch fetch failed:', err);
-    }
-
-    // Group Finnhub results by date
-    const finnhubByDate = new Map<string, EarningsData[]>();
-    for (const e of finnhubAll) {
-      // Finnhub returns date in the entry; we need to assign each to its date
-      // Since we fetched a range, we need to re-fetch per-day to get dates
-      // Actually, Finnhub batch returns each entry with its own date field
-    }
+    let finnhubRecordCount = 0;
+    // ET-anchored day grid — raw `new Date()` iterates UTC days, which are
+    // one day ahead of the US calendar during 20:00–24:00 ET.
+    const { getDateET } = await import('@/lib/utils/dateET');
+    const todayNoon = new Date(getDateET() + 'T12:00:00Z');
 
     for (let i = -3; i <= 7; i++) {
-      const targetDate = new Date(today);
-      targetDate.setDate(today.getDate() + i);
+      const targetDate = new Date(todayNoon);
+      targetDate.setUTCDate(todayNoon.getUTCDate() + i);
       const dateStr = targetDate.toISOString().split('T')[0];
 
       if (!dateStr) continue;
 
       serverLog(`\n--- Processing date: ${dateStr} ---`);
 
-      // 1. Vyčisti existujúce záznamy pre tento dátum
-      await clearEarningsCalendar(dateStr);
-
-      // 2. Získaj earnings data z Finnhub (ALL tickers)
+      // 1. Získaj earnings data z Finnhub (ALL tickers)
       const finnhubData = await fetchEarningsFromFinnhub(dateStr);
 
       // 3. Získaj earnings data z Yahoo Finance (naše tickery, možno viac detailov)
@@ -358,8 +306,12 @@ async function runEarningsCalendarUpdate(manual: boolean): Promise<NextResponse>
 
       const earningsData = Array.from(mergedMap.values());
 
-      // 5. Ulož do databázy
+      finnhubRecordCount += finnhubData.length;
+
+      // 5. Ulož do databázy — clear runs only when replacement data exists,
+      // so a transient source outage can't wipe an already-populated day.
       if (earningsData.length > 0) {
+        await clearEarningsCalendar(dateStr);
         await saveEarningsToDatabase(earningsData, dateStr);
         totalProcessed += earningsData.length;
       }
@@ -369,7 +321,7 @@ async function runEarningsCalendarUpdate(manual: boolean): Promise<NextResponse>
       success: true,
       message: `Earnings calendar updated for extended range (-3 to +7 days)`,
       recordsProcessed: totalProcessed,
-      finnhubRecords: finnhubAll.length,
+      finnhubRecords: finnhubRecordCount,
     });
 
   } catch (error) {

@@ -218,12 +218,16 @@ export async function loadFrozenPrices(
   if (!useFrozenPrice) return frozenPricesMap;
 
   try {
-    const dateET = getDateET();
-    const todayDate = createETDate(dateET);
+    // The frozen price is the LAST after-hours print, which was written under
+    // that session's trading-day date — not necessarily today's calendar date.
+    // Tue 00:00–04:00 ET must still see Monday's 'after' rows (keyed under
+    // Monday), so use a trailing window and take the latest row per symbol.
+    const todayDate = createETDate(getDateET());
+    const weekAgo = new Date(todayDate.getTime() - 7 * 24 * 60 * 60 * 1000);
     const frozenSessionPrices = await prisma.sessionPrice.findMany({
       where: {
         symbol: { in: tickers },
-        date: todayDate,
+        date: { gte: weekAgo, lte: todayDate },
         session: 'after',
         lastPrice: { gt: 0 }
       },

@@ -85,7 +85,10 @@ export async function GET(req: NextRequest) {
     // so weekends/holidays resolve to the most recent session's date.
     const etNow = nowET();
     const date = getSessionDateStr(etNow);
-    const session = detectSession(etNow);
+    // Rank keys exist only for pre/live/after — 'closed' (nights, weekends)
+    // falls back to the last 'after' session instead of a guaranteed miss.
+    const detected = detectSession(etNow);
+    const session = detected === 'closed' ? 'after' : detected;
 
     // Get ZSET key
     const zKey = getRankKey(sort, date, session, dir);

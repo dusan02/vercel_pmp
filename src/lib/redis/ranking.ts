@@ -432,8 +432,9 @@ export async function getRankMinMax(
 
     // Get min (first in ascending order)
     const minRange = await redisClient.zRangeWithScores(key, 0, 0);
-    // Get max (first in descending order)
-    const maxRange = await redisClient.zRangeWithScores(key, -1, -1, { REV: true });
+    // Get max (last in ascending order — do NOT add REV here: with REV the
+    // indexes apply to the reversed ordering, so -1 would return the MIN)
+    const maxRange = await redisClient.zRangeWithScores(key, -1, -1);
 
     const min = minRange.length >= 1 && typeof minRange[0] === 'object'
       ? { sym: (minRange[0] as any).value as string, v: (minRange[0] as any).score as number }

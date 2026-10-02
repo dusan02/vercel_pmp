@@ -74,11 +74,11 @@ export async function bootstrapPreviousCloses(
       // Post-close, Polygon rolls snapshot.prevDay forward to today's bar —
       // trusting prevDay.c then writes today's close as its own prevClose
       // (Sep 30 incident: DailyRef.previousClose=739.77 instead of D-1=737.93).
-      // Accept it only when the bar's own date matches the expected previous
-      // trading day; otherwise fall back to the dated aggregates fetch.
+      // Reject only a verifiably NEWER bar (rolled-forward corruption); an
+      // older bar is still the correct prev close (halted/suspended tickers).
       const prevDayTs = snapshot?.prevDay?.t;
       const prevDayYMD = prevDayTs ? getDateET(new Date(nsToMs(prevDayTs))) : null;
-      if (snapshot?.prevDay?.c && snapshot.prevDay.c > 0 && prevDayYMD === expectedPrevYMD) {
+      if (snapshot?.prevDay?.c && snapshot.prevDay.c > 0 && (!prevDayYMD || prevDayYMD <= expectedPrevYMD)) {
         rawPrevDayClose = snapshot.prevDay.c;
       }
       if (snapshot?.day?.c && snapshot.day.c > 0) {
@@ -113,7 +113,10 @@ export async function bootstrapPreviousCloses(
         }
         backfillPrevClose = rawPrevDayClose;
       } else {
-        prevClose = rawPrevDayClose > 0 ? rawPrevDayClose : (snapshot?.prevDay?.c || 0);
+        // rawPrevDayClose already includes prevDay.c when its bar date was
+        // acceptable; a rejected prevDay.c (rolled-forward bar) must NOT be
+        // resurrected here — that's the corruption the guard exists for.
+        prevClose = rawPrevDayClose;
         actualPrevTradingDay = prevTradingDay;
       }
 

@@ -8,8 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronAuth, withCronLock } from '@/lib/utils/cronAuth';
 import { NotificationService } from '@/services/notificationService';
-import { detectSession, mapToRedisSession } from '@/lib/utils/timeUtils';
-import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
+import { detectSession, mapToRedisSession, getSessionDateStr } from '@/lib/utils/timeUtils';
+import { getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
 
 export async function POST(request: NextRequest) {
   const authError = verifyCronAuth(request);
@@ -19,7 +19,9 @@ export async function POST(request: NextRequest) {
     const detected = detectSession();
     const mapped = detected === 'closed' ? 'after' : (detected as 'pre' | 'live' | 'after');
     const session = mapToRedisSession(mapped) ?? 'after';
-    const date = getDateET();
+    // Rank keys are written under the trading-session date — on weekends the
+    // calendar date has no ranks and the digest would go out empty.
+    const date = getSessionDateStr();
 
     const [gainerSyms, loserSyms] = await Promise.all([
       getRankedSymbols(date, session, 'chg', 'desc', 0, 5),

@@ -24,11 +24,16 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now();
   const searchParams = request.nextUrl.searchParams;
 
-  // Parse query parameters
-  const sort = (searchParams.get('sort') ?? 'chg') as RankField;
-  const order = (searchParams.get('order') ?? 'desc') as 'asc' | 'desc';
-  const limit = Math.min(Number(searchParams.get('limit') ?? 100), 600);
-  const cursor = Number(searchParams.get('cursor') ?? 0);
+  // Parse query parameters — validate before they reach Redis/Prisma;
+  // a bad sort field throws inside getRankKey, NaN limit/cursor breaks ZRANGE.
+  const VALID_SORTS = new Set<RankField>(['price', 'cap', 'capdiff', 'chg', 'zscore', 'rvol']);
+  const sortParam = searchParams.get('sort') ?? 'chg';
+  const sort = (VALID_SORTS.has(sortParam as RankField) ? sortParam : 'chg') as RankField;
+  const order = searchParams.get('order') === 'asc' ? 'asc' : 'desc';
+  const rawLimit = Number(searchParams.get('limit') ?? 100);
+  const limit = Math.min(Math.max(1, isFinite(rawLimit) ? rawLimit : 100), 600);
+  const rawCursor = Number(searchParams.get('cursor') ?? 0);
+  const cursor = Math.max(0, isFinite(rawCursor) ? rawCursor : 0);
   const sessionParam = searchParams.get('session') ?? 'live';
 
   try {

@@ -348,7 +348,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get('date');
-    const date = (dateParam || new Date().toISOString().split('T')[0]) as string;
+    const date = (dateParam || getDateET()) as string;
     const refresh = searchParams.get('refresh') === 'true';
 
     console.log(`🔍 Yahoo Finance earnings request:`, { date, refresh });

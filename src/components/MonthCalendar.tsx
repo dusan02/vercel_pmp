@@ -27,7 +27,13 @@ function getETDate(): Date {
 }
 
 function formatDate(d: Date): string {
-  return d.toISOString().split('T')[0] ?? '';
+  // Read LOCAL fields — dates here are constructed as local-midnight
+  // (new Date(y, m, d)). toISOString() would shift the day for users in
+  // positive UTC offsets (e.g. CET midnight = previous day in UTC).
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 export default function MonthCalendar({ onDateSelect, selectedDate, initialDateCounts }: MonthCalendarProps) {

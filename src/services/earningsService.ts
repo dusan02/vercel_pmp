@@ -42,7 +42,7 @@ const earningsCache = new Map<string, { data: ProcessedEarningsResponse; timesta
 const todayEarningsCache = new Map<string, { data: ProcessedEarningsResponse; timestamp: number }>();
 
 function getCachedEarnings(date: string): ProcessedEarningsResponse | null {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getDateET(); // ET calendar day — UTC ISO would shift ET evenings into 'tomorrow'
     const isToday = date === today;
 
     if (isToday) {
@@ -62,7 +62,7 @@ function getCachedEarnings(date: string): ProcessedEarningsResponse | null {
 }
 
 function setCachedEarnings(date: string, data: ProcessedEarningsResponse): void {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getDateET(); // ET calendar day — UTC ISO would shift ET evenings into 'tomorrow'
     const isToday = date === today;
 
     if (isToday) {
@@ -337,7 +337,7 @@ export async function getEarningsForDate(date: string, forceRefresh = false): Pr
         enrichedAfterMarket = processed.afterMarket;
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getDateET(); // ET calendar day — UTC ISO would shift ET evenings into 'tomorrow'
     const isToday = date === today;
 
     const result: ProcessedEarningsResponse = {

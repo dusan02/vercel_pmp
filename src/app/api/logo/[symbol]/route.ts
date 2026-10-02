@@ -72,7 +72,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ symb
 
     const url = new URL(req.url);
     const sizeParam = parseInt(url.searchParams.get('s') || '32', 10);
-    const size = Math.max(16, Math.min(64, sizeParam));
+    const size = Math.max(16, Math.min(64, isFinite(sizeParam) ? sizeParam : 32));
 
     const cacheKey = `logo:${symbol}:${size}`;
 

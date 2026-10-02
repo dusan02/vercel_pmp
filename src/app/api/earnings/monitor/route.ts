@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkEarningsForOurTickers } from '@/lib/clients/yahooFinanceScraper';
 import { startEarningsMonitoring } from '@/lib/earningsMonitor';
+import { getDateET } from '@/lib/utils/dateET';
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
       });
     } else {
       // Manuálna kontrola
-      const checkDate = (date || new Date().toISOString().split('T')[0]) as string;
+      const checkDate = (date || getDateET()) as string;
       const result = await checkEarningsForOurTickers(checkDate, project);
 
       return NextResponse.json({
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔍 Earnings monitor POST request:`, { date, project });
 
-    const checkDate = date || new Date().toISOString().split('T')[0];
+    const checkDate = date || getDateET();
     const result = await checkEarningsForOurTickers(checkDate, project);
 
     return NextResponse.json({

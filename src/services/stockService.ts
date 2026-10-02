@@ -108,15 +108,29 @@ export async function getStocksList(options: {
           // since getManyLastWithDate doesn't guarantee the exact requested order
           // and we didn't use ZSET for explicit ticker arrays.
           if (!isGlobalQuery) {
+            // API sort names → StockData fields (changePct → percentChange,
+            // name → companyName, symbol → ticker; strings need localeCompare)
+            const sortKeyMap: Record<string, keyof StockData> = {
+              marketCapDiff: 'marketCapDiff',
+              marketCap: 'marketCap',
+              changePct: 'percentChange',
+              percentChange: 'percentChange',
+              currentPrice: 'currentPrice',
+              name: 'companyName',
+              symbol: 'ticker',
+            };
+            const k = sortKeyMap[sort] ?? 'marketCapDiff';
             results.sort((a, b) => {
-              let valA = a[sort as keyof StockData] as number;
-              let valB = b[sort as keyof StockData] as number;
-              // Fallback sorting logic
-              if (valA === undefined) valA = 0;
-              if (valB === undefined) valB = 0;
-              
-              if (order === 'asc') return valA - valB;
-              return valB - valA;
+              const va = a[k];
+              const vb = b[k];
+              if (typeof va === 'string' || typeof vb === 'string') {
+                const sa = String(va ?? '');
+                const sb = String(vb ?? '');
+                return order === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
+              }
+              const na = typeof va === 'number' && isFinite(va) ? va : 0;
+              const nb = typeof vb === 'number' && isFinite(vb) ? vb : 0;
+              return order === 'asc' ? na - nb : nb - na;
             });
           }
 
@@ -150,8 +164,11 @@ export async function getStocksList(options: {
     marketCap: 'lastMarketCap',
     marketCapDiff: 'lastMarketCapDiff',
     percentChange: 'lastChangePct',
+    changePct: 'lastChangePct',
     currentPrice: 'lastPrice',
-    ticker: 'symbol'
+    name: 'name',
+    ticker: 'symbol',
+    symbol: 'symbol'
   };
 
   const dbSortColumn = sortMapping[sort] || 'lastMarketCapDiff';

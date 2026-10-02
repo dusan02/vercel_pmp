@@ -39,13 +39,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { ticker } = await request.json();
+    const body = await request.json();
+    const ticker = typeof body?.ticker === 'string' ? body.ticker.trim().toUpperCase() : '';
     const user = await getCurrentUser(request);
     const userId = user?.id || 'default';
 
-    if (!ticker) {
+    if (!ticker || !/^[A-Z0-9.\-]{1,10}$/.test(ticker)) {
       return NextResponse.json(
-        { error: 'ticker is required' },
+        { error: 'valid ticker is required' },
         { status: 400 }
       );
     }
@@ -55,8 +56,13 @@ export async function POST(request: NextRequest) {
         await dbHelpers.addFavorite.run(userId, ticker);
       });
     } catch (dbError) {
+      // A swallowed failure returns success:true while nothing was saved —
+      // the UI then shows a favorite that disappears on reload.
       console.error('Database error in addFavorite:', dbError);
-      // Continue anyway - in-memory storage will work
+      return NextResponse.json(
+        { success: false, error: 'Failed to save favorite' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
@@ -76,7 +82,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const ticker = searchParams.get('ticker');
+    const ticker = (searchParams.get('ticker') ?? '').trim().toUpperCase();
     const user = await getCurrentUser(request);
     const userId = user?.id || 'default';
 
@@ -93,7 +99,10 @@ export async function DELETE(request: NextRequest) {
       });
     } catch (dbError) {
       console.error('Database error in removeFavorite:', dbError);
-      // Continue anyway - in-memory storage will work
+      return NextResponse.json(
+        { success: false, error: 'Failed to remove favorite' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({

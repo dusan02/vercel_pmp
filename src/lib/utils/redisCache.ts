@@ -25,10 +25,9 @@ export async function clearRedisPrevCloseCache(): Promise<void> {
         console.log('ℹ️  No Redis previous close cache entries found for today');
       }
       
-      // Also try to clear yesterday's cache (in case it's still there)
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      // Also try to clear yesterday's cache (in case it's still there) —
+      // ET calendar day, same convention as the `today` key above.
+      const yesterdayStr = getDateET(new Date(Date.now() - 24 * 60 * 60 * 1000));
       if (yesterdayStr) {
         const yesterdayKey = REDIS_KEYS.prevclose(yesterdayStr);
         await redisClient.del(yesterdayKey);

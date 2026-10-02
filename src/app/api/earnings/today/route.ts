@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/db/prisma';
+import { getDateET } from '@/lib/utils/dateET';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const date = searchParams.get('date') || new Date().toISOString().split('T')[0];
+    // ET calendar day — a raw UTC ISO shifts US evenings into "tomorrow",
+    // which returned an empty earnings list after ~20:00 ET.
+    const date = searchParams.get('date') || getDateET();
 
     console.log(`🔍 Getting earnings data for ${date} from database...`);
 
@@ -43,9 +44,10 @@ export async function GET(request: NextRequest) {
       date: earning.date.toISOString().split('T')[0]
     }));
 
-    // Split by time
-    const preMarket = earningsData.filter(earning => earning.time === 'before');
-    const afterMarket = earningsData.filter(earning => earning.time === 'after');
+    // Split by time — both vocab variants exist in the data ('bmo'/'before',
+    // 'amc'/'after'); matching only one drops rows from the response.
+    const preMarket = earningsData.filter(earning => earning.time === 'before' || earning.time === 'bmo');
+    const afterMarket = earningsData.filter(earning => earning.time === 'after' || earning.time === 'amc');
 
     const response = {
       success: true,
