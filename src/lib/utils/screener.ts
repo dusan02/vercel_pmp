@@ -14,11 +14,13 @@ export interface ScreenerResult {
         evEbitda: number | null;
         evSales: number | null;
         priceFreeCashFlow: number | null;
+        priceCashFlow: number | null;
         grossMargin: number | null;
         operatingMargin: number | null;
         netMargin: number | null;
         revenueGrowth: number | null;
         earningsGrowth: number | null;
+        bookValueGrowth: number | null;
         dividendYield: number | null;
         payoutRatio: number | null;
         beta: number | null;
@@ -291,7 +293,10 @@ export function matchesPreset(p: ScreenerPreset, ctx: PresetMatchContext): boole
     if (p.minFcfMargin !== undefined && !inRange(s?.fcfMargin, { min: p.minFcfMargin })) return false;
     if (p.marketCapPreset && p.marketCapPreset !== 'all') {
         const mc = MARKET_CAP_PRESETS.find((x) => x.id === p.marketCapPreset);
-        if (mc && !inRange(ctx.market?.marketCapB, { min: mc.min, max: mc.max })) return false;
+        const capRange: { min?: number; max?: number } = {};
+        if (mc?.min !== undefined) capRange.min = mc.min;
+        if (mc?.max !== undefined) capRange.max = mc.max;
+        if (mc && !inRange(ctx.market?.marketCapB, capRange)) return false;
     }
     for (const [key, r] of Object.entries(p.ranges ?? {})) {
         const def = RANGE_FILTERS.find((d) => d.key === key);

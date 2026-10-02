@@ -27,7 +27,39 @@ const COLUMN_VIEWS = [
   { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'sector', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'ticker.lastMarketCapDiff'] },
   { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'metrics.peRatio', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta'] },
   { id: 'all', label: 'All columns', keys: null }, // null = every defined column
+  { id: 'custom', label: 'Custom', keys: null },   // user-defined ordered set
 ] as const;
+
+/** Plain-text labels for the column picker (column headers contain icons). */
+const COLUMN_LABELS: Record<string, string> = {
+  'ticker.name': 'Company',
+  'sector': 'Sector',
+  'sparkline': '1Y Chart',
+  'ticker.lastPrice': 'Price',
+  'ticker.lastChangePct': 'Change %',
+  'ticker.lastMarketCap': 'Market Cap',
+  'ticker.lastMarketCapDiff': 'Mkt Cap Δ',
+  'overallScore': 'Overall',
+  'valuationScore': 'Valuation',
+  'growthScore': 'Growth',
+  'profitabilityScore': 'Profitability',
+  'healthScore': 'Health',
+  'qualityScore': 'Quality',
+  'altmanZ': 'Altman Z',
+  'piotroskiScore': 'Piotroski F',
+  'beneishScore': 'Beneish M',
+  'fcfMargin': 'FCF Margin',
+  'insider.netBuyValue90d': 'Insider Net 90D',
+  'insider.largestBuyValue90d': 'Top Insider Buy',
+  'insider.largestSellValue90d': 'Top Insider Sell',
+  'insider.uniqueSellers14d': 'Insider Cluster 14D',
+};
+const columnLabel = (key: string) =>
+  COLUMN_LABELS[key]
+  ?? METRIC_FILTERS.find((d) => `metrics.${d.key}` === key)?.label
+  ?? key;
+// Company is the row identifier — always first, never removable.
+const PINNED_COLUMN = 'ticker.name';
 
 type ColumnViewId = (typeof COLUMN_VIEWS)[number]['id'];
 
@@ -326,6 +358,8 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
   // ── Column view tabs — persist the last used view (localStorage + a
   // shareable ?view= param on the standalone /screener page). ────────────
   const [columnView, setColumnView] = useState<ColumnViewId>('overview');
+  const [customCols, setCustomCols] = useState<string[]>([]);
+  const [showColPicker, setShowColPicker] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const advancedActive = minAltman > 0 || minPiotroski > 0 || maxBeneish < 10 || minFcfMargin > -100 || maxDebtRepayment < 350;
   const advancedVisible = showAdvanced || advancedActive;
@@ -360,6 +394,13 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
     const fromStore = localStorage.getItem('screener-column-view') as ColumnViewId | null;
     const initial = fromUrl ?? fromStore;
     if (initial && COLUMN_VIEWS.some(v => v.id === initial)) setColumnView(initial);
+    // Custom column set — URL ?cols= wins over localStorage (shareable link).
+    const colsParam = sp.get('cols');
+    const stored = localStorage.getItem('screener-custom-cols');
+    try {
+      if (colsParam) setCustomCols(colsParam.split(',').map((s) => s.trim()).filter(Boolean));
+      else if (stored) setCustomCols(JSON.parse(stored) as string[]);
+    } catch { /* ignore malformed stored state */ }
   }, []);
   useEffect(() => {
     localStorage.setItem('screener-column-view', columnView);
@@ -369,13 +410,58 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
     const qs = sp.toString();
     window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
   }, [columnView]);
+  // Persist the custom column set (localStorage always; ?cols= in the URL
+  // only while the Custom view is active so shared links carry the config).
+  useEffect(() => {
+    if (customCols.length > 0) localStorage.setItem('screener-custom-cols', JSON.stringify(customCols));
+    if (window.location.pathname !== '/screener') return;
+    const sp = new URLSearchParams(window.location.search);
+    if (columnView === 'custom' && customCols.length > 0) sp.set('cols', customCols.join(','));
+    else sp.delete('cols');
+    const qs = sp.toString();
+    window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+  }, [customCols, columnView]);
 
   const columnMap = useMemo(() => new Map(allColumns.map(c => [c.key, c])), [allColumns]);
+  // Column picker actions — every edit switches the active tab to Custom.
+  // effectiveCols: the user's custom set, or the current view's keys as the
+  // seed before the first edit.
+  const effectiveCols = useMemo<string[]>(() => {
+    if (customCols.length > 0) return customCols;
+    const view = COLUMN_VIEWS.find(v => v.id === columnView);
+    return [...(view?.keys ?? allColumns.map(c => c.key))];
+  }, [customCols, columnView, allColumns]);
   const columns = useMemo(() => {
+    if (columnView === 'custom') {
+      // User-defined order — unknown keys (renamed/removed columns) drop out,
+      // Company is force-pinned first if the user somehow removed it.
+      const keys = effectiveCols.filter((k) => columnMap.has(k));
+      const withPin = keys.includes(PINNED_COLUMN) ? keys : [PINNED_COLUMN, ...keys];
+      const resolved = withPin.map((k) => columnMap.get(k)!).filter(Boolean);
+      return resolved.length > 0 ? resolved : allColumns;
+    }
     const view = COLUMN_VIEWS.find(v => v.id === columnView);
     if (!view || view.keys === null) return allColumns;
     return (view.keys as readonly string[]).map(k => columnMap.get(k)).filter((c): c is ColumnDef<ScreenerResult> => !!c);
-  }, [allColumns, columnMap, columnView]);
+  }, [allColumns, columnMap, columnView, effectiveCols]);
+
+  const applyCustomCols = (next: string[]) => {
+    const deduped = [PINNED_COLUMN, ...next.filter((k) => k !== PINNED_COLUMN && columnMap.has(k))];
+    setCustomCols(deduped);
+    setColumnView('custom');
+  };
+  const toggleColumn = (key: string) => {
+    if (key === PINNED_COLUMN) return;
+    applyCustomCols(effectiveCols.includes(key) ? effectiveCols.filter((k) => k !== key) : [...effectiveCols, key]);
+  };
+  const moveColumn = (key: string, dir: -1 | 1) => {
+    const i = effectiveCols.indexOf(key);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= effectiveCols.length) return;
+    const next = [...effectiveCols];
+    [next[i], next[j]] = [next[j]!, next[i]!];
+    applyCustomCols(next);
+  };
 
   const totalPages = pagination?.totalPages || 1;
   const total = pagination?.total || 0;
@@ -764,7 +850,8 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
 
       {/* Results Table */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
-        {/* Column view tabs — switch metric columns without touching filters */}
+        {/* Column view tabs — switch metric columns without touching filters.
+            Custom = user's own ordered column set (persisted + shareable). */}
         <div className="flex items-center gap-1 px-3 pt-3 pb-0 overflow-x-auto" role="tablist" aria-label="Column views">
           {COLUMN_VIEWS.map(v => (
             <button
@@ -781,7 +868,58 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               {v.label}
             </button>
           ))}
+          <button
+            onClick={() => setShowColPicker(v => !v)}
+            title="Customize columns (pick + reorder)"
+            aria-expanded={showColPicker}
+            className={`ml-auto px-2.5 py-1.5 text-xs rounded-t-lg border-b-2 transition-colors whitespace-nowrap ${
+              showColPicker
+                ? 'text-blue-600 dark:text-blue-400 border-blue-500'
+                : 'text-gray-400 dark:text-gray-500 border-transparent hover:text-gray-600 dark:hover:text-gray-300'
+            }`}
+          >
+            ⚙ Columns
+          </button>
         </div>
+        {showColPicker && (
+          <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-900/40">
+            {/* Shown columns — ordered chips, ← → reorder, × remove */}
+            <div className="flex items-center gap-1.5 flex-wrap mb-2">
+              <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider w-14 shrink-0">Shown:</span>
+              {effectiveCols.filter((k) => columnMap.has(k)).map((k, i) => {
+                const pinned = k === PINNED_COLUMN;
+                return (
+                  <span key={k} className="inline-flex items-center gap-0.5 rounded-full border border-blue-300 dark:border-blue-700 bg-white dark:bg-slate-800 text-[11px] pl-2 pr-0.5 py-0.5">
+                    <span className="text-gray-700 dark:text-gray-200">{columnLabel(k)}</span>
+                    {!pinned && (
+                      <>
+                        <button onClick={() => moveColumn(k, -1)} disabled={i <= 1} className="px-0.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-20" title="Move left">←</button>
+                        <button onClick={() => moveColumn(k, 1)} disabled={i >= effectiveCols.length - 1} className="px-0.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-20" title="Move right">→</button>
+                        <button onClick={() => toggleColumn(k)} className="px-1 text-gray-400 hover:text-red-500" title="Remove">×</button>
+                      </>
+                    )}
+                    {pinned && <span className="pr-1.5 text-[9px] text-gray-300 dark:text-gray-600">pinned</span>}
+                  </span>
+                );
+              })}
+            </div>
+            {/* Available columns — click to append */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider w-14 shrink-0">Add:</span>
+              {allColumns
+                .filter((c) => !effectiveCols.includes(c.key) && c.key !== PINNED_COLUMN)
+                .map((c) => (
+                  <button
+                    key={c.key}
+                    onClick={() => toggleColumn(c.key)}
+                    className="text-[11px] px-2 py-0.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
+                    + {columnLabel(c.key)}
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
         <UniversalTable
           data={results}
           columns={columns}
