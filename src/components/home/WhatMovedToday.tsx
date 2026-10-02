@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import CompanyLogo from '@/components/CompanyLogo';
 
 interface MoverData {
   symbol: string;
   name?: string;
+  logoUrl?: string | null;
   price?: number;
   changePct?: number;
   lastPrice?: number;
@@ -73,12 +75,12 @@ export function WhatMovedToday({ movers, eligibleTickers }: WhatMovedTodayProps)
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Gainers */}
           {gainers.length > 0 && (
-            <div className="bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-100 dark:border-green-900/30 p-4">
-              <h3 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-3 flex items-center gap-1.5">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-green-500"></span>
                 Top Gainers
               </h3>
-              <div className="space-y-2">
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 {gainers.map((m) => (
                   <MoverRow key={m.symbol} mover={m} eligible={eligibleTickers} positive />
                 ))}
@@ -88,12 +90,12 @@ export function WhatMovedToday({ movers, eligibleTickers }: WhatMovedTodayProps)
 
           {/* Losers */}
           {losers.length > 0 && (
-            <div className="bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/30 p-4">
-              <h3 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-3 flex items-center gap-1.5">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-red-500"></span>
                 Top Losers
               </h3>
-              <div className="space-y-2">
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 {losers.map((m) => (
                   <MoverRow key={m.symbol} mover={m} eligible={eligibleTickers} positive={false} />
                 ))}
@@ -114,10 +116,13 @@ function MoverRow({ mover, eligible, positive }: { mover: MoverData; eligible: S
   const isEligible = eligible.has(symbol);
 
   const content = (
-    <div className="flex items-center justify-between py-1.5">
-      <div className="flex items-center gap-2 min-w-0">
-        <span className="font-bold text-gray-900 dark:text-white text-sm">{symbol}</span>
-        <span className="text-xs text-gray-500 dark:text-gray-400 truncate hidden sm:inline">{name}</span>
+    <div className="flex items-center justify-between py-2">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <CompanyLogo ticker={symbol} logoUrl={mover.logoUrl} size={26} />
+        <div className="min-w-0">
+          <span className="font-bold text-gray-900 dark:text-white text-sm">{symbol}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 truncate hidden sm:block">{name}</span>
+        </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
         {price != null && (
@@ -132,7 +137,7 @@ function MoverRow({ mover, eligible, positive }: { mover: MoverData; eligible: S
 
   if (isEligible) {
     return (
-      <Link href={`/analysis/${symbol}`} className="block hover:bg-green-100/50 dark:hover:bg-green-900/20 rounded-lg px-2 -mx-2 transition-colors">
+      <Link href={`/analysis/${symbol}`} className="block hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg px-2 -mx-2 transition-colors">
         {content}
       </Link>
     );
