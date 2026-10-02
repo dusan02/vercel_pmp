@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getEarningsRange, type EarningsSSRRow, type EarningsSSRGroup } from '@/lib/seo/earningsSSR';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { getDateET } from '@/lib/utils/dateET';
+import { getTradingDay } from '@/lib/utils/timeUtils';
 import { formatPercent } from '@/lib/utils/heatmapFormat';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 import {
@@ -126,16 +127,19 @@ function EarningsDaySection({ group, eligible }: { group: EarningsSSRGroup; elig
 }
 
 export default async function EarningsPage() {
-  // SSR: fetch earnings for today + next 7 days (ET trading days)
-  const todayStr = getDateET(new Date());
-  const todayNoonUTC = new Date(todayStr + 'T12:00:00Z');
-  const end = new Date(todayNoonUTC);
+  // SSR: fetch earnings for the current trading day + next 7 days.
+  // Earnings only exist on trading days — on weekends/holidays the
+  // calendar must open on the most recent session (Friday), not an
+  // empty weekend cell.
+  const tradingDayStr = getDateET(getTradingDay());
+  const tradingDayNoonUTC = new Date(tradingDayStr + 'T12:00:00Z');
+  const end = new Date(tradingDayNoonUTC);
   end.setUTCDate(end.getUTCDate() + 7);
   const endStr = end.toISOString().split('T')[0] ?? '';
 
   // Parallel SSR fetch: DB earnings + date counts for the calendar rail
   const [groups, dateCountsData, eligibleSet] = await Promise.all([
-    getEarningsRange(todayStr, endStr, { enrich: true }),
+    getEarningsRange(tradingDayStr, endStr, { enrich: true }),
     // SSR pre-fetch for the explorer's MonthCalendar — date counts
     (async () => {
       try {
@@ -147,7 +151,7 @@ export default async function EarningsPage() {
     })(),
     getEligibleAnalysisSet(),
   ]);
-  const todayRows = groups[0]?.date === todayStr
+  const todayRows = groups[0]?.date === tradingDayStr
     ? [...groups[0].preMarket, ...groups[0].afterMarket, ...groups[0].timeTbd]
     : [];
   const totalEarnings = groups.reduce((sum, g) => sum + g.total, 0);
@@ -169,7 +173,7 @@ export default async function EarningsPage() {
   const earningsItemList = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: `Upcoming earnings — week of ${todayStr}`,
+    name: `Upcoming earnings — week of ${tradingDayStr}`,
     numberOfItems: Math.min(allRows.filter((r) => eligibleSet.has(r.ticker)).length, 15),
     itemListElement: allRows
       .filter((r) => eligibleSet.has(r.ticker))
@@ -214,7 +218,7 @@ export default async function EarningsPage() {
 
         {/* ET-style explorer: month calendar rail + compact day table */}
         <EarningsDayExplorer
-          initialDate={todayStr}
+          initialDate={tradingDayStr}
           initialRows={todayRows}
           dateCounts={dateCountsData}
           eligibleTickers={eligibleSet}
