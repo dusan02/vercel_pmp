@@ -220,20 +220,6 @@ export default async function Page() {
               Real-time pre-market prices, earnings, analysis for 1,000+ NYSE & NASDAQ stocks — no sign-up needed
             </p>
           </div>
-          <div className="flex gap-3 text-sm">
-            <Link href="/premarket-movers" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-              Movers →
-            </Link>
-            <Link href="/heatmap" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-              Heatmap →
-            </Link>
-            <Link href="/earnings" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-              Earnings →
-            </Link>
-            <Link href="/screener" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-              Screener →
-            </Link>
-          </div>
         </div>
       </section>
       <Suspense fallback={<div className="min-h-screen bg-white dark:bg-gray-950"></div>}>

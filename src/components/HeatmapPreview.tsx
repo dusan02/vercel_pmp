@@ -3,7 +3,6 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { SectionIcon } from './SectionIcon';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricChips } from './HeatmapMetricChips';
 import { HeatmapViewButton } from './HeatmapViewButton';
@@ -60,15 +59,11 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHo
 
   return (
     <section className={`heatmap-preview ${wrapperClass || ''} ${!isDesktop ? 'h-full flex flex-col' : ''}`}>
-      {/* Header - hide on mobile (MobileTreemap has its own) */}
+      {/* Toolbar - hide on mobile (MobileTreemap has its own header).
+          No visible title — the active tab above already carries the label. */}
+      <h2 className="sr-only">Market Heatmap</h2>
       {isDesktop && (
-        <div className="flex items-center gap-4 mb-4 px-4 border-none outline-none">
-          <div className="flex items-center shrink-0">
-            <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
-              <SectionIcon type="heatmap" size={28} className="text-gray-900 dark:text-white shrink-0" />
-              <span>Heatmap</span>
-            </h2>
-          </div>
+        <div className="flex items-center gap-4 mb-3 px-4 border-none outline-none">
           {stockData && onSelectTicker && (
             <div className="flex-1 max-w-md">
               <GlobalStockSearch

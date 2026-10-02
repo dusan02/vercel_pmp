@@ -12,9 +12,11 @@ import { ThemeToggle } from './ThemeToggle';
 interface PageHeaderProps {
   navigation?: React.ReactNode;
   onLogoClick?: () => void;
+  /** Market-session pill (PRE-MARKET/LIVE/…) — rendered next to auth controls */
+  statusBadge?: React.ReactNode;
 }
 
-export function PageHeader({ navigation, onLogoClick }: PageHeaderProps) {
+export function PageHeader({ navigation, onLogoClick, statusBadge }: PageHeaderProps) {
   return (
     <header className="w-full bg-[var(--clr-surface)] border-b border-[var(--clr-border)] relative z-50 py-2 text-left sticky top-0 lg:static">
       <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto px-3 sm:px-6 gap-2 sm:gap-4 flex-wrap lg:flex-nowrap">
@@ -66,8 +68,9 @@ export function PageHeader({ navigation, onLogoClick }: PageHeaderProps) {
               <MarketIndices />
             </div>
 
-            {/* Login & Theme */}
+            {/* Session badge + Login & Theme */}
             <div className="flex-none flex items-center justify-end gap-2">
+              {statusBadge}
               <ThemeToggle />
               <LoginButton />
             </div>

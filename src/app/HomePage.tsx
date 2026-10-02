@@ -390,6 +390,27 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                       <div className="desktop-layout-wrapper">
                         <PageHeader
                           onLogoClick={() => handleMobileNavChange('heatmap')}
+                          statusBadge={liveConnected ? (() => {
+                            const session = detectSession();
+                            const badge = {
+                              pre:    { label: 'PRE-MARKET',  cls: 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/50',   dot: 'bg-amber-500',  ping: 'bg-amber-400' },
+                              live:   { label: 'LIVE',        cls: 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800/50', dot: 'bg-green-500',  ping: 'bg-green-400' },
+                              after:  { label: 'AFTER-HOURS', cls: 'bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800/50', dot: 'bg-violet-500', ping: 'bg-violet-400' },
+                              closed: { label: 'CLOSED',      cls: 'bg-gray-100 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-700',         dot: 'bg-gray-400',   ping: '' },
+                            }[session];
+                            return (
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${badge.cls}`}
+                                title={`Real-time prices via WebSocket — market session: ${session}`}
+                              >
+                                <span className="relative flex h-1.5 w-1.5">
+                                  {badge.ping && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${badge.ping}`} />}
+                                  <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${badge.dot}`} />
+                                </span>
+                                {badge.label}
+                              </span>
+                            );
+                          })() : undefined}
                           navigation={
                             <div className="hidden lg:block">
                               <SectionNavigation
@@ -398,27 +419,6 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                             </div>
                           }
                         />
-                        {liveConnected && (() => {
-                          const session = detectSession();
-                          const badge = {
-                            pre:    { label: 'PRE-MARKET',  cls: 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/50',   dot: 'bg-amber-500',  ping: 'bg-amber-400' },
-                            live:   { label: 'LIVE',        cls: 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800/50', dot: 'bg-green-500',  ping: 'bg-green-400' },
-                            after:  { label: 'AFTER-HOURS', cls: 'bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800/50', dot: 'bg-violet-500', ping: 'bg-violet-400' },
-                            closed: { label: 'CLOSED',      cls: 'bg-gray-100 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-700',         dot: 'bg-gray-400',   ping: '' },
-                          }[session];
-                          return (
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${badge.cls}`}
-                              title={`Real-time prices via WebSocket — market session: ${session}`}
-                            >
-                              <span className="relative flex h-1.5 w-1.5">
-                                {badge.ping && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${badge.ping}`} />}
-                                <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${badge.dot}`} />
-                              </span>
-                              {badge.label}
-                            </span>
-                          );
-                        })()}
                       </div>
                     </div>
 
