@@ -15,6 +15,7 @@ import { prisma } from '@/lib/db/prisma';
 import { getDateET, nowET, createETDate } from '@/lib/utils/dateET';
 import { detectSession, getLastTradingDay } from '@/lib/utils/timeUtils';
 import { isFreshPrevCloseDate } from '@/lib/utils/prevCloseDates';
+import { fetchLatestSessionPrices, sessionPriceOverrides } from '@/lib/utils/freshPrice';
 import { resolveTickerIdentity } from '@/lib/utils/tickerIdentity';
 import { calculatePercentChange } from '@/lib/utils/priceResolver';
 import { analyzeMovers, MoverAnalysis } from '@/services/movers/analyze';
@@ -100,36 +101,10 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
 
     if (symbols.length > 0) {
         try {
-            const dateET = getDateET(etNow);
-            const today = createETDate(dateET);
-            const lookback = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000);
-
-            const sessionPrices = await prisma.sessionPrice.findMany({
-                where: {
-                    symbol: { in: symbols },
-                    date: { gte: lookback, lte: today }
-                },
-                orderBy: { lastTs: 'desc' },
-                select: { symbol: true, lastPrice: true, lastTs: true }
-            });
-
-            // Keep newest SessionPrice per symbol
-            const latestSpBySymbol = new Map<string, { price: number; ts: Date }>();
-            for (const sp of sessionPrices) {
-                if (!latestSpBySymbol.has(sp.symbol)) {
-                    latestSpBySymbol.set(sp.symbol, { price: sp.lastPrice, ts: sp.lastTs });
-                }
-            }
-
-            const STALE_THRESHOLD_MS = 60 * 1000; // 1 minute
-            for (const [symbol, sp] of latestSpBySymbol.entries()) {
+            const sessionPrices = await fetchLatestSessionPrices(symbols, etNow);
+            for (const [symbol, sp] of sessionPrices) {
                 const existing = bestPriceBySymbol.get(symbol);
-                if (existing) {
-                    const spIsNewer = sp.ts.getTime() > existing.ts.getTime() + STALE_THRESHOLD_MS;
-                    if (spIsNewer) {
-                        bestPriceBySymbol.set(symbol, { price: sp.price, ts: sp.ts });
-                    }
-                } else {
+                if (sessionPriceOverrides(sp.ts.getTime(), existing?.ts.getTime())) {
                     bestPriceBySymbol.set(symbol, { price: sp.price, ts: sp.ts });
                 }
             }

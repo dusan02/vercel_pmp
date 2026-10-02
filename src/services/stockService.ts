@@ -4,6 +4,7 @@ import { detectSession, getLastTradingDay } from '@/lib/utils/timeUtils';
 import { nowET, getDateET, createETDate } from '@/lib/utils/dateET';
 import { getPricingState } from '@/lib/utils/pricingStateMachine';
 import { getPrevCloseRefDay, isFreshPrevCloseDate } from '@/lib/utils/prevCloseDates';
+import { fetchLatestSessionPrices, sessionPriceOverrides } from '@/lib/utils/freshPrice';
 import { calculatePercentChange } from '@/lib/utils/priceResolver';
 
 import { StockData } from '@/lib/types';
@@ -194,28 +195,11 @@ export async function getStocksList(options: {
     const isLargeQuery = stocks.length > 500;
 
     try {
-      const dateET = getDateET(etNow);
-      const today = createETDate(dateET);
-      const lookback = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000);
-
       if (!isLargeQuery) {
-        const sessionPrices = await prisma.sessionPrice.findMany({
-          where: { symbol: { in: symbols }, date: { gte: lookback, lte: today } },
-          orderBy: { lastTs: 'desc' },
-          select: { symbol: true, lastPrice: true, lastTs: true }
-        });
-
-        const latestSpBySymbol = new Map<string, { price: number; ts: Date }>();
-        for (const sp of sessionPrices) {
-          if (!latestSpBySymbol.has(sp.symbol)) latestSpBySymbol.set(sp.symbol, { price: sp.lastPrice, ts: sp.lastTs });
-        }
-
-        const STALE_THRESHOLD_MS = 60 * 1000;
-        for (const [symbol, sp] of latestSpBySymbol.entries()) {
+        const sessionPrices = await fetchLatestSessionPrices(symbols, etNow);
+        for (const [symbol, sp] of sessionPrices) {
           const existing = bestPriceBySymbol.get(symbol);
-          if (existing && sp.ts.getTime() > existing.ts.getTime() + STALE_THRESHOLD_MS) {
-            bestPriceBySymbol.set(symbol, { price: sp.price, ts: sp.ts, source: 'session' });
-          } else if (!existing) {
+          if (sessionPriceOverrides(sp.ts.getTime(), existing?.ts.getTime())) {
             bestPriceBySymbol.set(symbol, { price: sp.price, ts: sp.ts, source: 'session' });
           }
         }

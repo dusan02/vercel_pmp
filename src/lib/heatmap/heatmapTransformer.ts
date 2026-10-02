@@ -1,6 +1,7 @@
 import { SessionPrice, DailyRef } from '@prisma/client';
 import { StockData } from '@/lib/types';
 import { computeMarketCap, computeMarketCapDiff, computePercentChange, validateMarketCap, validatePercentChange } from '@/lib/utils/marketCapUtils';
+import { sessionPriceOverrides } from '@/lib/utils/freshPrice';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
 import { detectSession, nowET, isMarketHoliday, getTradingDay, getLastTradingDay } from '@/lib/utils/timeUtils';
 import { isWeekendET } from '@/lib/utils/dateET';
@@ -135,7 +136,10 @@ export function buildPriceMap(
   for (const sp of sessionPrices) {
     const spTs = sp.lastTs ? new Date(sp.lastTs).getTime() : (sp.updatedAt ? new Date(sp.updatedAt).getTime() : 0);
     const existing = priceMap.get(sp.symbol);
-    if (!existing || (spTs && spTs >= existing.tsMs)) {
+    // Same freshness policy as stockService/getMovers: a SessionPrice row
+    // only overrides the Ticker baseline when clearly newer — an overnight
+    // stale session row must not win over a fresh worker write.
+    if (!existing || sessionPriceOverrides(spTs, existing.tsMs)) {
       priceMap.set(sp.symbol, {
         price: sp.lastPrice,
         changePct: sp.changePct,

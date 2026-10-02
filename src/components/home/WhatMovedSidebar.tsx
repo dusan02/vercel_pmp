@@ -48,7 +48,7 @@ export function WhatMovedSidebar({ movers, eligibleTickers }: WhatMovedSidebarPr
             What Moved Today
           </h2>
           <Link
-            href="/premarket-movers"
+            href="/?tab=movers"
             className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
           >
             All movers →
