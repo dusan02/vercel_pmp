@@ -86,6 +86,10 @@ const GlobalStockSearch = dynamic(
   () => import('@/components/GlobalStockSearch').then((mod) => mod.GlobalStockSearch),
   { ssr: true, loading: () => null }
 );
+const HeatmapMetricChips = dynamic(
+  () => import('@/components/HeatmapMetricChips').then((mod) => mod.HeatmapMetricChips),
+  { ssr: true, loading: () => null }
+);
 const HeatmapViewButton = dynamic(
   () => import('@/components/HeatmapViewButton').then((mod) => mod.HeatmapViewButton),
   { ssr: true, loading: () => null }
@@ -131,6 +135,7 @@ import { detectSession } from '@/lib/utils/timeUtils';
 import { useMobilePrefetch } from '@/hooks/useMobilePrefetch';
 import { useHomeNavigation } from '@/hooks/useHomeNavigation';
 import { useHomeData } from '@/hooks/useHomeData';
+import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { KeepAliveTab } from '@/components/KeepAliveTab';
 
 interface HomePageProps {
@@ -164,6 +169,10 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
 
   const { activeSection, analysisTicker, setAnalysisTicker, handleMobileNavChange } =
     useHomeNavigation({ isMounted });
+
+  // Heatmap metric state lives here so the chips can render in the header
+  // (directly under the tabs) while the map consumes the same selection.
+  const { metric: heatmapMetric, setMetric: setHeatmapMetric } = useHeatmapMetric('percent');
 
   const {
     toggleFavorite, isFavorite,
@@ -440,6 +449,15 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                               <HeatmapViewButton />
                             </div>
                           }
+                          subnav={activeSection === 'heatmap' ? (
+                            <div className="hidden lg:block">
+                              <HeatmapMetricChips
+                                metric={heatmapMetric}
+                                onMetricChange={setHeatmapMetric}
+                                orientation="horizontal"
+                              />
+                            </div>
+                          ) : null}
                         />
                       </div>
                     </div>
@@ -465,6 +483,8 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                             activeView={activeSection === 'heatmap' ? 'heatmap' : 'inactive'}
                             onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
                             onTileHover={handleAnalysisPrefetch}
+                            metric={heatmapMetric}
+                            onMetricChange={setHeatmapMetric}
                             initialHeatmapData={initialHeatmapData}
                           />
                           <WhatMovedToday movers={initialMoversData} eligibleTickers={eligibleTickers} />

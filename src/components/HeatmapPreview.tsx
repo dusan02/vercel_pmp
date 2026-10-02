@@ -4,7 +4,7 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
-import { HeatmapMetricChips } from './HeatmapMetricChips';
+import type { HeatmapMetric } from '@/lib/heatmap/types';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { HeatmapMethodology } from './HeatmapMethodology';
 
@@ -27,10 +27,13 @@ const ResponsiveMarketHeatmap = dynamic(
  * Zobrazuje zmenšenú verziu heatmapy, ktorá pri kliknutí presmeruje na plnú stránku
  * Prepínacie buttony (% Change / Mcap Change) sú vedľa nadpisu
  */
-export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHover, initialHeatmapData }: { activeView?: string | undefined; wrapperClass?: string | undefined; onTileClick?: (ticker: string) => void | undefined; onTileHover?: (ticker: string | null) => void | undefined; initialHeatmapData?: any[] | undefined }) {
+export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHover, metric, onMetricChange, initialHeatmapData }: { activeView?: string | undefined; wrapperClass?: string | undefined; onTileClick?: (ticker: string) => void | undefined; onTileHover?: (ticker: string | null) => void | undefined; metric?: HeatmapMetric | undefined; onMetricChange?: ((metric: HeatmapMetric) => void) | undefined; initialHeatmapData?: any[] | undefined }) {
   const router = useRouter();
-  // Centralized metric state with localStorage persistence
-  const { metric, setMetric } = useHeatmapMetric('percent');
+  // Metric is controlled by HomePage (chips render in the header under the
+  // tabs); fall back to the hook when no controller is provided.
+  const internal = useHeatmapMetric('percent');
+  const effectiveMetric = metric ?? internal.metric;
+  const effectiveSetMetric = onMetricChange ?? internal.setMetric;
 
   // Use hook for reliable desktop/mobile detection
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -57,15 +60,9 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHo
   return (
     <section className={`heatmap-preview ${wrapperClass || ''} ${!isDesktop ? 'h-full flex flex-col' : ''}`}>
       {/* No visible title — the active tab above already carries the label.
-          Search + fullscreen live in the nav row (PageHeader toolbar). */}
+          Search + fullscreen live in the nav row, metric chips in the header
+          subnav row (PageHeader) — the map starts flush below them. */}
       <h2 className="sr-only">Market Heatmap</h2>
-
-      {/* Metric chips — single scrollable row above the map (desktop) */}
-      {isDesktop && (
-        <div className="px-4 mb-1.5">
-          <HeatmapMetricChips metric={metric} onMetricChange={setMetric} orientation="horizontal" />
-        </div>
-      )}
 
       {/* Map — full width; height clamps so the whole map fits above the fold
           (≈190px of header/nav/chips chrome above it), capped at 600px */}
@@ -74,7 +71,7 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHo
       <div
         className={`relative w-full bg-black overflow-hidden group heatmap-preview-container border-none outline-none ${isDesktop ? 'heatmap-preview-desktop' : 'flex-1'
           }`}
-        style={isDesktop ? { cursor: 'pointer', border: 'none', outline: 'none', height: 'clamp(420px, calc(100vh - 235px), 600px)' } : { cursor: 'pointer', border: 'none', outline: 'none' }}
+        style={isDesktop ? { cursor: 'pointer', border: 'none', outline: 'none', height: 'clamp(420px, calc(100vh - 255px), 600px)' } : { cursor: 'pointer', border: 'none', outline: 'none' }}
         onClick={handleBackgroundClick}
       >
         <ResponsiveMarketHeatmap
@@ -82,8 +79,8 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHo
           autoRefresh={true}
           refreshInterval={60000}
           initialTimeframe="day"
-          controlledMetric={metric}
-          onMetricChange={setMetric}
+          controlledMetric={effectiveMetric}
+          onMetricChange={effectiveSetMetric}
           hideMetricButtons={true}
           sectorLabelVariant="compact"
           activeView={activeView}

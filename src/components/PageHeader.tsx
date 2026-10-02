@@ -13,12 +13,14 @@ interface PageHeaderProps {
   navigation?: React.ReactNode;
   /** Right side of the nav row — stock search + fullscreen heatmap button */
   toolbar?: React.ReactNode;
+  /** Third header row rendered directly under the nav — heatmap metric chips */
+  subnav?: React.ReactNode;
   onLogoClick?: () => void;
   /** Market-session pill (PRE-MARKET/LIVE/…) — rendered next to auth controls */
   statusBadge?: React.ReactNode;
 }
 
-export function PageHeader({ navigation, toolbar, onLogoClick, statusBadge }: PageHeaderProps) {
+export function PageHeader({ navigation, toolbar, subnav, onLogoClick, statusBadge }: PageHeaderProps) {
   return (
     <header className="w-full bg-[var(--clr-surface)] border-b border-[var(--clr-border)] relative z-50 py-2 text-left sticky top-0 lg:static">
       <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto px-3 sm:px-6 gap-2 sm:gap-4 flex-wrap lg:flex-nowrap">
@@ -88,6 +90,14 @@ export function PageHeader({ navigation, toolbar, onLogoClick, statusBadge }: Pa
               </div>
             )}
           </div>
+
+          {/* THIRD ROW: sub-navigation (heatmap metric chips) — flush with
+              the map below, part of the header chrome instead of the body */}
+          {subnav && (
+            <div className="w-full border-t border-[var(--clr-border-subtle)] pt-1.5 pb-1">
+              {subnav}
+            </div>
+          )}
         </div>
       </div>
     </header>
