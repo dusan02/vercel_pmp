@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ScreenerResult, ScreenerPagination, MARKET_CAP_PRESETS, METRIC_FILTERS, MARKET_RANGE_FILTERS, RangeFilterKey } from '@/lib/utils/screener';
+import { ScreenerResult, ScreenerPagination, MARKET_CAP_PRESETS, METRIC_FILTERS, MARKET_RANGE_FILTERS, RangeFilterKey, ScreenerPreset } from '@/lib/utils/screener';
 
 interface UseScreenerOptions {
     initialLimit?: number;
@@ -358,12 +358,7 @@ export function useScreener({
         Object.keys(metricRanges).length > 0;
 
     /** Apply a named quick-screen preset (sets multiple filters atomically). */
-    const applyPreset = (preset: {
-        minValue?: number; minGrowth?: number; minProfit?: number;
-        minHealth?: number; minQuality?: number; minOverall?: number;
-        minAltman?: number; minFcfMargin?: number; marketCapPreset?: string;
-        sort?: string;
-    }) => {
+    const applyPreset = (preset: ScreenerPreset) => {
         resetFilters();
         if (preset.minValue !== undefined) setMinValue(preset.minValue);
         if (preset.minGrowth !== undefined) setMinGrowth(preset.minGrowth);
@@ -374,6 +369,11 @@ export function useScreener({
         if (preset.minAltman !== undefined) setMinAltman(preset.minAltman);
         if (preset.minFcfMargin !== undefined) setMinFcfMargin(preset.minFcfMargin);
         if (preset.marketCapPreset !== undefined) setMarketCapPreset(preset.marketCapPreset);
+        if (preset.ranges) {
+            for (const [key, range] of Object.entries(preset.ranges)) {
+                if (range) setMetricRange(key as RangeFilterKey, range);
+            }
+        }
         if (preset.sort) {
             const [f, o] = preset.sort.split(':');
             if (f) setSortField(f);

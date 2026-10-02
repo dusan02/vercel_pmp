@@ -10,7 +10,7 @@ import { useScreener } from '@/hooks/useScreener';
 import { LivePrice } from './LivePrice';
 import {
   ScreenerResult, scoreColor, altmanZLabel, piotroskiLabel, beneishLabel, fcfMarginLabel, debtRepayLabel,
-  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, MARKET_RANGE_FILTERS, RangeFilterKey,
+  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, MARKET_RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS,
 } from '@/lib/utils/screener';
 import { Sparkline } from './Sparkline';
 import { formatBillions, formatMarketCapDiff, formatCurrencyCompact } from '@/lib/utils/format';
@@ -381,17 +381,11 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         {/* Quick screens — one-tap preset combinations */}
         <div className="flex flex-wrap items-center gap-1.5 mb-3">
           <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1">Quick screens:</span>
-          {[
-            { label: 'Quality Compounders', preset: { minQuality: 80, minProfit: 75, minGrowth: 60, sort: 'qualityScore:desc' } },
-            { label: 'Quality at Reasonable Price', preset: { minQuality: 75, minValue: 60, sort: 'overallScore:desc' } },
-            { label: 'Growth at Reasonable Price', preset: { minGrowth: 75, minValue: 60, sort: 'growthScore:desc' } },
-            { label: 'Strong Balance Sheets', preset: { minHealth: 80, minAltman: 3, sort: 'healthScore:desc' } },
-            { label: 'Cash Machines', preset: { minFcfMargin: 0.15, minProfit: 60, sort: 'overallScore:desc' } },
-            { label: 'Top Overall', preset: { minOverall: 75, sort: 'overallScore:desc' } },
-          ].map((p) => (
+          {QUICK_SCREENS.map((p) => (
             <button
               key={p.label}
               onClick={() => applyPreset(p.preset)}
+              title={p.tip}
               className="text-[11px] px-2.5 py-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
               {p.label}

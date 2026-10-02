@@ -104,7 +104,7 @@ export const METRIC_FILTERS = [
     { key: 'revenueGrowth', label: 'Rev Growth %', min: -50, max: 100, step: 1 },
     { key: 'earningsGrowth', label: 'EPS Growth %', min: -50, max: 100, step: 1 },
     { key: 'dividendYield', label: 'Div Yield %', min: 0, max: 10, step: 0.1 },
-    { key: 'debtEquityRatio', label: 'D/E %', min: 0, max: 300, step: 5 },
+    { key: 'debtEquityRatio', label: 'D/E', min: 0, max: 5, step: 0.1 },
     { key: 'currentRatio', label: 'Current Ratio', min: 0, max: 10, step: 0.1 },
     { key: 'interestCoverage', label: 'Int. Coverage', min: 0, max: 50, step: 1 },
     { key: 'beta', label: 'Beta', min: 0, max: 4, step: 0.1 },
@@ -137,6 +137,55 @@ export function downsampleSeries(values: number[], maxPoints = 52): number[] {
     if (pts[pts.length - 1] !== last) pts.push(last);
     return pts;
 }
+
+/**
+ * Quick-screen preset — score defaults + optional metric/market ranges.
+ * `ranges` keys are RangeFilterKey (metric keys → FinnhubMetrics, plus
+ * `price`/`changePct` → Ticker columns).
+ */
+export interface ScreenerPreset {
+    minValue?: number; minGrowth?: number; minProfit?: number;
+    minHealth?: number; minQuality?: number; minOverall?: number;
+    minAltman?: number; minFcfMargin?: number;
+    marketCapPreset?: string;
+    sort?: string;
+    ranges?: Partial<Record<RangeFilterKey, { min?: number; max?: number }>>;
+}
+
+/**
+ * One-click screens. First group = score-based (AnalysisCache). Second group
+ * = classic literature categories mapped onto our metric filters:
+ *
+ * - Value (Graham): P/E≤15, P/B≤1.5 (Graham's 15×1.5 rule), current
+ *   ratio ≥1.5, positive earnings growth (Intelligent Investor ch.14).
+ * - Dividend Growth: yield 1.5–6% (upper cap avoids yield traps), ROE≥12%,
+ *   D/E≤1, EPS growth ≥5% (consensus dividend-growth screens).
+ * - Fast Growers (Lynch): EPS growth ≥20%, revenue growth ≥15%, PEG≤2
+ *   (One Up on Wall Street — 20–25% growers at a sane price).
+ * - GARP: PEG≤1 (Lynch's signature ratio), EPS growth ≥10%, P/E 1–40.
+ * - Asset Plays: P/B 0.1–1, P/S≤1.5, current ratio ≥1 — trading below book
+ *   with enough liquidity to not be distressed.
+ * - Turnarounds: P/S≤1 (beaten down), forward P/E 1–25 (market expects
+ *   profits back), current ratio ≥1.5 (survivable), ranked by 90d insider
+ *   buying — management buying the trough is the classic tell.
+ * - Stalwarts (Lynch): EPS growth 8–20%, ROE≥12%, net margin ≥10% —
+ *   large steady compounders, not explosive.
+ */
+export const QUICK_SCREENS: { label: string; tip?: string; preset: ScreenerPreset }[] = [
+    { label: 'Quality Compounders', tip: 'Quality ≥80 · Profit ≥75 · Growth ≥60', preset: { minQuality: 80, minProfit: 75, minGrowth: 60, sort: 'qualityScore:desc' } },
+    { label: 'Quality at Reasonable Price', tip: 'Quality ≥75 · Valuation ≥60', preset: { minQuality: 75, minValue: 60, sort: 'overallScore:desc' } },
+    { label: 'Growth at Reasonable Price', tip: 'Growth ≥75 · Valuation ≥60', preset: { minGrowth: 75, minValue: 60, sort: 'growthScore:desc' } },
+    { label: 'Strong Balance Sheets', tip: 'Health ≥80 · Altman Z ≥3', preset: { minHealth: 80, minAltman: 3, sort: 'healthScore:desc' } },
+    { label: 'Cash Machines', tip: 'FCF margin ≥15% · Profit ≥60', preset: { minFcfMargin: 0.15, minProfit: 60, sort: 'overallScore:desc' } },
+    { label: 'Top Overall', tip: 'Overall score ≥75', preset: { minOverall: 75, sort: 'overallScore:desc' } },
+    { label: 'Value (Graham)', tip: 'P/E ≤15 · P/B ≤1.5 · Current ≥1.5 · EPS growth >0', preset: { sort: 'valuationScore:desc', ranges: { peRatio: { max: 15 }, pbRatio: { max: 1.5 }, currentRatio: { min: 1.5 }, earningsGrowth: { min: 0 } } } },
+    { label: 'Dividend Growth', tip: 'Yield 1.5–6% · ROE ≥12% · D/E ≤1 · EPS growth ≥5%', preset: { sort: 'metrics.dividendYield:desc', ranges: { dividendYield: { min: 1.5, max: 6 }, roe: { min: 12 }, debtEquityRatio: { max: 1 }, earningsGrowth: { min: 5 } } } },
+    { label: 'Fast Growers (Lynch)', tip: 'EPS growth ≥20% · Rev growth ≥15% · PEG ≤2', preset: { sort: 'metrics.earningsGrowth:desc', ranges: { earningsGrowth: { min: 20 }, revenueGrowth: { min: 15 }, pegRatio: { max: 2 } } } },
+    { label: 'GARP (PEG<1)', tip: 'PEG ≤1 · EPS growth ≥10% · P/E 1–40', preset: { sort: 'metrics.pegRatio:asc', ranges: { pegRatio: { max: 1 }, earningsGrowth: { min: 10 }, peRatio: { min: 1, max: 40 } } } },
+    { label: 'Asset Plays', tip: 'P/B 0.1–1 · P/S ≤1.5 · Current ≥1 — below book, still liquid', preset: { sort: 'metrics.pbRatio:asc', ranges: { pbRatio: { min: 0.1, max: 1 }, psRatio: { max: 1.5 }, currentRatio: { min: 1 } } } },
+    { label: 'Turnarounds', tip: 'P/S ≤1 · Fwd P/E 1–25 · Current ≥1.5 · ranked by insider buying', preset: { sort: 'insider.netBuyValue90d:desc', ranges: { psRatio: { max: 1 }, forwardPe: { min: 1, max: 25 }, currentRatio: { min: 1.5 } } } },
+    { label: 'Stalwarts (Lynch)', tip: 'EPS growth 8–20% · ROE ≥12% · Net margin ≥10%', preset: { sort: 'overallScore:desc', ranges: { earningsGrowth: { min: 8, max: 20 }, roe: { min: 12 }, netMargin: { min: 10 } } } },
+];
 
 export const SORT_OPTIONS = [
     { value: 'overallScore:desc', label: 'Overall Score ↓' },
