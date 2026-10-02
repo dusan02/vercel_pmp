@@ -64,12 +64,18 @@ export function WhatMovedToday({ movers, eligibleTickers }: WhatMovedTodayProps)
               Biggest pre-market moves — {today}
             </p>
           </div>
-          <Link
-            href="/?tab=movers"
+          <a
+            href="/premarket-movers"
+            onClick={(e) => {
+              // In-app tab switch — the middleware 301s /?tab=movers to
+              // /premarket-movers, so a plain href would leave the page.
+              e.preventDefault();
+              window.dispatchEvent(new CustomEvent('mobile-nav-change', { detail: 'movers' }));
+            }}
             className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
           >
             All movers →
-          </Link>
+          </a>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

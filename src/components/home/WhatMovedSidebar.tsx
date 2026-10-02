@@ -47,21 +47,27 @@ export function WhatMovedSidebar({ movers, eligibleTickers }: WhatMovedSidebarPr
           <h2 className="text-sm font-bold text-gray-900 dark:text-white">
             What Moved Today
           </h2>
-          <Link
-            href="/?tab=movers"
+          <a
+            href="/premarket-movers"
+            onClick={(e) => {
+              // In-app tab switch — the middleware 301s /?tab=movers to
+              // /premarket-movers, so a plain href would leave the page.
+              e.preventDefault();
+              window.dispatchEvent(new CustomEvent('mobile-nav-change', { detail: 'movers' }));
+            }}
             className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
           >
             All movers →
-          </Link>
+          </a>
         </div>
 
         {gainers.length > 0 && (
-          <div className="bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-100 dark:border-green-900/30 p-3">
-            <h3 className="text-xs font-semibold text-green-700 dark:text-green-400 mb-2 flex items-center gap-1.5">
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+            <h3 className="text-xs font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
               Top Gainers
             </h3>
-            <div className="space-y-1">
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
               {gainers.map((m) => (
                 <SidebarMoverRow key={m.symbol} mover={m} eligible={eligibleTickers} positive />
               ))}
@@ -70,12 +76,12 @@ export function WhatMovedSidebar({ movers, eligibleTickers }: WhatMovedSidebarPr
         )}
 
         {losers.length > 0 && (
-          <div className="bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/30 p-3">
-            <h3 className="text-xs font-semibold text-red-700 dark:text-red-400 mb-2 flex items-center gap-1.5">
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+            <h3 className="text-xs font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
               Top Losers
             </h3>
-            <div className="space-y-1">
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
               {losers.map((m) => (
                 <SidebarMoverRow key={m.symbol} mover={m} eligible={eligibleTickers} positive={false} />
               ))}
@@ -115,7 +121,7 @@ function SidebarMoverRow({ mover, eligible, positive }: { mover: MoverData; elig
 
   if (isEligible) {
     return (
-      <Link href={`/analysis/${symbol}`} className="block hover:bg-green-100/50 dark:hover:bg-green-900/20 rounded px-1 -mx-1 transition-colors">
+      <Link href={`/analysis/${symbol}`} className="block hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded px-1 -mx-1 transition-colors">
         {content}
       </Link>
     );

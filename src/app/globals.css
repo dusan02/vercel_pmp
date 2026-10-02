@@ -610,6 +610,16 @@
     margin-bottom: 3rem;
   }
 
+  /* Full-bleed heatmap on desktop — escapes the 72rem .container so the
+     treemap spans the whole viewport like the standalone /heatmap page.
+     html { overflow-x: hidden } absorbs the classic-100vw scrollbar quirk. */
+  @media (min-width: 1024px) {
+    .desktop-heatmap-wrapper {
+      width: 100vw;
+      margin-left: calc(50% - 50vw);
+    }
+  }
+
   /* Mobile: tighter section spacing */
   @media (max-width: 1023px) {
 
