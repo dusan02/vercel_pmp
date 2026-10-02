@@ -392,7 +392,10 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                   <StructuredData stocks={stockData} pageType="home" />
 
                   <div className="header-wrapper">
-                    <div className="container mx-auto px-4">
+                    {/* Full-width header — the 72rem .container was squeezing
+                        brand+indices+auth into 1152px while the heatmap below
+                        spans the whole viewport, causing overlaps. */}
+                    <div className="w-full">
                       {/* --- DESKTOP LAYOUT (Tab Based) --- */}
                       <div className="desktop-layout-wrapper">
                         <PageHeader
