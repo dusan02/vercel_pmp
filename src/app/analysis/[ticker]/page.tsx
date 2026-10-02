@@ -37,6 +37,7 @@ import { AnalysisCrossLinks } from '@/components/company/analysis/sections/Analy
 import { SeoTextSection } from '@/components/company/SeoTextSection';
 import { AnalysisStockSearch } from '@/components/AnalysisStockSearch';
 import { ThesisCard } from '@/components/company/analysis/sections/ThesisCard';
+import { getMatchedScreens } from '@/lib/analysis/matchedScreens';
 
 // Lazy client chunks — keeps recharts/finnhub-fetch code out of the initial bundle
 const IntradayChart = dynamic(() => import('@/components/company/IntradayChart').then((m) => m.IntradayChart));
@@ -113,7 +114,7 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   // Fetch everything in parallel (independent queries).
   // Includes SSR pre-fetch of analysis API + history for instant client hydration.
-  const [earningsData, recentMoves, sectorPeers, analysisData, historyData, flowStatements, week52, topNews] = await Promise.all([
+  const [earningsData, recentMoves, sectorPeers, analysisData, historyData, flowStatements, week52, topNews, matchedScreens] = await Promise.all([
     getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
     getSectorPeers(data?.sector, tickerUpper),
@@ -122,6 +123,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     getFinancialFlowsData(tickerUpper),
     get52WeekRange(tickerUpper),
     prefetchTopNews(tickerUpper),
+    getMatchedScreens(tickerUpper),
   ]);
 
   const { price: displayPrice, changePct: displayChangePct, marketSession } = getAnalysisQuote(data);
@@ -244,6 +246,24 @@ export default async function AnalysisPage({ params }: PageProps) {
               time={nextEarnings.time}
               earningsDays={earningsDays}
             />
+          )}
+
+          {/* Screen badges — which quick screens this stock currently passes.
+              SSR chips double as internal links to the filtered screener. */}
+          {matchedScreens.length > 0 && (
+            <div className="mb-4 flex flex-wrap items-center gap-1.5" data-testid="screen-badges">
+              <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1">In screens:</span>
+              {matchedScreens.map((s) => (
+                <Link
+                  key={s.label}
+                  href={s.href}
+                  title={s.tip}
+                  className="text-[11px] px-2.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:border-indigo-400 transition-colors"
+                >
+                  {s.label}
+                </Link>
+              ))}
+            </div>
           )}
 
           {/* Two independent columns — no row coupling, so neither column's

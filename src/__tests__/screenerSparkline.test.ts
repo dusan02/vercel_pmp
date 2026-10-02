@@ -1,4 +1,4 @@
-import { downsampleSeries, METRIC_FILTERS, METRIC_GROUPS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, RANGE_FILTERS, QUICK_SCREENS, presetToQueryString, isValidScreenParams } from '@/lib/utils/screener';
+import { downsampleSeries, METRIC_FILTERS, METRIC_GROUPS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, RANGE_FILTERS, QUICK_SCREENS, presetToQueryString, isValidScreenParams, matchesPreset } from '@/lib/utils/screener';
 import { LEADERBOARDS } from '@/lib/seo/leaderboards';
 
 describe('downsampleSeries (screener 1Y sparkline)', () => {
@@ -162,5 +162,56 @@ describe('METRIC_GROUPS', () => {
     it('covers every metric filter exactly once, in order', () => {
         const grouped = METRIC_GROUPS.flatMap((g) => METRIC_FILTERS.filter((d) => d.group === g));
         expect(grouped.map((d) => d.key)).toEqual(METRIC_FILTERS.map((d) => d.key));
+    });
+});
+
+describe('matchesPreset (analysis-page badges)', () => {
+    const garp = QUICK_SCREENS.find((s) => s.label === 'GARP (PEG<1)')!.preset;
+    const compounders = QUICK_SCREENS.find((s) => s.label === 'Quality Compounders')!.preset;
+    const turnarounds = QUICK_SCREENS.find((s) => s.label === 'Turnarounds')!.preset;
+
+    it('matches a ticker satisfying all GARP bounds', () => {
+        expect(matchesPreset(garp, {
+            metrics: { pegRatio: 0.8, earningsGrowth: 15, peRatio: 12 },
+        })).toBe(true);
+    });
+
+    it('rejects when any bound fails', () => {
+        expect(matchesPreset(garp, {
+            metrics: { pegRatio: 1.5, earningsGrowth: 15, peRatio: 12 },
+        })).toBe(false);
+        expect(matchesPreset(garp, {
+            metrics: { pegRatio: 0.8, earningsGrowth: 5, peRatio: 12 },
+        })).toBe(false);
+    });
+
+    it('null/missing metrics never pass a bound (SQL-null semantics)', () => {
+        expect(matchesPreset(garp, { metrics: {} })).toBe(false);
+        expect(matchesPreset(garp, { metrics: null })).toBe(false);
+        expect(matchesPreset(garp, {
+            metrics: { pegRatio: null, earningsGrowth: 15, peRatio: 12 },
+        })).toBe(false);
+        expect(matchesPreset(garp, {})).toBe(false);
+    });
+
+    it('score presets read the AnalysisCache score context', () => {
+        const scores = { qualityScore: 85, profitabilityScore: 80, growthScore: 65 };
+        expect(matchesPreset(compounders, { scores })).toBe(true);
+        expect(matchesPreset(compounders, { scores: { ...scores, growthScore: 50 } })).toBe(false);
+        expect(matchesPreset(compounders, { scores: null })).toBe(false);
+    });
+
+    it('cross-relation presets need insider + finnhub data together', () => {
+        const good = {
+            metrics: { psRatio: 0.8, forwardPe: 15, currentRatio: 2 },
+            insider: { netBuyValue90d: 1_000_000 },
+        };
+        expect(matchesPreset(turnarounds, good)).toBe(true);
+        // insider net-selling fails the screen
+        expect(matchesPreset(turnarounds, {
+            ...good, insider: { netBuyValue90d: -500_000 },
+        })).toBe(false);
+        // no insider data at all also fails (null never passes)
+        expect(matchesPreset(turnarounds, { ...good, insider: null })).toBe(false);
     });
 });

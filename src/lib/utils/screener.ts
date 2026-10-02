@@ -107,6 +107,7 @@ export const METRIC_FILTERS = [
     { key: 'evEbitda', label: 'EV/EBITDA', min: 0, max: 60, step: 1, group: 'Valuation' },
     { key: 'evSales', label: 'EV/Sales', min: 0, max: 20, step: 0.5, group: 'Valuation' },
     { key: 'priceFreeCashFlow', label: 'P/FCF', min: 0, max: 100, step: 1, group: 'Valuation' },
+    { key: 'priceCashFlow', label: 'P/CF', min: 0, max: 60, step: 1, group: 'Valuation' },
     // Profitability
     { key: 'roe', label: 'ROE %', min: -50, max: 100, step: 1, group: 'Profitability' },
     { key: 'roa', label: 'ROA %', min: -30, max: 50, step: 1, group: 'Profitability' },
@@ -116,6 +117,7 @@ export const METRIC_FILTERS = [
     // Growth
     { key: 'revenueGrowth', label: 'Rev Growth %', min: -50, max: 100, step: 1, group: 'Growth' },
     { key: 'earningsGrowth', label: 'EPS Growth %', min: -50, max: 100, step: 1, group: 'Growth' },
+    { key: 'bookValueGrowth', label: 'BV Growth %', min: -30, max: 60, step: 1, group: 'Growth' },
     // Dividends
     { key: 'dividendYield', label: 'Div Yield %', min: 0, max: 10, step: 0.1, group: 'Dividends' },
     { key: 'payoutRatio', label: 'Payout %', min: 0, max: 100, step: 1, group: 'Dividends' },
@@ -230,23 +232,23 @@ export interface ScreenerPreset {
  *   large steady compounders, not explosive.
  */
 export const QUICK_SCREENS: { label: string; tip?: string; group: 'score' | 'strategy'; preset: ScreenerPreset }[] = [
-    { label: 'Quality Compounders', tip: 'Quality ≥80 · Profit ≥75 · Growth ≥60', group: 'score', preset: { minQuality: 80, minProfit: 75, minGrowth: 60, sort: 'qualityScore:desc' } },
-    { label: 'Quality at Reasonable Price', tip: 'Quality ≥75 · Valuation ≥60', group: 'score', preset: { minQuality: 75, minValue: 60, sort: 'overallScore:desc' } },
-    { label: 'Growth at Reasonable Price', tip: 'Growth ≥75 · Valuation ≥60', group: 'score', preset: { minGrowth: 75, minValue: 60, sort: 'growthScore:desc' } },
-    { label: 'Strong Balance Sheets', tip: 'Health ≥80 · Altman Z ≥3', group: 'score', preset: { minHealth: 80, minAltman: 3, sort: 'healthScore:desc' } },
-    { label: 'Cash Machines', tip: 'FCF margin ≥15% · Profit ≥60 · P/FCF ≤30 (cheap FCF)', group: 'score', preset: { minFcfMargin: 0.15, minProfit: 60, sort: 'overallScore:desc', ranges: { priceFreeCashFlow: { min: 0.1, max: 30 } } } },
-    { label: 'Top Overall', tip: 'Overall score ≥75', group: 'score', preset: { minOverall: 75, sort: 'overallScore:desc' } },
+    { label: 'Quality Compounders', tip: 'Quality ≥80 · Profit ≥75 · Growth ≥60', group: 'score', preset: { minQuality: 80, minProfit: 75, minGrowth: 60 } },
+    { label: 'Quality at Reasonable Price', tip: 'Quality ≥75 · Valuation ≥60', group: 'score', preset: { minQuality: 75, minValue: 60 } },
+    { label: 'Growth at Reasonable Price', tip: 'Growth ≥75 · Valuation ≥60', group: 'score', preset: { minGrowth: 75, minValue: 60 } },
+    { label: 'Strong Balance Sheets', tip: 'Health ≥80 · Altman Z ≥3', group: 'score', preset: { minHealth: 80, minAltman: 3 } },
+    { label: 'Cash Machines', tip: 'FCF margin ≥15% · Profit ≥60 · P/FCF ≤30 (cheap FCF)', group: 'score', preset: { minFcfMargin: 0.15, minProfit: 60, ranges: { priceFreeCashFlow: { min: 0.1, max: 30 } } } },
+    { label: 'Top Overall', tip: 'Overall score ≥75', group: 'score', preset: { minOverall: 75 } },
     // Strategy screens — classic investor categories on raw fundamentals.
     // Floors (`min`) on valuation ratios exclude negative/nonsense values
     // (negative P/E = loss-maker, negative P/B = negative equity).
-    { label: 'Value (Graham)', tip: 'P/E 1–15 · P/B 0.1–1.5 · Current ≥1.5 · EPS growth >0 · pays dividend', group: 'strategy', preset: { sort: 'valuationScore:desc', ranges: { peRatio: { min: 1, max: 15 }, pbRatio: { min: 0.1, max: 1.5 }, currentRatio: { min: 1.5 }, earningsGrowth: { min: 0 }, dividendYield: { min: 0.1 } } } },
-    { label: 'Dividend Growth', tip: 'Yield 1.5–6% · Payout 0–75% · ROE ≥12% · D/E 0–1 · EPS growth ≥5%', group: 'strategy', preset: { sort: 'metrics.dividendYield:desc', ranges: { dividendYield: { min: 1.5, max: 6 }, payoutRatio: { min: 0, max: 75 }, roe: { min: 12 }, debtEquityRatio: { min: 0, max: 1 }, earningsGrowth: { min: 5 } } } },
-    { label: 'Fast Growers (Lynch)', tip: 'EPS ≥20% · Rev ≥15% · PEG ≤2 · profitable · D/E ≤2', group: 'strategy', preset: { sort: 'metrics.earningsGrowth:desc', ranges: { earningsGrowth: { min: 20 }, revenueGrowth: { min: 15 }, pegRatio: { min: 0.1, max: 2 }, netMargin: { min: 0 }, debtEquityRatio: { min: 0, max: 2 } } } },
-    { label: 'GARP (PEG<1)', tip: 'PEG 0–1 · EPS growth ≥10% · P/E 1–40', group: 'strategy', preset: { sort: 'metrics.pegRatio:asc', ranges: { pegRatio: { min: 0.01, max: 1 }, earningsGrowth: { min: 10 }, peRatio: { min: 1, max: 40 } } } },
-    { label: 'Asset Plays', tip: 'P/B 0.1–1 · P/S ≤1.5 · Current ≥1 · D/E ≤3 (assets not buried in debt)', group: 'strategy', preset: { sort: 'metrics.pbRatio:asc', ranges: { pbRatio: { min: 0.1, max: 1 }, psRatio: { min: 0, max: 1.5 }, currentRatio: { min: 1 }, debtEquityRatio: { min: 0, max: 3 } } } },
-    { label: 'Turnarounds', tip: 'P/S ≤1 · Fwd P/E 1–25 · Current ≥1.5 · insiders net-buying', group: 'strategy', preset: { sort: 'insider.netBuyValue90d:desc', ranges: { psRatio: { min: 0, max: 1 }, forwardPe: { min: 1, max: 25 }, currentRatio: { min: 1.5 }, netBuyValue90d: { min: 0 } } } },
-    { label: 'Stalwarts (Lynch)', tip: 'EPS growth 8–20% · ROE ≥12% · Net margin ≥10% · Beta ≤1.4', group: 'strategy', preset: { sort: 'overallScore:desc', ranges: { earningsGrowth: { min: 8, max: 20 }, roe: { min: 12 }, netMargin: { min: 10 }, beta: { min: 0, max: 1.4 } } } },
-    { label: 'Slow Growers (Lynch)', tip: 'Yield 2–9% · EPS growth 0–8% · Beta ≤1.2 — dividend payers', group: 'strategy', preset: { sort: 'metrics.dividendYield:desc', ranges: { dividendYield: { min: 2, max: 9 }, earningsGrowth: { min: 0, max: 8 }, beta: { min: 0, max: 1.2 } } } },
+    { label: 'Value (Graham)', tip: 'P/E 1–15 · P/B 0.1–1.5 · Current ≥1.5 · EPS growth >0 · pays dividend', group: 'strategy', preset: { ranges: { peRatio: { min: 1, max: 15 }, pbRatio: { min: 0.1, max: 1.5 }, currentRatio: { min: 1.5 }, earningsGrowth: { min: 0 }, dividendYield: { min: 0.1 } } } },
+    { label: 'Dividend Growth', tip: 'Yield 1.5–6% · Payout 0–75% · ROE ≥12% · D/E 0–1 · EPS growth ≥5%', group: 'strategy', preset: { ranges: { dividendYield: { min: 1.5, max: 6 }, payoutRatio: { min: 0, max: 75 }, roe: { min: 12 }, debtEquityRatio: { min: 0, max: 1 }, earningsGrowth: { min: 5 } } } },
+    { label: 'Fast Growers (Lynch)', tip: 'EPS ≥20% · Rev ≥15% · PEG ≤2 · profitable · D/E ≤2', group: 'strategy', preset: { ranges: { earningsGrowth: { min: 20 }, revenueGrowth: { min: 15 }, pegRatio: { min: 0.1, max: 2 }, netMargin: { min: 0 }, debtEquityRatio: { min: 0, max: 2 } } } },
+    { label: 'GARP (PEG<1)', tip: 'PEG 0–1 · EPS growth ≥10% · P/E 1–40', group: 'strategy', preset: { ranges: { pegRatio: { min: 0.01, max: 1 }, earningsGrowth: { min: 10 }, peRatio: { min: 1, max: 40 } } } },
+    { label: 'Asset Plays', tip: 'P/B 0.1–1 · P/S ≤1.5 · Current ≥1 · D/E ≤3 (assets not buried in debt)', group: 'strategy', preset: { ranges: { pbRatio: { min: 0.1, max: 1 }, psRatio: { min: 0, max: 1.5 }, currentRatio: { min: 1 }, debtEquityRatio: { min: 0, max: 3 } } } },
+    { label: 'Turnarounds', tip: 'P/S ≤1 · Fwd P/E 1–25 · Current ≥1.5 · insiders net-buying', group: 'strategy', preset: { ranges: { psRatio: { min: 0, max: 1 }, forwardPe: { min: 1, max: 25 }, currentRatio: { min: 1.5 }, netBuyValue90d: { min: 0 } } } },
+    { label: 'Stalwarts (Lynch)', tip: 'EPS growth 8–20% · ROE ≥12% · Net margin ≥10% · Beta ≤1.4', group: 'strategy', preset: { ranges: { earningsGrowth: { min: 8, max: 20 }, roe: { min: 12 }, netMargin: { min: 10 }, beta: { min: 0, max: 1.4 } } } },
+    { label: 'Slow Growers (Lynch)', tip: 'Yield 2–9% · EPS growth 0–8% · Beta ≤1.2 — dividend payers', group: 'strategy', preset: { ranges: { dividendYield: { min: 2, max: 9 }, earningsGrowth: { min: 0, max: 8 }, beta: { min: 0, max: 1.2 } } } },
 ];
 
 /**
@@ -254,6 +256,55 @@ export const QUICK_SCREENS: { label: string; tip?: string; group: 'score' | 'str
  * serialization the hook produces (min<Cap>/max<Cap> convention) — used for
  * leaderboard → screener deep links and tests.
  */
+/**
+ * Evaluate whether one ticker satisfies a quick-screen preset — mirrors the
+ * screener API's where-clause semantics: a null metric/score NEVER passes a
+ * bound (SQL `is` on a missing relation row fails the row).
+ * Used by the /analysis/[ticker] "matches screen X" badges.
+ */
+export interface PresetMatchContext {
+    scores?: {
+        healthScore?: number | null; profitabilityScore?: number | null;
+        valuationScore?: number | null; growthScore?: number | null;
+        qualityScore?: number | null; overallScore?: number | null;
+        altmanZ?: number | null; fcfMargin?: number | null;
+    } | null;
+    metrics?: Partial<Record<MetricFilterKey, number | null>> | null;
+    market?: { price?: number | null; changePct?: number | null; marketCapB?: number | null } | null;
+    insider?: Partial<Record<'netBuyValue90d' | 'netBuyPct90d', number | null>> | null;
+}
+
+export function matchesPreset(p: ScreenerPreset, ctx: PresetMatchContext): boolean {
+    const s = ctx.scores;
+    const inRange = (v: number | null | undefined, r: { min?: number; max?: number }) => {
+        if (r.min !== undefined && !(v != null && v >= r.min)) return false;
+        if (r.max !== undefined && !(v != null && v <= r.max)) return false;
+        return true;
+    };
+    if (p.minValue !== undefined && !inRange(s?.valuationScore, { min: p.minValue })) return false;
+    if (p.minGrowth !== undefined && !inRange(s?.growthScore, { min: p.minGrowth })) return false;
+    if (p.minProfit !== undefined && !inRange(s?.profitabilityScore, { min: p.minProfit })) return false;
+    if (p.minHealth !== undefined && !inRange(s?.healthScore, { min: p.minHealth })) return false;
+    if (p.minQuality !== undefined && !inRange(s?.qualityScore, { min: p.minQuality })) return false;
+    if (p.minOverall !== undefined && !inRange(s?.overallScore, { min: p.minOverall })) return false;
+    if (p.minAltman !== undefined && !inRange(s?.altmanZ, { min: p.minAltman })) return false;
+    if (p.minFcfMargin !== undefined && !inRange(s?.fcfMargin, { min: p.minFcfMargin })) return false;
+    if (p.marketCapPreset && p.marketCapPreset !== 'all') {
+        const mc = MARKET_CAP_PRESETS.find((x) => x.id === p.marketCapPreset);
+        if (mc && !inRange(ctx.market?.marketCapB, { min: mc.min, max: mc.max })) return false;
+    }
+    for (const [key, r] of Object.entries(p.ranges ?? {})) {
+        const def = RANGE_FILTERS.find((d) => d.key === key);
+        if (!def || !r) continue;
+        let v: number | null | undefined;
+        if (def.source === 'finnhub') v = ctx.metrics?.[key as MetricFilterKey];
+        else if (def.source === 'insider') v = ctx.insider?.[key as 'netBuyValue90d' | 'netBuyPct90d'];
+        else v = def.field === 'lastPrice' ? ctx.market?.price : ctx.market?.changePct;
+        if (!inRange(v, r)) return false;
+    }
+    return true;
+}
+
 // ─── Saved-screen param validation (shared: API route + tests) ────────────
 
 const SCORE_PARAMS = new Set([

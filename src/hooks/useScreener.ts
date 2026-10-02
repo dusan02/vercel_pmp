@@ -339,8 +339,8 @@ export function useScreener({
         if (minFcfMargin !== (p.minFcfMargin ?? -100) || maxDebtRepayment !== 350) return false;
         if (selectedSector !== '' || selectedIndustry !== '' || searchQuery !== '') return false;
         if (marketCapPreset !== (p.marketCapPreset ?? 'all')) return false;
-        const [ef, eo] = (p.sort ?? 'ticker.lastMarketCap:desc').split(':');
-        if (sortField !== ef || sortOrder !== eo) return false;
+        // Sort is user-controlled presentation, not part of preset identity —
+        // a preset pill stays active while the user re-sorts the same screen.
         const expected = p.ranges ?? {};
         const keys = new Set([...Object.keys(metricRanges), ...Object.keys(expected)]);
         for (const k of keys) {
