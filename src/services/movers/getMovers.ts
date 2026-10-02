@@ -44,20 +44,27 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
     const session = detectSession(etNow);
 
     // ── Step 1: Fetch candidates from DB ──────────────────────────────────
-    // STALENESS GUARD: Only include tickers with fresh lastPriceUpdated (< 24h).
-    // Without this, stale tickers with old Z-scores/RVOL show 0.00% change
-    // because their prevClose is missing or price is outdated.
+    // STALENESS GUARDS:
+    //  - lastPriceUpdated < 24h: drops tickers with no recent prints at all.
+    //  - lastPriceUpdated >= today's ET midnight: stored movers metrics
+    //    (lastChangePct, zScore, rvol) are written per ingest tick and FREEZE
+    //    when the price stops changing — after a session rollover they still
+    //    carry yesterday's move (ACN stayed a "5.4σ mover" overnight on a
+    //    +0.45% drift, Oct 2026). Requiring a today-dated price confines
+    //    stored-field qualification to the current trading day.
     const TWENTY_FOUR_HOURS_AGO = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const todayStartET = createETDate(getDateET(etNow));
+    const freshToday = { lastPriceUpdated: { gte: todayStartET } };
     const topMovers = await prisma.ticker.findMany({
         where: {
             lastPrice: { gt: 0 },
             lastPriceUpdated: { gte: TWENTY_FOUR_HOURS_AGO },
             OR: [
-                { latestMoversZScore: { gte: minZScore } },
-                { latestMoversZScore: { lte: -minZScore } },
-                { lastChangePct: { gte: 5.0 } },
-                { lastChangePct: { lte: -5.0 } },
-                { latestMoversRVOL: { gte: 3.0 } }
+                { ...freshToday, latestMoversZScore: { gte: minZScore } },
+                { ...freshToday, latestMoversZScore: { lte: -minZScore } },
+                { ...freshToday, lastChangePct: { gte: 5.0 } },
+                { ...freshToday, lastChangePct: { lte: -5.0 } },
+                { ...freshToday, latestMoversRVOL: { gte: 3.0 } }
             ]
         },
         take: limit * 2, // Fetch more for ranking
@@ -193,14 +200,23 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
         };
     });
 
+    // ── Step 4b: Post-filter on the FRESH recomputed move ─────────────────
+    // Candidate selection uses stored fields that can lag a session boundary;
+    // a "mover" must actually be moving NOW. |fresh %| >= 1.5 drops yesterday's
+    // leftovers whose price merely drifted overnight.
+    const MIN_FRESH_MOVE_PCT = 1.5;
+    const significantMovers = enrichedMovers.filter(m =>
+        Math.abs(m.lastChangePct || 0) >= MIN_FRESH_MOVE_PCT
+    );
+
     // ── Step 5: Sort by combined significance score ───────────────────────
-    enrichedMovers.sort((a, b) => {
+    significantMovers.sort((a, b) => {
         const sigA = Math.abs(a.latestMoversZScore || 0) + (Math.abs(a.lastChangePct || 0) / 2) + (a.latestMoversRVOL || 0);
         const sigB = Math.abs(b.latestMoversZScore || 0) + (Math.abs(b.lastChangePct || 0) / 2) + (b.latestMoversRVOL || 0);
         return sigB - sigA;
     });
 
-    const finalMovers = enrichedMovers.slice(0, limit);
+    const finalMovers = significantMovers.slice(0, limit);
 
     // ── Step 6: Movers 2.0 analysis — sigma level, market/sector context,
     // deterministic catalyst detection, pillar strip. List-level Redis cache
