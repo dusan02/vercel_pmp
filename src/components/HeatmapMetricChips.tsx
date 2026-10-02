@@ -50,45 +50,58 @@ export function HeatmapMetricChips({
     event('heatmap_change', { metric: id, timeframe: 'day' });
   };
 
-  return (
-    <div
-      className={isVertical
-        ? `flex flex-col gap-3 ${className}`
-        : `flex items-center gap-x-3 gap-y-1 overflow-x-auto whitespace-nowrap scrollbar-none md:flex-wrap md:overflow-visible ${className}`}
-      role="group"
-      aria-label="Heatmap metric"
-    >
-      {HEATMAP_METRIC_GROUPS.map((group) => (
-        <div key={group} className={isVertical ? 'flex flex-col gap-1' : 'flex items-center gap-1.5 flex-shrink-0'}>
-          <span className={`text-[9px] uppercase tracking-wider font-semibold select-none ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
-            {group}
-          </span>
-          <div className={isVertical ? 'flex flex-wrap gap-1' : 'contents'}>
-          {HEATMAP_METRICS.filter((m) => m.group === group).map((m) => {
-            const active = m.id === metric;
-            return (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => handleSelect(m.id)}
-                aria-pressed={active}
-                className={`flex-shrink-0 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-colors ${
-                  active
-                    ? 'bg-green-600 border-green-600 text-white'
-                    : isDark
-                      ? 'border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white bg-transparent'
-                      // 'light' follows the site theme — white chips look fine
-                      // on a light surface but must not stay white in dark mode.
-                      : 'border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900 bg-white dark:bg-transparent dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-400 dark:hover:text-white'
-                }`}
-              >
-                {m.label}
-              </button>
-            );
-          })}
-          </div>
+  const renderGroup = (group: (typeof HEATMAP_METRIC_GROUPS)[number]) => (
+    <div key={group} className={isVertical ? 'flex flex-col gap-1' : 'flex items-center gap-1.5 flex-shrink-0'}>
+      <span className={`text-[9px] uppercase tracking-wider font-semibold select-none ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
+        {group}
+      </span>
+      <div className={isVertical ? 'flex flex-wrap gap-1' : 'contents'}>
+        {HEATMAP_METRICS.filter((m) => m.group === group).map((m) => {
+          const active = m.id === metric;
+          return (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => handleSelect(m.id)}
+              aria-pressed={active}
+              className={`flex-shrink-0 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-colors ${
+                active
+                  ? 'bg-green-600 border-green-600 text-white'
+                  : isDark
+                    ? 'border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white bg-transparent'
+                    // 'light' follows the site theme — white chips look fine
+                    // on a light surface but must not stay white in dark mode.
+                    : 'border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900 bg-white dark:bg-transparent dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-400 dark:hover:text-white'
+              }`}
+            >
+              {m.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  // Horizontal (homepage header subnav): fixed two rows — Performance + Scores
+  // on top, Valuation + Fundamentals + Activity below. Balanced ~14/15 chips.
+  if (!isVertical) {
+    const ROW1 = HEATMAP_METRIC_GROUPS.slice(0, 2); // Performance, Scores
+    const ROW2 = HEATMAP_METRIC_GROUPS.slice(2);    // Valuation, Fundamentals, Activity
+    return (
+      <div className={`flex flex-col gap-y-1 ${className}`} role="group" aria-label="Heatmap metric">
+        <div className="flex items-center gap-x-3 overflow-x-auto whitespace-nowrap scrollbar-none md:flex-wrap md:overflow-visible md:gap-y-1">
+          {ROW1.map(renderGroup)}
         </div>
-      ))}
+        <div className="flex items-center gap-x-3 overflow-x-auto whitespace-nowrap scrollbar-none md:flex-wrap md:overflow-visible md:gap-y-1">
+          {ROW2.map(renderGroup)}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`flex flex-col gap-3 ${className}`} role="group" aria-label="Heatmap metric">
+      {HEATMAP_METRIC_GROUPS.map(renderGroup)}
     </div>
   );
 }
