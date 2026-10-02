@@ -54,3 +54,40 @@ export function getPrevCloseContext(at: Date | string = nowET()): PrevCloseConte
 export function getPrevCloseRefDay(sessionDateStr: string): Date {
   return getLastTradingDay(createETDate(sessionDateStr));
 }
+
+/**
+ * Is `Ticker.latestPrevCloseDate` fresh enough to trust for the current
+ * session? `latestPrevClose` is only valid when the close it holds is at
+ * least as recent as the last trading day — otherwise it's a stale value
+ * from a previous session and must not be used as today's reference
+ * (Oct-2 incident: stale latestPrevClose produced a two-day move).
+ *
+ * Use this guard at every read site that falls back to Ticker.latestPrevClose.
+ */
+export function isFreshPrevCloseDate(
+  prevCloseDate: Date | null | undefined,
+  lastTradingDay: Date
+): boolean {
+  return !!prevCloseDate && prevCloseDate.getTime() >= lastTradingDay.getTime();
+}
+
+/*
+ * PrevClose read priorities — one chain per consumer. Keep this list in sync
+ * when adding a new read site; the write side has a single writer
+ * (writePrevClose → Redis + DailyRef + Ticker).
+ *
+ *   stockService (/api/stocks):
+ *     prevDayClose (DailyRef D-1 regularClose) → on-demand Polygon batch →
+ *     DailyRef(D).previousClose → Ticker.latestPrevClose (guarded)
+ *
+ *   worker resolvePrevCloses (ingest):
+ *     Redis prevclose:{D} → DailyRef(D).previousClose →
+ *     DailyRef(D-1).regularClose → Polygon bootstrap
+ *
+ *   heatmap resolvePrevClose (lib/heatmap):
+ *     trading day:  worker cache → DailyRef(D) → Ticker (guarded) → batch
+ *     closed day:   DailyRef → worker cache → Ticker (guarded) → batch
+ *
+ *   movers getMovers (/api/stocks/movers):
+ *     DailyRef(D).previousClose → Ticker.latestPrevClose (guarded)
+ */

@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { SessionPrice, DailyRef } from '@prisma/client';
-import { SECTOR_INDUSTRY_OVERRIDES } from '@/data/sectorIndustryOverrides';
-import { normalizeSectorIndustryPair } from '@/lib/utils/sectorIndustryValidator';
+import { resolveTickerIdentity } from '@/lib/utils/tickerIdentity';
 import { getCacheKey } from '@/lib/redis/keys';
 import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
 import { getLastTradingDay } from '@/lib/utils/timeUtils';
@@ -119,11 +118,10 @@ export async function fetchTickers(maxTickers: number): Promise<{
   const tickerMap = new Map<string, TickerInfo>();
   for (const t of tickers) {
     const symbol = t.symbol;
-    const ov = SECTOR_INDUSTRY_OVERRIDES[symbol];
-    const normalized = normalizeSectorIndustryPair(t.sector, t.industry);
-    const sector = ov ? ov.sector : normalized.sector;
-    const industry = ov ? ov.industry : normalized.industry;
-    const name = ov?.name && (!t.name || t.name.trim() === '') ? ov.name : (t.name || symbol);
+    const identity = resolveTickerIdentity(symbol, t.name, t.sector, t.industry);
+    const sector = identity.sector;
+    const industry = identity.industry;
+    const name = identity.name;
 
     tickerMap.set(symbol, {
       name,

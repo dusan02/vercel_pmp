@@ -13,7 +13,9 @@
  */
 import { prisma } from '@/lib/db/prisma';
 import { getDateET, nowET, createETDate } from '@/lib/utils/dateET';
-import { detectSession } from '@/lib/utils/timeUtils';
+import { detectSession, getLastTradingDay } from '@/lib/utils/timeUtils';
+import { isFreshPrevCloseDate } from '@/lib/utils/prevCloseDates';
+import { resolveTickerIdentity } from '@/lib/utils/tickerIdentity';
 import { calculatePercentChange } from '@/lib/utils/priceResolver';
 import { analyzeMovers, MoverAnalysis } from '@/services/movers/analyze';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
@@ -71,12 +73,12 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
         select: {
             symbol: true,
             name: true,
-            logoUrl: true,
             sector: true,
             lastPrice: true,
             lastChangePct: true,
             lastVolume: true,
             latestPrevClose: true,
+            latestPrevCloseDate: true,
             lastPriceUpdated: true,
             updatedAt: true,
             latestMoversZScore: true,
@@ -136,8 +138,11 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
         }
     }
 
-    // ── Step 3: Fetch DailyRef regularClose (for after-hours % calc) ──────
+    // ── Step 3: Fetch DailyRef regularClose + previousClose ──────────────
+    // previousClose is today's canonical session reference (written by
+    // writePrevClose); regularClose pins the official close for after/closed.
     const regularCloseBySymbol = new Map<string, number>();
+    const dailyRefPrevBySymbol = new Map<string, number>();
     if (symbols.length > 0) {
         try {
             const dateET = getDateET(etNow);
@@ -147,15 +152,16 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
                     symbol: { in: symbols },
                     date: todayDateObj
                 },
-                select: { symbol: true, regularClose: true, date: true }
+                select: { symbol: true, regularClose: true, previousClose: true, date: true }
             });
             dailyRefs.forEach(r => {
+                const drDate = new Date(r.date);
+                if (drDate.getTime() !== todayDateObj.getTime()) return;
                 if (r.regularClose && r.regularClose > 0) {
-                    const drDate = new Date(r.date);
-                    const todayDateObj2 = createETDate(getDateET(etNow));
-                    if (drDate.getTime() === todayDateObj2.getTime()) {
-                        regularCloseBySymbol.set(r.symbol, r.regularClose);
-                    }
+                    regularCloseBySymbol.set(r.symbol, r.regularClose);
+                }
+                if (r.previousClose && r.previousClose > 0) {
+                    dailyRefPrevBySymbol.set(r.symbol, r.previousClose);
                 }
             });
         } catch (e) {
@@ -164,10 +170,17 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
     }
 
     // ── Step 4: Enrich movers with fresh price + recalculated % change ────
+    const lastTradingDay = getLastTradingDay(createETDate(getDateET(etNow)));
     const enrichedMovers = topMovers.map(m => {
         const best = bestPriceBySymbol.get(m.symbol);
         const currentPrice = best?.price || m.lastPrice || 0;
-        const previousClose = m.latestPrevClose || 0;
+        // Ticker.latestPrevClose is only trusted when its close date is at
+        // least as fresh as the last trading day — same guard as
+        // stockService (stale value was the Oct-2 two-day-move incident).
+        const tickerPrev = isFreshPrevCloseDate(m.latestPrevCloseDate, lastTradingDay)
+            ? (m.latestPrevClose || 0)
+            : 0;
+        const previousClose = dailyRefPrevBySymbol.get(m.symbol) || tickerPrev;
         const regularClose = regularCloseBySymbol.get(m.symbol) || 0;
 
         const pct = calculatePercentChange(
@@ -185,11 +198,16 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
             ? pct.changePct
             : (m.lastChangePct || pct.changePct || 0);
 
+        const identity = resolveTickerIdentity(m.symbol, m.name, m.sector, null);
         return {
             symbol: m.symbol,
-            name: m.name,
-            logoUrl: m.logoUrl,
-            sector: m.sector,
+            name: identity.name,
+            // Renderers resolve logos via /api/logo/{ticker} (local webp →
+            // Redis → live fetch) — same as every other surface. Ticker.logoUrl
+            // is intentionally not preferred so movers don't render a
+            // different logo than the stocks table.
+            logoUrl: null,
+            sector: identity.sector,
             lastPrice: currentPrice,
             lastChangePct,
             lastVolume: m.lastVolume ?? null,

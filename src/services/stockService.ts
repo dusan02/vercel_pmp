@@ -3,12 +3,11 @@ import { computeMarketCap, computeMarketCapDiff, computePercentChange, getShares
 import { detectSession, getLastTradingDay } from '@/lib/utils/timeUtils';
 import { nowET, getDateET, createETDate } from '@/lib/utils/dateET';
 import { getPricingState } from '@/lib/utils/pricingStateMachine';
-import { getPrevCloseRefDay } from '@/lib/utils/prevCloseDates';
+import { getPrevCloseRefDay, isFreshPrevCloseDate } from '@/lib/utils/prevCloseDates';
 import { calculatePercentChange } from '@/lib/utils/priceResolver';
 
 import { StockData } from '@/lib/types';
-import { SECTOR_INDUSTRY_OVERRIDES } from '@/data/sectorIndustryOverrides';
-import { normalizeSectorIndustryPair } from '@/lib/utils/sectorIndustryValidator';
+import { resolveTickerIdentity } from '@/lib/utils/tickerIdentity';
 
 interface StockServiceResult {
   data: StockData[];
@@ -80,11 +79,12 @@ export async function getStocksList(options: {
           for (const sym of symbolsToFetch) {
             const data = dataMap.get(sym);
             if (data) {
+              const identity = resolveTickerIdentity(sym, data.name, data.sector, data.industry);
               results.push({
                 ticker: sym,
-                companyName: data.name || '',
-                sector: data.sector || 'Unknown',
-                industry: data.industry || 'Unknown',
+                companyName: identity.name,
+                sector: identity.sector,
+                industry: identity.industry,
                 logoUrl: `/logos/${sym.toLowerCase()}-32.webp`,
                 currentPrice: Number(data.p) || 0,
                 closePrice: Number(prevCloseMap.get(sym)) || 0,
@@ -259,7 +259,7 @@ export async function getStocksList(options: {
     const tickersNeedingPrevClose = stocks.filter(s => {
       if ((priceBySymbol.get(s.symbol) || 0) === 0 || (prevCloseBySymbol.get(s.symbol) || 0) > 0 || (prevDayCloseBySymbol.get(s.symbol) || 0) > 0) return false;
       if ((s.latestPrevClose || 0) === 0 || !s.latestPrevCloseDate) return true;
-      return s.latestPrevCloseDate.getTime() < lastTradingDayForQuery.getTime();
+      return !isFreshPrevCloseDate(s.latestPrevCloseDate, lastTradingDayForQuery);
     }).map(s => s.symbol);
 
     const onDemandPrevCloseMap = new Map<string, number>();
@@ -319,12 +319,10 @@ export async function getStocksList(options: {
       const onDemandPrev = onDemandPrevCloseMap.get(s.symbol) || 0;
       const dailyRefPrev = prevCloseBySymbol.get(s.symbol) || 0;
 
-      let latestPrevCloseSafe = 0;
-      if ((s.latestPrevClose || 0) > 0 && s.latestPrevCloseDate) {
-        if (s.latestPrevCloseDate.getTime() >= lastTradingDayForQuery.getTime()) {
-          latestPrevCloseSafe = s.latestPrevClose!;
-        }
-      }
+      const latestPrevCloseSafe =
+        (s.latestPrevClose || 0) > 0 && isFreshPrevCloseDate(s.latestPrevCloseDate, lastTradingDayForQuery)
+          ? s.latestPrevClose!
+          : 0;
 
       let previousClose = prevDayCloseBySymbol.get(s.symbol) || onDemandPrev || dailyRefPrev || latestPrevCloseSafe;
       const sharesOutstanding = onDemandSharesMap.get(s.symbol) || (s.sharesOutstanding || 0);
@@ -367,7 +365,7 @@ export async function getStocksList(options: {
         if (!(marketCap < 1) && Math.abs(marketCapDiff) > marketCap * capPct) marketCapDiff = 0;
       }
 
-      const _ov = SECTOR_INDUSTRY_OVERRIDES[s.symbol];
+      const identity = resolveTickerIdentity(s.symbol, s.name, s.sector, s.industry);
       // Pinned official day result (post-close): regularClose vs true D-1
       // close. Unlike percentChange (live price vs D-1), this never drifts
       // with after-hours ticks — the index strip / Finviz-parity display.
@@ -376,9 +374,9 @@ export async function getStocksList(options: {
         : null;
       return {
         ticker: s.symbol,
-        companyName: _ov?.name || s.name || '',
-        sector: _ov ? _ov.sector : normalizeSectorIndustryPair(s.sector, s.industry).sector,
-        industry: _ov ? _ov.industry : normalizeSectorIndustryPair(s.sector, s.industry).industry,
+        companyName: identity.name,
+        sector: identity.sector,
+        industry: identity.industry,
         logoUrl: s.logoUrl || `/logos/${s.symbol.toLowerCase()}-32.webp`,
         currentPrice, closePrice: previousClose, percentChange, marketCap, marketCapDiff,
         lastUpdated, volume: s.lastVolume || 0, referenceUsed: pct.reference.used,
