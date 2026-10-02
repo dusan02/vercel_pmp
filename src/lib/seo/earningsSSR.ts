@@ -337,6 +337,30 @@ export async function getEarningsWeekMap(
 }
 
 /**
+ * All earnings dates with per-day row counts — backs the month calendar's
+ * day badges. Shared by /api/earnings/dates and the /earnings SSR page so
+ * SSR doesn't self-fetch over HTTP.
+ */
+export async function getEarningsDateCounts(): Promise<{ date: string; count: number }[] | null> {
+  try {
+    const rows = await prisma.earningsCalendar.findMany({
+      select: { date: true },
+    });
+    const dateMap = new Map<string, number>();
+    for (const row of rows) {
+      const dateStr = row.date.toISOString().split('T')[0] ?? '';
+      dateMap.set(dateStr, (dateMap.get(dateStr) ?? 0) + 1);
+    }
+    return [...dateMap.entries()]
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  } catch (error) {
+    console.error('[earningsSSR] Failed to fetch date counts:', error);
+    return null;
+  }
+}
+
+/**
  * Get earnings for a date range from EarningsCalendar DB table.
  * This is the SSR source — no Redis, no live API calls.
  */

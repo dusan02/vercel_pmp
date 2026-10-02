@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { StructuredData } from '@/components/StructuredData';
 import Link from 'next/link';
-import { getEarningsRange, type EarningsSSRRow, type EarningsSSRGroup } from '@/lib/seo/earningsSSR';
+import { getEarningsRange, getEarningsDateCounts, type EarningsSSRRow, type EarningsSSRGroup } from '@/lib/seo/earningsSSR';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { getSessionDateStr } from '@/lib/utils/timeUtils';
 import { formatPercent } from '@/lib/utils/heatmapFormat';
@@ -136,18 +136,12 @@ export default async function EarningsPage() {
   end.setUTCDate(end.getUTCDate() + 7);
   const endStr = end.toISOString().split('T')[0] ?? '';
 
-  // Parallel SSR fetch: DB earnings + date counts for the calendar rail
+  // Parallel SSR fetch: DB earnings + date counts for the calendar rail.
+  // Direct DB call — no HTTP self-fetch (was 127.0.0.1:PORT roundtrip with
+  // a 3s timeout budget added to every revalidation).
   const [groups, dateCountsData, eligibleSet] = await Promise.all([
     getEarningsRange(tradingDayStr, endStr, { enrich: true }),
-    // SSR pre-fetch for the explorer's MonthCalendar — date counts
-    (async () => {
-      try {
-        const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/earnings/dates`, { signal: AbortSignal.timeout(3000) });
-        if (!res.ok) return null;
-        const json = await res.json();
-        return json.success ? json.data : null;
-      } catch { return null; }
-    })(),
+    getEarningsDateCounts(),
     getEligibleAnalysisSet(),
   ]);
   const todayRows = groups[0]?.date === tradingDayStr
