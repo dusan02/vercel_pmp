@@ -108,16 +108,30 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
       throw new Error(`Grouped aggs returned no data for ${tradingDayStr}`);
     }
 
-    const { getNextTradingDay } = await import('@/lib/utils/pricingStateMachine');
-    const nextTradingDay = getNextTradingDay(todayTradingDay);
-    const nextTradingDateStr = getDateET(nextTradingDay);
-    const nextTradingDateObj = createETDate(nextTradingDateStr);
+    // Next trading day strictly AFTER today's trading day. NOTE: do NOT use
+    // pricingStateMachine.getNextTradingDay here — it returns the next market
+    // OPEN instant (09:30 ET), which for an ET-midnight input is that same
+    // day's open. That wrote prevClose under TODAY's date (corrupting it with
+    // today's close) and never created tomorrow's keys (Oct 2026 incident).
+    let nextTradingDateObj: Date | null = null;
+    for (let i = 0; i < 10; i++) {
+      const candidate = new Date(todayTradingDay.getTime() + (i + 1) * 24 * 60 * 60 * 1000);
+      const w = toET(candidate).weekday;
+      if (w !== 0 && w !== 6 && !isMarketHoliday(candidate)) {
+        nextTradingDateObj = createETDate(getDateET(candidate));
+        break;
+      }
+    }
+    if (!nextTradingDateObj) {
+      throw new Error('Could not find next trading day within 10 calendar days');
+    }
+    const nextTradingDateStr = getDateET(nextTradingDateObj);
 
     // Validate nextTradingDay is a real trading day
-    const nextTradingDayET = toET(nextTradingDay);
+    const nextTradingDayET = toET(nextTradingDateObj);
     const isNextTradingDayValid = nextTradingDayET.weekday !== 0 &&
       nextTradingDayET.weekday !== 6 &&
-      !isMarketHoliday(nextTradingDay);
+      !isMarketHoliday(nextTradingDateObj);
 
     if (!isNextTradingDayValid) {
       console.error(`❌ INVARIANT VIOLATION: nextTradingDay ${nextTradingDateStr} is not a valid trading day!`);
