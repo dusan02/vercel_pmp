@@ -12,9 +12,11 @@ import { event } from '@/lib/ga';
 
 interface HeatmapViewButtonProps {
   className?: string;
+  /** Compact map-control styling for overlaying on the heatmap corner */
+  overlay?: boolean;
 }
 
-export function HeatmapViewButton({ className = '' }: HeatmapViewButtonProps) {
+export function HeatmapViewButton({ className = '', overlay = false }: HeatmapViewButtonProps) {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
   const [hasPrefetched, setHasPrefetched] = useState(false);
@@ -60,7 +62,9 @@ export function HeatmapViewButton({ className = '' }: HeatmapViewButtonProps) {
       onClick={handleFullscreen}
       onMouseEnter={handleMouseEnter}
       disabled={isNavigating}
-      className={`flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-semibold shadow-md disabled:opacity-75 disabled:cursor-wait ${className}`}
+      className={overlay
+        ? `flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-900/70 hover:bg-gray-900/90 backdrop-blur-sm text-white/90 hover:text-white rounded-md border border-white/20 text-xs font-semibold shadow-lg transition-colors disabled:opacity-75 disabled:cursor-wait ${className}`
+        : `flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-semibold shadow-md disabled:opacity-75 disabled:cursor-wait ${className}`}
       aria-label="Enter fullscreen heatmap"
       title="Enter fullscreen heatmap"
     >

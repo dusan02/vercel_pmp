@@ -90,11 +90,6 @@ const HeatmapMetricChips = dynamic(
   () => import('@/components/HeatmapMetricChips').then((mod) => mod.HeatmapMetricChips),
   { ssr: true, loading: () => null }
 );
-const HeatmapViewButton = dynamic(
-  () => import('@/components/HeatmapViewButton').then((mod) => mod.HeatmapViewButton),
-  { ssr: true, loading: () => null }
-);
-
 const CookieConsent = dynamic(
   () => import('@/components/CookieConsent'),
   { ssr: false, loading: () => null }
@@ -439,14 +434,13 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                           }
                           toolbar={
                             <div className="hidden lg:flex items-center gap-2">
-                              <div className="w-56">
+                              <div className="w-72">
                                 <GlobalStockSearch
                                   stockData={stockData}
                                   onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
                                   placeholder="Search stocks..."
                                 />
                               </div>
-                              <HeatmapViewButton />
                             </div>
                           }
                           subnav={activeSection === 'heatmap' ? (

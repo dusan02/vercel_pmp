@@ -4,6 +4,7 @@ import React, { useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
+import { HeatmapViewButton } from './HeatmapViewButton';
 import type { HeatmapMetric } from '@/lib/heatmap/types';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { HeatmapMethodology } from './HeatmapMethodology';
@@ -74,6 +75,12 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHo
         style={isDesktop ? { cursor: 'pointer', border: 'none', outline: 'none', height: 'clamp(420px, calc(100vh - 255px), 600px)' } : { cursor: 'pointer', border: 'none', outline: 'none' }}
         onClick={handleBackgroundClick}
       >
+        {/* Fullscreen — a map control, visually owned by the map itself */}
+        {isDesktop && (
+          <div className="absolute top-2 right-2 z-10">
+            <HeatmapViewButton overlay />
+          </div>
+        )}
         <ResponsiveMarketHeatmap
           apiEndpoint="/api/heatmap"
           autoRefresh={true}
