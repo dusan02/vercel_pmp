@@ -64,7 +64,7 @@ export function HeatmapMetricChips({
               type="button"
               onClick={() => handleSelect(m.id)}
               aria-pressed={active}
-              className={`flex-shrink-0 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-colors ${
+              className={`flex-shrink-0 px-2 py-0.5 rounded-full border text-[10px] font-semibold transition-colors ${
                 active
                   ? 'bg-green-600 border-green-600 text-white'
                   : isDark
@@ -82,17 +82,18 @@ export function HeatmapMetricChips({
     </div>
   );
 
-  // Horizontal (homepage header subnav): fixed two rows — Performance + Scores
-  // on top, Valuation + Fundamentals + Activity below. Balanced ~14/15 chips.
+  // Horizontal (homepage header subnav): exactly two rows — Performance+Scores
+  // on top, Valuation+Fundamentals+Activity below. No wrapping (a wrapping row
+  // silently becomes 2+ lines); if the viewport is narrower, each row scrolls.
   if (!isVertical) {
     const ROW1 = HEATMAP_METRIC_GROUPS.slice(0, 2); // Performance, Scores
     const ROW2 = HEATMAP_METRIC_GROUPS.slice(2);    // Valuation, Fundamentals, Activity
     return (
       <div className={`flex flex-col gap-y-1 ${className}`} role="group" aria-label="Heatmap metric">
-        <div className="flex items-center gap-x-3 overflow-x-auto whitespace-nowrap scrollbar-none md:flex-wrap md:overflow-visible md:gap-y-1">
+        <div className="flex items-center gap-x-3 overflow-x-auto whitespace-nowrap scrollbar-none">
           {ROW1.map(renderGroup)}
         </div>
-        <div className="flex items-center gap-x-3 overflow-x-auto whitespace-nowrap scrollbar-none md:flex-wrap md:overflow-visible md:gap-y-1">
+        <div className="flex items-center gap-x-3 overflow-x-auto whitespace-nowrap scrollbar-none">
           {ROW2.map(renderGroup)}
         </div>
       </div>

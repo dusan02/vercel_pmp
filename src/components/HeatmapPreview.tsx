@@ -66,13 +66,13 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHo
       <h2 className="sr-only">Market Heatmap</h2>
 
       {/* Map — full width; height clamps so the whole map fits above the fold
-          (≈190px of header/nav/chips chrome above it), capped at 600px */}
+          (≈215px of hero/header/nav/chips chrome above it), capped at 600px */}
       <div className={isDesktop ? '' : 'flex-1 flex flex-col'}>
       {/* Content Wrapper - simplified: removed unnecessary inner div */}
       <div
         className={`relative w-full bg-black overflow-hidden group heatmap-preview-container border-none outline-none ${isDesktop ? 'heatmap-preview-desktop' : 'flex-1'
           }`}
-        style={isDesktop ? { cursor: 'pointer', border: 'none', outline: 'none', height: 'clamp(420px, calc(100vh - 255px), 600px)' } : { cursor: 'pointer', border: 'none', outline: 'none' }}
+        style={isDesktop ? { cursor: 'pointer', border: 'none', outline: 'none', height: 'clamp(420px, calc(100vh - 215px), 600px)' } : { cursor: 'pointer', border: 'none', outline: 'none' }}
         onClick={handleBackgroundClick}
       >
         {/* Fullscreen — a map control, visually owned by the map itself */}
