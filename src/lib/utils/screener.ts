@@ -81,6 +81,50 @@ export interface ScreenerPagination {
     totalPages: number;
 }
 
+/**
+ * Score range filters (AnalysisCache columns) — registry driving hook state,
+ * the slider grid, URL params AND API params. Two vocabularies coexist by
+ * design: URLs use minValue/minProfit (back-compat with saved screens and
+ * SEO deep links), the API expects minValuation/minProfitability — keeping
+ * both in one def makes the mapping explicit instead of a silent rename
+ * hazard between the hook's fetch and the route's parsing.
+ */
+export const SCORE_FILTERS = [
+    { key: 'overall',       label: 'Overall',       urlMin: 'minOverall', urlMax: 'maxOverall', apiMin: 'minOverall',       apiMax: 'maxOverall',       accent: 'amber'   },
+    { key: 'valuation',     label: 'Valuation',     urlMin: 'minValue',   urlMax: 'maxValue',   apiMin: 'minValuation',     apiMax: 'maxValuation',     accent: 'violet'  },
+    { key: 'growth',        label: 'Growth',        urlMin: 'minGrowth',  urlMax: 'maxGrowth',  apiMin: 'minGrowth',        apiMax: 'maxGrowth',        accent: 'sky'     },
+    { key: 'profitability', label: 'Profitability', urlMin: 'minProfit',  urlMax: 'maxProfit',  apiMin: 'minProfitability', apiMax: 'maxProfitability', accent: 'emerald' },
+    { key: 'health',        label: 'Health',        urlMin: 'minHealth',  urlMax: 'maxHealth',  apiMin: 'minHealth',        apiMax: 'maxHealth',        accent: 'blue'    },
+    { key: 'quality',       label: 'Quality',       urlMin: 'minQuality', urlMax: 'maxQuality', apiMin: 'minQuality',       apiMax: 'maxQuality',       accent: 'rose'    },
+] as const;
+export type ScoreFilterKey = (typeof SCORE_FILTERS)[number]['key'];
+export type ScoreRange = { min?: number; max?: number };
+/** Absent entry = full 0–100 range (no constraint). */
+export const SCORE_RANGE_MIN = 0;
+export const SCORE_RANGE_MAX = 100;
+
+/**
+ * Single-bound advanced filters (AnalysisCache columns). `param` is shared by
+ * the URL and the API (same name both sides). `active()` decides when the
+ * value actually constrains the query — defaults are sentinel values, not
+ * real bounds. `displayScale` converts stored units → UI (FCF margin is
+ * stored as a decimal, displayed as %).
+ */
+export const ADVANCED_FILTERS = [
+    { key: 'minAltman',        param: 'minAltman',        def: 0,    displayScale: 1,   active: (v: number) => v > 0,    label: 'Min Altman Z',           hint: 'Safe >3, Grey 1.8–3, Risk <1.8' },
+    { key: 'minPiotroski',     param: 'minPiotroski',     def: 0,    displayScale: 1,   active: (v: number) => v > 0,    label: 'Min Piotroski F (0–9)',   hint: '≥7 Strong, 4–6 Avg, <4 Weak' },
+    { key: 'maxBeneish',       param: 'maxBeneish',       def: 10,   displayScale: 1,   active: (v: number) => v < 10,   label: 'Max Beneish M',           hint: '<-2.22 Safe, -2.22 to -1.78 Grey, >-1.78 Risky' },
+    { key: 'minFcfMargin',     param: 'minFcfMargin',     def: -100, displayScale: 100, active: (v: number) => v > -100, label: 'Min FCF Margin (%)',      hint: '≥15% High, ≥5% Good, <0% Negative' },
+    { key: 'maxDebtRepayment', param: 'maxDebtRepayment', def: 350,  displayScale: 1,   active: (v: number) => v < 350,  label: 'Max Debt Repay (years)', hint: '0 = No debt, ≤3 Fast, ≤5 OK, >5 Slow' },
+] as const;
+export type AdvancedFilterKey = (typeof ADVANCED_FILTERS)[number]['key'];
+
+/** ScreenerPreset score field → SCORE_FILTERS key (preset apply + active check). */
+export const PRESET_SCORE_KEYS = {
+    minOverall: 'overall', minValue: 'valuation', minGrowth: 'growth',
+    minProfit: 'profitability', minHealth: 'health', minQuality: 'quality',
+} as const satisfies Record<string, ScoreFilterKey>;
+
 export interface ScreenerResponse {
     results: ScreenerResult[];
     pagination: ScreenerPagination;
@@ -312,10 +356,11 @@ export function matchesPreset(p: ScreenerPreset, ctx: PresetMatchContext): boole
 
 // ─── Saved-screen param validation (shared: API route + tests) ────────────
 
-const SCORE_PARAMS = new Set([
-    'minHealth', 'maxHealth', 'minProfit', 'maxProfit', 'minValue', 'maxValue',
-    'minGrowth', 'maxGrowth', 'minQuality', 'maxQuality', 'minOverall', 'maxOverall',
-    'minAltman', 'minPiotroski', 'maxBeneish', 'minFcfMargin', 'maxDebtRepayment',
+// Derived from the registries — a new score/advanced/range filter is
+// automatically a valid saved-screen param.
+const SCORE_PARAMS: Set<string> = new Set([
+    ...SCORE_FILTERS.flatMap((d) => [d.urlMin, d.urlMax]),
+    ...ADVANCED_FILTERS.map((d) => d.param),
 ]);
 const RANGE_PARAMS = new Set(
     RANGE_FILTERS.flatMap((f) => {
@@ -358,12 +403,10 @@ export function presetToQueryString(p: ScreenerPreset): string {
     const set = (k: string, v: number | undefined, def: number) => {
         if (v !== undefined && v !== def) sp.set(k, String(v));
     };
-    set('minValue', p.minValue, 0);
-    set('minGrowth', p.minGrowth, 0);
-    set('minProfit', p.minProfit, 0);
-    set('minHealth', p.minHealth, 0);
-    set('minQuality', p.minQuality, 0);
-    set('minOverall', p.minOverall, 0);
+    for (const [presetField, key] of Object.entries(PRESET_SCORE_KEYS)) {
+        const def = SCORE_FILTERS.find((d) => d.key === key)!;
+        set(def.urlMin, p[presetField as keyof ScreenerPreset] as number | undefined, 0);
+    }
     if (p.minAltman != null && p.minAltman > 0) sp.set('minAltman', String(p.minAltman));
     if (p.minFcfMargin != null && p.minFcfMargin > -100) sp.set('minFcfMargin', String(p.minFcfMargin));
     if (p.marketCapPreset && p.marketCapPreset !== 'all') sp.set('mcap', p.marketCapPreset);

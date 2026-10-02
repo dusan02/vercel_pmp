@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ScreenerResult, ScreenerPagination, MARKET_CAP_PRESETS, METRIC_FILTERS, RANGE_FILTERS, RangeFilterKey, ScreenerPreset } from '@/lib/utils/screener';
+import {
+    ScreenerResult, ScreenerPagination, MARKET_CAP_PRESETS, RANGE_FILTERS,
+    RangeFilterKey, ScreenerPreset,
+    SCORE_FILTERS, ADVANCED_FILTERS, PRESET_SCORE_KEYS,
+    ScoreFilterKey, AdvancedFilterKey, ScoreRange,
+    SCORE_RANGE_MIN, SCORE_RANGE_MAX,
+} from '@/lib/utils/screener';
 
 interface UseScreenerOptions {
     initialLimit?: number;
@@ -11,6 +17,19 @@ interface UseScreenerOptions {
     initialData?: any[] | undefined;
 }
 
+type AdvancedState = Record<AdvancedFilterKey, number>;
+
+const ADVANCED_DEFAULTS = Object.fromEntries(
+    ADVANCED_FILTERS.map((d) => [d.key, d.def])
+) as AdvancedState;
+
+/**
+ * Screener filter state — registry-driven (SCORE_FILTERS / ADVANCED_FILTERS /
+ * RANGE_FILTERS in lib/utils/screener.ts). Score and metric filters share the
+ * same sparse-map shape: an absent key means "no constraint" (full range),
+ * which keeps add-a-filter a one-line registry change instead of touching a
+ * dozen useState/serialize/restore sites.
+ */
 export function useScreener({
     initialLimit = 20,
     defaultMinHealth = 50,
@@ -67,24 +86,30 @@ export function useScreener({
     const [loading, setLoading] = useState(() => !initialData || initialData.length === 0);
     const [page, setPage] = useState(1);
 
-    // Filters
-    const [minHealth, setMinHealth] = useState<number>(defaultMinHealth);
-    const [maxHealth, setMaxHealth] = useState<number>(100);
-    const [minProfit, setMinProfit] = useState<number>(defaultMinProfit);
-    const [maxProfit, setMaxProfit] = useState<number>(100);
-    const [minValue, setMinValue] = useState<number>(defaultMinValue);
-    const [maxValue, setMaxValue] = useState<number>(100);
-    const [minGrowth, setMinGrowth] = useState<number>(0);
-    const [maxGrowth, setMaxGrowth] = useState<number>(100);
-    const [minQuality, setMinQuality] = useState<number>(0);
-    const [maxQuality, setMaxQuality] = useState<number>(100);
-    const [minOverall, setMinOverall] = useState<number>(0);
-    const [maxOverall, setMaxOverall] = useState<number>(100);
-    const [minAltman, setMinAltman] = useState<number>(0);
-    const [minPiotroski, setMinPiotroski] = useState<number>(0);
-    const [maxBeneish, setMaxBeneish] = useState<number>(10); // 10 = effectively no filter (most scores are < 10)
-    const [minFcfMargin, setMinFcfMargin] = useState<number>(-100); // -100% = effectively no filter
-    const [maxDebtRepayment, setMaxDebtRepayment] = useState<number>(350); // 350 = effectively no filter
+    // ── Filter state ────────────────────────────────────────────────────
+    // scoreRanges: absent key = 0–100 (no constraint). Seeded with the
+    // caller's default mins (GlobalScreener defaults to 50s, StockScreener 0s).
+    const [scoreRanges, setScoreRanges] = useState<Partial<Record<ScoreFilterKey, ScoreRange>>>(() => {
+        const seed: Partial<Record<ScoreFilterKey, ScoreRange>> = {};
+        if (defaultMinHealth !== SCORE_RANGE_MIN) seed.health = { min: defaultMinHealth };
+        if (defaultMinProfit !== SCORE_RANGE_MIN) seed.profitability = { min: defaultMinProfit };
+        if (defaultMinValue !== SCORE_RANGE_MIN) seed.valuation = { min: defaultMinValue };
+        return seed;
+    });
+    const setScoreRange = useCallback((key: ScoreFilterKey, range: ScoreRange | undefined) => {
+        setScoreRanges(prev => {
+            const next = { ...prev };
+            if (range === undefined || (range.min === undefined && range.max === undefined)) delete next[key];
+            else next[key] = range;
+            return next;
+        });
+    }, []);
+
+    const [advanced, setAdvanced] = useState<AdvancedState>({ ...ADVANCED_DEFAULTS });
+    const setAdvancedValue = useCallback((key: AdvancedFilterKey, v: number) => {
+        setAdvanced(prev => ({ ...prev, [key]: v }));
+    }, []);
+
     const [selectedSector, setSelectedSector] = useState<string>('');
     const [selectedIndustry, setSelectedIndustry] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState<string>('');
@@ -92,7 +117,7 @@ export function useScreener({
     const [marketCapPreset, setMarketCapPreset] = useState<string>('all');
     const [sortField, setSortField] = useState<string>('ticker.lastMarketCap');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-    // FinnhubMetrics range filters — only entries the user touched are kept;
+    // Range filters — only entries the user touched are kept;
     // missing key = no filter for that metric.
     const [metricRanges, setMetricRanges] = useState<Partial<Record<RangeFilterKey, { min?: number; max?: number }>>>({});
     const setMetricRange = useCallback((key: RangeFilterKey, range: { min?: number; max?: number } | undefined) => {
@@ -104,17 +129,9 @@ export function useScreener({
         });
     }, []);
 
-    // Debounced filter values
+    // Debounced filter values — one snapshot object, registry-independent shape.
     const [debouncedFilters, setDebouncedFilters] = useState({
-        minHealth: defaultMinHealth, maxHealth: 100,
-        minProfit: defaultMinProfit, maxProfit: 100,
-        minValue: defaultMinValue, maxValue: 100,
-        minGrowth: 0, maxGrowth: 100,
-        minQuality: 0, maxQuality: 100,
-        minOverall: 0, maxOverall: 100,
-        minAltman: 0,
-        minPiotroski: 0, maxBeneish: 10,
-        minFcfMargin: -100, maxDebtRepayment: 350,
+        scoreRanges, advanced,
         selectedSector: '',
         selectedIndustry: '',
         searchQuery: '',
@@ -126,58 +143,39 @@ export function useScreener({
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedFilters({
-                minHealth, maxHealth,
-                minProfit, maxProfit,
-                minValue, maxValue,
-                minGrowth, maxGrowth,
-                minQuality, maxQuality,
-                minOverall, maxOverall,
-                minAltman,
-                minPiotroski, maxBeneish,
-                minFcfMargin, maxDebtRepayment,
-                selectedSector,
-                selectedIndustry,
-                searchQuery,
-                marketCapPreset,
-                sortField, sortOrder,
-                metricRanges,
+                scoreRanges, advanced,
+                selectedSector, selectedIndustry, searchQuery,
+                marketCapPreset, sortField, sortOrder, metricRanges,
             });
         }, 400);
         return () => clearTimeout(timer);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder, metricRanges]);
+    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder, metricRanges]);
 
     const fetchResults = useCallback(async () => {
         setLoading(true);
         try {
             const params = new URLSearchParams({
-                minHealth: debouncedFilters.minHealth.toString(),
-                maxHealth: debouncedFilters.maxHealth.toString(),
-                minProfitability: debouncedFilters.minProfit.toString(),
-                maxProfitability: debouncedFilters.maxProfit.toString(),
-                minValuation: debouncedFilters.minValue.toString(),
-                maxValuation: debouncedFilters.maxValue.toString(),
-                minGrowth: debouncedFilters.minGrowth.toString(),
-                maxGrowth: debouncedFilters.maxGrowth.toString(),
-                minQuality: debouncedFilters.minQuality.toString(),
-                maxQuality: debouncedFilters.maxQuality.toString(),
-                minOverall: debouncedFilters.minOverall.toString(),
-                maxOverall: debouncedFilters.maxOverall.toString(),
-                minAltman: debouncedFilters.minAltman.toString(),
                 sort: `${debouncedFilters.sortField}:${debouncedFilters.sortOrder}`,
                 limit: initialLimit.toString(),
                 page: page.toString()
             });
+            // Score ranges — always sent (explicit bounds keep null-score
+            // tickers out of the scored universe, the historical semantics).
+            for (const def of SCORE_FILTERS) {
+                const r = debouncedFilters.scoreRanges[def.key];
+                params.append(def.apiMin, (r?.min ?? SCORE_RANGE_MIN).toString());
+                params.append(def.apiMax, (r?.max ?? SCORE_RANGE_MAX).toString());
+            }
+            // Advanced filters — only sent when active (sentinel defaults).
+            for (const def of ADVANCED_FILTERS) {
+                const v = debouncedFilters.advanced[def.key];
+                if (def.active(v)) params.append(def.param, v.toString());
+            }
             if (debouncedFilters.selectedSector) params.append('sector', debouncedFilters.selectedSector);
             if (debouncedFilters.selectedIndustry) params.append('industry', debouncedFilters.selectedIndustry);
             if (debouncedFilters.searchQuery) params.append('q', debouncedFilters.searchQuery);
 
-            // Advanced filters — only send if user has changed from defaults
-            if (debouncedFilters.minPiotroski > 0) params.append('minPiotroski', debouncedFilters.minPiotroski.toString());
-            if (debouncedFilters.maxBeneish < 10) params.append('maxBeneish', debouncedFilters.maxBeneish.toString());
-            if (debouncedFilters.minFcfMargin > -100) params.append('minFcfMargin', debouncedFilters.minFcfMargin.toString());
-            if (debouncedFilters.maxDebtRepayment < 350) params.append('maxDebtRepayment', debouncedFilters.maxDebtRepayment.toString());
-
-            // Market Cap filter
+            // Market Cap preset → min/max billions
             const mcPreset = MARKET_CAP_PRESETS.find(p => p.id === debouncedFilters.marketCapPreset);
             if (mcPreset) {
                 if (mcPreset.min !== undefined) params.append('minMarketCap', mcPreset.min.toString());
@@ -214,7 +212,7 @@ export function useScreener({
     // Reset page on filter change (immediate, not debounced)
     useEffect(() => {
         setPage(1);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder, metricRanges]);
+    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder, metricRanges]);
 
     /**
      * Restore all filter state from a query param set — used for the initial
@@ -229,23 +227,18 @@ export function useScreener({
             const v = parseFloat(sp.get(k) ?? '');
             return Number.isFinite(v) ? v : fb;
         };
-        setMinHealth(num('minHealth', 0));
-        setMaxHealth(num('maxHealth', 100));
-        setMinProfit(num('minProfit', 0));
-        setMaxProfit(num('maxProfit', 100));
-        setMinValue(num('minValue', 0));
-        setMaxValue(num('maxValue', 100));
-        setMinGrowth(num('minGrowth', 0));
-        setMaxGrowth(num('maxGrowth', 100));
-        setMinQuality(num('minQuality', 0));
-        setMaxQuality(num('maxQuality', 100));
-        setMinOverall(num('minOverall', 0));
-        setMaxOverall(num('maxOverall', 100));
-        setMinAltman(num('minAltman', 0));
-        setMinPiotroski(num('minPiotroski', 0));
-        setMaxBeneish(num('maxBeneish', 10));
-        setMinFcfMargin(num('minFcfMargin', -100));
-        setMaxDebtRepayment(num('maxDebtRepayment', 350));
+        const scores: typeof scoreRanges = {};
+        for (const def of SCORE_FILTERS) {
+            const r: ScoreRange = {};
+            const lo = sp.get(def.urlMin), hi = sp.get(def.urlMax);
+            if (lo !== null && Number.isFinite(parseFloat(lo))) r.min = parseFloat(lo);
+            if (hi !== null && Number.isFinite(parseFloat(hi))) r.max = parseFloat(hi);
+            if (r.min !== undefined || r.max !== undefined) scores[def.key] = r;
+        }
+        setScoreRanges(scores);
+        const adv = { ...ADVANCED_DEFAULTS };
+        for (const def of ADVANCED_FILTERS) adv[def.key] = num(def.param, def.def);
+        setAdvanced(adv);
         setSelectedSector(sp.get('sector') ?? '');
         setSelectedIndustry(sp.get('industry') ?? '');
         setSearchQuery(sp.get('q') ?? '');
@@ -291,23 +284,15 @@ export function useScreener({
     /** Serialize current filter state to the query-string form. */
     const buildParamsString = useCallback((): string => {
         const sp = new URLSearchParams();
-        if (minHealth !== 0) sp.set('minHealth', minHealth.toString());
-        if (maxHealth !== 100) sp.set('maxHealth', maxHealth.toString());
-        if (minProfit !== 0) sp.set('minProfit', minProfit.toString());
-        if (maxProfit !== 100) sp.set('maxProfit', maxProfit.toString());
-        if (minValue !== 0) sp.set('minValue', minValue.toString());
-        if (maxValue !== 100) sp.set('maxValue', maxValue.toString());
-        if (minGrowth !== 0) sp.set('minGrowth', minGrowth.toString());
-        if (maxGrowth !== 100) sp.set('maxGrowth', maxGrowth.toString());
-        if (minQuality !== 0) sp.set('minQuality', minQuality.toString());
-        if (maxQuality !== 100) sp.set('maxQuality', maxQuality.toString());
-        if (minOverall !== 0) sp.set('minOverall', minOverall.toString());
-        if (maxOverall !== 100) sp.set('maxOverall', maxOverall.toString());
-        if (minAltman !== 0) sp.set('minAltman', minAltman.toString());
-        if (minPiotroski > 0) sp.set('minPiotroski', minPiotroski.toString());
-        if (maxBeneish < 10) sp.set('maxBeneish', maxBeneish.toString());
-        if (minFcfMargin > -100) sp.set('minFcfMargin', minFcfMargin.toString());
-        if (maxDebtRepayment < 350) sp.set('maxDebtRepayment', maxDebtRepayment.toString());
+        for (const def of SCORE_FILTERS) {
+            const r = scoreRanges[def.key];
+            if (r?.min !== undefined && r.min !== SCORE_RANGE_MIN) sp.set(def.urlMin, r.min.toString());
+            if (r?.max !== undefined && r.max !== SCORE_RANGE_MAX) sp.set(def.urlMax, r.max.toString());
+        }
+        for (const def of ADVANCED_FILTERS) {
+            const v = advanced[def.key];
+            if (def.active(v)) sp.set(def.param, v.toString());
+        }
         if (selectedSector) sp.set('sector', selectedSector);
         if (selectedIndustry) sp.set('industry', selectedIndustry);
         if (searchQuery) sp.set('q', searchQuery);
@@ -320,7 +305,7 @@ export function useScreener({
         }
         if (sortField !== 'ticker.lastMarketCap' || sortOrder !== 'desc') sp.set('sort', `${sortField}:${sortOrder}`);
         return sp.toString();
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder, metricRanges]);
+    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder, metricRanges]);
 
     /**
      * Is the current filter state exactly what this preset would produce?
@@ -328,15 +313,18 @@ export function useScreener({
      * or extra range deactivates the highlight).
      */
     const isPresetActive = useCallback((p: ScreenerPreset): boolean => {
-        if (minHealth !== (p.minHealth ?? 0) || maxHealth !== 100) return false;
-        if (minProfit !== (p.minProfit ?? 0) || maxProfit !== 100) return false;
-        if (minValue !== (p.minValue ?? 0) || maxValue !== 100) return false;
-        if (minGrowth !== (p.minGrowth ?? 0) || maxGrowth !== 100) return false;
-        if (minQuality !== (p.minQuality ?? 0) || maxQuality !== 100) return false;
-        if (minOverall !== (p.minOverall ?? 0) || maxOverall !== 100) return false;
-        if (minAltman !== (p.minAltman ?? 0)) return false;
-        if (minPiotroski !== 0 || maxBeneish !== 10) return false;
-        if (minFcfMargin !== (p.minFcfMargin ?? -100) || maxDebtRepayment !== 350) return false;
+        for (const [presetField, key] of Object.entries(PRESET_SCORE_KEYS)) {
+            const r = scoreRanges[key];
+            const expectedMin = (p[presetField as keyof ScreenerPreset] as number | undefined) ?? SCORE_RANGE_MIN;
+            if ((r?.min ?? SCORE_RANGE_MIN) !== expectedMin) return false;
+            if ((r?.max ?? SCORE_RANGE_MAX) !== SCORE_RANGE_MAX) return false;
+        }
+        const expectedAdv: AdvancedState = { ...ADVANCED_DEFAULTS };
+        if (p.minAltman !== undefined) expectedAdv.minAltman = p.minAltman;
+        if (p.minFcfMargin !== undefined) expectedAdv.minFcfMargin = p.minFcfMargin;
+        for (const def of ADVANCED_FILTERS) {
+            if (advanced[def.key] !== expectedAdv[def.key]) return false;
+        }
         if (selectedSector !== '' || selectedIndustry !== '' || searchQuery !== '') return false;
         if (marketCapPreset !== (p.marketCapPreset ?? 'all')) return false;
         // Sort is user-controlled presentation, not part of preset identity —
@@ -349,7 +337,7 @@ export function useScreener({
             if (a?.min !== b?.min || a?.max !== b?.max) return false;
         }
         return true;
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder, metricRanges]);
+    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, metricRanges]);
 
     // Sync filters → URL (replaceState: shareable, no history pollution).
     // Standalone /screener page only — the homepage embed lives under
@@ -380,17 +368,8 @@ export function useScreener({
     };
 
     const resetFilters = () => {
-        setMinHealth(0); setMaxHealth(100);
-        setMinProfit(0); setMaxProfit(100);
-        setMinValue(0); setMaxValue(100);
-        setMinGrowth(0); setMaxGrowth(100);
-        setMinQuality(0); setMaxQuality(100);
-        setMinOverall(0); setMaxOverall(100);
-        setMinAltman(0);
-        setMinPiotroski(0);
-        setMaxBeneish(10);
-        setMinFcfMargin(-100);
-        setMaxDebtRepayment(350);
+        setScoreRanges({});
+        setAdvanced({ ...ADVANCED_DEFAULTS });
         setSelectedSector('');
         setSelectedIndustry('');
         setSearchQuery('');
@@ -401,27 +380,21 @@ export function useScreener({
     };
 
     const hasActiveFilters =
-        minHealth !== 0 || maxHealth !== 100 ||
-        minProfit !== 0 || maxProfit !== 100 ||
-        minValue !== 0 || maxValue !== 100 ||
-        minGrowth !== 0 || maxGrowth !== 100 ||
-        minQuality !== 0 || maxQuality !== 100 ||
-        minOverall !== 0 || maxOverall !== 100 ||
-        minAltman !== 0 || selectedSector !== '' || marketCapPreset !== 'all' ||
-        minPiotroski > 0 || maxBeneish < 10 || minFcfMargin > -100 || maxDebtRepayment < 350 ||
+        Object.keys(scoreRanges).length > 0 ||
+        ADVANCED_FILTERS.some((d) => d.active(advanced[d.key])) ||
+        selectedSector !== '' || selectedIndustry !== '' || searchQuery !== '' ||
+        marketCapPreset !== 'all' ||
         Object.keys(metricRanges).length > 0;
 
     /** Apply a named quick-screen preset (sets multiple filters atomically). */
     const applyPreset = (preset: ScreenerPreset) => {
         resetFilters();
-        if (preset.minValue !== undefined) setMinValue(preset.minValue);
-        if (preset.minGrowth !== undefined) setMinGrowth(preset.minGrowth);
-        if (preset.minProfit !== undefined) setMinProfit(preset.minProfit);
-        if (preset.minHealth !== undefined) setMinHealth(preset.minHealth);
-        if (preset.minQuality !== undefined) setMinQuality(preset.minQuality);
-        if (preset.minOverall !== undefined) setMinOverall(preset.minOverall);
-        if (preset.minAltman !== undefined) setMinAltman(preset.minAltman);
-        if (preset.minFcfMargin !== undefined) setMinFcfMargin(preset.minFcfMargin);
+        for (const [presetField, key] of Object.entries(PRESET_SCORE_KEYS)) {
+            const v = preset[presetField as keyof ScreenerPreset] as number | undefined;
+            if (v !== undefined) setScoreRange(key, { min: v });
+        }
+        if (preset.minAltman !== undefined) setAdvancedValue('minAltman', preset.minAltman);
+        if (preset.minFcfMargin !== undefined) setAdvancedValue('minFcfMargin', preset.minFcfMargin);
         if (preset.marketCapPreset !== undefined) setMarketCapPreset(preset.marketCapPreset);
         if (preset.ranges) {
             for (const [key, range] of Object.entries(preset.ranges)) {
@@ -437,24 +410,14 @@ export function useScreener({
 
     return {
         results, pagination, loading, page, setPage,
-        // filters
-        minHealth, maxHealth, setMinHealth, setMaxHealth,
-        minProfit, maxProfit, setMinProfit, setMaxProfit,
-        minValue, maxValue, setMinValue, setMaxValue,
-        minGrowth, maxGrowth, setMinGrowth, setMaxGrowth,
-        minQuality, maxQuality, setMinQuality, setMaxQuality,
-        minOverall, maxOverall, setMinOverall, setMaxOverall,
-        minAltman, setMinAltman,
-        minPiotroski, setMinPiotroski,
-        maxBeneish, setMaxBeneish,
-        minFcfMargin, setMinFcfMargin,
-        maxDebtRepayment, setMaxDebtRepayment,
+        // registry-driven filter state
+        scoreRanges, setScoreRange,
+        advanced, setAdvancedValue,
         selectedSector, setSelectedSector,
         selectedIndustry, setSelectedIndustry,
         searchQuery, setSearchQuery,
         industries,
         marketCapPreset, setMarketCapPreset,
-        // metric range filters
         metricRanges, setMetricRange,
         // sort
         sortField, sortOrder, handleSort, setSort,

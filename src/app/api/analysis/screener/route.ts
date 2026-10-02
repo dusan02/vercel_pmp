@@ -112,9 +112,11 @@ export async function GET(request: Request) {
         if (sector) tickerWhere.sector = sector;
         if (industry) tickerWhere.industry = industry;
         if (q) {
-            // SQLite has no `mode: 'insensitive'` — match the raw, lower and
-            // upper variants instead (covers ticker symbols and names).
-            const variants = [...new Set([q, q.toLowerCase(), q.toUpperCase()])];
+            // SQLite has no `mode: 'insensitive'` — match raw, lower, upper
+            // and Title Case variants (company names are stored Title Case:
+            // "apple" must find "Apple Inc.").
+            const title = q.toLowerCase().replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+            const variants = [...new Set([q, q.toLowerCase(), q.toUpperCase(), title])];
             tickerWhere.OR = [
                 ...variants.map((v) => ({ symbol: { contains: v } })),
                 ...variants.map((v) => ({ name: { contains: v } })),

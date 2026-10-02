@@ -6,18 +6,34 @@ import { DualRangeSlider } from './DualRangeSlider';
 import CompanyLogo from '../CompanyLogo';
 import { UniversalTable, ColumnDef } from '../UniversalTable';
 import { useScreener } from '@/hooks/useScreener';
-import { ScreenerResult, scoreColor, altmanZLabel, SORT_OPTIONS } from '@/lib/utils/screener';
+import { ScreenerResult, scoreColor, altmanZLabel, SORT_OPTIONS, SCORE_FILTERS, ScoreFilterKey } from '@/lib/utils/screener';
 import { formatBillions } from '@/lib/utils/format';
 
 export function GlobalScreener() {
     const screener = useScreener({ initialLimit: 20 });
     const {
         results, pagination, loading, page, setPage,
-        minHealth, maxHealth, setMinHealth, setMaxHealth,
-        minProfit, maxProfit, setMinProfit, setMaxProfit,
-        minValue, maxValue, setMinValue, setMaxValue,
+        scoreRanges, setScoreRange,
         sortField, sortOrder, handleSort, setSort,
     } = screener;
+
+    const scoreSliderProps = (key: ScoreFilterKey, accent: string) => {
+        const r = scoreRanges[key];
+        const apply = (side: 'min' | 'max', v: number) => {
+            const next: { min?: number; max?: number } = { ...r };
+            if (side === 'min') { if (v === 0) delete next.min; else next.min = v; }
+            else { if (v === 100) delete next.max; else next.max = v; }
+            setScoreRange(key, next);
+        };
+        return {
+            valueMin: r?.min ?? 0,
+            valueMax: r?.max ?? 100,
+            onChangeMin: (v: number) => apply('min', v),
+            onChangeMax: (v: number) => apply('max', v),
+            accentColor: accent,
+        };
+    };
+    const sliderFor = (key: ScoreFilterKey) => SCORE_FILTERS.find((d) => d.key === key)!;
 
     const SortIcon = ({ field }: { field: string }) => {
         if (sortField !== field) return <ChevronsUpDown size={12} className="inline ml-1 text-gray-300 dark:text-gray-600" />;
@@ -135,27 +151,17 @@ export function GlobalScreener() {
                     )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4">
-                    <DualRangeSlider
-                        label="Health Score"
-                        min={0} max={100}
-                        valueMin={minHealth} valueMax={maxHealth}
-                        onChangeMin={setMinHealth} onChangeMax={setMaxHealth}
-                        accentColor="blue"
-                    />
-                    <DualRangeSlider
-                        label="Profitability"
-                        min={0} max={100}
-                        valueMin={minProfit} valueMax={maxProfit}
-                        onChangeMin={setMinProfit} onChangeMax={setMaxProfit}
-                        accentColor="emerald"
-                    />
-                    <DualRangeSlider
-                        label="Valuation"
-                        min={0} max={100}
-                        valueMin={minValue} valueMax={maxValue}
-                        onChangeMin={setMinValue} onChangeMax={setMaxValue}
-                        accentColor="violet"
-                    />
+                    {(['health', 'profitability', 'valuation'] as ScoreFilterKey[]).map((key) => {
+                        const d = sliderFor(key);
+                        return (
+                            <DualRangeSlider
+                                key={key}
+                                label={key === 'health' ? 'Health Score' : d.label}
+                                min={0} max={100}
+                                {...scoreSliderProps(key, d.accent)}
+                            />
+                        );
+                    })}
                     <div className="flex flex-col gap-1.5 min-w-[160px]">
                         <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sort By</label>
                         <select

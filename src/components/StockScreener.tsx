@@ -11,7 +11,8 @@ import { useSavedScreens, MAX_SAVED_SCREENS } from '@/hooks/useSavedScreens';
 import { LivePrice } from './LivePrice';
 import {
   ScreenerResult, scoreColor, altmanZLabel, piotroskiLabel, beneishLabel, fcfMarginLabel, debtRepayLabel,
-  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, METRIC_GROUPS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS,
+  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, METRIC_GROUPS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS,
+  SCORE_FILTERS, ADVANCED_FILTERS, matchesPreset,
 } from '@/lib/utils/screener';
 import { Sparkline } from './Sparkline';
 import { formatBillions, formatMarketCapDiff, formatCurrencyCompact } from '@/lib/utils/format';
@@ -21,7 +22,7 @@ import { useState, useEffect } from 'react';
 // (ticker.name) is always first; views only switch the metric columns shown.
 // Filters/sort are view-independent — switching a tab never changes the dataset.
 const COLUMN_VIEWS = [
-  { id: 'overview', label: 'Overview', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'overallScore', 'valuationScore', 'growthScore', 'profitabilityScore', 'healthScore', 'qualityScore'] },
+  { id: 'overview', label: 'Overview', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'overallScore', 'valuationScore', 'growthScore', 'profitabilityScore', 'healthScore', 'qualityScore', 'screens'] },
   { id: 'insiders', label: 'Insiders', keys: ['ticker.name', 'ticker.lastPrice', 'ticker.lastMarketCap', 'insider.netBuyValue90d', 'insider.largestBuyValue90d', 'insider.largestSellValue90d', 'insider.uniqueSellers14d', 'overallScore'] },
   { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'healthScore', 'qualityScore', 'overallScore'] },
   { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'sector', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'ticker.lastMarketCapDiff'] },
@@ -53,6 +54,7 @@ const COLUMN_LABELS: Record<string, string> = {
   'insider.largestBuyValue90d': 'Top Insider Buy',
   'insider.largestSellValue90d': 'Top Insider Sell',
   'insider.uniqueSellers14d': 'Insider Cluster 14D',
+  'screens': 'Matched Screens',
 };
 const columnLabel = (key: string) =>
   COLUMN_LABELS[key]
@@ -81,17 +83,8 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
   const screener = useScreener({ initialLimit: 25, defaultMinHealth: 0, defaultMinProfit: 0, defaultMinValue: 0, initialData });
   const {
     results, pagination, loading, page, setPage,
-    minHealth, maxHealth, setMinHealth, setMaxHealth,
-    minProfit, maxProfit, setMinProfit, setMaxProfit,
-    minValue, maxValue, setMinValue, setMaxValue,
-    minGrowth, maxGrowth, setMinGrowth, setMaxGrowth,
-    minQuality, maxQuality, setMinQuality, setMaxQuality,
-    minOverall, maxOverall, setMinOverall, setMaxOverall,
-    minAltman, setMinAltman,
-    minPiotroski, setMinPiotroski,
-    maxBeneish, setMaxBeneish,
-    minFcfMargin, setMinFcfMargin,
-    maxDebtRepayment, setMaxDebtRepayment,
+    scoreRanges, setScoreRange,
+    advanced, setAdvancedValue,
     selectedSector, setSelectedSector,
     selectedIndustry, setSelectedIndustry,
     searchQuery, setSearchQuery,
@@ -278,6 +271,32 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         return <span className={f.color}>{r.fcfMargin !== null ? `${(r.fcfMargin * 100).toFixed(1)}%` : '-'}</span>;
       },
     },
+    {
+      // Which strategy quick-screens this row currently satisfies — the
+      // "what kind of stock is it" discovery loop, computed client-side via
+      // the same matchesPreset() the analysis-page badges use (null-safe:
+      // missing data never matches a bound).
+      key: 'screens',
+      header: 'Screens',
+      align: 'left',
+      sortable: false,
+      render: (r) => {
+        const m = matchedScreensFor(r);
+        if (m.length === 0) return <span className="text-gray-400">-</span>;
+        const shown = m.slice(0, 2);
+        const rest = m.length - shown.length;
+        return (
+          <div className="flex flex-wrap gap-1 max-w-44" title={m.map((s) => s.label).join(' · ')}>
+            {shown.map((s) => (
+              <span key={s.label} className="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 whitespace-nowrap">
+                {s.label.replace(/\s*\(.*\)\s*$/, '')}
+              </span>
+            ))}
+            {rest > 0 && <span className="text-[10px] text-gray-400 self-center">+{rest}</span>}
+          </div>
+        );
+      },
+    },
     // FinnhubMetrics columns — sortable via `metrics.<field>` (server-side
     // orderBy on the finnhubMetrics relation). fmt varies per metric.
     ...METRIC_FILTERS.map((def) => ({
@@ -361,7 +380,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
   const [customCols, setCustomCols] = useState<string[]>([]);
   const [showColPicker, setShowColPicker] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const advancedActive = minAltman > 0 || minPiotroski > 0 || maxBeneish < 10 || minFcfMargin > -100 || maxDebtRepayment < 350;
+  const advancedActive = ADVANCED_FILTERS.some((d) => d.active(advanced[d.key]));
   const advancedVisible = showAdvanced || advancedActive;
   // Metric filters use DualRangeSlider (min+max) — active when any Finnhub
   // or insider key has a range (price/changePct live in the main grid and
@@ -388,6 +407,31 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       onChangeMax: (v: number) => apply('max', v),
     };
   };
+  // Same sparse-range semantics for score filters: touching a bound creates
+  // the entry, returning it to the 0–100 default deletes it.
+  const scoreSliderProps = (def: (typeof SCORE_FILTERS)[number]) => {
+    const r = scoreRanges[def.key];
+    const apply = (side: 'min' | 'max', v: number) => {
+      const next: { min?: number; max?: number } = { ...r };
+      if (side === 'min') { if (v === 0) delete next.min; else next.min = v; }
+      else { if (v === 100) delete next.max; else next.max = v; }
+      setScoreRange(def.key, next);
+    };
+    return {
+      valueMin: r?.min ?? 0,
+      valueMax: r?.max ?? 100,
+      onChangeMin: (v: number) => apply('min', v),
+      onChangeMax: (v: number) => apply('max', v),
+    };
+  };
+  /** Which strategy quick-screens does this row satisfy right now? */
+  const matchedScreensFor = (r: ScreenerResult) =>
+    QUICK_SCREENS.filter((q) => q.group === 'strategy' && matchesPreset(q.preset, {
+      scores: r,
+      metrics: r.metrics,
+      market: { price: r.ticker?.lastPrice ?? null, changePct: r.ticker?.lastChangePct ?? null, marketCapB: r.ticker?.lastMarketCap ?? null },
+      insider: { netBuyValue90d: r.insiderNetBuyValue90d, netBuyPct90d: r.insiderNetBuyPct90d },
+    }));
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const fromUrl = sp.get('view') as ColumnViewId | null;
@@ -593,54 +637,21 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Ticker or company…"
                 className="w-full h-8 pl-8 pr-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
               />
             </div>
           </div>
-          <DualRangeSlider
-            label="Overall"
-            min={0} max={100}
-            valueMin={minOverall} valueMax={maxOverall}
-            onChangeMin={setMinOverall} onChangeMax={setMaxOverall}
-            accentColor="amber"
-          />
-          <DualRangeSlider
-            label="Valuation"
-            min={0} max={100}
-            valueMin={minValue} valueMax={maxValue}
-            onChangeMin={setMinValue} onChangeMax={setMaxValue}
-            accentColor="violet"
-          />
-          <DualRangeSlider
-            label="Growth"
-            min={0} max={100}
-            valueMin={minGrowth} valueMax={maxGrowth}
-            onChangeMin={setMinGrowth} onChangeMax={setMaxGrowth}
-            accentColor="sky"
-          />
-          <DualRangeSlider
-            label="Profitability"
-            min={0} max={100}
-            valueMin={minProfit} valueMax={maxProfit}
-            onChangeMin={setMinProfit} onChangeMax={setMaxProfit}
-            accentColor="emerald"
-          />
-          <DualRangeSlider
-            label="Health"
-            min={0} max={100}
-            valueMin={minHealth} valueMax={maxHealth}
-            onChangeMin={setMinHealth} onChangeMax={setMaxHealth}
-            accentColor="blue"
-          />
-          <DualRangeSlider
-            label="Quality"
-            min={0} max={100}
-            valueMin={minQuality} valueMax={maxQuality}
-            onChangeMin={setMinQuality} onChangeMax={setMaxQuality}
-            accentColor="rose"
-          />
+          {SCORE_FILTERS.map((d) => (
+            <DualRangeSlider
+              key={d.key}
+              label={d.label}
+              min={0} max={100}
+              {...scoreSliderProps(d)}
+              accentColor={d.accent}
+            />
+          ))}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sort By</label>
             <select
@@ -774,72 +785,80 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         )}
         {advancedVisible && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-3 mt-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Min Altman Z</label>
-            <input
-              type="number"
-              min="0"
-              step="0.1"
-              value={minAltman || ''}
-              onChange={(e) => setMinAltman(parseFloat(e.target.value) || 0)}
-              placeholder="e.g. 3.0"
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Min Piotroski F (0–9)</label>
-            <input
-              type="number"
-              min="0"
-              max="9"
-              step="1"
-              value={minPiotroski || ''}
-              onChange={(e) => setMinPiotroski(Math.min(9, Math.max(0, parseInt(e.target.value, 10) || 0)))}
-              placeholder="e.g. 7"
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
-            />
-            <span className="text-[10px] text-gray-400">≥7 Strong, 4–6 Avg, &lt;4 Weak</span>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Max Beneish M</label>
-            <input
-              type="number"
-              step="0.1"
-              value={maxBeneish >= 10 ? '' : maxBeneish}
-              onChange={(e) => setMaxBeneish(parseFloat(e.target.value) || 10)}
-              placeholder="e.g. -1.78"
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
-            />
-            <span className="text-[10px] text-gray-400">&lt;-2.22 Safe, -2.22 to -1.78 Grey, &gt;-1.78 Risky</span>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Min FCF Margin (%)</label>
-            <input
-              type="number"
-              step="1"
-              value={minFcfMargin <= -100 ? '' : (minFcfMargin * 100).toFixed(0)}
-              onChange={(e) => setMinFcfMargin(parseFloat(e.target.value) / 100 || -100)}
-              placeholder="e.g. 5"
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
-            />
-            <span className="text-[10px] text-gray-400">≥15% High, ≥5% Good, &lt;0% Negative</span>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Max Debt Repay (years)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.5"
-              value={maxDebtRepayment >= 350 ? '' : maxDebtRepayment}
-              onChange={(e) => setMaxDebtRepayment(parseFloat(e.target.value) || 350)}
-              placeholder="e.g. 5"
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
-            />
-            <span className="text-[10px] text-gray-400">0 = No debt, ≤3 Fast, ≤5 OK, &gt;5 Slow</span>
-          </div>
+          {ADVANCED_FILTERS.map((d) => {
+            const raw = advanced[d.key];
+            const shown = d.active(raw)
+              ? String(Math.round(raw * d.displayScale * 100) / 100)
+              : '';
+            return (
+              <div key={d.key} className="flex flex-col gap-1">
+                <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">{d.label}</label>
+                <input
+                  type="number"
+                  step={d.key === 'minPiotroski' ? 1 : 'any'}
+                  value={shown}
+                  onChange={(e) => {
+                    let v = parseFloat(e.target.value);
+                    if (!Number.isFinite(v)) v = d.def;
+                    else v = v / d.displayScale;
+                    if (d.key === 'minPiotroski') v = Math.min(9, Math.max(0, Math.round(v)));
+                    setAdvancedValue(d.key, v);
+                  }}
+                  placeholder="—"
+                  className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+                />
+                <span className="text-[10px] text-gray-400">{d.hint}</span>
+              </div>
+            );
+          })}
           </div>
         )}
       </div>
+
+      {/* Active filter chips — every constraint as a removable chip, built
+          from the same registries that own the filters (a new filter shows
+          up here automatically). */}
+      {(() => {
+        const chips: { id: string; label: string; clear: () => void }[] = [];
+        const fmtBound = (r: { min?: number; max?: number } | undefined, lo: number, hi: number) => {
+          const a = r?.min !== undefined && r.min !== lo ? `≥${r.min}` : '';
+          const b = r?.max !== undefined && r.max !== hi ? `≤${r.max}` : '';
+          return [a, b].filter(Boolean).join(' ');
+        };
+        for (const d of SCORE_FILTERS) {
+          const bounds = fmtBound(scoreRanges[d.key], 0, 100);
+          if (bounds) chips.push({ id: `s:${d.key}`, label: `${d.label} ${bounds}`, clear: () => setScoreRange(d.key, undefined) });
+        }
+        for (const d of RANGE_FILTERS) {
+          const r = metricRanges[d.key];
+          if (!r) continue;
+          const bounds = fmtBound(r, d.min, d.max);
+          if (bounds) chips.push({ id: `m:${d.key}`, label: `${d.label} ${bounds}`, clear: () => setMetricRange(d.key, undefined) });
+        }
+        for (const d of ADVANCED_FILTERS) {
+          const v = advanced[d.key];
+          if (d.active(v)) chips.push({ id: `a:${d.key}`, label: `${d.label.replace(/ %\)$/, ')')}: ${Math.round(v * d.displayScale * 100) / 100}`, clear: () => setAdvancedValue(d.key, d.def) });
+        }
+        if (selectedSector) chips.push({ id: 'sector', label: `Sector: ${selectedSector}`, clear: () => setSelectedSector('') });
+        if (selectedIndustry) chips.push({ id: 'industry', label: `Industry: ${selectedIndustry}`, clear: () => setSelectedIndustry('') });
+        if (searchQuery) chips.push({ id: 'q', label: `“${searchQuery}”`, clear: () => setSearchQuery('') });
+        if (marketCapPreset !== 'all') {
+          const p = MARKET_CAP_PRESETS.find((x) => x.id === marketCapPreset);
+          if (p) chips.push({ id: 'mcap', label: `Cap: ${p.label}`, clear: () => setMarketCapPreset('all') });
+        }
+        if (chips.length === 0) return null;
+        return (
+          <div className="flex flex-wrap items-center gap-1.5 px-1">
+            {chips.map((c) => (
+              <span key={c.id} className="inline-flex items-center rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-[10px] text-blue-700 dark:text-blue-300 overflow-hidden">
+                <span className="pl-2 pr-1 py-0.5">{c.label}</span>
+                <button onClick={c.clear} className="px-1.5 py-0.5 hover:text-red-500" title="Clear filter">×</button>
+              </span>
+            ))}
+            <button onClick={resetFilters} className="text-[10px] text-gray-400 hover:text-red-500 underline underline-offset-2">Clear all</button>
+          </div>
+        );
+      })()}
 
       {/* Results count */}
       <div className="flex items-center justify-between">
