@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ScreenerResult, ScreenerPagination, MARKET_CAP_PRESETS } from '@/lib/utils/screener';
+import { ScreenerResult, ScreenerPagination, MARKET_CAP_PRESETS, METRIC_FILTERS, MARKET_RANGE_FILTERS, RangeFilterKey } from '@/lib/utils/screener';
 
 interface UseScreenerOptions {
     initialLimit?: number;
@@ -23,6 +23,8 @@ export function useScreener({
         // Transform SSR data to ScreenerResult format (matches API response)
         return initialData.map((r: any): ScreenerResult => ({
             symbol: r.ticker?.symbol ?? r.symbol ?? '',
+            sparkline: r.sparkline ?? null,
+            metrics: r.metrics ?? null,
             healthScore: r.healthScore ?? null,
             profitabilityScore: r.profitabilityScore ?? null,
             valuationScore: r.valuationScore ?? null,
@@ -90,6 +92,17 @@ export function useScreener({
     const [marketCapPreset, setMarketCapPreset] = useState<string>('all');
     const [sortField, setSortField] = useState<string>('ticker.lastMarketCap');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+    // FinnhubMetrics range filters — only entries the user touched are kept;
+    // missing key = no filter for that metric.
+    const [metricRanges, setMetricRanges] = useState<Partial<Record<RangeFilterKey, { min?: number; max?: number }>>>({});
+    const setMetricRange = useCallback((key: RangeFilterKey, range: { min?: number; max?: number } | undefined) => {
+        setMetricRanges(prev => {
+            const next = { ...prev };
+            if (range === undefined) delete next[key];
+            else next[key] = range;
+            return next;
+        });
+    }, []);
 
     // Debounced filter values
     const [debouncedFilters, setDebouncedFilters] = useState({
@@ -107,6 +120,7 @@ export function useScreener({
         searchQuery: '',
         marketCapPreset: 'all',
         sortField: 'ticker.lastMarketCap', sortOrder: 'desc' as 'asc' | 'desc',
+        metricRanges: {} as typeof metricRanges,
     });
 
     useEffect(() => {
@@ -126,10 +140,11 @@ export function useScreener({
                 searchQuery,
                 marketCapPreset,
                 sortField, sortOrder,
+                metricRanges,
             });
         }, 400);
         return () => clearTimeout(timer);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder]);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder, metricRanges]);
 
     const fetchResults = useCallback(async () => {
         setLoading(true);
@@ -169,6 +184,14 @@ export function useScreener({
                 if (mcPreset.max !== undefined) params.append('maxMarketCap', mcPreset.max.toString());
             }
 
+            // Metric range filters (minRoe/maxRoe/… — camelCase field names)
+            for (const [key, range] of Object.entries(debouncedFilters.metricRanges)) {
+                if (!range) continue;
+                const cap = key[0]!.toUpperCase() + key.slice(1);
+                if (range.min !== undefined) params.append(`min${cap}`, range.min.toString());
+                if (range.max !== undefined) params.append(`max${cap}`, range.max.toString());
+            }
+
             const res = await fetch(`/api/analysis/screener?${params.toString()}`);
             const data = await res.json();
             setResults(data.results || []);
@@ -191,7 +214,7 @@ export function useScreener({
     // Reset page on filter change (immediate, not debounced)
     useEffect(() => {
         setPage(1);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder]);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder, metricRanges]);
 
     // Restore filters from URL on mount (shareable screener state).
     // ONLY on the standalone /screener page — the homepage embed lives under
@@ -231,6 +254,24 @@ export function useScreener({
             if (f) setSortField(f);
             if (o === 'asc' || o === 'desc') setSortOrder(o);
         }
+        // Metric range filters: minRoe/maxRoe/... (camelCase field names)
+        const restored: typeof metricRanges = {};
+        for (const def of [...MARKET_RANGE_FILTERS, ...METRIC_FILTERS]) {
+            const cap = def.key[0]!.toUpperCase() + def.key.slice(1);
+            const lo = sp.get(`min${cap}`);
+            const hi = sp.get(`max${cap}`);
+            const range: { min?: number; max?: number } = {};
+            if (lo !== null) {
+                const v = parseFloat(lo);
+                if (Number.isFinite(v)) range.min = v;
+            }
+            if (hi !== null) {
+                const v = parseFloat(hi);
+                if (Number.isFinite(v)) range.max = v;
+            }
+            if (range.min !== undefined || range.max !== undefined) restored[def.key] = range;
+        }
+        if (Object.keys(restored).length > 0) setMetricRanges(restored);
     }, []);
 
     // Sync filters → URL (replaceState: shareable, no history pollution).
@@ -259,10 +300,16 @@ export function useScreener({
         if (selectedIndustry) sp.set('industry', selectedIndustry);
         if (searchQuery) sp.set('q', searchQuery);
         if (marketCapPreset !== 'all') sp.set('mcap', marketCapPreset);
+        for (const [key, range] of Object.entries(metricRanges)) {
+            if (!range) continue;
+            const cap = key[0]!.toUpperCase() + key.slice(1);
+            if (range.min !== undefined) sp.set(`min${cap}`, range.min.toString());
+            if (range.max !== undefined) sp.set(`max${cap}`, range.max.toString());
+        }
         if (sortField !== 'healthScore' || sortOrder !== 'desc') sp.set('sort', `${sortField}:${sortOrder}`);
         const qs = sp.toString();
         window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder]);
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder, metricRanges]);
 
     const handleSort = (field: string) => {
         if (sortField === field) {
@@ -294,6 +341,7 @@ export function useScreener({
         setSelectedIndustry('');
         setSearchQuery('');
         setMarketCapPreset('all');
+        setMetricRanges({});
         setSortField('ticker.lastMarketCap');
         setSortOrder('desc');
     };
@@ -306,7 +354,8 @@ export function useScreener({
         minQuality !== 0 || maxQuality !== 100 ||
         minOverall !== 0 || maxOverall !== 100 ||
         minAltman !== 0 || selectedSector !== '' || marketCapPreset !== 'all' ||
-        minPiotroski > 0 || maxBeneish < 10 || minFcfMargin > -100 || maxDebtRepayment < 350;
+        minPiotroski > 0 || maxBeneish < 10 || minFcfMargin > -100 || maxDebtRepayment < 350 ||
+        Object.keys(metricRanges).length > 0;
 
     /** Apply a named quick-screen preset (sets multiple filters atomically). */
     const applyPreset = (preset: {
@@ -351,6 +400,8 @@ export function useScreener({
         searchQuery, setSearchQuery,
         industries,
         marketCapPreset, setMarketCapPreset,
+        // metric range filters
+        metricRanges, setMetricRange,
         // sort
         sortField, sortOrder, handleSort, setSort,
         // utils

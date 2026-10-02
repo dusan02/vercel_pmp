@@ -26,12 +26,12 @@ export function DualRangeSlider({
   accentColor = 'blue',
 }: DualRangeSliderProps) {
   const handleMinChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value);
+    const val = parseFloat(e.target.value);
     if (val <= valueMax) onChangeMin(val);
   }, [valueMax, onChangeMin]);
 
   const handleMaxChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value);
+    const val = parseFloat(e.target.value);
     if (val >= valueMin) onChangeMax(val);
   }, [valueMin, onChangeMax]);
 
@@ -46,6 +46,7 @@ export function DualRangeSlider({
     amber: { fill: 'bg-amber-500', thumb: '[&::-webkit-slider-thumb]:bg-amber-600 [&::-moz-range-thumb]:bg-amber-600', text: 'text-amber-600 dark:text-amber-400' },
     sky: { fill: 'bg-sky-500', thumb: '[&::-webkit-slider-thumb]:bg-sky-600 [&::-moz-range-thumb]:bg-sky-600', text: 'text-sky-600 dark:text-sky-400' },
     rose: { fill: 'bg-rose-500', thumb: '[&::-webkit-slider-thumb]:bg-rose-600 [&::-moz-range-thumb]:bg-rose-600', text: 'text-rose-600 dark:text-rose-400' },
+    indigo: { fill: 'bg-indigo-500', thumb: '[&::-webkit-slider-thumb]:bg-indigo-600 [&::-moz-range-thumb]:bg-indigo-600', text: 'text-indigo-600 dark:text-indigo-400' },
   };
   const s: AccentStyle = styles[accentColor] ?? { fill: 'bg-blue-500', thumb: '[&::-webkit-slider-thumb]:bg-blue-600 [&::-moz-range-thumb]:bg-blue-600', text: 'text-blue-600 dark:text-blue-400' };
 

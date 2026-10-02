@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
+import { downsampleSeries } from '@/lib/utils/screener';
 
 const SCREENER_CACHE_TTL = 600; // 10 minutes
 
@@ -59,6 +60,33 @@ export async function GET(request: Request) {
     const minMarketCap = num('minMarketCap');
     const maxMarketCap = num('maxMarketCap');
 
+    // Price & day-change range filters (Ticker columns)
+    const minPrice = num('minPrice');
+    const maxPrice = num('maxPrice');
+    const minChangePct = num('minChangePct');
+    const maxChangePct = num('maxChangePct');
+
+    // FinnhubMetrics range filters — param name is the camelCase DB field
+    // prefixed with min/max (minRoe/maxForwardPe/...). Keeping one name
+    // convention lets the whitelist double as the param list.
+    const METRIC_PARAM_FIELDS = [
+        'roe', 'peRatio', 'forwardPe', 'psRatio', 'pbRatio', 'pegRatio',
+        'evEbitda', 'grossMargin', 'netMargin', 'revenueGrowth',
+        'earningsGrowth', 'dividendYield', 'beta', 'currentRatio',
+        'debtEquityRatio', 'interestCoverage',
+    ] as const;
+    const metricParams: Partial<Record<typeof METRIC_PARAM_FIELDS[number], { min?: number; max?: number }>> = {};
+    for (const field of METRIC_PARAM_FIELDS) {
+        const lo = num(`min${field[0]!.toUpperCase()}${field.slice(1)}`);
+        const hi = num(`max${field[0]!.toUpperCase()}${field.slice(1)}`);
+        if (lo !== undefined || hi !== undefined) {
+            const range: { min?: number; max?: number } = {};
+            if (lo !== undefined) range.min = lo;
+            if (hi !== undefined) range.max = hi;
+            metricParams[field] = range;
+        }
+    }
+
     // Pagination & Sorting — clamp NaN/negative/oversized values
     const page = Math.max(1, int('page') ?? 1);
     const limit = Math.min(200, Math.max(1, int('limit') ?? 50));
@@ -68,7 +96,11 @@ export async function GET(request: Request) {
     const sortOrder = (parts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
 
     // Build cache key from query params
-    const cacheKey = `screener:${minHealth || ''}:${maxHealth || ''}:${minProfitability || ''}:${maxProfitability || ''}:${minValuation || ''}:${maxValuation || ''}:${minGrowth || ''}:${maxGrowth || ''}:${minQuality || ''}:${maxQuality || ''}:${minOverall || ''}:${maxOverall || ''}:${minAltman || ''}:${minPiotroski || ''}:${maxBeneish || ''}:${minFcfMargin || ''}:${maxDebtRepayment || ''}:${sector || ''}:${industry || ''}:${q || ''}:${minMarketCap || ''}:${maxMarketCap || ''}:${page}:${limit}:${sortParams}`;
+    const metricsKey = METRIC_PARAM_FIELDS.map((f) => {
+        const p = metricParams[f];
+        return p ? `${f}=${p.min ?? ''}-${p.max ?? ''}` : '';
+    }).join('|');
+    const cacheKey = `screener:${minHealth || ''}:${maxHealth || ''}:${minProfitability || ''}:${maxProfitability || ''}:${minValuation || ''}:${maxValuation || ''}:${minGrowth || ''}:${maxGrowth || ''}:${minQuality || ''}:${maxQuality || ''}:${minOverall || ''}:${maxOverall || ''}:${minAltman || ''}:${minPiotroski || ''}:${maxBeneish || ''}:${minFcfMargin || ''}:${maxDebtRepayment || ''}:${sector || ''}:${industry || ''}:${q || ''}:${minMarketCap || ''}:${maxMarketCap || ''}:${minPrice || ''}:${maxPrice || ''}:${minChangePct || ''}:${maxChangePct || ''}:${metricsKey}:${page}:${limit}:${sortParams}`;
     try {
         const cached = await getCachedData(cacheKey);
         if (cached) return NextResponse.json(cached);
@@ -93,6 +125,30 @@ export async function GET(request: Request) {
             tickerWhere.lastMarketCap = {};
             if (minMarketCap !== undefined) tickerWhere.lastMarketCap.gte = minMarketCap;
             if (maxMarketCap !== undefined) tickerWhere.lastMarketCap.lte = maxMarketCap;
+        }
+        // Price / day-change range filters (Ticker columns)
+        if (minPrice !== undefined || maxPrice !== undefined) {
+            tickerWhere.lastPrice = { ...(tickerWhere.lastPrice ?? {}) };
+            if (minPrice !== undefined) tickerWhere.lastPrice.gte = minPrice;
+            if (maxPrice !== undefined) tickerWhere.lastPrice.lte = maxPrice;
+        }
+        if (minChangePct !== undefined || maxChangePct !== undefined) {
+            tickerWhere.lastChangePct = {};
+            if (minChangePct !== undefined) tickerWhere.lastChangePct.gte = minChangePct;
+            if (maxChangePct !== undefined) tickerWhere.lastChangePct.lte = maxChangePct;
+        }
+
+        // ── FinnhubMetrics range filters (roe, peRatio, margins, growth…) ──
+        // Same pattern as analysisCache — active metric filters require the
+        // relation row, so tickers without Finnhub coverage drop out.
+        if (Object.keys(metricParams).length > 0) {
+            const fm: any = {};
+            for (const [field, range] of Object.entries(metricParams)) {
+                fm[field] = {};
+                if (range.min !== undefined) fm[field].gte = range.min;
+                if (range.max !== undefined) fm[field].lte = range.max;
+            }
+            tickerWhere.finnhubMetrics = { is: fm };
         }
 
         // ── Fundamental filters apply on the AnalysisCache relation ──
@@ -169,6 +225,12 @@ export async function GET(request: Request) {
             orderBy = INSIDER_FIELDS.has(field)
                 ? { insiderAggregate: { [field]: { sort: sortOrder, nulls: 'last' } } }
                 : { lastMarketCap: { sort: 'desc', nulls: 'last' } };
+        } else if (sortField.startsWith('metrics.')) {
+            // FinnhubMetrics columns — same whitelist as the filter params.
+            const field = sortField.slice('metrics.'.length);
+            orderBy = (METRIC_PARAM_FIELDS as readonly string[]).includes(field)
+                ? { finnhubMetrics: { [field]: { sort: sortOrder, nulls: 'last' } } }
+                : { lastMarketCap: { sort: 'desc', nulls: 'last' } };
         } else if (SCORE_FIELDS.has(sortField)) {
             orderBy = { analysisCache: { [sortField]: { sort: sortOrder, nulls: 'last' } } };
         } else {
@@ -206,6 +268,26 @@ export async function GET(request: Request) {
                             uniqueSellers14d: true,
                         },
                     },
+                    finnhubMetrics: {
+                        select: {
+                            roe: true,
+                            peRatio: true,
+                            forwardPe: true,
+                            psRatio: true,
+                            pbRatio: true,
+                            pegRatio: true,
+                            evEbitda: true,
+                            grossMargin: true,
+                            netMargin: true,
+                            revenueGrowth: true,
+                            earningsGrowth: true,
+                            dividendYield: true,
+                            beta: true,
+                            currentRatio: true,
+                            debtEquityRatio: true,
+                            interestCoverage: true,
+                        },
+                    },
                 },
                 orderBy,
                 skip,
@@ -225,10 +307,43 @@ export async function GET(request: Request) {
             .map((r) => r.industry)
             .filter((i): i is string => !!i);
 
+        // 1Y sparkline — daily closes from DailyValuationHistory (covers ~999
+        // symbols, ~4.8y of history), downsampled to ~52 weekly points so the
+        // payload stays small (25 rows × ~52 points ≈ 1.3K numbers).
+        const symbolList = tickers.map((t) => t.symbol);
+        const sparkBySymbol = new Map<string, number[]>();
+        if (symbolList.length > 0) {
+            try {
+                const oneYearAgo = new Date(Date.now() - 366 * 24 * 60 * 60 * 1000);
+                const hist = await prisma.dailyValuationHistory.findMany({
+                    where: {
+                        symbol: { in: symbolList },
+                        date: { gte: oneYearAgo },
+                        closePrice: { not: null, gt: 0 },
+                    },
+                    select: { symbol: true, date: true, closePrice: true },
+                    orderBy: { date: 'asc' },
+                });
+                const grouped = new Map<string, number[]>();
+                for (const r of hist) {
+                    const arr = grouped.get(r.symbol);
+                    if (arr) arr.push(r.closePrice!);
+                    else grouped.set(r.symbol, [r.closePrice!]);
+                }
+                for (const [sym, closes] of grouped) {
+                    sparkBySymbol.set(sym, downsampleSeries(closes, 52));
+                }
+            } catch (e) {
+                console.warn('⚠️ sparkline fetch failed (non-fatal):', e);
+            }
+        }
+
         // Flatten to the response shape the UI expects (AnalysisCache fields
         // hoisted to the top level, null for tickers without analysis)
         const results = tickers.map((t) => ({
             symbol: t.symbol,
+            sparkline: sparkBySymbol.get(t.symbol) ?? null,
+            metrics: t.finnhubMetrics ?? null,
             healthScore: t.analysisCache?.healthScore ?? null,
             profitabilityScore: t.analysisCache?.profitabilityScore ?? null,
             valuationScore: t.analysisCache?.valuationScore ?? null,
