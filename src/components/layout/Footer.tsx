@@ -35,7 +35,8 @@ function FooterContent() {
 
   return (
     <footer className="bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 pt-12 pb-8 mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* 96rem cap + px-4/sm:px-6 — same rhythm as PageHeader inner row and <main> */}
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           {/* Brand Section */}
           <div className="col-span-1 md:col-span-1">
@@ -223,7 +224,7 @@ export function Footer() {
   return (
     <Suspense fallback={
       <footer className="bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 pt-12 pb-8 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
           <p className="text-sm text-gray-500 dark:text-gray-400">PreMarketPrice</p>
           <a href="/zh" hrefLang="zh-CN" className="text-xs text-gray-400 dark:text-gray-500">中文版</a>
         </div>

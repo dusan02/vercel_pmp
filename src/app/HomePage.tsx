@@ -464,7 +464,9 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
 
                   </div>
 
-                  <main className="container min-h-[calc(100dvh-130px)]" role="main">
+                  {/* Unified content width — same 96rem cap + padding rhythm as
+                      PageHeader's inner row and the footer, so top/bottom edges align */}
+                  <main className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 py-6 min-h-[calc(100dvh-130px)]" role="main">
                     <div className="flex-1 min-w-0">
                       {error && (
                         <div className="error" role="alert">
