@@ -216,45 +216,51 @@ export function useScreener({
         setPage(1);
     }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder, metricRanges]);
 
-    // Restore filters from URL on mount (shareable screener state).
-    // ONLY on the standalone /screener page — the homepage embed lives under
-    // /?tab=screener and its URL belongs to the tab navigation; rewriting it
-    // here strips ?tab=... and snaps the homepage back to the heatmap tab.
-    useEffect(() => {
-        if (window.location.pathname !== '/screener') return;
-        const sp = new URLSearchParams(window.location.search);
-        if (sp.size === 0) return;
+    /**
+     * Restore all filter state from a query param set — used for the initial
+     * URL on /screener and for applying a saved screen (which is stored as
+     * exactly this query-string form).
+     */
+    const restoreFromParams = useCallback((sp: URLSearchParams) => {
+        // Unconditional defaults — a query/saved-screen is a COMPLETE state:
+        // absent keys reset to defaults, otherwise stale filters would leak
+        // across saved-screen switches.
         const num = (k: string, fb: number) => {
             const v = parseFloat(sp.get(k) ?? '');
             return Number.isFinite(v) ? v : fb;
         };
         setMinHealth(num('minHealth', 0));
-        if (sp.has('maxHealth')) setMaxHealth(num('maxHealth', 100));
-        if (sp.has('minProfit')) setMinProfit(num('minProfit', 0));
-        if (sp.has('maxProfit')) setMaxProfit(num('maxProfit', 100));
-        if (sp.has('minValue')) setMinValue(num('minValue', 0));
-        if (sp.has('maxValue')) setMaxValue(num('maxValue', 100));
-        if (sp.has('minGrowth')) setMinGrowth(num('minGrowth', 0));
-        if (sp.has('maxGrowth')) setMaxGrowth(num('maxGrowth', 100));
-        if (sp.has('minQuality')) setMinQuality(num('minQuality', 0));
-        if (sp.has('maxQuality')) setMaxQuality(num('maxQuality', 100));
-        if (sp.has('minOverall')) setMinOverall(num('minOverall', 0));
-        if (sp.has('maxOverall')) setMaxOverall(num('maxOverall', 100));
-        if (sp.has('minAltman')) setMinAltman(num('minAltman', 0));
-        if (sp.has('minPiotroski')) setMinPiotroski(num('minPiotroski', 0));
-        if (sp.has('maxBeneish')) setMaxBeneish(num('maxBeneish', 10));
-        if (sp.has('minFcfMargin')) setMinFcfMargin(num('minFcfMargin', -100));
-        if (sp.has('maxDebtRepayment')) setMaxDebtRepayment(num('maxDebtRepayment', 350));
-        if (sp.has('sector')) setSelectedSector(sp.get('sector') ?? '');
-        if (sp.has('industry')) setSelectedIndustry(sp.get('industry') ?? '');
-        if (sp.has('q')) setSearchQuery(sp.get('q') ?? '');
+        setMaxHealth(num('maxHealth', 100));
+        setMinProfit(num('minProfit', 0));
+        setMaxProfit(num('maxProfit', 100));
+        setMinValue(num('minValue', 0));
+        setMaxValue(num('maxValue', 100));
+        setMinGrowth(num('minGrowth', 0));
+        setMaxGrowth(num('maxGrowth', 100));
+        setMinQuality(num('minQuality', 0));
+        setMaxQuality(num('maxQuality', 100));
+        setMinOverall(num('minOverall', 0));
+        setMaxOverall(num('maxOverall', 100));
+        setMinAltman(num('minAltman', 0));
+        setMinPiotroski(num('minPiotroski', 0));
+        setMaxBeneish(num('maxBeneish', 10));
+        setMinFcfMargin(num('minFcfMargin', -100));
+        setMaxDebtRepayment(num('maxDebtRepayment', 350));
+        setSelectedSector(sp.get('sector') ?? '');
+        setSelectedIndustry(sp.get('industry') ?? '');
+        setSearchQuery(sp.get('q') ?? '');
+        const m = sp.get('mcap') ?? 'all';
+        setMarketCapPreset(MARKET_CAP_PRESETS.some((p) => p.id === m) ? m : 'all');
         const sort = sp.get('sort');
         if (sort) {
             const [f, o] = sort.split(':');
-            if (f) setSortField(f);
-            if (o === 'asc' || o === 'desc') setSortOrder(o);
+            if (f) setSortField(f); else setSortField('ticker.lastMarketCap');
+            setSortOrder(o === 'asc' || o === 'desc' ? o : 'desc');
+        } else {
+            setSortField('ticker.lastMarketCap');
+            setSortOrder('desc');
         }
-        // Metric range filters: minRoe/maxRoe/... (camelCase field names)
+        // Range filters: minRoe/maxRoe/... (camelCase key names, registry-driven)
         const restored: typeof metricRanges = {};
         for (const def of RANGE_FILTERS) {
             const cap = def.key[0]!.toUpperCase() + def.key.slice(1);
@@ -271,13 +277,19 @@ export function useScreener({
             }
             if (range.min !== undefined || range.max !== undefined) restored[def.key] = range;
         }
-        if (Object.keys(restored).length > 0) setMetricRanges(restored);
+        setMetricRanges(restored);
     }, []);
 
-    // Sync filters → URL (replaceState: shareable, no history pollution).
-    // Standalone /screener page only — see the restore effect above.
+    // Restore once from the landing URL — /screener page only.
     useEffect(() => {
         if (window.location.pathname !== '/screener') return;
+        const sp = new URLSearchParams(window.location.search);
+        if (sp.size === 0) return;
+        restoreFromParams(sp);
+    }, [restoreFromParams]);
+
+    /** Serialize current filter state to the query-string form. */
+    const buildParamsString = useCallback((): string => {
         const sp = new URLSearchParams();
         if (minHealth !== 0) sp.set('minHealth', minHealth.toString());
         if (maxHealth !== 100) sp.set('maxHealth', maxHealth.toString());
@@ -306,10 +318,52 @@ export function useScreener({
             if (range.min !== undefined) sp.set(`min${cap}`, range.min.toString());
             if (range.max !== undefined) sp.set(`max${cap}`, range.max.toString());
         }
-        if (sortField !== 'healthScore' || sortOrder !== 'desc') sp.set('sort', `${sortField}:${sortOrder}`);
+        if (sortField !== 'ticker.lastMarketCap' || sortOrder !== 'desc') sp.set('sort', `${sortField}:${sortOrder}`);
+        return sp.toString();
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder, metricRanges]);
+
+    /**
+     * Is the current filter state exactly what this preset would produce?
+     * (preset applied = resetFilters + preset fields; any user deviation
+     * or extra range deactivates the highlight).
+     */
+    const isPresetActive = useCallback((p: ScreenerPreset): boolean => {
+        if (minHealth !== (p.minHealth ?? 0) || maxHealth !== 100) return false;
+        if (minProfit !== (p.minProfit ?? 0) || maxProfit !== 100) return false;
+        if (minValue !== (p.minValue ?? 0) || maxValue !== 100) return false;
+        if (minGrowth !== (p.minGrowth ?? 0) || maxGrowth !== 100) return false;
+        if (minQuality !== (p.minQuality ?? 0) || maxQuality !== 100) return false;
+        if (minOverall !== (p.minOverall ?? 0) || maxOverall !== 100) return false;
+        if (minAltman !== (p.minAltman ?? 0)) return false;
+        if (minPiotroski !== 0 || maxBeneish !== 10) return false;
+        if (minFcfMargin !== (p.minFcfMargin ?? -100) || maxDebtRepayment !== 350) return false;
+        if (selectedSector !== '' || selectedIndustry !== '' || searchQuery !== '') return false;
+        if (marketCapPreset !== (p.marketCapPreset ?? 'all')) return false;
+        const [ef, eo] = (p.sort ?? 'ticker.lastMarketCap:desc').split(':');
+        if (sortField !== ef || sortOrder !== eo) return false;
+        const expected = p.ranges ?? {};
+        const keys = new Set([...Object.keys(metricRanges), ...Object.keys(expected)]);
+        for (const k of keys) {
+            const a = metricRanges[k as RangeFilterKey];
+            const b = expected[k as RangeFilterKey];
+            if (a?.min !== b?.min || a?.max !== b?.max) return false;
+        }
+        return true;
+    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder, metricRanges]);
+
+    // Sync filters → URL (replaceState: shareable, no history pollution).
+    // Standalone /screener page only — the homepage embed lives under
+    // /?tab=screener and its URL belongs to tab navigation.
+    useEffect(() => {
+        if (window.location.pathname !== '/screener') return;
+        const sp = new URLSearchParams(buildParamsString());
+        // Preserve the ?view= param — it is owned by the column-view state in
+        // StockScreener, not by this hook's filter state.
+        const view = new URLSearchParams(window.location.search).get('view');
+        if (view) sp.set('view', view);
         const qs = sp.toString();
         window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
-    }, [minHealth, maxHealth, minProfit, maxProfit, minValue, maxValue, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment, selectedSector, marketCapPreset, sortField, sortOrder, metricRanges]);
+    }, [buildParamsString]);
 
     const handleSort = (field: string) => {
         if (sortField === field) {
@@ -406,5 +460,7 @@ export function useScreener({
         sortField, sortOrder, handleSort, setSort,
         // utils
         resetFilters, hasActiveFilters, applyPreset,
+        // saved screens / share links
+        buildParamsString, restoreFromParams, isPresetActive,
     };
 }

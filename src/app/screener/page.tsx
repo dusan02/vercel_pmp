@@ -12,18 +12,20 @@ export const revalidate = 600;
 export const metadata: Metadata = generatePageMetadata({
   title: 'Stock Screener — All US Stocks',
   description:
-    'Browse all US stocks and filter by financial health score, profitability, valuation, Altman Z-score, Piotroski F-Score, Beneish M-Score, FCF margin, debt and sector. Search 1,000+ companies and find the best investment opportunities.',
+    'Filter 1,000+ US stocks by P/E, PEG, ROE, margins, growth, dividends, debt, insider buying and our composite scores. One-click screens: Graham value, Lynch growers, GARP, dividend growth. Free, updated daily.',
   path: '/screener',
   keywords: [
     'stock screener',
     'all stocks list',
     'stock filter',
+    'pe ratio screener',
+    'roe screener',
+    'dividend stocks screener',
+    'peg ratio',
     'financial health',
-    'valuation score',
-    'profitability score',
     'altman z score',
+    'insider buying',
     'stock analysis tool',
-    'investment screener',
     'us stocks list',
   ],
 });
@@ -113,8 +115,19 @@ export default async function ScreenerPage() {
               profitability, debt levels, margin stability and growth; the valuation score compares
               each company&apos;s P/E and P/S against its own 5-year history; the Altman Z-Score
               estimates bankruptcy risk; the Piotroski F-Score measures financial strength; and the
-              Beneish M-Score flags potential earnings manipulation. Combine them with sector,
-              industry and market-cap filters to build precisely the favorites list you need.
+              Beneish M-Score flags potential earnings manipulation.
+            </p>
+            <p className="mt-3">
+              <strong>Metric filters:</strong> twenty fundamental ranges — P/E, forward P/E, P/S,
+              P/B, PEG, EV/EBITDA, EV/Sales, P/FCF, ROE, ROA, gross/operating/net margin, revenue
+              and EPS growth, dividend yield, payout ratio, D/E, current and quick ratio, interest
+              coverage and beta — plus price, day change, market cap, sector and industry.
+            </p>
+            <p className="mt-3">
+              <strong>Quick screens:</strong> one-tap presets for classic strategies — Graham value,
+              dividend growth, Lynch fast growers, stalwarts and slow growers, GARP (PEG&nbsp;&lt;&nbsp;1),
+              asset plays and insider-backed turnarounds — alongside our composite score screens.
+              Signed-in users can save up to three custom filter sets for quick re-use.
             </p>
             <p className="mt-3">
               <strong>Insider activity:</strong> the screener also ranks stocks by real insider

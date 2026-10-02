@@ -7,10 +7,11 @@ import CompanyLogo from './CompanyLogo';
 import { UniversalTable, ColumnDef } from './UniversalTable';
 import { DualRangeSlider } from './analysis/DualRangeSlider';
 import { useScreener } from '@/hooks/useScreener';
+import { useSavedScreens, MAX_SAVED_SCREENS } from '@/hooks/useSavedScreens';
 import { LivePrice } from './LivePrice';
 import {
   ScreenerResult, scoreColor, altmanZLabel, piotroskiLabel, beneishLabel, fcfMarginLabel, debtRepayLabel,
-  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS,
+  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, METRIC_GROUPS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS,
 } from '@/lib/utils/screener';
 import { Sparkline } from './Sparkline';
 import { formatBillions, formatMarketCapDiff, formatCurrencyCompact } from '@/lib/utils/format';
@@ -67,7 +68,11 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
     metricRanges, setMetricRange,
     sortField, sortOrder, handleSort, setSort,
     resetFilters, hasActiveFilters, applyPreset,
+    buildParamsString, restoreFromParams, isPresetActive,
   } = screener;
+  const savedScreens = useSavedScreens();
+  const [screenName, setScreenName] = useState('');
+  const [showSaveInput, setShowSaveInput] = useState(false);
 
   const handleTickerClick = (ticker: string) => {
     router.push(`/analysis/${ticker}`);
@@ -395,20 +400,102 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
           )}
         </div>
 
-        {/* Quick screens — one-tap preset combinations */}
-        <div className="flex flex-wrap items-center gap-1.5 mb-3">
-          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1">Quick screens:</span>
-          {QUICK_SCREENS.map((p) => (
-            <button
-              key={p.label}
-              onClick={() => applyPreset(p.preset)}
-              title={p.tip}
-              className="text-[11px] px-2.5 py-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+        {/* Quick screens — one-tap preset combinations. Two rows: internal
+            score presets vs. classic investor strategies on raw fundamentals.
+            Active pill highlights while the current filter state matches. */}
+        {(['score', 'strategy'] as const).map((g) => (
+          <div key={g} className="flex flex-wrap items-center gap-1.5 mb-2">
+            <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1 w-20 shrink-0">
+              {g === 'score' ? 'By score:' : 'Strategies:'}
+            </span>
+            {QUICK_SCREENS.filter((p) => p.group === g).map((p) => {
+              const active = isPresetActive(p.preset);
+              return (
+                <button
+                  key={p.label}
+                  onClick={() => applyPreset(p.preset)}
+                  title={p.tip}
+                  className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                    active
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-medium'
+                      : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+
+        {/* Saved screens — authenticated users persist up to 3 filter sets.
+            Params serialize identically to the share URL. */}
+        {savedScreens.isAuthenticated && (
+          <div className="flex flex-wrap items-center gap-1.5 mb-3">
+            <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1 w-20 shrink-0">Saved:</span>
+            {savedScreens.screens.map((s) => (
+              <span key={s.id} className="inline-flex items-center rounded-full border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 overflow-hidden">
+                <button
+                  onClick={() => restoreFromParams(new URLSearchParams(s.params))}
+                  title={s.params}
+                  className="text-[11px] px-2.5 py-1 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
+                >
+                  {s.name}
+                </button>
+                <button
+                  onClick={() => savedScreens.deleteScreen(s.id)}
+                  title="Delete saved screen"
+                  className="text-[11px] px-1.5 py-1 text-emerald-500/70 hover:text-red-500 transition-colors"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            {showSaveInput ? (
+              <span className="inline-flex items-center gap-1">
+                <input
+                  autoFocus
+                  value={screenName}
+                  onChange={(e) => setScreenName(e.target.value)}
+                  onKeyDown={async (e) => {
+                    if (e.key === 'Enter' && screenName.trim()) {
+                      if (await savedScreens.saveScreen(screenName.trim(), buildParamsString())) {
+                        setScreenName(''); setShowSaveInput(false);
+                      }
+                    } else if (e.key === 'Escape') { setShowSaveInput(false); }
+                  }}
+                  placeholder="Screen name…"
+                  maxLength={40}
+                  className="h-6 w-32 px-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-[11px] text-gray-700 dark:text-gray-300 outline-none focus:border-blue-400"
+                />
+                <button
+                  onClick={async () => {
+                    if (screenName.trim() && await savedScreens.saveScreen(screenName.trim(), buildParamsString())) {
+                      setScreenName(''); setShowSaveInput(false);
+                    }
+                  }}
+                  disabled={savedScreens.loading || !screenName.trim()}
+                  className="text-[11px] px-2 py-1 rounded-md bg-blue-600 text-white disabled:opacity-40"
+                >
+                  Save
+                </button>
+                <button onClick={() => setShowSaveInput(false)} className="text-[11px] text-gray-400 hover:text-gray-600">×</button>
+              </span>
+            ) : savedScreens.canSave ? (
+              <button
+                onClick={() => setShowSaveInput(true)}
+                disabled={!hasActiveFilters}
+                title={hasActiveFilters ? `Save current filters (${savedScreens.screens.length}/${MAX_SAVED_SCREENS})` : 'Set some filters first'}
+                className="text-[11px] px-2.5 py-1 rounded-full border border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                + Save current ({savedScreens.screens.length}/{MAX_SAVED_SCREENS})
+              </button>
+            ) : (
+              <span className="text-[11px] text-gray-400">max {MAX_SAVED_SCREENS} saved</span>
+            )}
+            {savedScreens.error && <span className="text-[11px] text-red-500">{savedScreens.error}</span>}
+          </div>
+        )}
 
         {/* One dense grid — Finviz-style: all filters always visible,
             tight label+control pairs, no dead space between rows. */}
@@ -559,16 +646,33 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
           </button>
         </div>
         {metricsVisible && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-3 mt-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-            {METRIC_FILTERS.map((def) => (
-              <DualRangeSlider
-                key={def.key}
-                label={def.label}
-                min={def.min} max={def.max} step={def.step}
-                {...rangeSliderProps(def)}
-                accentColor="sky"
-              />
-            ))}
+          <div className="mt-2 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-3">
+            {/* Grouped by category — 20 sliders flat was unscannable. */}
+            {METRIC_GROUPS.map((group) => {
+              const defs = METRIC_FILTERS.filter((d) => d.group === group);
+              const activeInGroup = defs.filter((d) => metricRanges[d.key]).length;
+              return (
+                <div key={group}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{group}</span>
+                    {activeInGroup > 0 && <span className="text-[10px] text-blue-500 font-medium">{activeInGroup} active</span>}
+                    <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-3">
+                    {defs.map((def) => (
+                      <div key={def.key} className={metricRanges[def.key] ? 'rounded-md ring-1 ring-blue-400/60 bg-blue-50/50 dark:bg-blue-950/20 -m-0.5 p-0.5' : ''}>
+                        <DualRangeSlider
+                          label={def.label}
+                          min={def.min} max={def.max} step={def.step}
+                          {...rangeSliderProps(def)}
+                          accentColor="sky"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
             <div className="col-span-full flex items-center justify-between">
               <span className="text-[10px] text-gray-400">Metrics from Finnhub fundamentals (coverage ~70–99 % per field; filtered-out tickers without data are excluded).</span>
               {metricsActive && (

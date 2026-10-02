@@ -44,6 +44,7 @@ model User {
   sessions      Session[]
   favorites     UserFavorite[]
   preferences   UserPreferences?
+  savedScreens  SavedScreen[]
 }
 
 model PortfolioItem {
@@ -245,6 +246,19 @@ model UserFavorite {
   @@unique([userId, ticker])
   @@index([userId])
   @@index([ticker])
+}
+
+model SavedScreen {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  // Filter state serialized as the /screener query string — restore is the
+  // same code path as URL restore (restoreFromParams in useScreener).
+  params    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VolumeBucket {

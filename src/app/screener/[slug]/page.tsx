@@ -97,6 +97,14 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
                 <p key={i} className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">{p}</p>
               ))}
             </div>
+            {def.screenerParams && (
+              <Link
+                href={`/screener?${def.screenerParams}`}
+                className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Open this screen in the interactive screener →
+              </Link>
+            )}
           </div>
 
           {isEw && (

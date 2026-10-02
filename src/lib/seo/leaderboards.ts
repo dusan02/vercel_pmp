@@ -7,6 +7,7 @@
 
 import { prisma } from '@/lib/db/prisma';
 import { formatCurrencyCompact } from '@/lib/utils/format';
+import { QUICK_SCREENS, presetToQueryString } from '@/lib/utils/screener';
 
 export type MetricSource = 'analysisCache' | 'finnhubMetrics' | 'ewScore' | 'insiderAggregate';
 
@@ -30,6 +31,13 @@ export interface LeaderboardDef {
   /** Extra conditions on the metric relation — combined screens like
    *  "quality ≥75 AND valuation ≥60". Merged into the metric `is` filter. */
   extraWhere?: Record<string, unknown>;
+  /** Conditions on OTHER relations of Ticker (cross-relation screens —
+   *  e.g. insider buying + Finnhub fundamentals). Merged into the
+   *  top-level ticker where clause. */
+  extraTickerWhere?: Record<string, unknown>;
+  /** /screener query string that reproduces this screen interactively —
+   *  rendered as a deep link so users can tweak the filter set. */
+  screenerParams?: string;
   format: (v: number) => string;
   /** 1–2 intro paragraphs rendered above the table (crawlable). */
   intro: string[];
@@ -460,6 +468,267 @@ export const LEADERBOARDS: LeaderboardDef[] = [
   },
 ];
 
+/**
+ * Strategy screens — these mirror the QUICK_SCREENS presets exactly
+ * (same thresholds in extraWhere/extraTickerWhere) and deep-link back to
+ * the interactive screener pre-loaded with the same filters.
+ */
+const qs = (label: string): string =>
+  presetToQueryString(QUICK_SCREENS.find((s) => s.label === label)!.preset);
+
+LEADERBOARDS.push(
+  {
+    slug: 'graham-value-stocks',
+    title: 'Benjamin Graham Value Stocks — Defensive Investor Screen',
+    h1: 'Benjamin Graham Value Stocks',
+    description:
+      'US stocks passing a Benjamin Graham defensive-investor screen: P/E ≤ 15, P/B ≤ 1.5, current ratio ≥ 1.5, positive earnings growth and a dividend. Updated daily.',
+    keywords: ['graham value stocks', 'benjamin graham screener', 'defensive investor stocks', 'low pe low pb stocks', 'value investing screen'],
+    metricLabel: 'P/E',
+    source: 'finnhubMetrics',
+    field: 'peRatio',
+    order: 'asc',
+    extraWhere: {
+      peRatio: { gt: 1, lte: 15 },
+      pbRatio: { gte: 0.1, lte: 1.5 },
+      currentRatio: { gte: 1.5 },
+      earningsGrowth: { gt: 0 },
+      dividendYield: { gt: 0.1 },
+    },
+    screenerParams: qs('Value (Graham)'),
+    format: num1,
+    intro: [
+      'Benjamin Graham\'s defensive-investor criteria (The Intelligent Investor, ch. 14) demanded a moderate P/E (≤ 15), moderate P/B (≤ 1.5 — his famous "15 × 1.5" combined ceiling), strong liquidity (current ratio ≥ 1.5), positive earnings growth and a dividend record. This list applies those thresholds to current Finnhub fundamentals.',
+      'We require positive P/E and positive book value — companies with losses or negative equity cannot pass a Graham screen regardless of how cheap the headline ratios look.',
+    ],
+    faq: [
+      { q: 'What is the Graham value screen?', a: 'A defensive-investor checklist from The Intelligent Investor: P/E ≤ 15, P/B ≤ 1.5, current ratio ≥ 1.5, positive earnings growth, and a paid dividend. It deliberately excludes speculative, loss-making companies.' },
+      { q: 'Why do profitable filters matter for value screens?', a: 'A negative P/E is not a low P/E — it means losses. Without positive floors, "cheap" screens fill up with distressed companies whose ratios are meaningless.' },
+    ],
+  },
+  {
+    slug: 'dividend-growth-stocks',
+    title: 'Dividend Growth Stocks — Sustainable Yield Screen',
+    h1: 'Dividend Growth Stocks',
+    description:
+      'US dividend stocks with yield 1.5–6%, payout ratio ≤ 75%, ROE ≥ 12%, low leverage and positive earnings growth — a sustainable-dividend screen. Updated daily.',
+    keywords: ['dividend growth stocks', 'sustainable dividend stocks', 'dividend stocks screener', 'safe dividend stocks', 'dividend yield payout ratio'],
+    metricLabel: 'Div. yield',
+    source: 'finnhubMetrics',
+    field: 'dividendYield',
+    order: 'desc',
+    extraWhere: {
+      dividendYield: { gte: 1.5, lte: 6 },
+      payoutRatio: { gte: 0, lte: 75 },
+      roe: { gte: 12 },
+      debtEquityRatio: { gte: 0, lte: 1 },
+      earningsGrowth: { gte: 5 },
+    },
+    screenerParams: qs('Dividend Growth'),
+    format: pct1,
+    intro: [
+      'A dividend worth holding needs to be paid for. This screen requires yield between 1.5% and 6% (the upper bound cuts classic yield traps), a payout ratio ≤ 75%, ROE ≥ 12%, debt-to-equity ≤ 1 and at least 5% earnings growth.',
+      'The payout cap is the key constraint: companies distributing most of their earnings have no margin of safety when profits dip — payout sustainability, not headline yield, is what separates dividend growers from future cutters.',
+    ],
+    faq: [
+      { q: 'Why cap the yield at 6%?', a: 'Very high yields usually mean the price collapsed faster than the dividend was cut — the trap closes when the payout is reduced. Capping at 6% trades a little headline yield for much better survivability.' },
+      { q: 'Why does payout ratio matter?', a: 'A payout above ~75–80% of earnings leaves almost nothing for reinvestment or downturns. Dividend growth needs both the will to pay and the earnings to cover it.' },
+    ],
+  },
+  {
+    slug: 'fast-growers',
+    title: 'Fast Growers — Peter Lynch High-Growth Stocks',
+    h1: 'Fast Growers (Peter Lynch)',
+    description:
+      'US stocks matching Peter Lynch\'s fast-grower profile: EPS growth ≥ 20%, revenue growth ≥ 15%, PEG ≤ 2, profitable, with moderate debt. Updated daily.',
+    keywords: ['fast grower stocks', 'peter lynch fast growers', 'high growth stocks', 'eps growth stocks', 'lynch screener'],
+    metricLabel: 'EPS growth',
+    source: 'finnhubMetrics',
+    field: 'earningsGrowth',
+    order: 'desc',
+    extraWhere: {
+      earningsGrowth: { gte: 20 },
+      revenueGrowth: { gte: 15 },
+      pegRatio: { gte: 0.1, lte: 2 },
+      netMargin: { gte: 0 },
+      debtEquityRatio: { gte: 0, lte: 2 },
+    },
+    screenerParams: qs('Fast Growers (Lynch)'),
+    format: pct1,
+    intro: [
+      'Peter Lynch\'s "fast growers" — the category behind most of his tenbaggers — are companies growing earnings 20–25%+ per year. This screen adds his usual safeguards: PEG ≤ 2 (don\'t overpay for growth), positive net margin (growth that actually produces profit) and debt-to-equity ≤ 2 (Lynch avoided heavily leveraged growers).',
+      'Lynch warned that the risk with fast growers is paying any price for the story — which is exactly what the PEG ceiling enforces here.',
+    ],
+    faq: [
+      { q: 'What counts as a Lynch fast grower?', a: 'In One Up on Wall Street, fast growers are companies compounding earnings at 20–25%+ — big enough to be real, small enough to keep growing. Lynch paired the growth rate with a PEG check to avoid overpaying.' },
+      { q: 'Why require positive net margin?', a: 'Revenue growth without profit can be bought, not earned. Lynch\'s growers converted growth into actual earnings — the margin floor enforces that.' },
+    ],
+  },
+  {
+    slug: 'garp-stocks',
+    title: 'GARP Stocks — Growth at a Reasonable Price (PEG < 1)',
+    h1: 'GARP Stocks (PEG < 1)',
+    description:
+      'US stocks with PEG ratio below 1, earnings growth ≥ 10% and P/E between 1–40 — Peter Lynch\'s growth-at-a-reasonable-price screen. Updated daily.',
+    keywords: ['garp stocks', 'peg below 1 stocks', 'growth at reasonable price', 'peter lynch peg', 'undervalued growth stocks'],
+    metricLabel: 'PEG',
+    source: 'finnhubMetrics',
+    field: 'pegRatio',
+    order: 'asc',
+    extraWhere: {
+      pegRatio: { gte: 0.01, lte: 1 },
+      earningsGrowth: { gte: 10 },
+      peRatio: { gt: 1, lte: 40 },
+    },
+    screenerParams: qs('GARP (PEG<1)'),
+    format: num2,
+    intro: [
+      'GARP — growth at a reasonable price — is Peter Lynch\'s signature discipline: a PEG ratio (P/E divided by earnings growth rate) below 1 means you pay less than one point of P/E per point of growth. This screen requires PEG 0–1, at least 10% earnings growth and a meaningful positive P/E (1–40).',
+      'PEG depends heavily on which growth rate the provider uses — treat sub-1 readings as a first-pass filter and verify the growth basis before acting on it.',
+    ],
+    faq: [
+      { q: 'What PEG is considered cheap?', a: 'Lynch\'s rule of thumb: PEG below 1 is attractive, 1–2 is fair, above 2 means you are paying up for growth. This list is capped at PEG ≤ 1 with positive floors so meaningless values cannot slip in.' },
+      { q: 'Can a PEG be negative?', a: 'Yes — when earnings growth is negative the PEG turns negative and loses meaning. We require PEG > 0 and at least 10% earnings growth.' },
+    ],
+  },
+  {
+    slug: 'asset-play-stocks',
+    title: 'Asset Play Stocks — Trading Below Book Value',
+    h1: 'Asset Play Stocks',
+    description:
+      'US stocks trading below book value (P/B ≤ 1) with P/S ≤ 1.5, positive liquidity and moderate debt — Lynch-style asset plays. Updated daily.',
+    keywords: ['asset play stocks', 'stocks below book value', 'low pb stocks', 'peter lynch asset play', 'undervalued asset stocks'],
+    metricLabel: 'P/B',
+    source: 'finnhubMetrics',
+    field: 'pbRatio',
+    order: 'asc',
+    extraWhere: {
+      pbRatio: { gte: 0.1, lte: 1 },
+      psRatio: { gte: 0, lte: 1.5 },
+      currentRatio: { gte: 1 },
+      debtEquityRatio: { gte: 0, lte: 3 },
+    },
+    screenerParams: qs('Asset Plays'),
+    format: num1,
+    intro: [
+      'An asset play is a company whose assets — property, inventory, subsidiaries — are worth more than the market price suggests. This screen finds stocks trading below book value (P/B ≤ 1) with low price-to-sales, enough liquidity to survive (current ratio ≥ 1) and debt-to-equity ≤ 3 so the assets aren\'t buried under leverage.',
+      'We exclude negative book value (P/B < 0.1 floor): a company whose liabilities exceed its assets has a negative book, which is distress — not an asset play.',
+    ],
+    faq: [
+      { q: 'What is a Lynch asset play?', a: 'A stock where the market overlooks the value of what the company owns. Lynch\'s examples were companies sitting on real estate or divisions worth more than the whole market cap — P/B below 1 is the screening proxy.' },
+      { q: 'Why exclude negative book value?', a: 'Negative equity means liabilities exceed assets — that is a distressed balance sheet, not hidden asset value. A positive P/B floor removes these automatically.' },
+    ],
+  },
+  {
+    slug: 'turnaround-stocks',
+    title: 'Turnaround Stocks With Insider Buying — Recovery Plays',
+    h1: 'Turnaround Stocks With Insider Buying',
+    description:
+      'Beaten-down US stocks where insiders are net buyers: P/S ≤ 1, forward P/E 1–25, current ratio ≥ 1.5, net insider buying over 90 days. Updated daily.',
+    keywords: ['turnaround stocks', 'stocks with insider buying', 'recovery stocks', 'beaten down stocks insiders buying', 'lynch turnaround stocks'],
+    metricLabel: 'Insider buying (90D)',
+    source: 'insiderAggregate',
+    field: 'netBuyValue90d',
+    order: 'desc',
+    extraWhere: { netBuyValue90d: { gte: 0 } },
+    extraTickerWhere: {
+      finnhubMetrics: {
+        is: { psRatio: { gte: 0, lte: 1 }, forwardPe: { gt: 1, lte: 25 }, currentRatio: { gte: 1.5 } },
+      },
+    },
+    screenerParams: qs('Turnarounds'),
+    format: (v) => formatCurrencyCompact(v),
+    intro: [
+      'Turnarounds are Lynch\'s highest-risk, highest-reward category: beaten-down companies with a plausible path back to profit. This screen requires P/S ≤ 1 (depressed valuation), forward P/E between 1 and 25 (the market still expects profits to return) and a current ratio ≥ 1.5 (enough liquidity to survive the turnaround).',
+      'The ranking signal is insider net buying over the last 90 days — management buying open-market shares at trough prices is the classic tell that insiders believe the recovery story. The list is ordered by real dollars bought, not press releases.',
+    ],
+    faq: [
+      { q: 'Why pair insider buying with valuation filters?', a: 'Cheap stocks are usually cheap for a reason. Insider open-market buying is evidence the people closest to the business disagree with the market\'s pessimism — it converts "cheap" into "cheap with a catalyst".' },
+      { q: 'What does forward P/E 1–25 filter out?', a: 'Companies with no expected profits (no meaningful forward P/E) and companies already priced for full recovery. The band targets the gap between "broken" and "fixed".' },
+    ],
+  },
+  {
+    slug: 'stalwart-stocks',
+    title: 'Stalwart Stocks — Peter Lynch Steady Compounders',
+    h1: 'Stalwart Stocks (Peter Lynch)',
+    description:
+      'Large steady US compounders matching Lynch\'s stalwart profile: EPS growth 8–20%, ROE ≥ 12%, net margin ≥ 10%, beta ≤ 1.4. Updated daily.',
+    keywords: ['stalwart stocks', 'peter lynch stalwarts', 'steady growth stocks', 'large cap compounders', 'defensive growth stocks'],
+    metricLabel: 'Overall score',
+    source: 'analysisCache',
+    field: 'overallScore',
+    order: 'desc',
+    extraTickerWhere: {
+      finnhubMetrics: {
+        is: { earningsGrowth: { gte: 8, lte: 20 }, roe: { gte: 12 }, netMargin: { gte: 10 }, beta: { gte: 0, lte: 1.4 } },
+      },
+    },
+    screenerParams: qs('Stalwarts (Lynch)'),
+    format: (v) => String(Math.round(v)),
+    intro: [
+      'Stalwarts are Lynch\'s middle category: large, established companies growing earnings 8–20% a year — the 2–4× multi-baggers of a portfolio rather than tenbaggers. This screen adds ROE ≥ 12%, net margin ≥ 10% and beta ≤ 1.4 for the defensive character Lynch expected from the category.',
+      'The table is ranked by our composite overall score, so the highest-quality stalwarts surface first rather than the fastest growers.',
+    ],
+    faq: [
+      { q: 'What makes a stock a stalwart?', a: 'Lynch\'s stalwarts are big companies growing steadily — Coca-Cola style. Enough growth to compound, established enough to hold through recessions, typically bought on dips for 30–50% gains rather than held for tenbaggers.' },
+      { q: 'Why the beta cap?', a: 'Stalwarts are supposed to be portfolio ballast. Beta ≤ 1.4 keeps genuinely volatile names out of a category meant to be steadier than the market.' },
+    ],
+  },
+  {
+    slug: 'slow-grower-stocks',
+    title: 'Slow Grower Stocks — Dividend-Paying Defensive Names',
+    h1: 'Slow Grower Stocks (Peter Lynch)',
+    description:
+      'Mature dividend payers matching Lynch\'s slow-grower profile: yield 2–9%, EPS growth 0–8%, beta ≤ 1.2. Updated daily.',
+    keywords: ['slow grower stocks', 'peter lynch slow growers', 'dividend defensive stocks', 'low beta dividend stocks', 'mature dividend payers'],
+    metricLabel: 'Div. yield',
+    source: 'finnhubMetrics',
+    field: 'dividendYield',
+    order: 'desc',
+    extraWhere: {
+      dividendYield: { gte: 2, lte: 9 },
+      earningsGrowth: { gte: 0, lte: 8 },
+      beta: { gte: 0, lte: 1.2 },
+    },
+    screenerParams: qs('Slow Growers (Lynch)'),
+    format: pct1,
+    intro: [
+      'Slow growers are Lynch\'s most conservative category: mature companies growing earnings 0–8% a year that exist in a portfolio for their dividends, not their appreciation. This screen requires yield 2–9% and beta ≤ 1.2 on top of the growth band.',
+      'Lynch bought slow growers for the dividend and the defensive floor — then rotated out when the price ran ahead of the (slow) growth. The yield is the point; the low beta is the safety margin.',
+    ],
+    faq: [
+      { q: 'Why would anyone want slow growers?', a: 'Income and stability. Lynch held them for dividends and recession resilience, rotating in when prices were depressed relative to the payout — not for capital gains.' },
+      { q: 'Why is there a growth ceiling?', a: 'A company growing at 15%+ is not a slow grower anymore — it graduates to stalwart territory. The 0–8% band keeps the category honest.' },
+    ],
+  },
+  {
+    slug: 'cash-machines',
+    title: 'Cash Machine Stocks — High FCF Margin at Fair Prices',
+    h1: 'Cash Machine Stocks',
+    description:
+      'US stocks converting ≥ 15% of revenue into free cash flow with strong profitability and P/FCF ≤ 30 — cheap cash generators. Updated daily.',
+    keywords: ['cash machine stocks', 'high fcf margin stocks', 'free cash flow stocks', 'cheap fcf stocks', 'fcf yield screener'],
+    metricLabel: 'FCF margin',
+    source: 'analysisCache',
+    field: 'fcfMargin',
+    order: 'desc',
+    extraWhere: { fcfMargin: { gte: 0.15 }, profitabilityScore: { gte: 60 } },
+    extraTickerWhere: {
+      finnhubMetrics: { is: { priceFreeCashFlow: { gt: 0.1, lte: 30 } } },
+    },
+    screenerParams: qs('Cash Machines'),
+    format: pct1,
+    intro: [
+      'Cash machines convert a large share of every revenue dollar into free cash flow — the money left after running and investing in the business. This screen requires FCF margin ≥ 15%, our profitability score ≥ 60, and a price-to-free-cash-flow of at most 30 so the cash generation isn\'t already fully priced in.',
+      'FCF margin is computed from trailing-twelve-month SEC filings; the P/FCF cap uses Finnhub fundamentals. Together they target businesses that are both efficient and not expensive.',
+    ],
+    faq: [
+      { q: 'What is a good FCF margin?', a: 'Above ~10% is solid, above 15% is strong — software and franchise businesses often run 20–30%. Capital-intensive industries rarely clear the bar, which is exactly what this screen exploits.' },
+      { q: 'Why cap P/FCF at 30?', a: 'High FCF margin at any price is a growth-stock trap — paying 60× free cash flow for a "quality" name often ends badly. The cap keeps this a value-aware quality screen.' },
+    ],
+  },
+);
+
 const LEADERBOARD_MAP = new Map(LEADERBOARDS.map((l) => [l.slug, l]));
 
 export function getLeaderboard(slug: string): LeaderboardDef | undefined {
@@ -495,6 +764,7 @@ export async function getLeaderboardRows(def: LeaderboardDef, limit = 50): Promi
     where: {
       lastPrice: { gt: 0 },
       [def.source]: { is: metricWhere },
+      ...(def.extraTickerWhere ?? {}),
     },
     select: {
       symbol: true,
