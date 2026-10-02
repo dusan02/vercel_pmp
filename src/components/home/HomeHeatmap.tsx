@@ -2,7 +2,6 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 import { SectionErrorBoundary } from '../SectionErrorBoundary';
 import { HeatmapSkeleton } from '../SectionSkeleton';
-import { StockData } from '@/lib/types';
 
 // CRITICAL: Heatmap je prvá obrazovka na mobile - prioritizuj načítanie
 // ssr: true — HeatmapPreview je SSR-safe (browser APIs len v effects/handlers).
@@ -21,12 +20,10 @@ interface HomeHeatmapProps {
     activeView?: string | undefined;
     onTileClick?: (ticker: string) => void | undefined;
     onTileHover?: (ticker: string | null) => void | undefined;
-    stockData?: StockData[] | undefined;
-    onSelectTicker?: (ticker: string) => void | undefined;
     initialHeatmapData?: any[] | undefined;
 }
 
-export function HomeHeatmap({ wrapperClass, activeView, onTileClick, onTileHover, stockData, onSelectTicker, initialHeatmapData }: HomeHeatmapProps) {
+export function HomeHeatmap({ wrapperClass, activeView, onTileClick, onTileHover, initialHeatmapData }: HomeHeatmapProps) {
     return (
         <SectionErrorBoundary sectionName="Heatmap">
             <div className="screen-heatmap-content flex flex-col h-full w-full">
@@ -36,8 +33,6 @@ export function HomeHeatmap({ wrapperClass, activeView, onTileClick, onTileHover
                         {...(wrapperClass !== undefined ? { wrapperClass } : {})}
                         {...(onTileClick !== undefined ? { onTileClick } : {})}
                         {...(onTileHover !== undefined ? { onTileHover } : {})}
-                        {...(stockData !== undefined ? { stockData } : {})}
-                        {...(onSelectTicker !== undefined ? { onSelectTicker } : {})}
                         {...(initialHeatmapData !== undefined ? { initialHeatmapData } : {})}
                     />
                 </div>

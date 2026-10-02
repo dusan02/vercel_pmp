@@ -212,17 +212,15 @@ export default async function Page() {
           </span>
         ))}
       </nav>
-      {/* Hero positioning text — compact, one line */}
+      {/* Hero positioning text — single hairline strip; H1 stays first for SEO */}
       <section className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between flex-wrap gap-2">
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-              Track US Stocks Before the Market Opens
-            </h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Real-time pre-market prices, earnings, analysis for 1,000+ NYSE & NASDAQ stocks — no sign-up needed
-            </p>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex items-baseline gap-x-3 flex-wrap">
+          <h1 className="text-sm font-bold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">
+            Track US Stocks Before the Market Opens
+          </h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Real-time pre-market prices, earnings, analysis for 1,000+ NYSE &amp; NASDAQ stocks — no sign-up needed
+          </p>
         </div>
       </section>
       <Suspense fallback={<div className="min-h-screen bg-white dark:bg-gray-950"></div>}>

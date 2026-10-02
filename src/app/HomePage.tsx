@@ -82,6 +82,15 @@ const WhatMovedToday = dynamic(
   { ssr: true, loading: () => null }
 );
 
+const GlobalStockSearch = dynamic(
+  () => import('@/components/GlobalStockSearch').then((mod) => mod.GlobalStockSearch),
+  { ssr: true, loading: () => null }
+);
+const HeatmapViewButton = dynamic(
+  () => import('@/components/HeatmapViewButton').then((mod) => mod.HeatmapViewButton),
+  { ssr: true, loading: () => null }
+);
+
 const CookieConsent = dynamic(
   () => import('@/components/CookieConsent'),
   { ssr: false, loading: () => null }
@@ -249,8 +258,6 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                     wrapperClass="mobile-heatmap-wrapper"
                     activeView={activeSection === 'heatmap' ? 'heatmap' : 'inactive'}
                     onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
-                    stockData={stockData}
-                    onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
                     initialHeatmapData={initialHeatmapData}
                   />
                 )}
@@ -418,6 +425,18 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                               />
                             </div>
                           }
+                          toolbar={
+                            <div className="hidden lg:flex items-center gap-2">
+                              <div className="w-56">
+                                <GlobalStockSearch
+                                  stockData={stockData}
+                                  onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
+                                  placeholder="Search stocks..."
+                                />
+                              </div>
+                              <HeatmapViewButton />
+                            </div>
+                          }
                         />
                       </div>
                     </div>
@@ -443,8 +462,6 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                             activeView={activeSection === 'heatmap' ? 'heatmap' : 'inactive'}
                             onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)}
                             onTileHover={handleAnalysisPrefetch}
-                            stockData={stockData}
-                            onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
                             initialHeatmapData={initialHeatmapData}
                           />
                           <WhatMovedToday movers={initialMoversData} eligibleTickers={eligibleTickers} />

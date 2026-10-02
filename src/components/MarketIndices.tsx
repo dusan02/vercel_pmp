@@ -120,57 +120,52 @@ export function MarketIndices() {
         const isPositive = (percentChg ?? 0) >= 0;
         const hasData = price != null && price > 0;
 
+        // Slim horizontal card: [label+price] [sparkline] [%+$ change] — one
+        // row ~52px tall instead of the previous 3-row ~100px card.
         return (
             <div
                 key={label}
                 className={`
-                    flex-1 flex flex-col gap-1
+                    flex-1 flex items-center gap-2
                     bg-white dark:bg-gray-900
                     border border-gray-200 dark:border-gray-700
                     border-l-[3px]
                     ${isPositive
                         ? 'border-l-emerald-500'
                         : 'border-l-red-500'}
-                    rounded-lg px-3 pt-2 pb-2
+                    rounded-lg px-2.5 py-1.5
                     transition-all duration-200 cursor-default
                     hover:shadow-sm
                 `}
                 title={label}
             >
-                {/* ── Row 1: label · % change · $ change ── */}
-                <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400">
+                {/* Left: label + price (+ AH drift once the day result is pinned) */}
+                <div className="flex flex-col justify-center shrink-0">
+                    <span className="text-[10px] font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400 leading-tight">
                         {label}
                     </span>
-
-                    <div className="flex items-center gap-1.5">
-                        {loading && !hasData ? (
-                            <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-3 w-12 rounded" />
-                        ) : (
-                            <>
-                                {dollarChg !== null && (
-                                    <span className={`text-[11px] font-medium tabular-nums hidden sm:inline
-                                        ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
-                                        {isPositive ? '+' : ''}{dollarChg.toFixed(isIndex ? 0 : 2)}
-                                    </span>
-                                )}
-                                <span className={`text-xs font-bold tabular-nums px-1.5 py-0.5 rounded
-                                    ${isPositive
-                                        ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
-                                        : 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400'}`}>
-                                        {formatPercent(percentChg)}
+                    {loading && !hasData ? (
+                        <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-16 rounded mt-0.5" />
+                    ) : (
+                        <span className="flex items-baseline gap-1.5 leading-tight">
+                            <span className="text-base font-bold text-gray-900 dark:text-white font-mono tabular-nums">
+                                {isIndex ? formatPrice(price) : `$${formatPrice(price)}`}
+                            </span>
+                            {ah && (
+                                <span className={`text-[10px] font-medium tabular-nums ${ah.pct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                                    AH {ah.pct >= 0 ? '+' : ''}{ah.pct.toFixed(2)}%
                                 </span>
-                            </>
-                        )}
-                    </div>
+                            )}
+                        </span>
+                    )}
                 </div>
 
-                {/* ── Row 2: sparkline ── */}
-                <div className="w-full" style={{ height: 56 }}>
+                {/* Middle: sparkline fills remaining width */}
+                <div className="flex-1 h-9 min-w-[40px]">
                     {pts.length > 0 ? (
                         <MiniIntradayChart
                             points={pts}
-                            height={56}
+                            height={36}
                             positive={isPositive}
                         />
                     ) : (
@@ -178,21 +173,27 @@ export function MarketIndices() {
                     )}
                 </div>
 
-                {/* ── Row 3: price (+ after-hours drift once the day result is pinned) ── */}
-                {loading && !hasData ? (
-                    <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-5 w-20 rounded" />
-                ) : (
-                    <span className="flex items-baseline gap-1.5 leading-tight">
-                        <span className="text-base font-bold text-gray-900 dark:text-white font-mono tabular-nums">
-                            {isIndex ? formatPrice(price) : `$${formatPrice(price)}`}
-                        </span>
-                        {ah && (
-                            <span className={`text-[10px] font-medium tabular-nums ${ah.pct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
-                                AH {ah.pct >= 0 ? '+' : ''}{ah.pct.toFixed(2)}%
+                {/* Right: % change chip + $ change */}
+                <div className="flex flex-col items-end justify-center gap-0.5 shrink-0">
+                    {loading && !hasData ? (
+                        <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-12 rounded" />
+                    ) : (
+                        <>
+                            <span className={`text-xs font-bold tabular-nums px-1.5 py-0.5 rounded
+                                ${isPositive
+                                    ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                                    : 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400'}`}>
+                                {formatPercent(percentChg)}
                             </span>
-                        )}
-                    </span>
-                )}
+                            {dollarChg !== null && (
+                                <span className={`text-[10px] font-medium tabular-nums hidden sm:inline
+                                    ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                                    {isPositive ? '+' : ''}{dollarChg.toFixed(isIndex ? 0 : 2)}
+                                </span>
+                            )}
+                        </>
+                    )}
+                </div>
             </div>
         );
     };

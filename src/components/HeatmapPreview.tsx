@@ -5,11 +5,8 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapMetricChips } from './HeatmapMetricChips';
-import { HeatmapViewButton } from './HeatmapViewButton';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { GlobalStockSearch } from './GlobalStockSearch';
 import { HeatmapMethodology } from './HeatmapMethodology';
-import { StockData } from '@/lib/types';
 
 // OPTIMIZATION: Enable SSR for desktop (faster initial load)
 // Mobile uses different components, so SSR is safe for desktop
@@ -30,7 +27,7 @@ const ResponsiveMarketHeatmap = dynamic(
  * Zobrazuje zmenšenú verziu heatmapy, ktorá pri kliknutí presmeruje na plnú stránku
  * Prepínacie buttony (% Change / Mcap Change) sú vedľa nadpisu
  */
-export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHover, stockData, onSelectTicker, initialHeatmapData }: { activeView?: string | undefined; wrapperClass?: string | undefined; onTileClick?: (ticker: string) => void | undefined; onTileHover?: (ticker: string | null) => void | undefined; stockData?: StockData[] | undefined; onSelectTicker?: (ticker: string) => void | undefined; initialHeatmapData?: any[] | undefined }) {
+export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHover, initialHeatmapData }: { activeView?: string | undefined; wrapperClass?: string | undefined; onTileClick?: (ticker: string) => void | undefined; onTileHover?: (ticker: string | null) => void | undefined; initialHeatmapData?: any[] | undefined }) {
   const router = useRouter();
   // Centralized metric state with localStorage persistence
   const { metric, setMetric } = useHeatmapMetric('percent');
@@ -59,25 +56,9 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHo
 
   return (
     <section className={`heatmap-preview ${wrapperClass || ''} ${!isDesktop ? 'h-full flex flex-col' : ''}`}>
-      {/* Toolbar - hide on mobile (MobileTreemap has its own header).
-          No visible title — the active tab above already carries the label. */}
+      {/* No visible title — the active tab above already carries the label.
+          Search + fullscreen live in the nav row (PageHeader toolbar). */}
       <h2 className="sr-only">Market Heatmap</h2>
-      {isDesktop && (
-        <div className="flex items-center gap-4 mb-3 px-4 border-none outline-none">
-          {stockData && onSelectTicker && (
-            <div className="flex-1 max-w-md">
-              <GlobalStockSearch
-                stockData={stockData}
-                onSelectTicker={onSelectTicker}
-                placeholder="Search stocks..."
-              />
-            </div>
-          )}
-          <div className="flex items-center gap-3 ml-auto shrink-0">
-            <HeatmapViewButton />
-          </div>
-        </div>
-      )}
 
       {/* Metric chips — horizontal row above the map (desktop) */}
       {isDesktop && (

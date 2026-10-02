@@ -11,12 +11,14 @@ import { ThemeToggle } from './ThemeToggle';
 
 interface PageHeaderProps {
   navigation?: React.ReactNode;
+  /** Right side of the nav row — stock search + fullscreen heatmap button */
+  toolbar?: React.ReactNode;
   onLogoClick?: () => void;
   /** Market-session pill (PRE-MARKET/LIVE/…) — rendered next to auth controls */
   statusBadge?: React.ReactNode;
 }
 
-export function PageHeader({ navigation, onLogoClick, statusBadge }: PageHeaderProps) {
+export function PageHeader({ navigation, toolbar, onLogoClick, statusBadge }: PageHeaderProps) {
   return (
     <header className="w-full bg-[var(--clr-surface)] border-b border-[var(--clr-border)] relative z-50 py-2 text-left sticky top-0 lg:static">
       <div className="flex items-center justify-between w-full max-w-screen-2xl mx-auto px-3 sm:px-6 gap-2 sm:gap-4 flex-wrap lg:flex-nowrap">
@@ -76,11 +78,16 @@ export function PageHeader({ navigation, onLogoClick, statusBadge }: PageHeaderP
             </div>
           </div>
 
-          {/* BOTTOM ROW: Navigation */}
-          <div className="flex items-center justify-start w-full pt-1">
-            <div className="w-full">
+          {/* BOTTOM ROW: Navigation | search + fullscreen toolbar */}
+          <div className="flex items-center justify-between w-full pt-1 gap-3">
+            <div className="min-w-0">
               {navigation}
             </div>
+            {toolbar && (
+              <div className="flex items-center gap-2 shrink-0">
+                {toolbar}
+              </div>
+            )}
           </div>
         </div>
       </div>
