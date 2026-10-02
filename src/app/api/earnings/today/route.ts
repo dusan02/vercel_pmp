@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getDateET } from '@/lib/utils/dateET';
+import { classifyEarningsTime } from '@/lib/utils/earningsTime';
 
 export async function GET(request: NextRequest) {
   try {
@@ -44,10 +45,8 @@ export async function GET(request: NextRequest) {
       date: earning.date.toISOString().split('T')[0]
     }));
 
-    // Split by time — both vocab variants exist in the data ('bmo'/'before',
-    // 'amc'/'after'); matching only one drops rows from the response.
-    const preMarket = earningsData.filter(earning => earning.time === 'before' || earning.time === 'bmo');
-    const afterMarket = earningsData.filter(earning => earning.time === 'after' || earning.time === 'amc');
+    const preMarket = earningsData.filter(earning => classifyEarningsTime(earning.time) === 'preMarket');
+    const afterMarket = earningsData.filter(earning => classifyEarningsTime(earning.time) === 'afterMarket');
 
     const response = {
       success: true,

@@ -10,6 +10,8 @@ import { getDateET, createETDate } from '@/lib/utils/dateET';
 import { getSessionDateStr } from '@/lib/utils/timeUtils';
 import Link from 'next/link';
 import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
+import { getMoversData } from '@/services/movers/getMovers';
+import { getHeatmapData } from '@/lib/heatmap/heatmapService';
 import { prisma } from '@/lib/db/prisma';
 
 const baseUrl = 'https://premarketprice.com';
@@ -94,13 +96,13 @@ export default async function Page() {
 
     const [stocksResult, moversResult, blogResult, heatmapResult, weeklyEarningsResult] = await Promise.allSettled([
       withTimeout(getStocksData(topTickers, project), SSR_TIMEOUT_MS, { data: [], errors: ['SSR timeout'] }),
-      // SSR fetch for movers — used by HomeMovers as SWR fallbackData
+      // Movers via shared pipeline — same records as /api/stocks/movers,
+      // without a self-referential HTTP hop (localhost:3001 fetch used to
+      // add latency + a failure mode on every ISR revalidation).
       withTimeout(
         (async () => {
-          const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/stocks/movers?limit=50`, { next: { revalidate: 30 } });
-          if (!res.ok) return [];
-          const data = await res.json();
-          return data.movers || data.rows || data || [];
+          const { movers } = await getMoversData(50, 2.0);
+          return movers;
         })(),
         SSR_TIMEOUT_MS,
         []
@@ -117,14 +119,12 @@ export default async function Page() {
         SSR_TIMEOUT_MS,
         []
       ),
-      // SSR fetch for heatmap — eliminates client-side fetch waterfall
-      // Fetches compact rows format (same as API) for instant hydration
+      // Heatmap via shared service — same cache-aware pipeline as
+      // /api/heatmap (compact rows for instant hydration), no HTTP hop.
       withTimeout(
         (async () => {
-          const res = await fetch(`http://127.0.0.1:${process.env.PORT || 3001}/api/heatmap`, { next: { revalidate: 30 } });
-          if (!res.ok) return [];
-          const data = await res.json();
-          return data.rows || data.data || [];
+          const result = await getHeatmapData();
+          return result.ok ? result.rows : [];
         })(),
         SSR_TIMEOUT_MS,
         []

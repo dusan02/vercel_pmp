@@ -3,6 +3,7 @@ import { getAllProjectTickers } from '@/data/defaultTickers';
 import { detectSession, nowET } from '@/lib/utils/timeUtils';
 import { prisma } from '@/lib/db/prisma';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
+import { classifyEarningsTime } from '@/lib/utils/earningsTime';
 import { getFinnhubClient, FinnhubEarningsItem, FinnhubEarningsResponse } from '@/lib/clients/finnhubClient';
 
 // FinnhubEarningsResponse is imported from finnhubClient.ts (Bug #4 fix: removed duplicate definition)
@@ -175,7 +176,7 @@ function processAllEarningsData(
             date: earning.date
         };
 
-        if (earning.time === 'bmo') {
+        if (classifyEarningsTime(earning.time) === 'preMarket') {
             preMarket.push(earningsItem);
         } else {
             afterMarket.push(earningsItem);

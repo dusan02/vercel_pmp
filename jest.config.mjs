@@ -35,7 +35,6 @@ const config = {
     '!src/__tests__/**',
   ],
   coverageDirectory: 'coverage',
-  forceExit: true,
   verbose: true,
 };
 

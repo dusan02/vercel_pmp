@@ -139,7 +139,7 @@ class BackgroundDataService {
     nextUpdate: string;
   }): Promise<void> {
     try {
-      await redisClient.set('background_service_status', JSON.stringify(status));
+      await redisClient?.set('background_service_status', JSON.stringify(status));
     } catch (error) {
       console.error('Failed to store background service status:', error);
     }
@@ -157,7 +157,7 @@ class BackgroundDataService {
     lastError?: string;
   } | null> {
     try {
-      const status = await redisClient.get('background_service_status');
+      const status = await redisClient?.get('background_service_status');
       return status ? JSON.parse(status.toString()) : null;
     } catch (error) {
       console.error('Failed to get background service status:', error);

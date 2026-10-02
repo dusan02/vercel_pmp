@@ -3,6 +3,7 @@ import { getEarningsForDate } from '@/services/earningsService';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { prisma } from '@/lib/db/prisma';
 import { getDateET } from '@/lib/utils/dateET';
+import { classifyEarningsTime } from '@/lib/utils/earningsTime';
 
 export const revalidate = 60; // 1 min cache
 
@@ -82,9 +83,9 @@ export async function GET(request: NextRequest) {
 
         weekData[dateStr] = {
           date: dateStr,
-          preMarket: dayEarnings.filter(e => e.time === 'bmo' || e.time === 'before').map(toRow),
-          afterMarket: dayEarnings.filter(e => e.time === 'amc' || e.time === 'after').map(toRow),
-          timeTbd: dayEarnings.filter(e => e.time !== 'bmo' && e.time !== 'amc' && e.time !== 'before' && e.time !== 'after').map(toRow),
+          preMarket: dayEarnings.filter(e => classifyEarningsTime(e.time) === 'preMarket').map(toRow),
+          afterMarket: dayEarnings.filter(e => classifyEarningsTime(e.time) === 'afterMarket').map(toRow),
+          timeTbd: dayEarnings.filter(e => classifyEarningsTime(e.time) === 'timeTbd').map(toRow),
         };
       }
       
@@ -128,9 +129,9 @@ export async function GET(request: NextRequest) {
             hasReported: e.epsActual != null || e.revenueActual != null,
           });
 
-          const preMarket = allEarnings.filter(e => e.time === 'bmo' || e.time === 'before').map(toRow);
-          const afterMarket = allEarnings.filter(e => e.time === 'amc' || e.time === 'after').map(toRow);
-          const timeTbd = allEarnings.filter(e => e.time !== 'bmo' && e.time !== 'before' && e.time !== 'amc' && e.time !== 'after').map(toRow);
+          const preMarket = allEarnings.filter(e => classifyEarningsTime(e.time) === 'preMarket').map(toRow);
+          const afterMarket = allEarnings.filter(e => classifyEarningsTime(e.time) === 'afterMarket').map(toRow);
+          const timeTbd = allEarnings.filter(e => classifyEarningsTime(e.time) === 'timeTbd').map(toRow);
           
           return {
             date,
