@@ -38,6 +38,62 @@ export interface FillValuationDayResult {
     priceOnly: number;
 }
 
+export interface DayRatios {
+    marketCap: number | null;
+    peRatio: number | null;
+    psRatio: number | null;
+    evEbitda: number | null;
+    fcfYield: number | null;
+}
+
+/**
+ * Compute valuation multiples for one close price from local statements.
+ * `statements` must be sorted endDate desc (as the DB query returns them).
+ *
+ * Share-count fallback: the latest filing does not always report
+ * sharesOutstanding (e.g. CMCSA Q1-2026 has null while FY2025 has 3.99B) —
+ * gating all ratios on the newest row's share count produced null P/E for the
+ * whole ticker. We take shares from the most recent statement that reports
+ * them; balance-sheet fields still come from the latest statement.
+ */
+export function computeDayRatios(statements: FinancialStatement[], closePrice: number, asOf: Date): DayRatios {
+    const out: DayRatios = { marketCap: null, peRatio: null, psRatio: null, evEbitda: null, fcfYield: null };
+    const ttm = computeTTMAtDate(statements, asOf);
+    const stmtsBeforeDate = statements.filter(s => s.endDate.getTime() <= asOf.getTime());
+    // Latest filings don't always report every field (e.g. CMCSA Q1-2026:
+    // sharesOutstanding/debt/cash all null while FY2025 has them). Gating all
+    // ratios on the newest row produced null multiples for the whole ticker —
+    // fall back per-field-group to the most recent statement that reports it.
+    const latestWith = (pred: (s: FinancialStatement) => boolean) =>
+        stmtsBeforeDate.find(pred) ?? statements.find(pred) ?? null;
+    const shares = latestWith((s) => s.sharesOutstanding != null && s.sharesOutstanding > 0)?.sharesOutstanding ?? null;
+
+    if (shares) {
+        out.marketCap = closePrice * shares;
+
+        const effectiveNI = ttm.netIncome ?? latestWith((s) => s.netIncome != null)?.netIncome;
+        if (effectiveNI && effectiveNI > 0) {
+            out.peRatio = closePrice / (effectiveNI / shares);
+        }
+        const effectiveRev = ttm.revenue ?? latestWith((s) => s.revenue != null)?.revenue;
+        if (effectiveRev && effectiveRev > 0) {
+            out.psRatio = closePrice / (effectiveRev / shares);
+        }
+        const bs = latestWith((s) => s.totalDebt != null && s.cashAndEquivalents != null);
+        const effectiveEbit = ttm.ebit ?? latestWith((s) => s.ebit != null)?.ebit;
+        if (effectiveEbit && effectiveEbit > 0 && bs) {
+            out.evEbitda = (out.marketCap + bs.totalDebt! - bs.cashAndEquivalents!) / effectiveEbit;
+        }
+        const cf = latestWith((s) => s.operatingCashFlow != null && s.capex != null);
+        const effOcf = ttm.operatingCashFlow ?? cf?.operatingCashFlow ?? null;
+        const effCapex = ttm.capex ?? cf?.capex ?? null;
+        if (effOcf !== null && effCapex !== null && out.marketCap > 0) {
+            out.fcfYield = (effOcf - Math.abs(effCapex)) / out.marketCap;
+        }
+    }
+    return out;
+}
+
 export async function fillValuationDay(dateET: string): Promise<FillValuationDayResult> {
     const DAY_START = new Date(dateET + 'T00:00:00Z');
     const DAY_END = new Date(DAY_START.getTime() + 86_400_000);
@@ -98,38 +154,8 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
         const closePrice = ref.regularClose!;
         try {
             const statements = stmtsBySymbol.get(ref.symbol) ?? [];
-
-            let marketCap: number | null = null;
-            let peRatio: number | null = null;
-            let psRatio: number | null = null;
-            let evEbitda: number | null = null;
-            let fcfYield: number | null = null;
-
-            const ttm = computeTTMAtDate(statements, ref.date);
-            const stmtsBeforeDate = statements.filter(s => s.endDate.getTime() <= ref.date.getTime());
-            const stmt = stmtsBeforeDate[0] || statements[statements.length - 1];
-
-            if (stmt && stmt.sharesOutstanding) {
-                marketCap = closePrice * stmt.sharesOutstanding;
-
-                const effectiveNI = ttm.netIncome ?? stmt.netIncome;
-                if (effectiveNI && effectiveNI > 0) {
-                    peRatio = closePrice / (effectiveNI / stmt.sharesOutstanding);
-                }
-                const effectiveRev = ttm.revenue ?? stmt.revenue;
-                if (effectiveRev && effectiveRev > 0) {
-                    psRatio = closePrice / (effectiveRev / stmt.sharesOutstanding);
-                }
-                const effectiveEbit = ttm.ebit ?? stmt.ebit;
-                if (effectiveEbit && effectiveEbit > 0 && stmt.totalDebt !== null && stmt.cashAndEquivalents !== null) {
-                    evEbitda = (marketCap + stmt.totalDebt - stmt.cashAndEquivalents) / effectiveEbit;
-                }
-                const effOcf = ttm.operatingCashFlow ?? stmt.operatingCashFlow;
-                const effCapex = ttm.capex ?? stmt.capex;
-                if (effOcf !== null && effCapex !== null && marketCap > 0) {
-                    fcfYield = (effOcf - Math.abs(effCapex)) / marketCap;
-                }
-            }
+            const { marketCap, peRatio, psRatio, evEbitda, fcfYield } =
+                computeDayRatios(statements, closePrice, ref.date);
 
             if (peRatio === null && psRatio === null) result.priceOnly++;
 

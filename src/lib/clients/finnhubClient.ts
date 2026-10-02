@@ -177,55 +177,60 @@ export class FinnhubClient {
         if (!data?.metric) return null;
 
         const m = data.metric;
+        // Basis convention: prefer TTM/Quarterly keys over Annual ones — annual
+        // values are up to a year stale and sit on a different basis than the
+        // TTM multiples we compute ourselves (the CMCSA peRatio incident:
+        // peNormalizedAnnual=3.83 vs peTTM≈7 — wrong-basis field won silently).
         return {
             // Valuation
-            peRatio: m['peNormalizedAnnual'] ?? m['peBasicExclExtraTTM'] ?? m['peExclExtraAnnual'] ?? null,
-            forwardPe: m['forwardPE'] ?? m['peNormalizedAnnual'] ?? null,
-            pbRatio: m['pbAnnual'] ?? m['pbQuarterly'] ?? null,
+            peRatio: m['peTTM'] ?? m['peBasicExclExtraTTM'] ?? m['peNormalizedAnnual'] ?? m['peExclExtraAnnual'] ?? null,
+            forwardPe: m['forwardPE'] ?? null,
+            pbRatio: m['pbQuarterly'] ?? m['pbAnnual'] ?? null,
             psRatio: m['psTTM'] ?? m['psAnnual'] ?? null,
             evEbitda: m['evEbitdaTTM'] ?? null,
             evSales: m['evRevenueTTM'] ?? null,
             pegRatio: m['pegTTM'] ?? m['forwardPEG'] ?? null,
             // Bug #1 fix: corrected metric keys (was payoutRatioTTM and ptbv — wrong!)
             priceCashFlow: m['pcfShareTTM'] ?? m['pcfShareAnnual'] ?? null,
-            priceFreeCashFlow: m['priceToFreeCashFlowTTM'] ?? m['pfcfShareTTM'] ?? null,
-            
+            priceFreeCashFlow: m['pfcfShareTTM'] ?? m['priceToFreeCashFlowTTM'] ?? null,
+
             // Profitability
-            grossMargin: m['grossMarginAnnual'] ?? m['grossMarginTTM'] ?? null,
-            operatingMargin: m['operatingMarginAnnual'] ?? m['operatingMarginTTM'] ?? null,
-            netMargin: m['netProfitMarginAnnual'] ?? m['netProfitMarginTTM'] ?? null,
+            grossMargin: m['grossMarginTTM'] ?? m['grossMarginAnnual'] ?? null,
+            operatingMargin: m['operatingMarginTTM'] ?? m['operatingMarginAnnual'] ?? null,
+            netMargin: m['netProfitMarginTTM'] ?? m['netProfitMarginAnnual'] ?? null,
             roe: m['roeTTM'] ?? m['roeAnnual'] ?? null,
             roa: m['roaTTM'] ?? m['roaAnnual'] ?? null,
             roic: m['roicTTM'] ?? null,
             rote: m['roteTTM'] ?? null,
-            
-            // Growth
+
+            // Growth — multi-year CAGR is the metric our scores/Lynch presets
+            // are defined on (sustained growth, not TTM momentum). Kept on 3Y.
             revenueGrowth: m['revenueGrowth3Y'] ?? m['revenueGrowth5Y'] ?? null,
             earningsGrowth: m['epsGrowth3Y'] ?? m['epsGrowth5Y'] ?? null,
             bookValueGrowth: m['bookValueShareGrowth5Y'] ?? null,
             debtGrowth: m['totalDebtToEquityGrowth5Y'] ?? null,
 
-            // Financial Health
-            currentRatio: m['currentRatioAnnual'] ?? m['currentRatioQuarterly'] ?? null,
-            quickRatio: m['quickRatioAnnual'] ?? m['quickRatioQuarterly'] ?? null,
-            debtEquityRatio: m['totalDebt/totalEquityAnnual'] ?? m['totalDebt/totalEquityQuarterly'] ?? null,
+            // Financial Health — quarterly balance sheet is fresher than annual
+            currentRatio: m['currentRatioQuarterly'] ?? m['currentRatioAnnual'] ?? null,
+            quickRatio: m['quickRatioQuarterly'] ?? m['quickRatioAnnual'] ?? null,
+            debtEquityRatio: m['totalDebt/totalEquityQuarterly'] ?? m['totalDebt/totalEquityAnnual'] ?? null,
             interestCoverage: m['netInterestCoverageTTM'] ?? m['netInterestCoverageAnnual'] ?? null,
             totalDebtToCapitalization: m['totalDebtToCapitalizationAnnual'] ?? null,
-            
+
             // Per Share
             revenuePerShare: m['revenuePerShareTTM'] ?? null,
             netIncomePerShare: m['netIncomePerShareTTM'] ?? null,
-            bookValuePerShare: m['bookValuePerShareAnnual'] ?? m['bookValuePerShareQuarterly'] ?? null,
-            cashPerShare: m['cashPerSharePerShareAnnual'] ?? m['cashPerSharePerShareQuarterly'] ?? null,
+            bookValuePerShare: m['bookValuePerShareQuarterly'] ?? m['bookValuePerShareAnnual'] ?? null,
+            cashPerShare: m['cashPerSharePerShareQuarterly'] ?? m['cashPerSharePerShareAnnual'] ?? null,
             freeCashFlowPerShare: m['freeCashFlowPerShareTTM'] ?? null,
-            
+
             // Other
             beta: m['beta'] ?? null,
             dividendYield: m['currentDividendYieldTTM'] ?? m['dividendYieldIndicatedAnnual'] ?? null,
-            payoutRatio: m['payoutRatioAnnual'] ?? m['payoutRatioTTM'] ?? null,
+            payoutRatio: m['payoutRatioTTM'] ?? m['payoutRatioAnnual'] ?? null,
             employees: m['employees'] ?? null,
             revenuePerEmployee: m['revenueEmployeeTTM'] ?? m['revenueEmployeeAnnual'] ?? null,
-            assetTurnover: m['assetTurnoverAnnual'] ?? m['assetTurnoverTTM'] ?? null,
+            assetTurnover: m['assetTurnoverTTM'] ?? m['assetTurnoverAnnual'] ?? null,
             inventoryTurnover: m['inventoryTurnoverAnnual'] ?? null,
             receivablesTurnover: m['receivablesTurnoverAnnual'] ?? null,
         };

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { getSectorFromSic, toTitleCase } from '@/lib/utils/sectorMapping';
-import { computeTTMAtDate } from '@/lib/utils/ttm';
+import { computeDayRatios } from '@/services/analysis/fillValuationDay';
 
 const POLYGON_API_KEY = process.env.POLYGON_API_KEY;
 
@@ -175,45 +175,13 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
             const date = new Date(agg.t);
             const closePrice = agg.c;
 
-            let peRatio = null;
-            let psRatio = null;
-            let marketCap = null;
-            let evEbitda = null; // Note: this is EV/EBIT (not EBITDA) — D&A not available from Finnhub
-            let fcfYield = null;
-
             // TTM fundamentals at this date — all four multiples share the same
             // TTM basis so historical percentiles compare like-for-like with the
-            // current values shown in Key Metrics.
-            const ttm = computeTTMAtDate(statements, date);
-
-            const stmtsBeforeDate = statements.filter(s => s.endDate.getTime() <= date.getTime());
-            const stmt = stmtsBeforeDate[0] || statements[statements.length - 1];
-
-            if (stmt && stmt.sharesOutstanding) {
-                marketCap = closePrice * stmt.sharesOutstanding;
-
-                const effectiveNI = ttm.netIncome ?? stmt.netIncome;
-                if (effectiveNI && effectiveNI > 0) {
-                    peRatio = closePrice / (effectiveNI / stmt.sharesOutstanding);
-                }
-
-                const effectiveRev = ttm.revenue ?? stmt.revenue;
-                if (effectiveRev && effectiveRev > 0) {
-                    psRatio = closePrice / (effectiveRev / stmt.sharesOutstanding);
-                }
-
-                const effectiveEbit = ttm.ebit ?? stmt.ebit;
-                if (effectiveEbit && effectiveEbit > 0 && stmt.totalDebt !== null && stmt.cashAndEquivalents !== null) {
-                    const ev = marketCap + stmt.totalDebt - stmt.cashAndEquivalents;
-                    evEbitda = ev / effectiveEbit;
-                }
-
-                const effOcf = ttm.operatingCashFlow ?? stmt.operatingCashFlow;
-                const effCapex = ttm.capex ?? stmt.capex;
-                if (effOcf !== null && effCapex !== null && marketCap > 0) {
-                    fcfYield = (effOcf - Math.abs(effCapex)) / marketCap;
-                }
-            }
+            // current values shown in Key Metrics. computeDayRatios is the
+            // single implementation shared with fillValuationDay (EV leg is
+            // EV/EBIT — D&A not available from Finnhub).
+            const { marketCap, peRatio, psRatio, evEbitda, fcfYield } =
+                computeDayRatios(statements, closePrice, date);
 
             transactions.push(
                 prisma.dailyValuationHistory.upsert({
