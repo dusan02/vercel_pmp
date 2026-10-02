@@ -68,7 +68,7 @@ export const MobileHeatmapHeader: React.FC<MobileHeatmapHeaderProps> = ({
           <optgroup key={g} label={g}>
             {HEATMAP_METRICS.filter((m) => m.group === g).map((m) => (
               <option key={m.id} value={m.id} style={{ color: '#1e293b', background: '#fff' }}>
-                {m.label}
+                {m.short ?? m.label}
               </option>
             ))}
           </optgroup>

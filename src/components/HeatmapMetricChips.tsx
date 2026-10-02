@@ -64,6 +64,7 @@ export function HeatmapMetricChips({
               type="button"
               onClick={() => handleSelect(m.id)}
               aria-pressed={active}
+              title={m.label}
               className={`flex-shrink-0 px-2 py-0.5 rounded-full border text-[10px] font-semibold transition-colors ${
                 active
                   ? 'bg-green-600 border-green-600 text-white'
@@ -74,7 +75,7 @@ export function HeatmapMetricChips({
                     : 'border-slate-300 text-slate-600 hover:border-slate-500 hover:text-slate-900 bg-white dark:bg-transparent dark:border-gray-600 dark:text-gray-300 dark:hover:border-gray-400 dark:hover:text-white'
               }`}
             >
-              {m.label}
+              {m.short ?? m.label}
             </button>
           );
         })}
