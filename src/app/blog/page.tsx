@@ -109,7 +109,7 @@ export default async function BlogIndexPage() {
                           <span className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">Weekly Earnings</span>
                         </div>
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          {overview.title || `Earnings This Week — ${snap.date}`}
+                          {overview.title || `Earnings This Week — ${formatDate(snap.date.replace('weekly-', ''))}`}
                         </h2>
                         {overview.summary && (
                           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{overview.summary}</p>

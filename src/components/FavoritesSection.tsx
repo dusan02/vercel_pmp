@@ -189,20 +189,31 @@ export function FavoritesSection({
 
   const emptyState = (
     <div
-      className="flex flex-col items-center justify-center gap-3 py-16 px-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10"
+      className="flex flex-col items-center justify-center gap-2.5 py-8 px-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10"
     >
-      <div className="text-6xl mb-2 opacity-30 grayscale">
+      <div className="text-4xl mb-1 opacity-30 grayscale">
         ⭐
       </div>
       <span className="text-base font-semibold text-gray-900 dark:text-gray-100">
         No favorites yet
       </span>
       <span className="text-sm text-center max-w-xs text-gray-500 dark:text-gray-400">
-        Tap ☆ next to a stock to add it here
+        Tap ☆ next to a stock — or start with popular ones:
       </span>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {['NVDA', 'AAPL', 'MSFT'].map(t => (
+          <button
+            key={t}
+            onClick={() => onToggleFavorite(t)}
+            className="text-xs px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-semibold"
+          >
+            ☆ {t}
+          </button>
+        ))}
+      </div>
       <button
         onClick={handleBrowseStocks}
-        className="mt-2 px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-colors hover:bg-blue-700"
+        className="mt-1 px-5 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold transition-colors hover:bg-blue-700"
         style={{
           WebkitTapHighlightColor: 'transparent',
           touchAction: 'manipulation',

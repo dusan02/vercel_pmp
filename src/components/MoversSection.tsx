@@ -276,38 +276,42 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
         const isIdiosyncratic = mover.sector && sectorData &&
             Math.abs((mover.lastChangePct || 0) - sectorData.avgChange) > 5;
 
+        const companyName = getCompanyName(mover.symbol);
         return (
             <motion.div
                 key={mover.symbol}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className={`group relative bg-white hover:bg-slate-50 border p-4 rounded-2xl transition-all shadow-sm hover:shadow-md ${isIdiosyncratic ? 'border-yellow-400 border-2' : 'border-slate-200'
+                className={`group relative bg-white hover:bg-slate-50 border p-3.5 rounded-2xl transition-all shadow-sm hover:shadow-md ${isIdiosyncratic ? 'border-yellow-400 border-2' : 'border-slate-200'
                     }`}
             >
                 {/* Left accent line */}
                 <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full transition-colors ${mover.lastChangePct && mover.lastChangePct >= 0 ? 'bg-green-500' : 'bg-red-500'
                     }`} />
-                {isIdiosyncratic && (
-                    <div className="absolute -top-2 -right-2 bg-yellow-500 text-black text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg z-10">
-                        IDIOSYNCRATIC MOVE
-                    </div>
-                )}
 
                 <div className="flex items-start gap-3">
                     {/* Logo & Symbol */}
-                    <div className="flex-shrink-0 cursor-pointer mt-1" onClick={() => onTileClick?.(mover.symbol)}>
+                    <div className="flex-shrink-0 cursor-pointer mt-0.5" onClick={() => onTileClick?.(mover.symbol)}>
                         <CompanyLogo ticker={mover.symbol} logoUrl={mover.logoUrl} size={40} className="rounded-md shadow-sm border border-gray-100 dark:border-gray-800 bg-gray-100 dark:bg-gray-800" />
                     </div>
 
                     <div className="flex-1 min-w-0">
                         {/* Row 1: Symbol + Name + Category + Price */}
-                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div className="flex items-start justify-between gap-2 mb-1">
                             <div className="min-w-0 cursor-pointer" onClick={() => onTileClick?.(mover.symbol)}>
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <span className="font-bold text-base text-gray-900 dark:text-gray-100 leading-tight">{mover.symbol}</span>
-                                    <span className="text-xs text-gray-500 dark:text-gray-400 truncate hidden sm:inline leading-tight">{getCompanyName(mover.symbol)}</span>
+                                    {/* getCompanyName falls back to the ticker — don't print "CTVA CTVA" */}
+                                    {companyName !== mover.symbol && (
+                                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate hidden sm:inline leading-tight">{companyName}</span>
+                                    )}
                                     {renderCategoryBadge(mover.moversCategory)}
+                                    {isIdiosyncratic && (
+                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wide bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700">
+                                            Idiosyncratic
+                                        </span>
+                                    )}
                                 </div>
 
                                 {/* Row 2: deterministic catalyst (primary) or AI reason */}

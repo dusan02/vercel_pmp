@@ -29,12 +29,23 @@ const SENTIMENT_STYLE: Record<string, string> = {
 
 function formatDate(dateStr: string): string {
   try {
-    return new Date(dateStr + 'T12:00:00Z').toLocaleDateString('en-US', {
+    const d = new Date(dateStr + 'T12:00:00Z');
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('en-US', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     });
   } catch {
     return dateStr;
   }
+}
+
+/** Weekly digests are stored as `weekly-YYYY-MM-DD` — strip the prefix for
+    parsing and give them their own title. Same helpers as blog/[date]. */
+function isWeeklyDate(dateStr: string): boolean {
+  return dateStr.startsWith('weekly-');
+}
+function weeklyDatePart(dateStr: string): string {
+  return dateStr.replace('weekly-', '');
 }
 
 function formatBillions(n: number): string {
@@ -87,6 +98,11 @@ export function HomeBlog({ initialSnapshots }: { initialSnapshots?: Snapshot[] |
 
             const sentiment = overview?.sentiment ?? 'Mixed';
             const mcap = overview?.totalMcapChange ?? 0;
+            const weekly = isWeeklyDate(snap.date);
+            const datePart = weekly ? weeklyDatePart(snap.date) : snap.date;
+            const title = weekly
+              ? (overview?.title || `Earnings This Week — ${formatDate(datePart)}`)
+              : `Premarket Report — ${formatDate(datePart)}`;
 
             return (
               <Link
@@ -96,9 +112,9 @@ export function HomeBlog({ initialSnapshots }: { initialSnapshots?: Snapshot[] |
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">{snap.date}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">{weekly ? `Week of ${datePart}` : snap.date}</p>
                     <p className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
-                      Premarket Report — {formatDate(snap.date)}
+                      {title}
                     </p>
                     {overview && (
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex flex-wrap gap-x-3 gap-y-0.5">

@@ -321,7 +321,9 @@ export default function EarningsDayExplorer({
                                 {badge && <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md ${badge.cls}`}>{badge.label}</span>}
                                 <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md ${chip.cls}`}>{chip.label}</span>
                               </div>
-                              <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate max-w-[220px]">{r.companyName}</div>
+                              {r.companyName && r.companyName.toUpperCase() !== r.ticker.toUpperCase() && (
+                                <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate max-w-[220px]">{r.companyName}</div>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -371,7 +373,9 @@ export default function EarningsDayExplorer({
                           {badge && <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md ${badge.cls}`}>{badge.label}</span>}
                           <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md ${chip.cls}`}>{chip.label}</span>
                         </div>
-                        <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{r.companyName}</div>
+                        {r.companyName && r.companyName.toUpperCase() !== r.ticker.toUpperCase() && (
+                          <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{r.companyName}</div>
+                        )}
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">

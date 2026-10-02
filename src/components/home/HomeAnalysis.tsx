@@ -82,8 +82,23 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
             window.dispatchEvent(new CustomEvent('mobile-nav-change', {
                 detail: { tab: 'analysis', ticker: t }
             }));
+            try {
+                const prev = JSON.parse(localStorage.getItem('pmp:recentTickers') ?? '[]');
+                const next = [t, ...(Array.isArray(prev) ? prev : []).filter((x: string) => x !== t)].slice(0, 6);
+                localStorage.setItem('pmp:recentTickers', JSON.stringify(next));
+            } catch { /* storage unavailable — recents are best-effort */ }
         }
     }, [onTickerChange]);
+
+    // Recently viewed tickers — back-fills the empty-state chip row with the
+    // user's own context instead of only a generic trending list.
+    const [recentTickers, setRecentTickers] = useState<string[]>([]);
+    useEffect(() => {
+        try {
+            const raw = JSON.parse(localStorage.getItem('pmp:recentTickers') ?? '[]');
+            if (Array.isArray(raw)) setRecentTickers(raw.filter((x: unknown) => typeof x === 'string'));
+        } catch { /* ignore */ }
+    }, []);
 
     const trendingTickers = ['NVDA', 'TSLA', 'AAPL', 'MSFT', 'AMD', 'META'];
 
@@ -145,6 +160,21 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                         </>
                     ) : (
                         <>
+                            {recentTickers.length > 0 && (
+                                <>
+                                    <span className="text-xs text-gray-400 mr-1">Recent:</span>
+                                    {recentTickers.map(t => (
+                                        <button
+                                            key={t}
+                                            onClick={() => setTicker(t)}
+                                            className="text-xs px-3 py-1 rounded-full border bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-400 transition-all"
+                                        >
+                                            {t}
+                                        </button>
+                                    ))}
+                                    <span className="text-gray-300 dark:text-gray-600 mx-0.5">·</span>
+                                </>
+                            )}
                             <span className="text-xs text-gray-400 mr-1">Trending:</span>
                             {trendingTickers.map(t => (
                                 <button
@@ -166,13 +196,12 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
             {/* Empty state — discovery surface: search hint + opportunities +
                 the five-pillar explainer. Shown when no ticker is selected. */}
             {!activeTicker && (
-                <div className="space-y-6">
-                    <div className="flex flex-col items-center justify-center py-10 text-center">
-                        <Search size={48} className="text-gray-300 dark:text-gray-600 mb-4" strokeWidth={1.5} />
-                        <h3 className="text-xl sm:text-2xl font-bold text-gray-700 dark:text-gray-300 mb-2">
+                <div className="space-y-4">
+                    <div className="flex flex-col items-center justify-center py-4 text-center">
+                        <h3 className="text-base sm:text-lg font-bold text-gray-700 dark:text-gray-300 mb-1">
                             Search for a stock to analyze
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md">
                             Every stock gets a five-dimensional fundamental profile — pick one below or search above.
                         </p>
                     </div>
@@ -201,9 +230,12 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                                             <div className="font-semibold text-sm text-gray-900 dark:text-white">{r.symbol}</div>
                                             <div className="text-[11px] text-gray-400 truncate">{r.ticker?.name || ''}</div>
                                         </div>
-                                        <div className="flex gap-1.5 shrink-0">
-                                            {([r.valuationScore, r.growthScore, r.profitabilityScore, r.healthScore, r.qualityScore] as (number | null)[]).map((v, i) => (
-                                                <span key={i} className={`text-[10px] font-bold tabular-nums ${scoreColor(v)}`}>{v !== null ? Math.round(v) : '–'}</span>
+                                        <div className="flex gap-2 shrink-0">
+                                            {([['V', 'Valuation', r.valuationScore], ['G', 'Growth', r.growthScore], ['P', 'Profitability', r.profitabilityScore], ['H', 'Health', r.healthScore], ['Q', 'Quality', r.qualityScore]] as [string, string, number | null][]).map(([letter, name, v]) => (
+                                                <span key={letter} title={`${name}: ${v !== null ? Math.round(v) : 'n/a'} / 100`} className="flex flex-col items-center w-5">
+                                                    <span className="text-[8px] font-semibold text-gray-400 dark:text-gray-500 leading-none">{letter}</span>
+                                                    <span className={`text-[10px] font-bold tabular-nums leading-tight ${scoreColor(v)}`}>{v !== null ? Math.round(v) : '–'}</span>
+                                                </span>
                                             ))}
                                         </div>
                                     </button>

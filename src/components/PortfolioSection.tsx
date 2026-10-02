@@ -392,10 +392,21 @@ export function PortfolioSection({
         onSort={requestSort}
         onRowClick={handleRowClick}
         emptyMessage={
-          <div className="empty-portfolio text-center py-12">
-            <div className="text-4xl mb-4 opacity-50">💼</div>
-            <h3 className="text-lg font-semibold mb-2">Your portfolio is empty</h3>
-            <p className="text-[var(--clr-subtext)] mb-4">Add stocks to track your performance</p>
+          <div className="empty-portfolio text-center py-8">
+            <div className="text-3xl mb-3 opacity-50">💼</div>
+            <h3 className="text-base font-semibold mb-1">Your portfolio is empty</h3>
+            <p className="text-sm text-[var(--clr-subtext)] mb-4">Add stocks to track your performance — or start with a sample:</p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {['NVDA', 'AAPL', 'MSFT'].map(t => (
+                <button
+                  key={t}
+                  onClick={() => onAddStock(t, 1)}
+                  className="text-xs px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-semibold"
+                >
+                  + {t}
+                </button>
+              ))}
+            </div>
           </div>
         }
         renderMobileCard={(stock) => (

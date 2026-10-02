@@ -28,6 +28,19 @@ const COLUMN_VIEWS = [
 
 type ColumnViewId = (typeof COLUMN_VIEWS)[number]['id'];
 
+// Score = number + micro-bar so values scan visually, not just numerically.
+const scoreBar = (v: number) =>
+  v >= 70 ? 'bg-emerald-500' : v >= 50 ? 'bg-amber-400' : v >= 30 ? 'bg-orange-400' : 'bg-rose-500';
+const ScoreCell = ({ v, bold }: { v: number | null; bold?: boolean }) =>
+  v == null ? <span className="text-gray-400">-</span> : (
+    <span className="inline-flex flex-col items-end gap-0.5" title={`${v.toFixed(0)} / 100`}>
+      <span className={`tabular-nums ${bold ? 'font-bold' : ''} ${scoreColor(v)}`}>{v.toFixed(0)}</span>
+      <span className="h-1 w-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+        <span className={`block h-full rounded-full ${scoreBar(v)}`} style={{ width: `${Math.min(100, Math.max(0, v))}%` }} />
+      </span>
+    </span>
+  );
+
 export default function StockScreener({ initialData }: { initialData?: any[] }) {
   const router = useRouter();
   const screener = useScreener({ initialLimit: 25, defaultMinHealth: 0, defaultMinProfit: 0, defaultMinValue: 0, initialData });
@@ -137,42 +150,42 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       header: <>Overall <SortIcon field="overallScore" /></>,
       align: 'right',
       sortable: true,
-      render: (r) => <span className={`font-bold ${scoreColor(r.overallScore)}`}>{r.overallScore !== null ? r.overallScore.toFixed(0) : '-'}</span>
+      render: (r) => <ScoreCell v={r.overallScore} bold />
     },
     {
       key: 'valuationScore',
       header: <>Value <SortIcon field="valuationScore" /></>,
       align: 'right',
       sortable: true,
-      render: (r) => <span className={scoreColor(r.valuationScore)}>{r.valuationScore !== null ? r.valuationScore.toFixed(0) : '-'}</span>
+      render: (r) => <ScoreCell v={r.valuationScore} />
     },
     {
       key: 'growthScore',
       header: <>Growth <SortIcon field="growthScore" /></>,
       align: 'right',
       sortable: true,
-      render: (r) => <span className={scoreColor(r.growthScore)}>{r.growthScore !== null ? r.growthScore.toFixed(0) : '-'}</span>
+      render: (r) => <ScoreCell v={r.growthScore} />
     },
     {
       key: 'profitabilityScore',
       header: <>Profit. <SortIcon field="profitabilityScore" /></>,
       align: 'right',
       sortable: true,
-      render: (r) => <span className={scoreColor(r.profitabilityScore)}>{r.profitabilityScore !== null ? r.profitabilityScore.toFixed(0) : '-'}</span>
+      render: (r) => <ScoreCell v={r.profitabilityScore} />
     },
     {
       key: 'healthScore',
       header: <>Health <SortIcon field="healthScore" /></>,
       align: 'right',
       sortable: true,
-      render: (r) => <span className={scoreColor(r.healthScore)}>{r.healthScore !== null ? r.healthScore.toFixed(0) : '-'}</span>
+      render: (r) => <ScoreCell v={r.healthScore} />
     },
     {
       key: 'qualityScore',
       header: <>Quality <SortIcon field="qualityScore" /></>,
       align: 'right',
       sortable: true,
-      render: (r) => <span className={scoreColor(r.qualityScore)}>{r.qualityScore !== null ? r.qualityScore.toFixed(0) : '-'}</span>
+      render: (r) => <ScoreCell v={r.qualityScore} />
     },
     {
       key: 'altmanZ',
@@ -275,6 +288,9 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
   // ── Column view tabs — persist the last used view (localStorage + a
   // shareable ?view= param on the standalone /screener page). ────────────
   const [columnView, setColumnView] = useState<ColumnViewId>('overview');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const advancedActive = minAltman > 0 || minPiotroski > 0 || maxBeneish < 10 || minFcfMargin > -100 || maxDebtRepayment < 350;
+  const advancedVisible = showAdvanced || advancedActive;
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const fromUrl = sp.get('view') as ColumnViewId | null;
@@ -455,6 +471,22 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               ))}
             </select>
           </div>
+        </div>
+
+        {/* Advanced filters — collapsed by default so the results table starts
+            higher. Auto-opens when any advanced filter is active. */}
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(v => !v)}
+          className="mt-3 flex items-center gap-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+          aria-expanded={advancedVisible}
+        >
+          {advancedVisible ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+          Advanced filters
+          {advancedActive && <span className="text-blue-500 font-semibold">(active)</span>}
+        </button>
+        {advancedVisible && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-3 mt-2 pt-3 border-t border-gray-100 dark:border-gray-800">
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Min Altman Z</label>
             <input
@@ -518,7 +550,8 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             />
             <span className="text-[10px] text-gray-400">0 = No debt, ≤3 Fast, ≤5 OK, &gt;5 Slow</span>
           </div>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Results count */}
