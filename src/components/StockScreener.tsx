@@ -10,7 +10,7 @@ import { useScreener } from '@/hooks/useScreener';
 import { LivePrice } from './LivePrice';
 import {
   ScreenerResult, scoreColor, altmanZLabel, piotroskiLabel, beneishLabel, fcfMarginLabel, debtRepayLabel,
-  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, MARKET_RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS,
+  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS,
 } from '@/lib/utils/screener';
 import { Sparkline } from './Sparkline';
 import { formatBillions, formatMarketCapDiff, formatCurrencyCompact } from '@/lib/utils/format';
@@ -24,7 +24,7 @@ const COLUMN_VIEWS = [
   { id: 'insiders', label: 'Insiders', keys: ['ticker.name', 'ticker.lastPrice', 'ticker.lastMarketCap', 'insider.netBuyValue90d', 'insider.largestBuyValue90d', 'insider.largestSellValue90d', 'insider.uniqueSellers14d', 'overallScore'] },
   { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'healthScore', 'qualityScore', 'overallScore'] },
   { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'sector', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'ticker.lastMarketCapDiff'] },
-  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'metrics.roe', 'metrics.netMargin', 'metrics.revenueGrowth', 'metrics.peRatio', 'metrics.forwardPe', 'metrics.dividendYield', 'metrics.beta'] },
+  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'metrics.peRatio', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta'] },
   { id: 'all', label: 'All columns', keys: null }, // null = every defined column
 ] as const;
 
@@ -325,13 +325,30 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
   const advancedActive = minAltman > 0 || minPiotroski > 0 || maxBeneish < 10 || minFcfMargin > -100 || maxDebtRepayment < 350;
   const advancedVisible = showAdvanced || advancedActive;
   // Metric filters use DualRangeSlider (min+max) — active when any Finnhub
-  // metric key has a range (price/changePct live in the main grid and are
-  // stored in the same map but don't count as "metric filters").
-  const METRIC_KEY_SET = new Set<string>(METRIC_FILTERS.map(d => d.key));
+  // or insider key has a range (price/changePct live in the main grid and
+  // don't count; insider keys are preset-only but still count as active).
+  const METRIC_KEY_SET = new Set<string>([...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS].map(d => d.key));
   const [showMetrics, setShowMetrics] = useState(false);
   const metricsActiveCount = Object.keys(metricRanges).filter(k => METRIC_KEY_SET.has(k)).length;
   const metricsActive = metricsActiveCount > 0;
   const metricsVisible = showMetrics || metricsActive;
+  // Shared wiring for registry-driven range sliders — a handle returned to
+  // the bound's default deletes that side of the range (default = no filter).
+  const rangeSliderProps = (def: { key: RangeFilterKey; min: number; max: number }) => {
+    const r = metricRanges[def.key];
+    const apply = (side: 'min' | 'max', v: number) => {
+      const next: { min?: number; max?: number } = { ...r };
+      if (side === 'min') { if (v === def.min) delete next.min; else next.min = v; }
+      else { if (v === def.max) delete next.max; else next.max = v; }
+      setMetricRange(def.key, next.min === undefined && next.max === undefined ? undefined : next);
+    };
+    return {
+      valueMin: r?.min ?? def.min,
+      valueMax: r?.max ?? def.max,
+      onChangeMin: (v: number) => apply('min', v),
+      onChangeMax: (v: number) => apply('max', v),
+    };
+  };
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const fromUrl = sp.get('view') as ColumnViewId | null;
@@ -506,29 +523,15 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               ))}
             </select>
           </div>
-          {MARKET_RANGE_FILTERS.map((def) => {
-            const r = metricRanges[def.key];
-            return (
-              <DualRangeSlider
-                key={def.key}
-                label={def.label}
-                min={def.min} max={def.max} step={def.step}
-                valueMin={r?.min ?? def.min}
-                valueMax={r?.max ?? def.max}
-                onChangeMin={(v) => {
-                  const next: { min?: number; max?: number } = { ...r };
-                  if (v === def.min) delete next.min; else next.min = v;
-                  setMetricRange(def.key, next.min === undefined && next.max === undefined ? undefined : next);
-                }}
-                onChangeMax={(v) => {
-                  const next: { min?: number; max?: number } = { ...r };
-                  if (v === def.max) delete next.max; else next.max = v;
-                  setMetricRange(def.key, next.min === undefined && next.max === undefined ? undefined : next);
-                }}
-                accentColor="indigo"
-              />
-            );
-          })}
+          {MARKET_RANGE_FILTERS.map((def) => (
+            <DualRangeSlider
+              key={def.key}
+              label={def.label}
+              min={def.min} max={def.max} step={def.step}
+              {...rangeSliderProps(def)}
+              accentColor="indigo"
+            />
+          ))}
         </div>
 
         {/* Advanced filters — collapsed by default so the results table starts
@@ -557,34 +560,20 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         </div>
         {metricsVisible && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-3 mt-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-            {METRIC_FILTERS.map((def) => {
-              const r = metricRanges[def.key];
-              return (
-                <DualRangeSlider
-                  key={def.key}
-                  label={def.label}
-                  min={def.min} max={def.max} step={def.step}
-                  valueMin={r?.min ?? def.min}
-                  valueMax={r?.max ?? def.max}
-                  onChangeMin={(v) => {
-                    const next: { min?: number; max?: number } = { ...r };
-                    if (v === def.min) delete next.min; else next.min = v;
-                    setMetricRange(def.key, next.min === undefined && next.max === undefined ? undefined : next);
-                  }}
-                  onChangeMax={(v) => {
-                    const next: { min?: number; max?: number } = { ...r };
-                    if (v === def.max) delete next.max; else next.max = v;
-                    setMetricRange(def.key, next.min === undefined && next.max === undefined ? undefined : next);
-                  }}
-                  accentColor="sky"
-                />
-              );
-            })}
+            {METRIC_FILTERS.map((def) => (
+              <DualRangeSlider
+                key={def.key}
+                label={def.label}
+                min={def.min} max={def.max} step={def.step}
+                {...rangeSliderProps(def)}
+                accentColor="sky"
+              />
+            ))}
             <div className="col-span-full flex items-center justify-between">
               <span className="text-[10px] text-gray-400">Metrics from Finnhub fundamentals (coverage ~70–99 % per field; filtered-out tickers without data are excluded).</span>
               {metricsActive && (
                 <button
-                  onClick={() => { for (const def of METRIC_FILTERS) setMetricRange(def.key as RangeFilterKey, undefined); }}
+                  onClick={() => { for (const def of [...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS]) setMetricRange(def.key as RangeFilterKey, undefined); }}
                   className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
                 >
                   Clear metric filters

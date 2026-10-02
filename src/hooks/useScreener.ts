@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ScreenerResult, ScreenerPagination, MARKET_CAP_PRESETS, METRIC_FILTERS, MARKET_RANGE_FILTERS, RangeFilterKey, ScreenerPreset } from '@/lib/utils/screener';
+import { ScreenerResult, ScreenerPagination, MARKET_CAP_PRESETS, METRIC_FILTERS, RANGE_FILTERS, RangeFilterKey, ScreenerPreset } from '@/lib/utils/screener';
 
 interface UseScreenerOptions {
     initialLimit?: number;
@@ -256,7 +256,7 @@ export function useScreener({
         }
         // Metric range filters: minRoe/maxRoe/... (camelCase field names)
         const restored: typeof metricRanges = {};
-        for (const def of [...MARKET_RANGE_FILTERS, ...METRIC_FILTERS]) {
+        for (const def of RANGE_FILTERS) {
             const cap = def.key[0]!.toUpperCase() + def.key.slice(1);
             const lo = sp.get(`min${cap}`);
             const hi = sp.get(`max${cap}`);

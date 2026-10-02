@@ -1,4 +1,4 @@
-import { downsampleSeries, METRIC_FILTERS, MARKET_RANGE_FILTERS } from '@/lib/utils/screener';
+import { downsampleSeries, METRIC_FILTERS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, RANGE_FILTERS, QUICK_SCREENS } from '@/lib/utils/screener';
 
 describe('downsampleSeries (screener 1Y sparkline)', () => {
     it('returns a copy of short series unchanged', () => {
@@ -35,9 +35,8 @@ describe('downsampleSeries (screener 1Y sparkline)', () => {
 });
 
 describe('screener filter param conventions', () => {
-    it('metric + market filter keys produce unique API param names', () => {
-        const all = [...MARKET_RANGE_FILTERS, ...METRIC_FILTERS];
-        const params = all.flatMap((d) => {
+    it('all registry keys produce unique API param names', () => {
+        const params = RANGE_FILTERS.flatMap((d) => {
             const cap = d.key[0]!.toUpperCase() + d.key.slice(1);
             return [`min${cap}`, `max${cap}`];
         });
@@ -47,5 +46,36 @@ describe('screener filter param conventions', () => {
         expect(params).toContain('maxChangePct');
         // No key may collide with a FinnhubMetrics field name.
         expect(MARKET_RANGE_FILTERS.map(d => d.key)).not.toContain('roe');
+    });
+
+    it('registry covers market + metric + insider arrays exactly once', () => {
+        const all = [...MARKET_RANGE_FILTERS, ...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS];
+        expect(RANGE_FILTERS.length).toBe(all.length);
+        for (const d of all) {
+            expect(RANGE_FILTERS.filter((r) => r.key === d.key).length).toBe(1);
+        }
+    });
+
+    it('ticker-source defs map to real Ticker columns', () => {
+        const ticker = RANGE_FILTERS.filter((d) => d.source === 'ticker');
+        expect(ticker.map((d) => d.field).sort()).toEqual(['lastChangePct', 'lastPrice']);
+    });
+});
+
+describe('QUICK_SCREENS presets', () => {
+    it('every preset range references a valid registry key', () => {
+        const valid = new Set(RANGE_FILTERS.map((d) => d.key));
+        for (const s of QUICK_SCREENS) {
+            for (const key of Object.keys(s.preset.ranges ?? {})) {
+                expect(valid.has(key as never)).toBe(true);
+            }
+        }
+    });
+
+    it('preset sort fields follow the <field>:<asc|desc> convention', () => {
+        for (const s of QUICK_SCREENS) {
+            if (!s.preset.sort) continue;
+            expect(s.preset.sort).toMatch(/^[a-zA-Z0-9.]+:(asc|desc)$/);
+        }
     });
 });

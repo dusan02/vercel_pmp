@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
-import { downsampleSeries } from '@/lib/utils/screener';
+import { downsampleSeries, RANGE_FILTERS } from '@/lib/utils/screener';
 
 const SCREENER_CACHE_TTL = 600; // 10 minutes
 
@@ -60,32 +60,32 @@ export async function GET(request: Request) {
     const minMarketCap = num('minMarketCap');
     const maxMarketCap = num('maxMarketCap');
 
-    // Price & day-change range filters (Ticker columns)
-    const minPrice = num('minPrice');
-    const maxPrice = num('maxPrice');
-    const minChangePct = num('minChangePct');
-    const maxChangePct = num('maxChangePct');
-
-    // FinnhubMetrics range filters — param name is the camelCase DB field
-    // prefixed with min/max (minRoe/maxForwardPe/...). Keeping one name
-    // convention lets the whitelist double as the param list.
-    const METRIC_PARAM_FIELDS = [
-        'roe', 'peRatio', 'forwardPe', 'psRatio', 'pbRatio', 'pegRatio',
-        'evEbitda', 'grossMargin', 'netMargin', 'revenueGrowth',
-        'earningsGrowth', 'dividendYield', 'beta', 'currentRatio',
-        'debtEquityRatio', 'interestCoverage',
-    ] as const;
-    const metricParams: Partial<Record<typeof METRIC_PARAM_FIELDS[number], { min?: number; max?: number }>> = {};
-    for (const field of METRIC_PARAM_FIELDS) {
-        const lo = num(`min${field[0]!.toUpperCase()}${field.slice(1)}`);
-        const hi = num(`max${field[0]!.toUpperCase()}${field.slice(1)}`);
+    // Range filters driven by RANGE_FILTERS — the single registry that maps
+    // every min<Cap>/max<Cap> param to its target: Ticker column (price,
+    // changePct), FinnhubMetrics relation (roe, peRatio, …) or
+    // InsiderAggregate relation (netBuyValue90d, netBuyPct90d). Adding a new
+    // filterable metric = one line in screener.ts.
+    const metricRanges: { source: string; field: string; min?: number; max?: number }[] = [];
+    for (const def of RANGE_FILTERS) {
+        const cap = def.key[0]!.toUpperCase() + def.key.slice(1);
+        const lo = num(`min${cap}`);
+        const hi = num(`max${cap}`);
         if (lo !== undefined || hi !== undefined) {
-            const range: { min?: number; max?: number } = {};
+            const range: { source: string; field: string; min?: number; max?: number } = { source: def.source, field: def.field ?? def.key };
             if (lo !== undefined) range.min = lo;
             if (hi !== undefined) range.max = hi;
-            metricParams[field] = range;
+            metricRanges.push(range);
         }
     }
+    const tickerRanges = metricRanges.filter((r) => r.source === 'ticker');
+    const finnhubRanges = metricRanges.filter((r) => r.source === 'finnhub');
+    const insiderRanges = metricRanges.filter((r) => r.source === 'insider');
+
+    // Price & day-change ranges (Ticker columns, source='ticker')
+    const minPrice = tickerRanges.find((r) => r.field === 'lastPrice')?.min;
+    const maxPrice = tickerRanges.find((r) => r.field === 'lastPrice')?.max;
+    const minChangePct = tickerRanges.find((r) => r.field === 'lastChangePct')?.min;
+    const maxChangePct = tickerRanges.find((r) => r.field === 'lastChangePct')?.max;
 
     // Pagination & Sorting — clamp NaN/negative/oversized values
     const page = Math.max(1, int('page') ?? 1);
@@ -95,11 +95,11 @@ export async function GET(request: Request) {
     const sortField = parts[0] || 'ticker.lastMarketCap';
     const sortOrder = (parts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
 
-    // Build cache key from query params
-    const metricsKey = METRIC_PARAM_FIELDS.map((f) => {
-        const p = metricParams[f];
-        return p ? `${f}=${p.min ?? ''}-${p.max ?? ''}` : '';
-    }).join('|');
+    // Build cache key from query params — ranges serialize as
+    // source.field=min-max so any registry key busts the cache correctly.
+    const metricsKey = metricRanges
+        .map((r) => `${r.source}.${r.field}=${r.min ?? ''}-${r.max ?? ''}`)
+        .join('|');
     const cacheKey = `screener:${minHealth || ''}:${maxHealth || ''}:${minProfitability || ''}:${maxProfitability || ''}:${minValuation || ''}:${maxValuation || ''}:${minGrowth || ''}:${maxGrowth || ''}:${minQuality || ''}:${maxQuality || ''}:${minOverall || ''}:${maxOverall || ''}:${minAltman || ''}:${minPiotroski || ''}:${maxBeneish || ''}:${minFcfMargin || ''}:${maxDebtRepayment || ''}:${sector || ''}:${industry || ''}:${q || ''}:${minMarketCap || ''}:${maxMarketCap || ''}:${minPrice || ''}:${maxPrice || ''}:${minChangePct || ''}:${maxChangePct || ''}:${metricsKey}:${page}:${limit}:${sortParams}`;
     try {
         const cached = await getCachedData(cacheKey);
@@ -138,17 +138,26 @@ export async function GET(request: Request) {
             if (maxChangePct !== undefined) tickerWhere.lastChangePct.lte = maxChangePct;
         }
 
-        // ── FinnhubMetrics range filters (roe, peRatio, margins, growth…) ──
-        // Same pattern as analysisCache — active metric filters require the
-        // relation row, so tickers without Finnhub coverage drop out.
-        if (Object.keys(metricParams).length > 0) {
+        // ── Relation range filters (FinnhubMetrics + InsiderAggregate) ──
+        // Same pattern as analysisCache — an active range requires the
+        // relation row, so tickers without coverage drop out.
+        if (finnhubRanges.length > 0) {
             const fm: any = {};
-            for (const [field, range] of Object.entries(metricParams)) {
-                fm[field] = {};
-                if (range.min !== undefined) fm[field].gte = range.min;
-                if (range.max !== undefined) fm[field].lte = range.max;
+            for (const r of finnhubRanges) {
+                fm[r.field] = {};
+                if (r.min !== undefined) fm[r.field].gte = r.min;
+                if (r.max !== undefined) fm[r.field].lte = r.max;
             }
             tickerWhere.finnhubMetrics = { is: fm };
+        }
+        if (insiderRanges.length > 0) {
+            const ins: any = {};
+            for (const r of insiderRanges) {
+                ins[r.field] = {};
+                if (r.min !== undefined) ins[r.field].gte = r.min;
+                if (r.max !== undefined) ins[r.field].lte = r.max;
+            }
+            tickerWhere.insiderAggregate = { is: ins };
         }
 
         // ── Fundamental filters apply on the AnalysisCache relation ──
@@ -226,9 +235,11 @@ export async function GET(request: Request) {
                 ? { insiderAggregate: { [field]: { sort: sortOrder, nulls: 'last' } } }
                 : { lastMarketCap: { sort: 'desc', nulls: 'last' } };
         } else if (sortField.startsWith('metrics.')) {
-            // FinnhubMetrics columns — same whitelist as the filter params.
+            // FinnhubMetrics columns — whitelist = finnhub-source keys from
+            // the shared RANGE_FILTERS registry.
             const field = sortField.slice('metrics.'.length);
-            orderBy = (METRIC_PARAM_FIELDS as readonly string[]).includes(field)
+            const finnhubKeys = RANGE_FILTERS.filter((d) => d.source === 'finnhub').map((d) => d.field ?? d.key);
+            orderBy = finnhubKeys.includes(field)
                 ? { finnhubMetrics: { [field]: { sort: sortOrder, nulls: 'last' } } }
                 : { lastMarketCap: { sort: 'desc', nulls: 'last' } };
         } else if (SCORE_FIELDS.has(sortField)) {
@@ -271,19 +282,25 @@ export async function GET(request: Request) {
                     finnhubMetrics: {
                         select: {
                             roe: true,
+                            roa: true,
                             peRatio: true,
                             forwardPe: true,
                             psRatio: true,
                             pbRatio: true,
                             pegRatio: true,
                             evEbitda: true,
+                            evSales: true,
+                            priceFreeCashFlow: true,
                             grossMargin: true,
+                            operatingMargin: true,
                             netMargin: true,
                             revenueGrowth: true,
                             earningsGrowth: true,
                             dividendYield: true,
+                            payoutRatio: true,
                             beta: true,
                             currentRatio: true,
+                            quickRatio: true,
                             debtEquityRatio: true,
                             interestCoverage: true,
                         },

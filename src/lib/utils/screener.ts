@@ -5,19 +5,25 @@ export interface ScreenerResult {
     /** FinnhubMetrics fundamentals used by metric filters (null = no data). */
     metrics: {
         roe: number | null;
+        roa: number | null;
         peRatio: number | null;
         forwardPe: number | null;
         psRatio: number | null;
         pbRatio: number | null;
         pegRatio: number | null;
         evEbitda: number | null;
+        evSales: number | null;
+        priceFreeCashFlow: number | null;
         grossMargin: number | null;
+        operatingMargin: number | null;
         netMargin: number | null;
         revenueGrowth: number | null;
         earningsGrowth: number | null;
         dividendYield: number | null;
+        payoutRatio: number | null;
         beta: number | null;
         currentRatio: number | null;
+        quickRatio: number | null;
         debtEquityRatio: number | null;
         interestCoverage: number | null;
     } | null;
@@ -93,24 +99,41 @@ export const SECTORS = [
  */
 export const METRIC_FILTERS = [
     { key: 'roe', label: 'ROE %', min: -50, max: 100, step: 1 },
+    { key: 'roa', label: 'ROA %', min: -30, max: 50, step: 1 },
     { key: 'peRatio', label: 'P/E', min: 0, max: 100, step: 1 },
     { key: 'forwardPe', label: 'Fwd P/E', min: 0, max: 80, step: 1 },
     { key: 'psRatio', label: 'P/S', min: 0, max: 30, step: 1 },
     { key: 'pbRatio', label: 'P/B', min: 0, max: 20, step: 1 },
     { key: 'pegRatio', label: 'PEG', min: 0, max: 5, step: 0.1 },
     { key: 'evEbitda', label: 'EV/EBITDA', min: 0, max: 60, step: 1 },
+    { key: 'evSales', label: 'EV/Sales', min: 0, max: 20, step: 0.5 },
+    { key: 'priceFreeCashFlow', label: 'P/FCF', min: 0, max: 100, step: 1 },
     { key: 'netMargin', label: 'Net Margin %', min: -50, max: 60, step: 1 },
     { key: 'grossMargin', label: 'Gross Margin %', min: 0, max: 100, step: 1 },
+    { key: 'operatingMargin', label: 'Op Margin %', min: -50, max: 60, step: 1 },
     { key: 'revenueGrowth', label: 'Rev Growth %', min: -50, max: 100, step: 1 },
     { key: 'earningsGrowth', label: 'EPS Growth %', min: -50, max: 100, step: 1 },
     { key: 'dividendYield', label: 'Div Yield %', min: 0, max: 10, step: 0.1 },
+    { key: 'payoutRatio', label: 'Payout %', min: 0, max: 100, step: 1 },
     { key: 'debtEquityRatio', label: 'D/E', min: 0, max: 5, step: 0.1 },
     { key: 'currentRatio', label: 'Current Ratio', min: 0, max: 10, step: 0.1 },
+    { key: 'quickRatio', label: 'Quick Ratio', min: 0, max: 5, step: 0.1 },
     { key: 'interestCoverage', label: 'Int. Coverage', min: 0, max: 50, step: 1 },
     { key: 'beta', label: 'Beta', min: 0, max: 4, step: 0.1 },
 ] as const;
 
 export type MetricFilterKey = (typeof METRIC_FILTERS)[number]['key'];
+
+/**
+ * Insider-activity range filters (InsiderAggregate relation). Not rendered
+ * as sliders — netBuyValue90d is in dollars (awkward slider bounds) — but
+ * valid as preset/URL keys (net insider buying is a classic turnaround
+ * tell: Turnarounds preset uses netBuyValue90d ≥ 0).
+ */
+export const INSIDER_RANGE_FILTERS = [
+    { key: 'netBuyValue90d', label: 'Insider Net Buy $ (90d)', min: 0, max: 100_000_000, step: 1_000_000 },
+    { key: 'netBuyPct90d', label: 'Insider Net Buy % (90d)', min: 0, max: 0.05, step: 0.001 },
+] as const;
 
 /**
  * Ticker-backed range filters (price / day change) — rendered in the main
@@ -122,7 +145,33 @@ export const MARKET_RANGE_FILTERS = [
     { key: 'changePct', label: 'Day Change %', min: -20, max: 20, step: 0.5 },
 ] as const;
 
-export type RangeFilterKey = MetricFilterKey | (typeof MARKET_RANGE_FILTERS)[number]['key'];
+export type RangeFilterKey =
+    | MetricFilterKey
+    | (typeof MARKET_RANGE_FILTERS)[number]['key']
+    | (typeof INSIDER_RANGE_FILTERS)[number]['key'];
+
+export type RangeFilterSource = 'ticker' | 'finnhub' | 'insider';
+
+/**
+ * Unified range-filter registry — the single source of truth for which
+ * min<Cap>/max<Cap> params the screener API accepts and which DB field each
+ * maps to. `field` = DB column (defaults to key when omitted).
+ * Route builds `{ tickerField | finnhubMetrics.is | insiderAggregate.is }`
+ * filters by bucketing parsed ranges on `source`.
+ */
+export const RANGE_FILTERS: {
+    key: RangeFilterKey; label: string;
+    min: number; max: number; step: number;
+    source: RangeFilterSource; field?: string;
+}[] = [
+    ...MARKET_RANGE_FILTERS.map((d) => ({
+        ...d,
+        source: 'ticker' as const,
+        field: d.key === 'price' ? 'lastPrice' : 'lastChangePct',
+    })),
+    ...METRIC_FILTERS.map((d) => ({ ...d, source: 'finnhub' as const })),
+    ...INSIDER_RANGE_FILTERS.map((d) => ({ ...d, source: 'insider' as const })),
+];
 
 /**
  * Stride-downsample a price series to at most `maxPoints` points.
@@ -179,11 +228,11 @@ export const QUICK_SCREENS: { label: string; tip?: string; preset: ScreenerPrese
     { label: 'Cash Machines', tip: 'FCF margin ≥15% · Profit ≥60', preset: { minFcfMargin: 0.15, minProfit: 60, sort: 'overallScore:desc' } },
     { label: 'Top Overall', tip: 'Overall score ≥75', preset: { minOverall: 75, sort: 'overallScore:desc' } },
     { label: 'Value (Graham)', tip: 'P/E ≤15 · P/B ≤1.5 · Current ≥1.5 · EPS growth >0', preset: { sort: 'valuationScore:desc', ranges: { peRatio: { max: 15 }, pbRatio: { max: 1.5 }, currentRatio: { min: 1.5 }, earningsGrowth: { min: 0 } } } },
-    { label: 'Dividend Growth', tip: 'Yield 1.5–6% · ROE ≥12% · D/E ≤1 · EPS growth ≥5%', preset: { sort: 'metrics.dividendYield:desc', ranges: { dividendYield: { min: 1.5, max: 6 }, roe: { min: 12 }, debtEquityRatio: { max: 1 }, earningsGrowth: { min: 5 } } } },
+    { label: 'Dividend Growth', tip: 'Yield 1.5–6% · Payout ≤75% · ROE ≥12% · D/E ≤1 · EPS growth ≥5%', preset: { sort: 'metrics.dividendYield:desc', ranges: { dividendYield: { min: 1.5, max: 6 }, payoutRatio: { max: 75 }, roe: { min: 12 }, debtEquityRatio: { max: 1 }, earningsGrowth: { min: 5 } } } },
     { label: 'Fast Growers (Lynch)', tip: 'EPS growth ≥20% · Rev growth ≥15% · PEG ≤2', preset: { sort: 'metrics.earningsGrowth:desc', ranges: { earningsGrowth: { min: 20 }, revenueGrowth: { min: 15 }, pegRatio: { max: 2 } } } },
     { label: 'GARP (PEG<1)', tip: 'PEG ≤1 · EPS growth ≥10% · P/E 1–40', preset: { sort: 'metrics.pegRatio:asc', ranges: { pegRatio: { max: 1 }, earningsGrowth: { min: 10 }, peRatio: { min: 1, max: 40 } } } },
     { label: 'Asset Plays', tip: 'P/B 0.1–1 · P/S ≤1.5 · Current ≥1 — below book, still liquid', preset: { sort: 'metrics.pbRatio:asc', ranges: { pbRatio: { min: 0.1, max: 1 }, psRatio: { max: 1.5 }, currentRatio: { min: 1 } } } },
-    { label: 'Turnarounds', tip: 'P/S ≤1 · Fwd P/E 1–25 · Current ≥1.5 · ranked by insider buying', preset: { sort: 'insider.netBuyValue90d:desc', ranges: { psRatio: { max: 1 }, forwardPe: { min: 1, max: 25 }, currentRatio: { min: 1.5 } } } },
+    { label: 'Turnarounds', tip: 'P/S ≤1 · Fwd P/E 1–25 · Current ≥1.5 · insiders net-buying', preset: { sort: 'insider.netBuyValue90d:desc', ranges: { psRatio: { max: 1 }, forwardPe: { min: 1, max: 25 }, currentRatio: { min: 1.5 }, netBuyValue90d: { min: 0 } } } },
     { label: 'Stalwarts (Lynch)', tip: 'EPS growth 8–20% · ROE ≥12% · Net margin ≥10%', preset: { sort: 'overallScore:desc', ranges: { earningsGrowth: { min: 8, max: 20 }, roe: { min: 12 }, netMargin: { min: 10 } } } },
 ];
 
