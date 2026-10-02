@@ -45,6 +45,10 @@ export const MobileHeatmapTile = React.memo<MobileHeatmapTileProps>(({
         top: `${y}px`,
         width: `${width}px`,
         height: `${height}px`,
+        // Tiles are D3-sized — the global 44px touch-target rule
+        // ([role=button] @ ≤1024px) would inflate them and cause overlap.
+        minHeight: 0,
+        minWidth: 0,
         background: color,
         borderRadius: `${r}px`,
         boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.2)',

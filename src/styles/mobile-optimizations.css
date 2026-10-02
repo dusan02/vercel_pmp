@@ -24,9 +24,10 @@
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
   }
 
-  /* Links and clickable elements */
+  /* Links and clickable elements — heatmap tiles excluded: they are D3-sized
+     rects and the 44px touch floor would inflate them over their neighbors */
   a,
-  [role="button"],
+  [role="button"]:not([data-heatmap-tile]),
   .clickable {
     min-height: 44px;
     display: inline-flex;
