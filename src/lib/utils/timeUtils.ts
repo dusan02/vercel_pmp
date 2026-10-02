@@ -244,6 +244,17 @@ export function getTradingDay(date?: Date): Date {
 }
 
 /**
+ * The session date currently being displayed (YYYY-MM-DD, ET).
+ * Today when it's a trading day; on weekends/holidays the most recent
+ * session (Friday). Use this for anything keyed by trading session —
+ * Redis rankings, SessionPrice rows, DailyRef, prevClose references —
+ * so weekends/holidays show the last session instead of empty results.
+ */
+export function getSessionDateStr(base?: Date): string {
+  return getDateET(getTradingDay(base));
+}
+
+/**
  * Get the last trading day's date as string (YYYY-MM-DD)
  */
 export function getLastTradingDayString(beforeDate?: Date): string {

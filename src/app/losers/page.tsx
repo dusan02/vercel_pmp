@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
-import { detectSession, getTradingDay, mapToRedisSession } from '@/lib/utils/timeUtils';
+import { detectSession, getSessionDateStr, mapToRedisSession } from '@/lib/utils/timeUtils';
 import { formatCompactNumber, formatMarketCapDiff, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
-import { getDateET, getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
-import { getDateET as formatDateET } from '@/lib/utils/dateET';
+import { getManyLastWithDate, getRankedSymbols } from '@/lib/redis/ranking';
 import { prisma } from '@/lib/db/prisma';
 import { SsrMoverLinks } from '@/components/seo/SsrMoverLinks';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
@@ -46,7 +45,7 @@ async function getRows(limit: number): Promise<Row[]> {
   const session = mapToRedisSession(mapped) ?? 'after';
   // Ranked keys are per trading session — on weekends/holidays today's
   // key doesn't exist; fall back to the most recent session's rankings.
-  const date = formatDateET(getTradingDay());
+  const date = getSessionDateStr();
 
   const symbols = await getRankedSymbols(date, session, 'chg', 'asc', 0, limit);
   const last = await getManyLastWithDate(date, session, symbols);

@@ -47,9 +47,8 @@ jest.mock('@/lib/utils/dateET', () => ({ getDateET: jest.fn().mockReturnValue('2
 jest.mock('@/lib/utils/timeUtils', () => ({
     detectSession: jest.fn().mockReturnValue('regular'),
     mapToRedisSession: jest.fn().mockReturnValue('regular'),
-    // getDateET is mocked above and ignores its arg — a fixed ET-midnight
-    // Date keeps the trading-day resolution deterministic.
-    getTradingDay: jest.fn().mockReturnValue(new Date('2026-09-21T04:00:00Z')),
+    // Session date — the mocked calendar date is a trading day.
+    getSessionDateStr: jest.fn().mockReturnValue('2026-09-21'),
 }));
 
 const fetchMock = jest.fn();

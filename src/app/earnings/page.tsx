@@ -4,8 +4,7 @@ import { StructuredData } from '@/components/StructuredData';
 import Link from 'next/link';
 import { getEarningsRange, type EarningsSSRRow, type EarningsSSRGroup } from '@/lib/seo/earningsSSR';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
-import { getDateET } from '@/lib/utils/dateET';
-import { getTradingDay } from '@/lib/utils/timeUtils';
+import { getSessionDateStr } from '@/lib/utils/timeUtils';
 import { formatPercent } from '@/lib/utils/heatmapFormat';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 import {
@@ -131,7 +130,7 @@ export default async function EarningsPage() {
   // Earnings only exist on trading days — on weekends/holidays the
   // calendar must open on the most recent session (Friday), not an
   // empty weekend cell.
-  const tradingDayStr = getDateET(getTradingDay());
+  const tradingDayStr = getSessionDateStr();
   const tradingDayNoonUTC = new Date(tradingDayStr + 'T12:00:00Z');
   const end = new Date(tradingDayNoonUTC);
   end.setUTCDate(end.getUTCDate() + 7);

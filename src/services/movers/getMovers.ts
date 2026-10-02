@@ -12,8 +12,8 @@
  *  3. % change re-calculated via calculatePercentChange(price, session, prevClose, regularClose)
  */
 import { prisma } from '@/lib/db/prisma';
-import { getDateET, nowET, createETDate } from '@/lib/utils/dateET';
-import { detectSession, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
+import { nowET } from '@/lib/utils/dateET';
+import { detectSession, getLastTradingDay, getSessionDateStr, getTradingDay } from '@/lib/utils/timeUtils';
 import { isFreshPrevCloseDate } from '@/lib/utils/prevCloseDates';
 import { fetchLatestSessionPrices, sessionPriceOverrides } from '@/lib/utils/freshPrice';
 import { resolveTickerIdentity } from '@/lib/utils/tickerIdentity';
@@ -123,8 +123,7 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
     const dailyRefPrevBySymbol = new Map<string, number>();
     if (symbols.length > 0) {
         try {
-            const dateET = getDateET(getTradingDay(etNow));
-            const todayDateObj = createETDate(dateET);
+            const todayDateObj = getTradingDay(etNow);
             const dailyRefs = await prisma.dailyRef.findMany({
                 where: {
                     symbol: { in: symbols },
@@ -224,7 +223,7 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
     let analysisBySymbol = new Map<string, MoverAnalysis>();
     let marketChangePct: number | null = null;
     try {
-        const dateET = getDateET(getTradingDay(etNow));
+        const dateET = getSessionDateStr(etNow);
         const cacheKey = `movers:analysis:${dateET}:${session}`;
         let cached: Record<string, MoverAnalysis> | null = null;
         try { cached = await getCachedData(cacheKey); } catch { }

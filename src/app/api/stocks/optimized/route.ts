@@ -7,10 +7,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { redisClient } from '@/lib/redis';
-import { getDateET } from '@/lib/redis/ranking';
 import { logger } from '@/lib/utils/logger';
-import { detectSession, getTradingDay } from '@/lib/utils/timeUtils';
-import { nowET, getDateET as formatDateET } from '@/lib/utils/dateET';
+import { detectSession, getSessionDateStr } from '@/lib/utils/timeUtils';
+import { nowET } from '@/lib/utils/dateET';
 import { prisma } from '@/lib/db/prisma';
 
 
@@ -85,7 +84,7 @@ export async function GET(req: NextRequest) {
     // Get date and session — ranked keys exist only for trading sessions,
     // so weekends/holidays resolve to the most recent session's date.
     const etNow = nowET();
-    const date = formatDateET(getTradingDay(etNow));
+    const date = getSessionDateStr(etNow);
     const session = detectSession(etNow);
 
     // Get ZSET key

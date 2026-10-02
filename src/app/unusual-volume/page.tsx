@@ -3,9 +3,7 @@ import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
-import { getDateET } from '@/lib/redis/ranking';
-import { getDateET as formatDateET } from '@/lib/utils/dateET';
-import { getTradingDay } from '@/lib/utils/timeUtils';
+import { getSessionDateStr } from '@/lib/utils/timeUtils';
 import { getUnusualVolumeStocks, type PremarketArchiveRow } from '@/lib/seo/premarketArchive';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 
@@ -35,7 +33,7 @@ export default async function UnusualVolumePage() {
   // Pre-market SessionPrice rows exist only for trading days — on
   // weekends/holidays show the most recent session (Friday) instead of an
   // empty table.
-  const todayStr = formatDateET(getTradingDay());
+  const todayStr = getSessionDateStr();
   const display = new Date(todayStr + 'T12:00:00Z').toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   });

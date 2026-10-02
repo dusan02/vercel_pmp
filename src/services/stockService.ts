@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { computeMarketCap, computeMarketCapDiff, computePercentChange, getSharesOutstanding } from '@/lib/utils/marketCapUtils';
-import { detectSession, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
+import { detectSession, getLastTradingDay, getSessionDateStr, getTradingDay } from '@/lib/utils/timeUtils';
 import { nowET, getDateET, createETDate } from '@/lib/utils/dateET';
 import { getPricingState } from '@/lib/utils/pricingStateMachine';
 import { getPrevCloseRefDay, isFreshPrevCloseDate } from '@/lib/utils/prevCloseDates';
@@ -48,7 +48,7 @@ export async function getStocksList(options: {
       const redisSession = mapToRedisSession(session);
       // Ranked/last keys are per trading session — on weekends/holidays use
       // the most recent session's keys instead of a nonexistent "today".
-      const dateET = getDateET(getTradingDay(etNow));
+      const dateET = getSessionDateStr(etNow);
 
       let symbolsToFetch: string[] = [];
       let isGlobalQuery = false;
@@ -256,7 +256,7 @@ export async function getStocksList(options: {
     if (!isLargeQuery && tickersNeedingPrevClose.length > 0) {
       try {
         const { fetchPreviousClosesBatchAndPersist } = await import('@/lib/utils/onDemandPrevClose');
-        const onDemandResults = await fetchPreviousClosesBatchAndPersist(tickersNeedingPrevClose, getDateET(getTradingDay(etNow)), { maxTickers: 150, timeoutBudget: 5000, maxConcurrent: 10 });
+        const onDemandResults = await fetchPreviousClosesBatchAndPersist(tickersNeedingPrevClose, getSessionDateStr(etNow), { maxTickers: 150, timeoutBudget: 5000, maxConcurrent: 10 });
         onDemandResults.forEach((prevClose, ticker) => onDemandPrevCloseMap.set(ticker, prevClose));
       } catch (error) {
         console.warn(`⚠️ On-demand prevClose fetch failed:`, error);

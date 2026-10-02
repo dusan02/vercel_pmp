@@ -2,7 +2,7 @@ import Decimal from 'decimal.js';
 import { calculatePercentChange } from './priceResolver';
 import { getPrevCloseRefDay } from './prevCloseDates';
 import { getDateET } from './dateET';
-import { getTradingDay } from './timeUtils';
+import { getSessionDateStr } from './timeUtils';
 
 // Cache for share counts (24-hour TTL)
 // NOTE: This is a module-level Map — it only lives within a single Node.js process.
@@ -152,7 +152,7 @@ export async function getPreviousClose(ticker: string): Promise<number> {
     // bar after the close (post-close it would return today's close as
     // "previous", corrupting every prevClose consumer/verifier).
     // Session date = trading day (weekends resolve to the last session).
-    const refDay = getDateET(getPrevCloseRefDay(getDateET(getTradingDay())));
+    const refDay = getDateET(getPrevCloseRefDay(getSessionDateStr()));
     const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${refDay}/${refDay}?adjusted=true&apiKey=${apiKey}`;
     const response = await fetch(url, {
       signal: AbortSignal.timeout(10000) // 10 second timeout

@@ -7,7 +7,7 @@ import { getProjectTickers } from '@/data/defaultTickers';
 import { getCompanyName } from '@/lib/companyNames';
 import { logger } from '@/lib/utils/logger';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
-import { getTradingDay } from '@/lib/utils/timeUtils';
+import { getSessionDateStr } from '@/lib/utils/timeUtils';
 import Link from 'next/link';
 import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 import { prisma } from '@/lib/db/prisma';
@@ -81,7 +81,7 @@ export default async function Page() {
   weekStartDate.setUTCDate(weekStartDate.getUTCDate() + (dow === 0 ? -6 : 1 - dow));
   // Earnings only exist on trading days — on weekends/holidays the week
   // calendar must open on the most recent session (Friday), not an empty cell.
-  const earningsTodayStr = getDateET(getTradingDay());
+  const earningsTodayStr = getSessionDateStr();
   const earningsWeekStartStr = weekStartDate.toISOString().split('T')[0] ?? todayET;
 
   try {
