@@ -44,7 +44,10 @@ async function runPostMarketReset(): Promise<NextResponse> {
     const calendarDateETStr = getDateET();
     const runId = Date.now().toString(36);
 
-    await saveRegularClose(apiKey, calendarDateETStr, runId);
+    const saveResult = await saveRegularClose(apiKey, calendarDateETStr, runId);
+    const closeSaveSummary = saveResult.status === 'saved'
+        ? `saved:${saveResult.saved} prevCloseNextDay:${saveResult.prevCloseUpdated} nextDayKeys:${saveResult.nextDayKeyCount}`
+        : `${saveResult.status}: ${saveResult.status === 'skipped' ? saveResult.reason : saveResult.error}`;
 
     // Fill today's DailyValuationHistory rows from the just-saved closes so the
     // newest trading day doesn't wait for lazy per-ticker syncs or the weekly
@@ -61,12 +64,21 @@ async function runPostMarketReset(): Promise<NextResponse> {
     }
 
     const duration = Date.now() - startTime;
+
+    if (saveResult.status === 'failed') {
+        console.error(`❌ Post-market reset failed at close-save step: ${saveResult.error}`);
+        return handleCronError(new Error(`regular close save failed: ${saveResult.error}`), 'post_market_reset cron job');
+    }
+
     console.log(`✅ Post-market reset completed in ${(duration / 1000).toFixed(2)}s`);
 
     return createCronSuccessResponse({
-        message: 'Post-market reset: regular close saved successfully',
+        message: saveResult.status === 'skipped'
+            ? `Post-market reset: regular close skipped (${saveResult.reason})`
+            : 'Post-market reset: regular close saved successfully',
         summary: {
             duration: `${(duration / 1000).toFixed(2)}s`,
+            regularClose: closeSaveSummary,
             valuationFill,
         },
     });

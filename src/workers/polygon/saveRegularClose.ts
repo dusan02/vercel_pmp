@@ -7,6 +7,7 @@
  */
 
 import { getUniverse } from '@/lib/redis/operations';
+import { redisClient } from '@/lib/redis';
 import { recordSuccess, recordFailure } from '../healthMonitor';
 import { isMarketHoliday, getTradingDay } from '@/lib/utils/timeUtils';
 import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
@@ -14,6 +15,11 @@ import { writePrevClose, writeRegularClose } from '@/lib/heatmap/prevCloseServic
 import { prisma } from '@/lib/db/prisma';
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+export type SaveRegularCloseResult =
+  | { status: 'saved'; saved: number; prevCloseUpdated: number; nextDayKeyCount: number; nextTradingDateStr: string }
+  | { status: 'skipped'; reason: string }
+  | { status: 'failed'; error: string };
 
 /**
  * Official close for every US ticker on a given trading day via Polygon
@@ -42,7 +48,7 @@ async function fetchGroupedCloses(dateStr: string, apiKey: string): Promise<Map<
   return new Map();
 }
 
-export async function saveRegularClose(apiKey: string, date: string, runId?: string): Promise<void> {
+export async function saveRegularClose(apiKey: string, date: string, runId?: string): Promise<SaveRegularCloseResult> {
   const correlationId = runId || Date.now().toString(36);
   try {
     console.log(`💾 [runId:${correlationId}] Starting regular close save...`);
@@ -66,14 +72,15 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
     const isLaterCalendarDay = calendarDateETStr > tradingDayStr;
     const isPostClose = calendarDateETStr === tradingDayStr && minutesET >= 16 * 60 + 15;
     if (!isLaterCalendarDay && !isPostClose) {
-      console.log(`⏸️  [runId:${correlationId}] Skipping regular close save — trading day ${tradingDayStr} not closed yet (ET ${String(etHour).padStart(2, '0')}:${String(etMinute).padStart(2, '0')})`);
-      return;
+      const reason = `trading day ${tradingDayStr} not closed yet (ET ${String(etHour).padStart(2, '0')}:${String(etMinute).padStart(2, '0')})`;
+      console.log(`⏸️  [runId:${correlationId}] Skipping regular close save — ${reason}`);
+      return { status: 'skipped', reason };
     }
 
     const tickers = await getUniverse('sp500');
     if (tickers.length === 0) {
       console.warn('⚠️ No tickers in universe, skipping regular close save');
-      return;
+      return { status: 'skipped', reason: 'empty universe' };
     }
 
     // Per-ticker idempotency: only process tickers without regularClose.
@@ -93,7 +100,7 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
 
     if (tickersToSave.length === 0) {
       console.log(`⏭️  [runId:${correlationId}] All ${tickers.length} tickers already saved for ${getDateET(todayTradingDay)}`);
-      return;
+      return { status: 'skipped', reason: `all ${tickers.length} tickers already saved` };
     }
 
     console.log(`📊 [runId:${correlationId}] ${tickersToSave.length}/${tickers.length} tickers need regular close (already saved: ${alreadySavedSymbols.size})`);
@@ -150,8 +157,14 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
 
           // 2. Write prevClose for nextTradingDay (prevClose(next) = close(today))
           try {
-            await writePrevClose(nextTradingDateStr, nextTradingDateObj, symbol, regularClose, { skipTickerUpdate: true });
-            prevCloseUpdated++;
+            const wr = await writePrevClose(nextTradingDateStr, nextTradingDateObj, symbol, regularClose, { skipTickerUpdate: true });
+            // Count only durable writes — writePrevClose swallows per-store
+            // failures, so a thrown-free call can still produce nothing.
+            if (wr.redis || wr.dailyRef) {
+              prevCloseUpdated++;
+            } else {
+              console.warn(`⚠️ prevClose write produced no durable result for ${symbol} (nextTradingDay: ${nextTradingDateStr})`);
+            }
           } catch (prevCloseError) {
             console.warn(`⚠️ Failed to update previousClose for ${symbol} (nextTradingDay: ${nextTradingDateStr}):`, prevCloseError);
           }
@@ -161,11 +174,35 @@ export async function saveRegularClose(apiKey: string, date: string, runId?: str
       }
     }
 
+    // Post-write invariant: next-day prevClose keys must actually exist in
+    // Redis. A silent miss leaves tomorrow's session resolving against stale
+    // fallbacks (whole-universe 2-day % moves — Oct 2026 incident).
+    let nextDayKeyCount = 0;
+    try {
+      if (redisClient?.isOpen) {
+        nextDayKeyCount = (await redisClient.keys(`prevclose:${nextTradingDateStr}:*`)).length;
+      }
+    } catch {
+      // non-fatal: coverage metric only
+    }
+
     console.log(`✅ [runId:${correlationId}] Saved regular close for ${saved}/${tickersToSave.length} tickers`);
     console.log(`✅ [runId:${correlationId}] Updated previousClose for ${prevCloseUpdated} tickers (nextTradingDay: ${nextTradingDateStr}, todayTradingDay: ${getDateET(todayTradingDay)})`);
+
+    const expectedKeys = Math.floor(tickersToSave.length * 0.95);
+    if (tickersToSave.length > 0 && nextDayKeyCount < expectedKeys) {
+      const msg = `prevclose:${nextTradingDateStr} coverage ${nextDayKeyCount}/${tickersToSave.length} after save (expected ≥${expectedKeys})`;
+      console.error(`❌ [runId:${correlationId}] INVARIANT FAILED: ${msg}`);
+      await recordFailure('saveRegularClose', msg);
+      return { status: 'failed', error: msg };
+    }
+
     await recordSuccess('saveRegularClose', saved);
+    return { status: 'saved', saved, prevCloseUpdated, nextDayKeyCount, nextTradingDateStr };
   } catch (error) {
     console.error(`❌ [runId:${correlationId}] Error in saveRegularClose:`, error);
-    await recordFailure('saveRegularClose', error instanceof Error ? error.message : String(error));
+    const msg = error instanceof Error ? error.message : String(error);
+    await recordFailure('saveRegularClose', msg);
+    return { status: 'failed', error: msg };
   }
 }

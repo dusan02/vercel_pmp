@@ -15,6 +15,8 @@
 import { getPrevClose, setPrevClose } from '@/lib/redis/operations';
 import { redisClient } from '@/lib/redis';
 import { getDateET, createETDate } from '@/lib/utils/dateET';
+import { getPrevCloseRefDay } from '@/lib/utils/prevCloseDates';
+import { writePrevClose } from '@/lib/heatmap/prevCloseService';
 import { getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
 import { prisma } from '@/lib/db/prisma';
 import { getPricingState } from '@/lib/utils/pricingStateMachine';
@@ -118,6 +120,38 @@ export async function resolvePrevCloses(
       }
     } catch (dbError) {
       console.error('Error loading previous closes from DB:', dbError);
+    }
+  }
+
+  // Fallback: derive from the previous trading day's regularClose — the
+  // write-once, rollover-immune source. Self-heals session-key gaps (missing
+  // Redis key AND missing DailyRef(session) row) without any Polygon call, and
+  // persists the result so Redis/DailyRef/Ticker converge for later ticks.
+  const missingBeforeBootstrap = tickers.filter(t => !prevCloseMap.has(t));
+  if (missingBeforeBootstrap.length > 0) {
+    try {
+      const closeRefDay = getPrevCloseRefDay(calendarDateETStr);
+      const refRows = await prisma.dailyRef.findMany({
+        where: {
+          symbol: { in: missingBeforeBootstrap },
+          date: closeRefDay,
+          regularClose: { not: null }
+        },
+        select: { symbol: true, regularClose: true }
+      });
+      if (refRows.length > 0) {
+        console.log(`✅ Derived ${refRows.length} prevCloses from ${getDateET(closeRefDay)} regularClose (self-heal)`);
+        for (const ref of refRows) {
+          if (ref.regularClose && ref.regularClose > 0) {
+            prevCloseMap.set(ref.symbol, ref.regularClose);
+            await writePrevClose(calendarDateETStr, closeRefDay, ref.symbol, ref.regularClose, {
+              dailyRefDate: calendarDateET,
+            }).catch(() => {});
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('regularClose-derived prevClose fallback failed:', err);
     }
   }
 

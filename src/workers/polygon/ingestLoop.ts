@@ -103,13 +103,15 @@ async function maybeBootstrap(
   session: string,
   isWeekendOrHoliday: boolean
 ): Promise<void> {
-  // Weekend/holiday: bootstrap if prevCloses missing
+  // Weekend/holiday: bootstrap missing prevCloses (coverage-based — a partial
+  // gap like 200/998 keys must still trigger, a 5-ticker sample misses it).
   if (session === 'closed' && isWeekendOrHoliday) {
     const today = getDateET(etNow);
-    const samplePrevCloses = await getPrevClose(today, tickers.slice(0, 10));
-    if (samplePrevCloses.size === 0) {
-      console.log(`🔔 Weekend/Holiday: bootstrapping previous closes for % change...`);
-      await bootstrapPreviousCloses(tickers, apiKey, today);
+    const prevCloses = await getPrevClose(today, tickers);
+    const missing = tickers.filter(t => !prevCloses.has(t));
+    if (missing.length > 0) {
+      console.log(`🔔 Weekend/Holiday: ${missing.length}/${tickers.length} missing prevClose — bootstrapping...`);
+      await bootstrapPreviousCloses(missing, apiKey, today);
     } else {
       console.log(`🔔 Weekend/Holiday: prevCloses ready, proceeding with Redis ingest (DB protected)`);
     }
@@ -122,15 +124,16 @@ async function maybeBootstrap(
   // rate-limit burst at 04:00-04:05 left prevCloses missing until late morning,
   // which made premarket % changes appear late on some days. The bootstrap itself
   // is idempotent (skips tickers that already have prevClose), so re-checking
-  // every loop within the hour is cheap (one small Redis sample read).
+  // every loop within the hour is cheap (one Redis MGET over the universe).
   if (!isWeekendOrHoliday && (session === 'pre' || session === 'closed')) {
     const etParts = toET(etNow);
     if (etParts.hour === 4) {
       const today = getDateET(etNow);
-      const samplePrevCloses = await getPrevClose(today, tickers.slice(0, 5));
-      if (samplePrevCloses.size === 0) {
-        console.log('🌅 04:00 ET weekday bootstrap: prevClose missing — bootstrapping...');
-        await bootstrapPreviousCloses(tickers, apiKey, today);
+      const prevCloses = await getPrevClose(today, tickers);
+      const missing = tickers.filter(t => !prevCloses.has(t));
+      if (missing.length > 0) {
+        console.log(`🌅 04:00 ET weekday bootstrap: ${missing.length}/${tickers.length} missing prevClose — bootstrapping...`);
+        await bootstrapPreviousCloses(missing, apiKey, today);
       }
     }
   }
