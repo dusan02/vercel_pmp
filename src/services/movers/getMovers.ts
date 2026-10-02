@@ -13,7 +13,7 @@
  */
 import { prisma } from '@/lib/db/prisma';
 import { getDateET, nowET, createETDate } from '@/lib/utils/dateET';
-import { detectSession, getLastTradingDay } from '@/lib/utils/timeUtils';
+import { detectSession, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
 import { isFreshPrevCloseDate } from '@/lib/utils/prevCloseDates';
 import { fetchLatestSessionPrices, sessionPriceOverrides } from '@/lib/utils/freshPrice';
 import { resolveTickerIdentity } from '@/lib/utils/tickerIdentity';
@@ -56,7 +56,10 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
     //    +0.45% drift, Oct 2026). Requiring a today-dated price confines
     //    stored-field qualification to the current trading day.
     const TWENTY_FOUR_HOURS_AGO = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const todayStartET = createETDate(getDateET(etNow));
+    // Trading-day-aware: on weekends/holidays "today" is the last session
+    // (Friday) — otherwise lastPriceUpdated from Friday's close fails the
+    // >= midnight cutoff and the movers list renders empty.
+    const todayStartET = getTradingDay(etNow);
     const freshToday = { lastPriceUpdated: { gte: todayStartET } };
     const topMovers = await prisma.ticker.findMany({
         where: {
@@ -120,7 +123,7 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
     const dailyRefPrevBySymbol = new Map<string, number>();
     if (symbols.length > 0) {
         try {
-            const dateET = getDateET(etNow);
+            const dateET = getDateET(getTradingDay(etNow));
             const todayDateObj = createETDate(dateET);
             const dailyRefs = await prisma.dailyRef.findMany({
                 where: {
@@ -145,7 +148,10 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
     }
 
     // ── Step 4: Enrich movers with fresh price + recalculated % change ────
-    const lastTradingDay = getLastTradingDay(createETDate(getDateET(etNow)));
+    // PrevClose freshness is measured against the session being displayed —
+    // on weekends that's the last trading day, whose prevClose ref is the
+    // trading day before it (e.g. Saturday → session Friday → ref Thursday).
+    const lastTradingDay = getLastTradingDay(getTradingDay(etNow));
     const enrichedMovers = topMovers.map(m => {
         const best = bestPriceBySymbol.get(m.symbol);
         const currentPrice = best?.price || m.lastPrice || 0;
@@ -218,7 +224,7 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
     let analysisBySymbol = new Map<string, MoverAnalysis>();
     let marketChangePct: number | null = null;
     try {
-        const dateET = getDateET(etNow);
+        const dateET = getDateET(getTradingDay(etNow));
         const cacheKey = `movers:analysis:${dateET}:${session}`;
         let cached: Record<string, MoverAnalysis> | null = null;
         try { cached = await getCachedData(cacheKey); } catch { }

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { computeMarketCap, computeMarketCapDiff, computePercentChange, getSharesOutstanding } from '@/lib/utils/marketCapUtils';
-import { detectSession, getLastTradingDay } from '@/lib/utils/timeUtils';
+import { detectSession, getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
 import { nowET, getDateET, createETDate } from '@/lib/utils/dateET';
 import { getPricingState } from '@/lib/utils/pricingStateMachine';
 import { getPrevCloseRefDay, isFreshPrevCloseDate } from '@/lib/utils/prevCloseDates';
@@ -46,7 +46,9 @@ export async function getStocksList(options: {
       const session = detectSession(etNow);
       const { mapToRedisSession } = await import('@/lib/utils/timeUtils');
       const redisSession = mapToRedisSession(session);
-      const dateET = getDateET(etNow);
+      // Ranked/last keys are per trading session — on weekends/holidays use
+      // the most recent session's keys instead of a nonexistent "today".
+      const dateET = getDateET(getTradingDay(etNow));
 
       let symbolsToFetch: string[] = [];
       let isGlobalQuery = false;
@@ -218,9 +220,12 @@ export async function getStocksList(options: {
     // `previousClose` gets overwritten with today's own close by post-close
     // ingest (Polygon prevDay rolls at EOD), so it cannot be trusted as D-1
     // after the close.
-    const prevTradingDayObj = getPrevCloseRefDay(getDateET(etNow));
+    // Session date = trading day — on weekends the displayed session is the
+    // last trading day (Friday), so DailyRef/prevClose lookups target it.
+    const sessionDateObj = getTradingDay(etNow);
+    const prevTradingDayObj = getPrevCloseRefDay(getDateET(sessionDateObj));
     const prevDayCloseBySymbol = new Map<string, number>();
-    const dateET = getDateET(etNow);
+    const dateET = getDateET(sessionDateObj);
     const todayDateObj = createETDate(dateET);
     const lastTradingDayForQuery = getLastTradingDay(todayDateObj);
 
@@ -251,7 +256,7 @@ export async function getStocksList(options: {
     if (!isLargeQuery && tickersNeedingPrevClose.length > 0) {
       try {
         const { fetchPreviousClosesBatchAndPersist } = await import('@/lib/utils/onDemandPrevClose');
-        const onDemandResults = await fetchPreviousClosesBatchAndPersist(tickersNeedingPrevClose, getDateET(), { maxTickers: 150, timeoutBudget: 5000, maxConcurrent: 10 });
+        const onDemandResults = await fetchPreviousClosesBatchAndPersist(tickersNeedingPrevClose, getDateET(getTradingDay(etNow)), { maxTickers: 150, timeoutBudget: 5000, maxConcurrent: 10 });
         onDemandResults.forEach((prevClose, ticker) => onDemandPrevCloseMap.set(ticker, prevClose));
       } catch (error) {
         console.warn(`⚠️ On-demand prevClose fetch failed:`, error);

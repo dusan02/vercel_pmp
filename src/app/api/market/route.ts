@@ -18,8 +18,9 @@ import {
   getStatsFromCache,
   RankField
 } from '@/lib/redis/ranking';
-import { detectSession, mapToRedisSession } from '@/lib/utils/timeUtils';
+import { detectSession, getTradingDay, mapToRedisSession } from '@/lib/utils/timeUtils';
 import { getDateET } from '@/lib/redis/ranking';
+import { getDateET as formatDateET } from '@/lib/utils/dateET';
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
@@ -50,8 +51,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get date in ET timezone (YYYY-MM-DD)
-    const date = getDateET();
+    // Ranked keys exist only for trading sessions — on weekends/holidays
+    // serve the most recent session's rankings instead of an empty list.
+    const date = formatDateET(getTradingDay());
 
     // Get ranked symbols
     const symbols = await getRankedSymbols(date, session, sort, order, cursor, limit);

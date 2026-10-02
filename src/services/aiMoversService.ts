@@ -4,7 +4,7 @@ import { FINNHUB_API_KEY } from '@/lib/clients/finnhubClient';
 import { redisClient } from '@/lib/redis';
 import { REDIS_KEYS } from '@/lib/redis/keys';
 import { getDateET } from '@/lib/utils/dateET';
-import { mapToRedisSession, detectSession } from '@/lib/utils/timeUtils';
+import { mapToRedisSession, detectSession, getTradingDay } from '@/lib/utils/timeUtils';
 
 export interface MoverInsight {
     symbol: string;
@@ -23,7 +23,7 @@ export class AiMoversService {
      * Process pending movers to generate AI insights
      */
     async processMoversInsights(): Promise<{ success: number; failed: number }> {
-        const date = getDateET();
+        const date = getDateET(getTradingDay());
         const session = detectSession(new Date());
         const redisSession = mapToRedisSession(session);
         const zscoreKey = REDIS_KEYS.rankZScore(date, redisSession);
