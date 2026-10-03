@@ -1,5 +1,8 @@
 import { ImageResponse } from 'next/og';
 import { prisma } from '@/lib/db/prisma';
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+import sharp from 'sharp';
 
 export const runtime = 'nodejs';
 export const alt = 'Stock Analysis';
@@ -16,6 +19,20 @@ export default async function Image({ params }: { params: Promise<{ ticker: stri
   let healthScore: number | null = null;
   let sector: string | null = null;
   let closes: number[] = [];
+  // Company logo — read the locally cached webp (populated by
+  // /api/logo/[symbol] + LogoFetcher), convert to png (satori can't decode
+  // webp/svg img sources) and inline as a data URI. No extra network call →
+  // zero cost per post; .svg-only logos just fall through to the
+  // logo-free layout.
+  let logoDataUri: string | null = null;
+  for (const sizeSuffix of ['-64.webp', '-32.webp']) {
+    try {
+      const buf = await readFile(join(process.cwd(), 'public', 'logos', `${symbol.toLowerCase()}${sizeSuffix}`));
+      const png = await sharp(buf).resize(128, 128, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 0 } }).png().toBuffer();
+      logoDataUri = `data:image/png;base64,${png.toString('base64')}`;
+      break;
+    } catch { /* not cached / undecodable — try next size */ }
+  }
 
   try {
     const ticker = await prisma.ticker.findUnique({
@@ -75,14 +92,24 @@ export default async function Image({ params }: { params: Promise<{ ticker: stri
           </div>
         </div>
 
-        {/* Ticker */}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '20px', marginBottom: '12px' }}>
-          <div style={{ fontSize: '72px', fontWeight: 800, color: '#ffffff', display: 'flex' }}>
-            {symbol}
-          </div>
-          {sector && (
-            <div style={{ fontSize: '24px', color: '#94a3b8', display: 'flex' }}>{sector}</div>
+        {/* Ticker + company logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '12px' }}>
+          {logoDataUri && (
+            <img
+              src={logoDataUri}
+              width={88}
+              height={88}
+              style={{ borderRadius: '16px', background: '#ffffff', objectFit: 'contain', padding: '6px' }}
+            />
           )}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '20px' }}>
+            <div style={{ fontSize: '72px', fontWeight: 800, color: '#ffffff', display: 'flex' }}>
+              {symbol}
+            </div>
+            {sector && (
+              <div style={{ fontSize: '24px', color: '#94a3b8', display: 'flex' }}>{sector}</div>
+            )}
+          </div>
         </div>
 
         {/* Company name */}
