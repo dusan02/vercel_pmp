@@ -395,7 +395,11 @@ export async function getStocksList(options: {
     if (tickers && tickers.length > 0) {
       const foundTickers = new Set(results.map(r => r.ticker));
       const missingTickers = tickers.filter(t => !foundTickers.has(t));
-      if (missingTickers.length > 0) {
+      // During production-build prerender there is no live DB — every ticker
+      // is "missing", so this fallback fires a no-store Polygon call that
+      // throws DynamicServerError and permanently marks "/" dynamic (ISR
+      // dead → 2s SSR on every request). Skip external fallbacks at build.
+      if (missingTickers.length > 0 && process.env.NEXT_PHASE !== 'phase-production-build') {
         let stillMissing = missingTickers;
         try {
           const { getPolygonClient } = await import('@/lib/clients/polygonClient');

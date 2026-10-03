@@ -1,4 +1,6 @@
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
+import { detectSession } from '@/lib/utils/timeUtils';
+import { nowET } from '@/lib/utils/dateET';
 import {
   fetchTickers,
   fetchPriceData,
@@ -90,13 +92,28 @@ export async function getHeatmapData(query: HeatmapQuery = {}): Promise<HeatmapS
     // 1. Cache check
     if (!forceRefresh) {
       try {
-        const cachedData = await getCachedData(CACHE_KEY);
+        const cachedEnvelope = await getCachedData(CACHE_KEY);
+        // Envelope {fetchedAt, data} since 2026-10; tolerate legacy bare array.
+        const cachedData = Array.isArray(cachedEnvelope) ? cachedEnvelope : (cachedEnvelope as any)?.data;
+        const fetchedAtMs = !Array.isArray(cachedEnvelope) && typeof (cachedEnvelope as any)?.fetchedAt === 'number'
+          ? (cachedEnvelope as any).fetchedAt
+          : null;
 
         if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
           const cacheTimestamp = (cachedData as any)?.[0]?._timestamp || null;
           const dataAgeMs = cacheTimestamp ? Date.now() - new Date(cacheTimestamp).getTime() : Infinity;
 
-          if (dataAgeMs < MAX_DATA_AGE) {
+          // Rebuild-rate gate: dataAge alone can't distinguish "stale because
+          // the market moved" from "stale because the market is closed" — a
+          // closed market freezes maxUpdatedAt, so refetches return identical
+          // rows yet ran on EVERY call (permanent cache-miss loop, ~1.7s of
+          // DB work per request). fetchedAt bounds rebuilds to once per
+          // window; while closed the window stretches to the cache TTL since
+          // the DB provably holds nothing fresher.
+          const fetchAgeMs = fetchedAtMs ? Date.now() - fetchedAtMs : Infinity;
+          const rebuildWindowMs = detectSession(nowET()) === 'closed' ? CACHE_TTL * 1000 : MAX_DATA_AGE;
+
+          if (dataAgeMs < MAX_DATA_AGE || fetchAgeMs < rebuildWindowMs) {
             console.log(`✅ Heatmap cache hit - returning ${cachedData.length} companies (data age: ${Math.floor(dataAgeMs / 1000)}s, ${Date.now() - startTime}ms)`);
             const limited = requestedLimit ? cachedData.slice(0, requestedLimit) : cachedData;
             return {
@@ -286,7 +303,7 @@ export async function getHeatmapData(query: HeatmapQuery = {}): Promise<HeatmapS
     const lastUpdatedAt = transformResult.maxUpdatedAt ? transformResult.maxUpdatedAt.toISOString() : new Date().toISOString();
     const dataAgeMs = transformResult.maxUpdatedAt ? Date.now() - transformResult.maxUpdatedAt.getTime() : 0;
     try {
-      await setCachedData(CACHE_KEY, payload, CACHE_TTL);
+      await setCachedData(CACHE_KEY, { fetchedAt: Date.now(), data: payload }, CACHE_TTL);
       console.log(`✅ Heatmap data fetched from DB and cached: ${payload.length} companies (lastUpdated: ${lastUpdatedAt}) in ${Date.now() - startTime}ms`);
     } catch (cacheError) {
       console.warn('⚠️ Error caching heatmap results:', cacheError);
