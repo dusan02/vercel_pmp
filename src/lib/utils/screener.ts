@@ -286,6 +286,7 @@ export const QUICK_SCREENS: { label: string; tip?: string; group: 'score' | 'str
     { label: 'Quality Compounders', tip: 'Quality ≥80 · Profit ≥75 · Growth ≥60', group: 'score', preset: { minQuality: 80, minProfit: 75, minGrowth: 60 } },
     { label: 'Quality at Reasonable Price', tip: 'Quality ≥75 · Valuation ≥60', group: 'score', preset: { minQuality: 75, minValue: 60 } },
     { label: 'Growth at Reasonable Price', tip: 'Growth ≥75 · Valuation ≥60', group: 'score', preset: { minGrowth: 75, minValue: 60 } },
+    { label: 'Growth + Quality', tip: 'Growth ≥75 · Quality ≥75', group: 'score', preset: { minGrowth: 75, minQuality: 75 } },
     { label: 'Strong Balance Sheets', tip: 'Health ≥80 · Altman Z ≥3', group: 'score', preset: { minHealth: 80, minAltman: 3 } },
     { label: 'Cash Machines', tip: 'FCF margin ≥15% · Profit ≥60 · P/FCF ≤30 (cheap FCF)', group: 'score', preset: { minFcfMargin: 0.15, minProfit: 60, ranges: { priceFreeCashFlow: { min: 0.1, max: 30 } } } },
     { label: 'Top Overall', tip: 'Overall score ≥75', group: 'score', preset: { minOverall: 75 } },
