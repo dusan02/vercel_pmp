@@ -104,6 +104,16 @@ describe('QUICK_SCREENS presets', () => {
         }
     });
 
+    it('every preset icon name resolves in PRESET_ICONS', async () => {
+        const { PRESET_ICONS } = await import('@/lib/utils/screenerIcons');
+        for (const s of QUICK_SCREENS) {
+            const names = s.icon ? (Array.isArray(s.icon) ? s.icon : [s.icon]) : [];
+            for (const n of names) {
+                expect(Object.keys(PRESET_ICONS)).toContain(n);
+            }
+        }
+    });
+
     it('preset sort values exist in SORT_OPTIONS (else the dropdown shows a phantom value)', async () => {
         const { SORT_OPTIONS } = await import('@/lib/utils/screener');
         const valid = new Set(SORT_OPTIONS.map((o) => o.value));

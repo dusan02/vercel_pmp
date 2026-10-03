@@ -38,6 +38,7 @@ import { SeoTextSection } from '@/components/company/SeoTextSection';
 import { AnalysisStockSearch } from '@/components/AnalysisStockSearch';
 import { ThesisCard } from '@/components/company/analysis/sections/ThesisCard';
 import { getMatchedScreens } from '@/lib/analysis/matchedScreens';
+import { renderPresetIcon } from '@/lib/utils/screenerIcons';
 
 // Lazy client chunks — keeps recharts/finnhub-fetch code out of the initial bundle
 const IntradayChart = dynamic(() => import('@/components/company/IntradayChart').then((m) => m.IntradayChart));
@@ -260,7 +261,7 @@ export default async function AnalysisPage({ params }: PageProps) {
                   title={s.tip}
                   className="text-[11px] px-2.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800/60 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:border-indigo-400 transition-colors"
                 >
-                  {s.label}
+                  <span className="inline-flex items-center gap-1">{renderPresetIcon(s.icon)}{s.label}</span>
                 </Link>
               ))}
             </div>

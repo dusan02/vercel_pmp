@@ -282,33 +282,39 @@ export interface ScreenerPreset {
  * - Stalwarts (Lynch): EPS growth 8–20%, ROE≥12%, net margin ≥10% —
  *   large steady compounders, not explosive.
  */
-export const QUICK_SCREENS: { label: string; tip?: string; group: 'score' | 'strategy'; preset: ScreenerPreset }[] = [
-    { label: 'Quality Compounders', tip: 'Quality ≥80 · Profit ≥75 · Growth ≥60', group: 'score', preset: { minQuality: 80, minProfit: 75, minGrowth: 60 } },
-    { label: 'Quality at Reasonable Price', tip: 'Quality ≥75 · Valuation ≥60', group: 'score', preset: { minQuality: 75, minValue: 60 } },
-    { label: 'Growth at Reasonable Price', tip: 'Growth ≥75 · Valuation ≥60', group: 'score', preset: { minGrowth: 75, minValue: 60 } },
-    { label: 'Growth + Quality', tip: 'Growth ≥75 · Quality ≥75', group: 'score', preset: { minGrowth: 75, minQuality: 75 } },
-    { label: 'Strong Balance Sheets', tip: 'Health ≥80 · Altman Z ≥3', group: 'score', preset: { minHealth: 80, minAltman: 3 } },
-    { label: 'Cash Machines', tip: 'FCF margin ≥15% · Profit ≥60 · P/FCF ≤30 (cheap FCF)', group: 'score', preset: { minFcfMargin: 0.15, minProfit: 60, ranges: { priceFreeCashFlow: { min: 0.1, max: 30 } } } },
-    { label: 'Top Overall', tip: 'Overall score ≥75', group: 'score', preset: { minOverall: 75 } },
+export const QUICK_SCREENS: {
+    label: string; tip?: string; group: 'score' | 'strategy';
+    /** Lucide icon name(s) — rendered left of the label in the preset pill
+        and the /analysis "In screens" badges (mapped in screenerIcons.tsx). */
+    icon?: string | string[];
+    preset: ScreenerPreset;
+}[] = [
+    { label: 'Quality Compounders', tip: 'Quality ≥80 · Profit ≥75 · Growth ≥60', group: 'score', icon: 'Gem', preset: { minQuality: 80, minProfit: 75, minGrowth: 60 } },
+    { label: 'Quality at Reasonable Price', tip: 'Quality ≥75 · Valuation ≥60', group: 'score', icon: 'Scale', preset: { minQuality: 75, minValue: 60 } },
+    { label: 'Growth at Reasonable Price', tip: 'Growth ≥75 · Valuation ≥60', group: 'score', icon: 'Tag', preset: { minGrowth: 75, minValue: 60 } },
+    { label: 'Growth + Quality', tip: 'Growth ≥75 · Quality ≥75', group: 'score', icon: ['TrendingUp', 'Check'], preset: { minGrowth: 75, minQuality: 75 } },
+    { label: 'Strong Balance Sheets', tip: 'Health ≥80 · Altman Z ≥3', group: 'score', icon: 'Vault', preset: { minHealth: 80, minAltman: 3 } },
+    { label: 'Cash Machines', tip: 'FCF margin ≥15% · Profit ≥60 · P/FCF ≤30 (cheap FCF)', group: 'score', icon: 'Banknote', preset: { minFcfMargin: 0.15, minProfit: 60, ranges: { priceFreeCashFlow: { min: 0.1, max: 30 } } } },
+    { label: 'Top Overall', tip: 'Overall score ≥75', group: 'score', icon: 'Trophy', preset: { minOverall: 75 } },
     // Strategy screens — classic investor categories on raw fundamentals.
     // Floors (`min`) on valuation ratios exclude negative/nonsense values
     // (negative P/E = loss-maker, negative P/B = negative equity).
-    { label: 'Value (Graham)', tip: 'P/E 1–15 · P/B 0.1–1.5 · Current ≥1.5 · EPS growth >0 · pays dividend', group: 'strategy', preset: { ranges: { peRatio: { min: 1, max: 15 }, pbRatio: { min: 0.1, max: 1.5 }, currentRatio: { min: 1.5 }, earningsGrowth: { min: 0 }, dividendYield: { min: 0.1 } } } },
-    { label: 'Dividend Growth', tip: 'Yield 1.5–6% · Payout 0–75% · ROE ≥12% · D/E 0–1 · EPS growth ≥5%', group: 'strategy', preset: { ranges: { dividendYield: { min: 1.5, max: 6 }, payoutRatio: { min: 0, max: 75 }, roe: { min: 12 }, debtEquityRatio: { min: 0, max: 1 }, earningsGrowth: { min: 5 } } } },
-    { label: 'Fast Growers (Lynch)', tip: 'EPS ≥20% · Rev ≥15% · PEG ≤2 · profitable · D/E ≤2', group: 'strategy', preset: { ranges: { earningsGrowth: { min: 20 }, revenueGrowth: { min: 15 }, pegRatio: { min: 0.1, max: 2 }, netMargin: { min: 0 }, debtEquityRatio: { min: 0, max: 2 } } } },
-    { label: 'GARP (PEG<1)', tip: 'PEG 0–1 · EPS growth ≥10% · P/E 1–40', group: 'strategy', preset: { ranges: { pegRatio: { min: 0.01, max: 1 }, earningsGrowth: { min: 10 }, peRatio: { min: 1, max: 40 } } } },
-    { label: 'Asset Plays', tip: 'P/B 0.1–1 · P/S ≤1.5 · Current ≥1 · D/E ≤3 (assets not buried in debt)', group: 'strategy', preset: { ranges: { pbRatio: { min: 0.1, max: 1 }, psRatio: { min: 0, max: 1.5 }, currentRatio: { min: 1 }, debtEquityRatio: { min: 0, max: 3 } } } },
-    { label: 'Turnarounds', tip: 'P/S ≤1 · Fwd P/E 1–25 · Current ≥1.5 · insiders net-buying', group: 'strategy', preset: { ranges: { psRatio: { min: 0, max: 1 }, forwardPe: { min: 1, max: 25 }, currentRatio: { min: 1.5 }, netBuyValue90d: { min: 0 } } } },
-    { label: 'Stalwarts (Lynch)', tip: 'EPS growth 8–20% · ROE ≥12% · Net margin ≥10% · Beta ≤1.4', group: 'strategy', preset: { ranges: { earningsGrowth: { min: 8, max: 20 }, roe: { min: 12 }, netMargin: { min: 10 }, beta: { min: 0, max: 1.4 } } } },
-    { label: 'Slow Growers (Lynch)', tip: 'Yield 2–9% · EPS growth 0–8% · Beta ≤1.2 — dividend payers', group: 'strategy', preset: { ranges: { dividendYield: { min: 2, max: 9 }, earningsGrowth: { min: 0, max: 8 }, beta: { min: 0, max: 1.2 } } } },
+    { label: 'Value (Graham)', tip: 'P/E 1–15 · P/B 0.1–1.5 · Current ≥1.5 · EPS growth >0 · pays dividend', group: 'strategy', icon: 'Sprout', preset: { ranges: { peRatio: { min: 1, max: 15 }, pbRatio: { min: 0.1, max: 1.5 }, currentRatio: { min: 1.5 }, earningsGrowth: { min: 0 }, dividendYield: { min: 0.1 } } } },
+    { label: 'Dividend Growth', tip: 'Yield 1.5–6% · Payout 0–75% · ROE ≥12% · D/E 0–1 · EPS growth ≥5%', group: 'strategy', icon: 'Coins', preset: { ranges: { dividendYield: { min: 1.5, max: 6 }, payoutRatio: { min: 0, max: 75 }, roe: { min: 12 }, debtEquityRatio: { min: 0, max: 1 }, earningsGrowth: { min: 5 } } } },
+    { label: 'Fast Growers (Lynch)', tip: 'EPS ≥20% · Rev ≥15% · PEG ≤2 · profitable · D/E ≤2', group: 'strategy', icon: 'TrendingUp', preset: { ranges: { earningsGrowth: { min: 20 }, revenueGrowth: { min: 15 }, pegRatio: { min: 0.1, max: 2 }, netMargin: { min: 0 }, debtEquityRatio: { min: 0, max: 2 } } } },
+    { label: 'GARP (PEG<1)', tip: 'PEG 0–1 · EPS growth ≥10% · P/E 1–40', group: 'strategy', icon: 'Percent', preset: { ranges: { pegRatio: { min: 0.01, max: 1 }, earningsGrowth: { min: 10 }, peRatio: { min: 1, max: 40 } } } },
+    { label: 'Asset Plays', tip: 'P/B 0.1–1 · P/S ≤1.5 · Current ≥1 · D/E ≤3 (assets not buried in debt)', group: 'strategy', icon: 'Landmark', preset: { ranges: { pbRatio: { min: 0.1, max: 1 }, psRatio: { min: 0, max: 1.5 }, currentRatio: { min: 1 }, debtEquityRatio: { min: 0, max: 3 } } } },
+    { label: 'Turnarounds', tip: 'P/S ≤1 · Fwd P/E 1–25 · Current ≥1.5 · insiders net-buying', group: 'strategy', icon: 'RefreshCcw', preset: { ranges: { psRatio: { min: 0, max: 1 }, forwardPe: { min: 1, max: 25 }, currentRatio: { min: 1.5 }, netBuyValue90d: { min: 0 } } } },
+    { label: 'Stalwarts (Lynch)', tip: 'EPS growth 8–20% · ROE ≥12% · Net margin ≥10% · Beta ≤1.4', group: 'strategy', icon: 'ShieldCheck', preset: { ranges: { earningsGrowth: { min: 8, max: 20 }, roe: { min: 12 }, netMargin: { min: 10 }, beta: { min: 0, max: 1.4 } } } },
+    { label: 'Slow Growers (Lynch)', tip: 'Yield 2–9% · EPS growth 0–8% · Beta ≤1.2 — dividend payers', group: 'strategy', icon: 'ArrowUpRight', preset: { ranges: { dividendYield: { min: 2, max: 9 }, earningsGrowth: { min: 0, max: 8 }, beta: { min: 0, max: 1.2 } } } },
     // Discovery screens — idea-driven ("quality companies near their 52w
     // low", "insiders buying", "abnormal move on solid fundamentals"). The
     // `sort` field applies once on click; the pill stays active while the
     // user re-sorts the same screen.
-    { label: 'Quality Selloff', tip: 'Quality ≥70 · Fin. Health ≥70 · in bottom 25% of 52W range · >$2B — quality names near their yearly low', group: 'strategy', preset: { minQuality: 70, minHealth: 70, marketCapPreset: 'midplus', ranges: { week52Position: { max: 25 } }, sort: 'metrics.week52Position:asc' } },
-    { label: 'Insider Buying', tip: 'Net insider buying >$0 (90d) · Quality ≥60 · Fin. Health ≥50, sorted by insider buy $', group: 'strategy', preset: { minQuality: 60, minHealth: 50, ranges: { netBuyValue90d: { min: 1 } }, sort: 'insider.netBuyValue90d:desc' } },
-    { label: 'Selloff + Fundamentals', tip: 'Day change ≤-5% · Overall ≥70 · Quality ≥70 — abnormal drop on strong fundamentals', group: 'strategy', preset: { minOverall: 70, minQuality: 70, ranges: { changePct: { max: -5 } }, sort: 'ticker.lastChangePct:asc' } },
-    { label: 'Momentum + Fundamentals', tip: 'Day change ≥+5% · Overall ≥70 · Quality ≥70 — abnormal move on strong fundamentals', group: 'strategy', preset: { minOverall: 70, minQuality: 70, ranges: { changePct: { min: 5 } }, sort: 'ticker.lastChangePct:desc' } },
+    { label: 'Quality Selloff', tip: 'Quality ≥70 · Fin. Health ≥70 · in bottom 25% of 52W range · >$2B — quality names near their yearly low', group: 'strategy', icon: 'TrendingDown', preset: { minQuality: 70, minHealth: 70, marketCapPreset: 'midplus', ranges: { week52Position: { max: 25 } }, sort: 'metrics.week52Position:asc' } },
+    { label: 'Insider Buying', tip: 'Net insider buying >$0 (90d) · Quality ≥60 · Fin. Health ≥50, sorted by insider buy $', group: 'strategy', icon: 'HandCoins', preset: { minQuality: 60, minHealth: 50, ranges: { netBuyValue90d: { min: 1 } }, sort: 'insider.netBuyValue90d:desc' } },
+    { label: 'Selloff + Fundamentals', tip: 'Day change ≤-5% · Overall ≥70 · Quality ≥70 — abnormal drop on strong fundamentals', group: 'strategy', icon: 'ArrowDown', preset: { minOverall: 70, minQuality: 70, ranges: { changePct: { max: -5 } }, sort: 'ticker.lastChangePct:asc' } },
+    { label: 'Momentum + Fundamentals', tip: 'Day change ≥+5% · Overall ≥70 · Quality ≥70 — abnormal move on strong fundamentals', group: 'strategy', icon: 'Zap', preset: { minOverall: 70, minQuality: 70, ranges: { changePct: { min: 5 } }, sort: 'ticker.lastChangePct:desc' } },
 ];
 
 /**

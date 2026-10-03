@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { renderPresetIcon } from '@/lib/utils/screenerIcons';
 import CompanyLogo from './CompanyLogo';
 import { UniversalTable, ColumnDef } from './UniversalTable';
 import { DualRangeSlider } from './analysis/DualRangeSlider';
@@ -551,7 +552,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
                       : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400'
                   }`}
                 >
-                  {p.label}
+                  <span className="inline-flex items-center gap-1">{renderPresetIcon(p.icon)}{p.label}</span>
                 </button>
               );
             })}

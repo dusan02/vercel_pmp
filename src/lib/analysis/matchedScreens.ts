@@ -5,6 +5,8 @@ import { QUICK_SCREENS, matchesPreset, presetToQueryString } from '@/lib/utils/s
 export interface MatchedScreen {
     label: string;
     tip?: string;
+    /** Lucide icon name(s) for the badge — same glyph as the screener pill. */
+    icon?: string | string[];
     /** /screener pre-loaded with this screen's filters — internal deep link. */
     href: string;
 }
@@ -63,6 +65,7 @@ export const getMatchedScreens = cache(async (symbol: string): Promise<MatchedSc
         .map((s) => ({
             label: s.label,
             ...(s.tip ? { tip: s.tip } : {}),
+            ...(s.icon ? { icon: s.icon } : {}),
             href: `/screener?${presetToQueryString(s.preset)}`,
         }));
 });
