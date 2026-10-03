@@ -110,7 +110,7 @@ export function initializePreloading() {
   preloadFont('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
   
   // Preload critical images
-  preloadImage('/favicon.ico');
+  preloadImage('/favicon.png');
   preloadImage('/og-image.png');
   
   // Lazy load non-critical resources

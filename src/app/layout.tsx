@@ -125,8 +125,8 @@ export const metadata: Metadata = {
   applicationName: 'PreMarketPrice',
   icons: {
     icon: [
-      { url: '/favicon.svg?v=4', type: 'image/svg+xml' },
-      // favicon.ico removed - using SVG only to avoid 404 errors
+      { url: '/favicon.png?v=1', type: 'image/png', sizes: '64x64' },
+      // favicon.ico removed - PNG favicon (bull logo)
     ],
     apple: [
       { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
@@ -178,8 +178,8 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="167x167" href="/apple-touch-icon.png" />
 
-        {/* Favicons - SVG only (modern browsers support SVG favicons) */}
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
+        {/* Favicon — PNG bull mark */}
+        <link rel="icon" type="image/png" href="/favicon.png?v=1" />
 
         {/* Resource Hints - Preconnect to external APIs */}
         <link rel="preconnect" href="https://api.polygon.io" crossOrigin="anonymous" />
