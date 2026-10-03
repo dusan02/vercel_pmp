@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
+import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'About Us',
@@ -11,6 +12,7 @@ export const metadata: Metadata = generatePageMetadata({
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
+        <StandaloneHeader />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8 md:p-12">
           <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-6">

@@ -10,6 +10,7 @@ import ShareButtons from '@/components/ShareButtons';
 import { MoveAlertButton } from '@/components/notifications/MoveAlertButton';
 import { TrackPageEvent } from '@/components/analytics/TrackPageEvent';
 import { IntradayChart } from '@/components/company/IntradayChart';
+import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 // Revalidate every 5 minutes — mover data is fairly stable post-session
 export const revalidate = 300;
@@ -273,6 +274,7 @@ export default async function MoverSymbolPage({ params }: PageProps) {
       <TrackPageEvent name="view_item" params={{ item_id: tickerUpper, item_type: 'premarket' }} />
 
       <div className="min-h-screen bg-white dark:bg-slate-900">
+        <StandaloneHeader />
         {/* Breadcrumb */}
         <nav className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
           <div className="max-w-5xl mx-auto px-4 py-3">

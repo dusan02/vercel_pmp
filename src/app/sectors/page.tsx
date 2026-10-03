@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db/prisma';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { formatSectorName } from '@/lib/utils/format';
+import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 // Keep this as a plain number literal so Next can statically analyze segment config.
 // force-dynamic: CI artifact builds have no DB, so a build-time prerender would
@@ -61,6 +62,7 @@ export default async function SectorsPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
+        <StandaloneHeader />
       <div className="container mx-auto py-8 px-4">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Sectors</h1>

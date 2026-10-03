@@ -9,6 +9,7 @@ import { prisma } from '@/lib/db/prisma';
 import { SsrMoverLinks } from '@/components/seo/SsrMoverLinks';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
+import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 export const revalidate = 60;
 
@@ -99,6 +100,7 @@ export default async function GainersPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
+        <StandaloneHeader />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}

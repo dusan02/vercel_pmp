@@ -10,6 +10,7 @@ import {
   type PremarketArchiveRow,
 } from '@/lib/seo/premarketArchive';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
+import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 export const revalidate = 3600; // 1 hour — archive pages are less volatile
 
@@ -82,6 +83,7 @@ export default async function PremarketGainersDatePage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
+        <StandaloneHeader />
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">

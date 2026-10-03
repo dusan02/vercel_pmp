@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db/prisma';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 import { getEligibleValuationTickers } from '@/lib/seo/eligibleValuation';
+import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 export const revalidate = 3600; // 1 hour
 
@@ -145,6 +146,7 @@ export default async function StocksHubPage({ searchParams }: StocksPageProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
 
       <div className="min-h-screen bg-white dark:bg-slate-900">
+        <StandaloneHeader />
         <div className="container mx-auto py-8 px-4">
           {/* Header */}
           <div className="mb-6">

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { formatPercent } from '@/lib/utils/heatmapFormat';
 import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
+import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 export const revalidate = 3600;
 
@@ -30,6 +31,7 @@ export default async function PremarketLosersIndexPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
+        <StandaloneHeader />
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Premarket Losers Archive</h1>

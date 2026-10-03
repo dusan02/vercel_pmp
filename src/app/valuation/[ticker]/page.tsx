@@ -11,6 +11,7 @@ import {
 } from '@/lib/seo/eligibleValuation';
 import { ValuationSeoText } from '@/components/company/ValuationSeoText';
 import { TrackPageEvent } from '@/components/analytics/TrackPageEvent';
+import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 export const revalidate = 3600; // 1 hour — valuation history updates daily
 
@@ -158,6 +159,7 @@ export default async function ValuationPage({ params }: PageProps) {
     // Not enough data — show minimal page with noindex (handled by generateMetadata)
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <StandaloneHeader />
         <main className="max-w-4xl mx-auto px-4 py-8">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             {companyName} ({tickerUpper}) Valuation

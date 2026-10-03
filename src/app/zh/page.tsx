@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
+import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 export const revalidate = 300;
 
@@ -55,6 +56,7 @@ const cards = [
 export default function ZhHomePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
+        <StandaloneHeader homeHref="/zh" />
       <div className="container mx-auto py-10 px-4">
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">

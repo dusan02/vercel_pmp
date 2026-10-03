@@ -7,6 +7,7 @@ import { formatSectorName } from '@/lib/utils/format';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { getMoversData, type MoverRecord } from '@/services/movers/getMovers';
 import { SIGMA_LABELS, type SigmaLevel } from '@/services/movers/classify';
+import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 export const revalidate = 60;
 
@@ -187,6 +188,7 @@ export default async function ZhPremarketMoversPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
+        <StandaloneHeader homeHref="/zh" />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(faqSchema) }} />
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8">

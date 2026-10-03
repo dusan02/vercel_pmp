@@ -6,6 +6,7 @@ import { formatSectorName } from '@/lib/utils/format';
 import { getSessionDateStr } from '@/lib/utils/timeUtils';
 import { getUnusualVolumeStocks, type PremarketArchiveRow } from '@/lib/seo/premarketArchive';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
+import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 export const revalidate = 300; // 5 minutes — live-ish data
 
@@ -42,6 +43,7 @@ export default async function UnusualVolumePage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
+        <StandaloneHeader />
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">

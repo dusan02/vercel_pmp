@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 import { prisma } from '@/lib/prisma';
+import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 // Render per-request — a static prerender can bake empty rows if the DB
 // query returns nothing during build (SQLite contention/dummy build DB).
@@ -122,6 +123,7 @@ export default async function CapexTrackerPage() {
         <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(itemListSchema) }} />
             <div className="min-h-screen bg-white dark:bg-slate-900">
+        <StandaloneHeader />
                 <div className="container mx-auto py-8 px-4 max-w-6xl">
                     <nav className="text-sm text-slate-500 dark:text-slate-400 mb-4" aria-label="Breadcrumb">
                         <Link href="/" className="hover:underline">Home</Link>

@@ -5,6 +5,7 @@ import { generatePageMetadata } from '@/lib/seo/metadata';
 import { getMetricPage, METRIC_PAGES } from '@/lib/heatmap/metricPages';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 import MetricHeatmapClient from './MetricHeatmapClient';
+import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 export const revalidate = 3600;
 
@@ -50,6 +51,7 @@ export default async function MetricHeatmapPage({ params }: { params: Promise<{ 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(faqSchema) }} />
 
       <div className="min-h-screen bg-white dark:bg-slate-900">
+        <StandaloneHeader />
         <div className="container mx-auto py-8 px-4">
           {/* Breadcrumb */}
           <nav className="text-sm text-slate-500 dark:text-slate-400 mb-4" aria-label="Breadcrumb">
