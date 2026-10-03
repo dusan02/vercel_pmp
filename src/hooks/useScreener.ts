@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     ScreenerResult, ScreenerPagination, MARKET_CAP_PRESETS, RANGE_FILTERS,
     RangeFilterKey, ScreenerPreset,
@@ -151,7 +151,13 @@ export function useScreener({
         return () => clearTimeout(timer);
     }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder, metricRanges]);
 
+    // Stale-response guard — rapid typing/slider drags fire several fetches;
+    // only the latest request may commit results, otherwise a slow earlier
+    // response (e.g. the big unfiltered payload) lands last and visually
+    // "cancels" a narrower search.
+    const reqSeq = useRef(0);
     const fetchResults = useCallback(async () => {
+        const seq = ++reqSeq.current;
         setLoading(true);
         try {
             const params = new URLSearchParams({
@@ -192,16 +198,18 @@ export function useScreener({
 
             const res = await fetch(`/api/analysis/screener?${params.toString()}`);
             const data = await res.json();
+            if (seq !== reqSeq.current) return;
             setResults(data.results || []);
             setPagination(data.pagination || null);
             if (Array.isArray(data.industries) && data.industries.length > 0) {
                 setIndustries(data.industries);
             }
         } catch (error) {
+            if (seq !== reqSeq.current) return;
             console.error('Failed to fetch screener results:', error);
             setResults([]);
         } finally {
-            setLoading(false);
+            if (seq === reqSeq.current) setLoading(false);
         }
     }, [debouncedFilters, page, initialLimit]);
 

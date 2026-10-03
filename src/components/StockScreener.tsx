@@ -12,7 +12,7 @@ import { useSavedScreens, MAX_SAVED_SCREENS } from '@/hooks/useSavedScreens';
 import { LivePrice } from './LivePrice';
 import {
   ScreenerResult, scoreColor, altmanZLabel, piotroskiLabel, beneishLabel, fcfMarginLabel, debtRepayLabel,
-  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, METRIC_GROUPS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS,
+  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, METRIC_GROUPS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS, PRESET_GROUPS,
   SCORE_FILTERS, ADVANCED_FILTERS, matchesPreset,
 } from '@/lib/utils/screener';
 import { Sparkline } from './Sparkline';
@@ -427,7 +427,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
   };
   /** Which strategy quick-screens does this row satisfy right now? */
   const matchedScreensFor = (r: ScreenerResult) =>
-    QUICK_SCREENS.filter((q) => q.group === 'strategy' && matchesPreset(q.preset, {
+    QUICK_SCREENS.filter((q) => q.group !== 'score' && matchesPreset(q.preset, {
       scores: r,
       metrics: r.metrics,
       market: { price: r.ticker?.lastPrice ?? null, changePct: r.ticker?.lastChangePct ?? null, marketCapB: r.ticker?.lastMarketCap ?? null },
@@ -531,15 +531,16 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
           )}
         </div>
 
-        {/* Quick screens — one-tap preset combinations. Two rows: internal
-            score presets vs. classic investor strategies on raw fundamentals.
-            Active pill highlights while the current filter state matches. */}
-        {(['score', 'strategy'] as const).map((g) => (
-          <div key={g} className="flex flex-wrap items-center gap-1.5 mb-2">
+        {/* Quick screens — one-tap preset combinations, grouped by style:
+            PMP-score screens, classic strategies, Lynch categories, and
+            idea-driven discovery screens. Active pill highlights while the
+            current filter state matches. */}
+        {PRESET_GROUPS.map((g) => (
+          <div key={g.id} className="flex flex-wrap items-center gap-1.5 mb-1.5">
             <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1 w-20 shrink-0">
-              {g === 'score' ? 'By score:' : 'Strategies:'}
+              {g.label}:
             </span>
-            {QUICK_SCREENS.filter((p) => p.group === g).map((p) => {
+            {QUICK_SCREENS.filter((p) => p.group === g.id).map((p) => {
               const active = isPresetActive(p.preset);
               return (
                 <button
@@ -652,7 +653,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             <span className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Search</label>
+            <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">Search</label>
             <div className="relative">
               <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
               <input
@@ -665,7 +666,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sort By</label>
+            <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">Sort By</label>
             <select
               value={`${sortField}:${sortOrder}`}
               onChange={(e) => {
@@ -682,7 +683,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sector</label>
+            <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">Sector</label>
             <select
               value={selectedSector}
               onChange={(e) => setSelectedSector(e.target.value)}
@@ -695,7 +696,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Industry</label>
+            <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">Industry</label>
             <select
               value={selectedIndustry}
               onChange={(e) => setSelectedIndustry(e.target.value)}
@@ -708,7 +709,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Market Cap</label>
+            <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">Market Cap</label>
             <select
               value={marketCapPreset}
               onChange={(e) => setMarketCapPreset(e.target.value)}
@@ -755,19 +756,19 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
           </button>
         </div>
         {metricsVisible && (
-          <div className="mt-2 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-3">
+          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
             {/* Grouped by category — 20 sliders flat was unscannable. */}
             {METRIC_GROUPS.map((group) => {
               const defs = METRIC_FILTERS.filter((d) => d.group === group);
               const activeInGroup = defs.filter((d) => metricRanges[d.key]).length;
               return (
                 <div key={group}>
-                  <div className="flex items-center gap-2 mb-1.5">
+                  <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{group}</span>
                     {activeInGroup > 0 && <span className="text-[10px] text-blue-500 font-medium">{activeInGroup} active</span>}
                     <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-2">
                     {defs.map((def) => (
                       <div key={def.key} className={metricRanges[def.key] ? 'rounded-md ring-1 ring-blue-400/60 bg-blue-50/50 dark:bg-blue-950/20 -m-0.5 p-0.5' : ''}>
                         <DualRangeSlider
@@ -796,7 +797,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
           </div>
         )}
         {advancedVisible && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-3 mt-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-2 mt-2 pt-3 border-t border-gray-100 dark:border-gray-800">
           {ADVANCED_FILTERS.map((d) => {
             const raw = advanced[d.key];
             const shown = d.active(raw)
@@ -804,7 +805,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               : '';
             return (
               <div key={d.key} className="flex flex-col gap-1">
-                <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">{d.label}</label>
+                <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">{d.label}</label>
                 <input
                   type="number"
                   step={d.key === 'minPiotroski' ? 1 : 'any'}

@@ -1,4 +1,4 @@
-import { downsampleSeries, METRIC_FILTERS, METRIC_GROUPS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, RANGE_FILTERS, QUICK_SCREENS, presetToQueryString, isValidScreenParams, matchesPreset } from '@/lib/utils/screener';
+import { downsampleSeries, METRIC_FILTERS, METRIC_GROUPS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, RANGE_FILTERS, QUICK_SCREENS, PRESET_GROUPS, presetToQueryString, isValidScreenParams, matchesPreset } from '@/lib/utils/screener';
 import { LEADERBOARDS } from '@/lib/seo/leaderboards';
 
 describe('downsampleSeries (screener 1Y sparkline)', () => {
@@ -92,9 +92,10 @@ describe('QUICK_SCREENS presets', () => {
         }
     });
 
-    it('every preset group is declared and both groups are used', () => {
-        const groups = new Set(QUICK_SCREENS.map((s) => s.group));
-        expect(groups).toEqual(new Set(['score', 'strategy']));
+    it('every preset group is declared in PRESET_GROUPS and all are used', () => {
+        const declared = new Set(PRESET_GROUPS.map((g) => g.id));
+        const used = new Set(QUICK_SCREENS.map((s) => s.group));
+        expect(used).toEqual(declared);
     });
 
     it('presetToQueryString produces only whitelisted params (round-trip safe)', () => {
