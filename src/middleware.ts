@@ -57,6 +57,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(canonicalUrl, 301);
   }
 
+  // Strip punctuation glued onto shared links (301)
+  // Markdown/social shares produce URLs like /premarket-gainers/2026-10-01)
+  // — GA4: ~23 sessions/7d landed on trailing-paren variants. The dynamic
+  // segment swallows the char and the page renders, but it's a non-canonical
+  // duplicate URL. Strip trailing ) ] . , ; ! — no legit route ends with
+  // these (all end in alnum or '/').
+  const cleanPath = pathname.replace(/[)\].,;!]+$/, '');
+  if (cleanPath !== pathname && cleanPath.length > 1) {
+    const redirectUrl = new URL(cleanPath + request.nextUrl.search, request.url);
+    return NextResponse.redirect(redirectUrl, 301);
+  }
+
   // Redirect /company/[ticker] → /analysis/[ticker] (301)
   // Old sitemap had /company/ URLs; Google still has them in index → 404s.
   if (pathname.startsWith('/company/')) {
