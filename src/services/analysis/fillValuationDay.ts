@@ -199,5 +199,40 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
         ), 'fillValuationDay.update');
     }
 
+    // Refresh 52W-range position on FinnhubMetrics from OUR OWN closes —
+    // authoritative for foreign ADRs (Finnhub reports their 52w range in
+    // home-market units: AZN GBX, TM ¥ vs the USD ADR price → unusable).
+    // Today's close is inside the range by construction → position ∈ [0,100].
+    // Only runs when filling the newest DVH day — a historical repair fill
+    // must not overwrite the current position with a stale close.
+    try {
+        const latest = await prisma.dailyValuationHistory.aggregate({ _max: { date: true } });
+        if (latest._max.date?.getTime() === dayInstant.getTime()) {
+            const cutoff = new Date(dayInstant.getTime() - 366 * 24 * 60 * 60 * 1000);
+            const ranges = await prisma.dailyValuationHistory.groupBy({
+                by: ['symbol'],
+                where: { date: { gte: cutoff }, closePrice: { gt: 0 } },
+                _min: { closePrice: true },
+                _max: { closePrice: true },
+            });
+            const rangeBySymbol = new Map(ranges.map((r) => [r.symbol, r]));
+            const posUpdates: ReturnType<typeof prisma.finnhubMetrics.updateMany>[] = [];
+            for (const ref of targets) {
+                const g = rangeBySymbol.get(ref.symbol);
+                const lo = g?._min?.closePrice, hi = g?._max?.closePrice;
+                if (lo == null || hi == null || hi <= lo) continue;
+                posUpdates.push(prisma.finnhubMetrics.updateMany({
+                    where: { symbol: ref.symbol },
+                    data: { week52Position: ((ref.regularClose! - lo) / (hi - lo)) * 100 },
+                }));
+            }
+            for (let i = 0; i < posUpdates.length; i += writeChunk) {
+                await dbWrite(() => prisma.$transaction(posUpdates.slice(i, i + writeChunk)), 'fillValuationDay.week52');
+            }
+        }
+    } catch (e) {
+        console.warn('⚠️ [fillValuationDay] week52Position refresh failed (non-fatal):', e);
+    }
+
     return result;
 }
