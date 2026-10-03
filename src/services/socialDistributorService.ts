@@ -250,8 +250,14 @@ export class SocialDistributorService {
                 { orgId }
             );
             const wanted = new Set(['twitter', 'x', 'threads', 'bluesky']);
+            // Brand-scope: post only to channels named after the brand —
+            // the Buffer account can have personal profiles connected too
+            // (e.g. a personal Threads handle) and bot posts must never land
+            // on those. BUFFER_BRAND_NAME overrides the default match.
+            const brand = (process.env.BUFFER_BRAND_NAME || 'premarketprice').toLowerCase();
             this.bufferChannels = (channels?.data?.channels ?? [])
-                .filter((c: any) => wanted.has(c.service));
+                .filter((c: any) => wanted.has(c.service))
+                .filter((c: any) => `${c.name} ${c.displayName}`.toLowerCase().includes(brand));
         } catch (e) {
             console.warn('⚠️ SocialDistributorService: Buffer channel lookup failed', e);
             this.bufferChannels = null;
