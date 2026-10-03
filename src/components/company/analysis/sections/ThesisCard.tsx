@@ -17,11 +17,34 @@ interface ThesisCardProps {
         negativeNiYears: number | null;
     } | null;
     roe: number | null;
+    /** Render only one panel — page splits strengths|risks across columns. */
+    only?: 'strengths' | 'risks';
 }
 
 const fmt = (v: number, d = 1) => v.toFixed(d);
 
-export function ThesisCard({ analysisData, cache, roe }: ThesisCardProps) {
+function EvidencePanel({ title, items, icon, iconClass }: {
+    title: string;
+    items: string[];
+    icon: string;
+    iconClass: string;
+}) {
+    return (
+        <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800 p-3.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">{title}</p>
+            <ul className="space-y-1.5">
+                {items.slice(0, 5).map((s) => (
+                    <li key={s} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300 leading-snug">
+                        <span className={`mt-0.5 shrink-0 font-bold ${iconClass}`}>{icon}</span>
+                        <span>{s}</span>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+export function ThesisCard({ analysisData, cache, roe, only }: ThesisCardProps) {
     const m = analysisData?.metrics ?? null;
     const peStat = analysisData?.valuationHistoryStats?.pe ?? null;
     // SBC as % of TTM revenue — BalanceSheetSummary only carries SBC/NI
@@ -92,34 +115,24 @@ export function ThesisCard({ analysisData, cache, roe }: ThesisCardProps) {
     }
 
     if (strengths.length === 0 && risks.length === 0) return null;
+    if (only === 'strengths') {
+        return strengths.length > 0
+            ? <EvidencePanel title="Strengths" items={strengths} icon="✓" iconClass="text-emerald-500" />
+            : null;
+    }
+    if (only === 'risks') {
+        return risks.length > 0
+            ? <EvidencePanel title="Risks" items={risks} icon="⚠" iconClass="text-amber-500" />
+            : null;
+    }
 
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {strengths.length > 0 && (
-                <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800 p-3.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">Strengths</p>
-                    <ul className="space-y-1.5">
-                        {strengths.slice(0, 5).map((s) => (
-                            <li key={s} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300 leading-snug">
-                                <span className="mt-0.5 shrink-0 text-emerald-500 font-bold">✓</span>
-                                <span>{s}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+                <EvidencePanel title="Strengths" items={strengths} icon="✓" iconClass="text-emerald-500" />
             )}
             {risks.length > 0 && (
-                <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800 p-3.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-2">Risks</p>
-                    <ul className="space-y-1.5">
-                        {risks.slice(0, 5).map((r) => (
-                            <li key={r} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300 leading-snug">
-                                <span className="mt-0.5 shrink-0 text-amber-500 font-bold">⚠</span>
-                                <span>{r}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+                <EvidencePanel title="Risks" items={risks} icon="⚠" iconClass="text-amber-500" />
             )}
         </div>
     );

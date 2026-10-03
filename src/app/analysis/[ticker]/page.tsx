@@ -304,14 +304,22 @@ export default async function AnalysisPage({ params }: PageProps) {
                   <PillarChips pillars={analysisData!.pillars!} />
                 </div>
               )}
-              {/* Thesis on one screen — threshold-rule bull/bear evidence
-                  surfaced before the scroll stack; null renders nothing
-                  when no rule fires. */}
-              <ThesisCard
-                analysisData={analysisData}
-                cache={data?.analysisCache ?? null}
-                roe={roeStat}
-              />
+              {/* Thesis on one screen — strengths evidence beside the live
+                  intraday chart; risks list moved into the right rail so the
+                  rail stays a compact scannable column. */}
+              <div className="flex flex-col lg:flex-row gap-3">
+                <div className="flex-1 min-w-0">
+                  <ThesisCard
+                    analysisData={analysisData}
+                    cache={data?.analysisCache ?? null}
+                    roe={roeStat}
+                    only="strengths"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <IntradayChart ticker={tickerUpper} />
+                </div>
+              </div>
               <MoverInsightSection
                 ticker={tickerUpper}
                 moversReason={data?.moversReason ?? null}
@@ -332,10 +340,15 @@ export default async function AnalysisPage({ params }: PageProps) {
               />
             </div>
             <div className="min-w-0 space-y-6">
-              {hasPillars
-                ? <PillarsRadar pillars={analysisData!.pillars!} />
-                : <IntradayChart ticker={tickerUpper} />}
-              {hasPillars && <IntradayChart ticker={tickerUpper} />}
+              {hasPillars && <PillarsRadar pillars={analysisData!.pillars!} />}
+              {/* Risks panel — split out of ThesisCard; compact list suits the
+                  narrow rail better than sharing the wide left column. */}
+              <ThesisCard
+                analysisData={analysisData}
+                cache={data?.analysisCache ?? null}
+                roe={roeStat}
+                only="risks"
+              />
               <CompanyOverviewSection
                 companyName={companyName}
                 description={data?.description}
