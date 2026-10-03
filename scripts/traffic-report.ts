@@ -12,9 +12,16 @@
  *              (send_page_view:false + GAListener on hydration), so a rendered
  *              session means a browser actually executed the app. NOTE: since
  *              ~2026-10-02 the farm also renders pages — rendered ≠ human.
- *   HUMAN~   — rendered minus farm signals: country in {Singapore, China,
- *              (not set)} or source in {(not set), (data not available)}.
- *              Residual proxy-farm inflation remains — treat as an estimate.
+ *   HUMAN~   — ESTIMATED human, not proven human: rendered minus farm signals
+ *              (country in {Singapore, China, (not set)} or source in
+ *              {(not set), (data not available)}). Proxy-farm inflation
+ *              remains — treat as an estimate, cross-check vs ENG.
+ *
+ * Model versioning policy: this is v1 — DO NOT silently mutate the filter
+ * each time a new bot pattern appears (history becomes incomparable). When a
+ * new pattern emerges, tag it (e.g. "farm renders pages from ~2026-10-02"),
+ * add a dated marker like ⚠farm-leak?, and bump the filter as v2 so old and
+ * new periods can be compared.
  *
  * Sources:
  *   GA4 via service account; nginx access.log on VPS — unique IPs that loaded
