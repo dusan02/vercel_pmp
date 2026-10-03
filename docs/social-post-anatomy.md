@@ -99,3 +99,46 @@ premarketprice.com/analysis/WDC   Live pre-market data & analysis
 - Format leverage: Threads/X/Bluesky differences worth exploiting
 - Any low-effort/high-impact additions (day high-low bar, market-cap
   chip, percentile badge "top 5% mover today", etc.)
+
+## 7. Instructions for the analyzing LLM
+
+**Output discipline — for every proposed improvement:**
+
+- Classify as: `High impact / low effort` · `High impact / medium
+  effort` · `Low impact / low effort` · `Not worth implementing`
+- Provide: current behavior → proposed behavior → example of the
+  resulting post → why it should work → implementation complexity →
+  potential downside
+- Do not recommend changes merely because they are possible; prioritize
+  changes that can realistically improve CTR, engagement, ticker
+  recognition, or conversion to PMP visits while preserving the fully
+  automated nature of the system
+- Do not redesign the whole system unless there is a clear measurable
+  benefit
+- Concrete deliverable style: "Change X now → reason → new template →
+  rendered example" — not "consider making it more engaging"
+
+**Strategic question to answer first:**
+
+Analyze whether PMP should optimize social posts primarily for
+information density, curiosity/hook, credibility, or click-through rate.
+Explain the trade-offs and propose the optimal balance for an
+*automated* financial-market account (PMP differs from a classic
+finance X account: every post is generated, there is no human persona,
+and the destination — not the post — carries the full analysis).
+
+**Evaluate these areas explicitly:**
+
+| Area | Question |
+|---|---|
+| Hook | Are the first 5–10 words compelling enough? |
+| Why | Is it instantly clear *why* the stock moved? |
+| Numbers | Right amount of numbers — or too many? |
+| Ticker | Is the ticker immediately visible? |
+| CTA | Does the post give a natural reason to click through to PMP? |
+| Card | What does a person see in the first 1 second? |
+| Health | Is "PMP Health" understandable without knowing PMP? |
+| Platform | Should X/Threads/Bluesky text be identical? |
+| Automation | What can be personalized without materially raising complexity? |
+| CTR | Which changes most plausibly raise clicks? |
+| Brand | What strengthens PMP as a product vs. a generic stock-tweet bot? |
