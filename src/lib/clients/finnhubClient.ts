@@ -77,6 +77,11 @@ export interface FinnhubMetric {
     assetTurnover: number | null;
     inventoryTurnover: number | null;
     receivablesTurnover: number | null;
+
+    // 52-week range (Finnhub 52WeekHigh/52WeekLow — position vs current
+    // price is derived at save time in finnhubService)
+    week52High: number | null;
+    week52Low: number | null;
 }
 
 export interface FinnhubEarningsItem {
@@ -233,6 +238,10 @@ export class FinnhubClient {
             assetTurnover: m['assetTurnoverTTM'] ?? m['assetTurnoverAnnual'] ?? null,
             inventoryTurnover: m['inventoryTurnoverAnnual'] ?? null,
             receivablesTurnover: m['receivablesTurnoverAnnual'] ?? null,
+
+            // 52-week range — powers the Quality Selloff screen
+            week52High: m['52WeekHigh'] ?? null,
+            week52Low: m['52WeekLow'] ?? null,
         };
     }
 

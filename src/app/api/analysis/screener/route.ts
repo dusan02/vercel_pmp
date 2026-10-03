@@ -307,6 +307,7 @@ export async function GET(request: Request) {
                             quickRatio: true,
                             debtEquityRatio: true,
                             interestCoverage: true,
+                            week52Position: true,
                         },
                     },
                 },

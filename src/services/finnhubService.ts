@@ -90,6 +90,8 @@ async function getCachedMetrics(symbol: string): Promise<FinnhubMetric | null> {
             assetTurnover: dbRecord.assetTurnover,
             inventoryTurnover: dbRecord.inventoryTurnover,
             receivablesTurnover: dbRecord.receivablesTurnover,
+            week52High: dbRecord.week52High,
+            week52Low: dbRecord.week52Low,
         };
 
         // Populate Redis cache
@@ -104,6 +106,23 @@ async function getCachedMetrics(symbol: string): Promise<FinnhubMetric | null> {
  * Save metrics to database and cache
  */
 async function saveMetrics(symbol: string, metrics: FinnhubMetric): Promise<void> {
+    // Position of the latest price inside the 52w range (0 = at low, 100 =
+    // at high; can be <0 / >100 when price just broke out). Drives the
+    // screener's "52W Position" filter — one extra ticker read per save.
+    let week52Position: number | null = null;
+    if (metrics.week52High != null && metrics.week52Low != null && metrics.week52High > metrics.week52Low) {
+        const t = await prisma.ticker.findUnique({ where: { symbol }, select: { lastPrice: true } });
+        const price = t?.lastPrice;
+        if (price != null && price > 0) {
+            const pos = ((price - metrics.week52Low) / (metrics.week52High - metrics.week52Low)) * 100;
+            // Plausibility window — Finnhub occasionally reports the 52w
+            // range in the wrong share-class units (BRK.B gets BRK.A's
+            // ~$800K range vs its ~$500 price → position ≈ -645). Beyond
+            // ~-25%/+150% the range is stale or mismatched; store null
+            // rather than let garbage top the "near 52w low" sort.
+            week52Position = pos >= -25 && pos <= 150 ? pos : null;
+        }
+    }
     const data = {
         peRatio: metrics.peRatio,
         forwardPe: metrics.forwardPe,
@@ -143,6 +162,9 @@ async function saveMetrics(symbol: string, metrics: FinnhubMetric): Promise<void
         assetTurnover: metrics.assetTurnover,
         inventoryTurnover: metrics.inventoryTurnover,
         receivablesTurnover: metrics.receivablesTurnover,
+        week52High: metrics.week52High,
+        week52Low: metrics.week52Low,
+        week52Position,
     };
 
     await prisma.finnhubMetrics.upsert({

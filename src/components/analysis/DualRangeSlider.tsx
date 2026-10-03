@@ -1,6 +1,49 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
+
+/**
+ * Compact numeric entry paired with the slider — lets users hit exact
+ * values (P/E 15) that are fiddly on a 0–300 track. Holds a local draft
+ * while focused so intermediate keystrokes don't fight the controlled
+ * value; commits every parseable number immediately (clamped), blur
+ * restores the real value.
+ */
+function NumInput({
+  value,
+  step,
+  onCommit,
+  className,
+}: {
+  value: number;
+  step: number;
+  onCommit: (v: number) => void;
+  className?: string;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <input
+      type="number"
+      inputMode="decimal"
+      step={step}
+      value={draft ?? value}
+      onFocus={(e) => { setDraft(String(value)); e.target.select(); }}
+      onChange={(e) => {
+        setDraft(e.target.value);
+        const v = parseFloat(e.target.value);
+        if (Number.isFinite(v)) onCommit(v);
+      }}
+      onBlur={() => setDraft(null)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === 'Escape') (e.target as HTMLInputElement).blur();
+      }}
+      className={`w-11 text-right text-[11px] font-semibold tabular-nums bg-transparent border border-transparent rounded px-0.5
+        hover:border-gray-300 dark:hover:border-gray-600 focus:border-blue-400 focus:bg-white dark:focus:bg-gray-800 outline-none transition-colors
+        [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none
+        ${className ?? ''}`}
+    />
+  );
+}
 
 interface DualRangeSliderProps {
   label: string;
@@ -56,10 +99,20 @@ export function DualRangeSlider({
         <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">
           {label}
         </label>
-        <div className="flex items-center gap-1 text-[11px] font-semibold tabular-nums">
-          <span className={s.text}>{valueMin}</span>
+        <div className="flex items-center text-[11px] font-semibold tabular-nums">
+          <NumInput
+            value={valueMin}
+            step={step}
+            onCommit={(v) => onChangeMin(Math.min(Math.max(v, min), valueMax))}
+            className={s.text}
+          />
           <span className="text-gray-300 dark:text-gray-600">–</span>
-          <span className={s.text}>{valueMax}</span>
+          <NumInput
+            value={valueMax}
+            step={step}
+            onCommit={(v) => onChangeMax(Math.max(Math.min(v, max), valueMin))}
+            className={s.text}
+          />
         </div>
       </div>
       <div className="relative h-5 flex items-center">

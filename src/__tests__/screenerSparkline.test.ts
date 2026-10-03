@@ -103,6 +103,61 @@ describe('QUICK_SCREENS presets', () => {
             expect(isValidScreenParams(qs)).toBe(true);
         }
     });
+
+    it('preset sort values exist in SORT_OPTIONS (else the dropdown shows a phantom value)', async () => {
+        const { SORT_OPTIONS } = await import('@/lib/utils/screener');
+        const valid = new Set(SORT_OPTIONS.map((o) => o.value));
+        for (const s of QUICK_SCREENS) {
+            if (!s.preset.sort) continue;
+            expect(valid.has(s.preset.sort)).toBe(true);
+        }
+    });
+});
+
+describe('discovery presets (Quality Selloff / Insider Buying / abnormal moves)', () => {
+    const selloff = QUICK_SCREENS.find((s) => s.label === 'Quality Selloff')!.preset;
+    const insider = QUICK_SCREENS.find((s) => s.label === 'Insider Buying')!.preset;
+    const daySelloff = QUICK_SCREENS.find((s) => s.label === 'Selloff + Fundamentals')!.preset;
+    const momentum = QUICK_SCREENS.find((s) => s.label === 'Momentum + Fundamentals')!.preset;
+
+    it('Quality Selloff = high scores + bottom quartile of 52W range + mid-cap floor', () => {
+        const ctx = {
+            scores: { qualityScore: 80, healthScore: 75 },
+            metrics: { week52Position: 10 },
+            market: { marketCapB: 50 },
+        };
+        expect(matchesPreset(selloff, ctx)).toBe(true);
+        // near the top of the 52w range → not a selloff
+        expect(matchesPreset(selloff, { ...ctx, metrics: { week52Position: 80 } })).toBe(false);
+        // microcap noise excluded by the >$2B floor
+        expect(matchesPreset(selloff, { ...ctx, market: { marketCapB: 0.5 } })).toBe(false);
+        // weak quality doesn't qualify either
+        expect(matchesPreset(selloff, { ...ctx, scores: { qualityScore: 50, healthScore: 75 } })).toBe(false);
+        // null 52w position never passes (SQL-null semantics)
+        expect(matchesPreset(selloff, { ...ctx, metrics: { week52Position: null } })).toBe(false);
+        expect(matchesPreset(selloff, { ...ctx, metrics: null })).toBe(false);
+    });
+
+    it('Insider Buying requires positive net insider buying', () => {
+        const ctx = {
+            scores: { qualityScore: 70, healthScore: 60 },
+            insider: { netBuyValue90d: 2_000_000 },
+        };
+        expect(matchesPreset(insider, ctx)).toBe(true);
+        expect(matchesPreset(insider, { ...ctx, insider: { netBuyValue90d: 0 } })).toBe(false);
+        expect(matchesPreset(insider, { ...ctx, insider: { netBuyValue90d: -1 } })).toBe(false);
+        expect(matchesPreset(insider, { ...ctx, insider: null })).toBe(false);
+    });
+
+    it('day-move screens read ticker changePct against the score floor', () => {
+        const scores = { overallScore: 75, qualityScore: 72 };
+        expect(matchesPreset(daySelloff, { scores, market: { changePct: -7 } })).toBe(true);
+        expect(matchesPreset(daySelloff, { scores, market: { changePct: -2 } })).toBe(false);
+        expect(matchesPreset(momentum, { scores, market: { changePct: 8 } })).toBe(true);
+        expect(matchesPreset(momentum, { scores, market: { changePct: 3 } })).toBe(false);
+        // a crash on weak fundamentals is not a buy-the-dip candidate
+        expect(matchesPreset(daySelloff, { scores: { overallScore: 40, qualityScore: 40 }, market: { changePct: -9 } })).toBe(false);
+    });
 });
 
 describe('isValidScreenParams (saved screens)', () => {

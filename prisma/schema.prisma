@@ -498,6 +498,13 @@ model FinnhubMetrics {
   inventoryTurnover   Float?
   receivablesTurnover Float?
 
+  // 52-week range (Finnhub 52WeekHigh/Low). week52Position = % position of
+  // lastPrice inside [low, high] — computed at save time vs Ticker.lastPrice,
+  // so it refreshes with each metrics sync (~daily). 0 = at 52w low.
+  week52High     Float?
+  week52Low      Float?
+  week52Position Float?
+
   // Metadata
   fetchedAt DateTime @default(now())
   updatedAt DateTime @updatedAt

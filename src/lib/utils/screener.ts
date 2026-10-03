@@ -28,6 +28,7 @@ export interface ScreenerResult {
         quickRatio: number | null;
         debtEquityRatio: number | null;
         interestCoverage: number | null;
+        week52Position: number | null;
     } | null;
     healthScore: number | null;
     profitabilityScore: number | null;
@@ -70,6 +71,7 @@ export const MARKET_CAP_PRESETS = [
     { id: 'all',       label: 'All',         min: undefined, max: undefined },
     { id: 'mega',      label: 'Mega >$200B', min: 200,       max: undefined },
     { id: 'large',     label: 'Large $10-200B', min: 10,     max: 200 },
+    { id: 'midplus',   label: 'Mid+ >$2B',   min: 2,         max: undefined },
     { id: 'mid',       label: 'Mid $2-10B',  min: 2,         max: 10 },
     { id: 'small',     label: 'Small <$2B',  min: undefined, max: 2 },
 ] as const;
@@ -94,7 +96,7 @@ export const SCORE_FILTERS = [
     { key: 'valuation',     label: 'Valuation',     urlMin: 'minValue',   urlMax: 'maxValue',   apiMin: 'minValuation',     apiMax: 'maxValuation',     accent: 'violet'  },
     { key: 'growth',        label: 'Growth',        urlMin: 'minGrowth',  urlMax: 'maxGrowth',  apiMin: 'minGrowth',        apiMax: 'maxGrowth',        accent: 'sky'     },
     { key: 'profitability', label: 'Profitability', urlMin: 'minProfit',  urlMax: 'maxProfit',  apiMin: 'minProfitability', apiMax: 'maxProfitability', accent: 'emerald' },
-    { key: 'health',        label: 'Health',        urlMin: 'minHealth',  urlMax: 'maxHealth',  apiMin: 'minHealth',        apiMax: 'maxHealth',        accent: 'blue'    },
+    { key: 'health',        label: 'Fin. Health',   urlMin: 'minHealth',  urlMax: 'maxHealth',  apiMin: 'minHealth',        apiMax: 'maxHealth',        accent: 'blue'    },
     { key: 'quality',       label: 'Quality',       urlMin: 'minQuality', urlMax: 'maxQuality', apiMin: 'minQuality',       apiMax: 'maxQuality',       accent: 'rose'    },
 ] as const;
 export type ScoreFilterKey = (typeof SCORE_FILTERS)[number]['key'];
@@ -174,6 +176,9 @@ export const METRIC_FILTERS = [
     { key: 'interestCoverage', label: 'Int. Coverage', min: 0, max: 50, step: 1, group: 'Balance Sheet' },
     // Risk
     { key: 'beta', label: 'Beta', min: 0, max: 4, step: 0.1, group: 'Risk' },
+    // Price context — position inside the 52-week range (0 = at low,
+    // 100 = at high). Stored on FinnhubMetrics, refreshed with metrics sync.
+    { key: 'week52Position', label: '52W Position %', min: 0, max: 100, step: 5, group: 'Price Context' },
 ] as const;
 
 export type MetricFilterKey = (typeof METRIC_FILTERS)[number]['key'];
@@ -295,6 +300,14 @@ export const QUICK_SCREENS: { label: string; tip?: string; group: 'score' | 'str
     { label: 'Turnarounds', tip: 'P/S ≤1 · Fwd P/E 1–25 · Current ≥1.5 · insiders net-buying', group: 'strategy', preset: { ranges: { psRatio: { min: 0, max: 1 }, forwardPe: { min: 1, max: 25 }, currentRatio: { min: 1.5 }, netBuyValue90d: { min: 0 } } } },
     { label: 'Stalwarts (Lynch)', tip: 'EPS growth 8–20% · ROE ≥12% · Net margin ≥10% · Beta ≤1.4', group: 'strategy', preset: { ranges: { earningsGrowth: { min: 8, max: 20 }, roe: { min: 12 }, netMargin: { min: 10 }, beta: { min: 0, max: 1.4 } } } },
     { label: 'Slow Growers (Lynch)', tip: 'Yield 2–9% · EPS growth 0–8% · Beta ≤1.2 — dividend payers', group: 'strategy', preset: { ranges: { dividendYield: { min: 2, max: 9 }, earningsGrowth: { min: 0, max: 8 }, beta: { min: 0, max: 1.2 } } } },
+    // Discovery screens — idea-driven ("quality companies near their 52w
+    // low", "insiders buying", "abnormal move on solid fundamentals"). The
+    // `sort` field applies once on click; the pill stays active while the
+    // user re-sorts the same screen.
+    { label: 'Quality Selloff', tip: 'Quality ≥70 · Fin. Health ≥70 · in bottom 25% of 52W range · >$2B — quality names near their yearly low', group: 'strategy', preset: { minQuality: 70, minHealth: 70, marketCapPreset: 'midplus', ranges: { week52Position: { max: 25 } }, sort: 'metrics.week52Position:asc' } },
+    { label: 'Insider Buying', tip: 'Net insider buying >$0 (90d) · Quality ≥60 · Fin. Health ≥50, sorted by insider buy $', group: 'strategy', preset: { minQuality: 60, minHealth: 50, ranges: { netBuyValue90d: { min: 1 } }, sort: 'insider.netBuyValue90d:desc' } },
+    { label: 'Selloff + Fundamentals', tip: 'Day change ≤-5% · Overall ≥70 · Quality ≥70 — abnormal drop on strong fundamentals', group: 'strategy', preset: { minOverall: 70, minQuality: 70, ranges: { changePct: { max: -5 } }, sort: 'ticker.lastChangePct:asc' } },
+    { label: 'Momentum + Fundamentals', tip: 'Day change ≥+5% · Overall ≥70 · Quality ≥70 — abnormal move on strong fundamentals', group: 'strategy', preset: { minOverall: 70, minQuality: 70, ranges: { changePct: { min: 5 } }, sort: 'ticker.lastChangePct:desc' } },
 ];
 
 /**
@@ -415,7 +428,7 @@ export function presetToQueryString(p: ScreenerPreset): string {
         if (r?.min !== undefined) sp.set(`min${cap}`, String(r.min));
         if (r?.max !== undefined) sp.set(`max${cap}`, String(r.max));
     }
-    if (p.sort && p.sort !== 'healthScore:desc') sp.set('sort', p.sort);
+    if (p.sort && p.sort !== 'ticker.lastMarketCap:desc') sp.set('sort', p.sort);
     return sp.toString();
 }
 
@@ -456,6 +469,8 @@ export const SORT_OPTIONS = [
     { value: 'metrics.peRatio:asc', label: 'P/E ↑ (cheapest)' },
     { value: 'metrics.dividendYield:desc', label: 'Div Yield ↓' },
     { value: 'metrics.beta:asc', label: 'Beta ↑ (lowest)' },
+    { value: 'metrics.week52Position:asc', label: '52W Position ↑ (near low)' },
+    { value: 'metrics.week52Position:desc', label: '52W Position ↓ (near high)' },
     { value: 'ticker.lastPrice:desc', label: 'Price ↓' },
     { value: 'ticker.lastPrice:asc', label: 'Price ↑' },
     { value: 'ticker.lastChangePct:desc', label: 'Day Change ↓ (gainers)' },

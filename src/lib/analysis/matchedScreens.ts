@@ -38,6 +38,7 @@ export const getMatchedScreens = cache(async (symbol: string): Promise<MatchedSc
                     bookValueGrowth: true, dividendYield: true, payoutRatio: true,
                     beta: true, currentRatio: true, quickRatio: true,
                     debtEquityRatio: true, interestCoverage: true,
+                    week52Position: true,
                 },
             },
             insiderAggregate: {

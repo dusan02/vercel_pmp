@@ -26,7 +26,7 @@ const COLUMN_VIEWS = [
   { id: 'insiders', label: 'Insiders', keys: ['ticker.name', 'ticker.lastPrice', 'ticker.lastMarketCap', 'insider.netBuyValue90d', 'insider.largestBuyValue90d', 'insider.largestSellValue90d', 'insider.uniqueSellers14d', 'overallScore'] },
   { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'healthScore', 'qualityScore', 'overallScore'] },
   { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'sector', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'ticker.lastMarketCapDiff'] },
-  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'metrics.peRatio', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta'] },
+  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'metrics.peRatio', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position'] },
   { id: 'all', label: 'All columns', keys: null }, // null = every defined column
   { id: 'custom', label: 'Custom', keys: null },   // user-defined ordered set
 ] as const;
@@ -628,8 +628,28 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         )}
 
         {/* One dense grid — Finviz-style: all filters always visible,
-            tight label+control pairs, no dead space between rows. */}
+            tight label+control pairs, no dead space between rows. Two
+            labelled groups: PMP Scores (our composite model) first, then
+            the universe/market controls. */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-3 gap-y-3">
+          <div className="col-span-full -mb-1 flex items-center gap-2">
+            <span className="text-[9px] font-semibold uppercase tracking-widest text-blue-500/80">PMP Scores</span>
+            <span className="text-[9px] text-gray-400 dark:text-gray-500">our composite ratings, 0–100</span>
+            <span className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
+          </div>
+          {SCORE_FILTERS.map((d) => (
+            <DualRangeSlider
+              key={d.key}
+              label={d.label}
+              min={0} max={100}
+              {...scoreSliderProps(d)}
+              accentColor={d.accent}
+            />
+          ))}
+          <div className="col-span-full mt-1 -mb-1 flex items-center gap-2">
+            <span className="text-[9px] font-semibold uppercase tracking-widest text-gray-400">Universe & Market</span>
+            <span className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
+          </div>
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Search</label>
             <div className="relative">
@@ -643,15 +663,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               />
             </div>
           </div>
-          {SCORE_FILTERS.map((d) => (
-            <DualRangeSlider
-              key={d.key}
-              label={d.label}
-              min={0} max={100}
-              {...scoreSliderProps(d)}
-              accentColor={d.accent}
-            />
-          ))}
           <div className="flex flex-col gap-1">
             <label className="text-[10px] font-medium text-gray-500 dark:text-gray-400 tracking-wide">Sort By</label>
             <select
