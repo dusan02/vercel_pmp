@@ -258,3 +258,34 @@ porovná read vs write na jednej DB. Povedzme divergence mimo PM:
 - **Save screen cross-device** — závisí na účtoch/auth rozhodnutí.
 - **`overallScore` = plain mean** — možná váhovaná varianta neskôr;
   nezáleží na EW score pipeline (oddelené).
+
+---
+
+## 8. Site-wide UX/IA audit (2026-10-03, homepage + movers + analysis + screener + heatmap)
+
+### GPT netrafil (overené na prode)
+- **Related stocks** — existuje (`RelatedStocksSection`, sector peers
+  `/analysis/TSM|AVGO|MU` v SSR HTML). Návrh "pridať" → správna vec je
+  vizuálny uplift existujúceho, nie nová feature.
+- **Screener "Searching..." pre crawlera** — pravdivé, ale nie bug:
+  tabuľka je client-rendered appka, nie SEO target (GSC ~0 impressions).
+  IGNOROVAŤ.
+- **JTBD quick screens** — 4 skupiny (By Score/Classic/Lynch/Discovery)
+  s ikonami nasadené včera (`2a221fe9`).
+- **"Most unusual"** — movers stránka už má σ/RVOL/sector-excess ranky.
+
+### Triáž (dohodnuté — čaká na social-LLM analýzu, potom jeden batch)
+- 🟢 **IMPLEMENT**: „PMP Verdict / What matters now" decision-compression
+  blok na analysis (pillars + takeaway dáta existujú, len hierarchia);
+  „Why it matters" fallback namiesto dead-end `No catalyst found`
+  (Z-score + RVOL + sector excess ako kontext).
+- 🟡 **TEST**: homepage aha-block (ukázať reálny analysis output namiesto
+  vysvetľovania); Related Stocks vizuálny uplift → skutočný nav loop.
+- 🔴 **IGNORE**: screener SSR, ďalšie SEO rozširovanie, veľký redesign,
+  ďalšie features bez dôkazu.
+
+### Konvergencia
+Audit nezávisle dospel k rovnakému product loopu: **movers → why →
+fundamentals → ďalší ticker**, retention ako budúci projekt. Posilňuje
+confidence v existujúcej architektúre — problém je hierarchia/decision
+compression, nie chýbajúca funkcionalita.
