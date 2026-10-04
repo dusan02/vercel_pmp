@@ -9,6 +9,7 @@ interface PmpVerdictProps {
     changePct?: number | null;
     moversReason?: string | null;
     moversCategory?: string | null;
+    modelVerdict?: string | null;
 }
 
 const TONE_STYLES: Record<VerdictTone, string> = {

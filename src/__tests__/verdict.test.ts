@@ -69,6 +69,15 @@ describe('buildVerdict', () => {
         expect(v?.lines[0]?.text).toContain('flow-driven');
     });
 
+    it('leads with the model verdict line when provided', () => {
+        const v = buildVerdict({
+            pillars: pillars({ growth: 90, profitability: 85, health: 80 }),
+            modelVerdict: 'Strong Buy',
+        });
+        expect(v?.lines[0]?.text).toBe('Model verdict: Strong Buy');
+        expect(v?.lines[0]?.tone).toBe('info');
+    });
+
     it('ignores small moves without a reason', () => {
         const v = buildVerdict({ changePct: 1.2 });
         expect(v).toBeNull();

@@ -15,6 +15,8 @@ export interface VerdictInput {
     changePct?: number | null;
     moversReason?: string | null;
     moversCategory?: string | null;
+    /** Composite model label from AnalysisCache (e.g. "Neutral", "Strong Buy"). */
+    modelVerdict?: string | null;
 }
 
 export type VerdictTone = 'pos' | 'warn' | 'neg' | 'info';
@@ -76,6 +78,10 @@ export function buildVerdict(input: VerdictInput): Verdict | null {
     const headline = [fundamentalsClause, valuationClause].filter(Boolean).join(', ');
 
     // ── Detail lines (max 3) ──────────────────────────────────────────────
+    if (input.modelVerdict) {
+        lines.push({ tone: 'info', text: `Model verdict: ${input.modelVerdict}` });
+    }
+
     if (fundStrong.length > 0) {
         lines.push({
             tone: 'pos',

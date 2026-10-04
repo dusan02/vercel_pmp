@@ -36,8 +36,8 @@ interface AnalysisHeroProps {
   /** Next earnings date (YYYY-MM-DD) + days until it */
   earningsDate?: string | null;
   earningsDays?: number | null;
-  /** Composite model verdict label (e.g. "Neutral") from AnalysisCache */
   verdict?: string | null;
+
   /** Early Winners composite snapshot — compact cell in the stats strip */
   ewScore?: {
     totalScore: number | null;
@@ -49,14 +49,6 @@ interface AnalysisHeroProps {
   recommendation?: RecommendationData | null;
 }
 
-function verdictColor(v: string): string {
-  const s = v.toLowerCase();
-  if (s.includes('attractive') || s.includes('buy') || s.includes('undervalued') || s.includes('strong'))
-    return 'text-emerald-600 dark:text-emerald-400';
-  if (s.includes('overvalued') || s.includes('sell') || s.includes('weak') || s.includes('avoid'))
-    return 'text-red-600 dark:text-red-400';
-  return 'text-gray-800 dark:text-gray-200';
-}
 
 export function AnalysisHero({
   ticker,
@@ -76,7 +68,6 @@ export function AnalysisHero({
   peHistory,
   earningsDate,
   earningsDays,
-  verdict,
   ewScore,
   priceTarget,
   recommendation,
@@ -101,8 +92,7 @@ export function AnalysisHero({
       ? (price / prevClose - 1) * 100
       : null;
   const displayPct = isClosed ? lastSessionPct : changePct;
-  const hasStats = verdict != null
-    || (ewScore?.totalScore != null && ewScore?.maxPossible != null)
+  const hasStats = (ewScore?.totalScore != null && ewScore?.maxPossible != null)
     || marketCap != null || peRatio != null
     || (dividendYield != null && dividendYield > 0) || roe != null
     || (week52Low != null && week52High != null) || earningsLabel != null;
@@ -219,12 +209,6 @@ export function AnalysisHero({
           when the ticker has no stats (otherwise an empty bordered box). */}
       {hasStats && (
       <div className="mt-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 px-3 py-2 grid grid-cols-2 gap-x-5 gap-y-1.5 text-sm sm:flex sm:flex-wrap sm:gap-y-1">
-        {verdict && (
-          <span className="text-gray-600 dark:text-gray-400">
-            <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">Verdict </span>
-            <strong className={`font-semibold ${verdictColor(verdict)}`}>{verdict}</strong>
-          </span>
-        )}
         {ewScore?.totalScore != null && ewScore?.maxPossible != null && (
           <span className="text-gray-600 dark:text-gray-400" title="Early Winners composite score (V5-B, current data) — fundamentals + momentum + quality">
             <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">EW Score </span>

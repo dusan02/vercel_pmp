@@ -124,7 +124,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     prefetchHistoryData(tickerUpper),
     getFinancialFlowsData(tickerUpper),
     get52WeekRange(tickerUpper),
-    prefetchTopNews(tickerUpper),
+    prefetchTopNews(tickerUpper, companyName),
     getMatchedScreens(tickerUpper),
   ]);
 
@@ -292,7 +292,6 @@ export default async function AnalysisPage({ params }: PageProps) {
                 week52High={week52?.high ?? null}
                 earningsDate={nextEarnings?.date ?? null}
                 earningsDays={earningsDays}
-                verdict={data?.analysisCache?.verdictText ?? null}
                 ewScore={ewScore}
                 priceTarget={data?.finnhubPriceTarget ?? null}
                 recommendation={data?.finnhubRecommendation ?? null}
@@ -316,6 +315,7 @@ export default async function AnalysisPage({ params }: PageProps) {
                 changePct={displayChangePct}
                 moversReason={data?.moversReason ?? null}
                 moversCategory={data?.moversCategory ?? null}
+                modelVerdict={data?.analysisCache?.verdictText ?? null}
               />
               {/* Thesis on one screen — strengths evidence beside the live
                   intraday chart; risks list moved into the right rail so the
