@@ -180,6 +180,15 @@ function CatalystCell({ mover }: { mover: MoverRecord }) {
           {a.excessMovePct !== null && ` · Excess ${a.excessMovePct >= 0 ? '+' : ''}${a.excessMovePct.toFixed(1)}%`}
         </div>
       )}
+      {/* "Why it matters" fallback — turn the dead-end "No catalyst found"
+          into an interpretation: a move beyond the sector with no news/analyst
+          catalyst is most likely flow/positioning-driven. */}
+      {c.status !== 'found' && c.status !== 'unavailable' &&
+        a.excessMovePct !== null && Math.abs(a.excessMovePct) >= 1 && (
+        <div className="text-[10px] text-slate-400/80 dark:text-slate-500/80 mt-0.5 italic">
+          Likely flow-driven — move is beyond sector
+        </div>
+      )}
     </div>
   );
 }

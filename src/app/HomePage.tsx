@@ -81,6 +81,10 @@ const WhatMovedToday = dynamic(
   () => import('@/components/home/WhatMovedToday').then((mod) => mod.WhatMovedToday),
   { ssr: true, loading: () => null }
 );
+const YourTickersToday = dynamic(
+  () => import('@/components/home/YourTickersToday').then((mod) => mod.YourTickersToday),
+  { ssr: false, loading: () => null }
+);
 
 const GlobalStockSearch = dynamic(
   () => import('@/components/GlobalStockSearch').then((mod) => mod.GlobalStockSearch),
@@ -483,6 +487,10 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                             onMetricChange={setHeatmapMetric}
                             initialHeatmapData={initialHeatmapData}
                           />
+                          {/* Personalization strip — favorites × today's move.
+                              Client-only; renders nothing without favorites so
+                              SSR/anonymous output is identical. */}
+                          <YourTickersToday />
                           <WhatMovedToday movers={initialMoversData} eligibleTickers={eligibleTickers} />
                         </KeepAliveTab>
 

@@ -128,7 +128,7 @@ export function MoveAlertButton({ symbol }: { symbol: string }) {
             title={on ? `${symbol} move alerts on` : `Alert me when ${symbol} makes an unusual move`}
         >
             {on ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-            <span className="hidden sm:inline">{on ? 'Alerts On' : 'Move Alerts'}</span>
+            <span>{on ? 'Alerts on' : 'Get move alerts'}</span>
         </button>
     );
 }

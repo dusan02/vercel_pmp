@@ -37,6 +37,7 @@ import { AnalysisCrossLinks } from '@/components/company/analysis/sections/Analy
 import { SeoTextSection } from '@/components/company/SeoTextSection';
 import { AnalysisStockSearch } from '@/components/AnalysisStockSearch';
 import { ThesisCard } from '@/components/company/analysis/sections/ThesisCard';
+import { PmpVerdict } from '@/components/company/analysis/sections/PmpVerdict';
 import { getMatchedScreens } from '@/lib/analysis/matchedScreens';
 import { renderPresetIcon } from '@/lib/utils/screenerIcons';
 
@@ -304,6 +305,18 @@ export default async function AnalysisPage({ params }: PageProps) {
                   <PillarChips pillars={analysisData!.pillars!} />
                 </div>
               )}
+              {/* PMP Verdict — deterministic one-glance summary above the
+                  fold; compresses pillars + valuation percentile + mover
+                  context already rendered deeper down the page. */}
+              <PmpVerdict
+                pillars={analysisData?.pillars ?? null}
+                pePercentile={analysisData?.valuationHistoryStats?.pe?.percentile ?? null}
+                peCurrent={displayPeRatio}
+                peYears={analysisData?.valuationHistoryStats?.pe?.years ?? null}
+                changePct={displayChangePct}
+                moversReason={data?.moversReason ?? null}
+                moversCategory={data?.moversCategory ?? null}
+              />
               {/* Thesis on one screen — strengths evidence beside the live
                   intraday chart; risks list moved into the right rail so the
                   rail stays a compact scannable column. */}

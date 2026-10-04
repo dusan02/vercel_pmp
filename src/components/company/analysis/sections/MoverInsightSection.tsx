@@ -58,7 +58,11 @@ export function MoverInsightSection({
             ? 'tomorrow'
             : `in ${earningsDays} days`
         : null;
-    const hasContext = topNews || earningsLabel || lastMove;
+    // No catalyst is itself an answer: a notable move with no news/analyst/
+    // earnings driver is most likely flow/positioning-driven — say so instead
+    // of rendering nothing.
+    const notableMove = changePct != null && Math.abs(changePct) >= 3;
+    const hasContext = topNews || earningsLabel || lastMove || (notableMove && !topNews);
     if (!hasContext) return null;
 
     const age = newsAge(topNews?.datetime ?? null);
@@ -86,6 +90,11 @@ export function MoverInsightSection({
             {earningsLabel && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 whitespace-nowrap">
                 Earnings {earningsLabel}
+              </span>
+            )}
+            {notableMove && !topNews && (
+              <span className="text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+                Moving {changePct! >= 0 ? '+' : ''}{changePct!.toFixed(1)}% with no obvious catalyst — likely flow-driven
               </span>
             )}
             {lastMove && lastMove.changePct != null && (
