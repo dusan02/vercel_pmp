@@ -2,13 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
 import { AnalysisService } from '@/services/analysisService';
 import { FinnhubService } from '@/services/finnhubService';
-import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { computeMetrics, fetchPeers, TICKER_SELECT } from '@/services/analysisCompute';
-
-// In-memory dedup: prevents multiple concurrent background revalidations for the same symbol
-const revalidating = new Set<string>();
-
-const ANALYSIS_CACHE_TTL = 300; // 5 minutes
+import { getAnalysisResponse } from '@/lib/analysis/analysisResponse';
 
 export async function GET(
     request: Request,
@@ -20,63 +15,11 @@ export async function GET(
     const compareSymbol = searchParams.get('compare')?.toUpperCase() || null;
 
     try {
-        // 1. Check Redis cache first (skip for compare requests — they need fresh data)
-        if (!compareSymbol) {
-            try {
-                const cached = await getCachedData(`analysis:cache:${symbol}`);
-                if (cached) {
-                    return NextResponse.json(cached);
-                }
-            } catch {}
-        }
-
-        // 2. Fetch ticker record once (shared select for computeMetrics + response)
-        const tickerRecord = await prisma.ticker.findUnique({
-            where: { symbol },
-            select: TICKER_SELECT,
+        const body = await getAnalysisResponse(symbol, {
+            compareSymbol,
+            origin: new URL(request.url).origin,
         });
-
-        // 3. Compute metrics (pass tickerRecord to avoid duplicate DB query)
-        const primary = await computeMetrics(symbol, tickerRecord);
-        if (!primary) return NextResponse.json(null);
-
-        // 4. Fetch peers
-        const peers = await fetchPeers(symbol, tickerRecord?.sector ?? null);
-
-        // 5. If compare requested, fetch secondary analysis
-        if (compareSymbol) {
-            const secondary = await computeMetrics(compareSymbol);
-            return NextResponse.json({
-                primary: { ...primary, ticker: tickerRecord },
-                secondary,
-                peers
-            });
-        }
-
-        // 6. Background revalidation: if cache is stale (> 7 days), trigger async refresh
-        const analysisUpdatedAt = (primary as any)?.updatedAt;
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        if (analysisUpdatedAt && new Date(analysisUpdatedAt) < sevenDaysAgo && !revalidating.has(symbol)) {
-            revalidating.add(symbol);
-            // Timeout guard: a hung self-POST must not permanently occupy the
-            // revalidating slot (it would block revalidation for this symbol).
-            const abort = new AbortController();
-            const timeout = setTimeout(() => abort.abort(), 120_000);
-            fetch(`${new URL(request.url).origin}/api/analysis/${symbol}`, { method: 'POST', signal: abort.signal })
-                .catch(() => {/* silent — background job */})
-                .finally(() => {
-                    clearTimeout(timeout);
-                    revalidating.delete(symbol);
-                });
-        }
-
-        // 7. Build response and cache it
-        const response = { ...primary, ticker: tickerRecord, peers };
-        try {
-            await setCachedData(`analysis:cache:${symbol}`, response, ANALYSIS_CACHE_TTL);
-        } catch {}
-
-        return NextResponse.json(response);
+        return NextResponse.json(body);
     } catch (error) {
         console.error(`Error fetching analysis for ${symbol}:`, error);
         return NextResponse.json({ error: 'Failed to fetch analysis' }, { status: 500 });

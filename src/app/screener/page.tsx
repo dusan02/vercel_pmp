@@ -4,6 +4,7 @@ import { generatePageMetadata } from '@/lib/seo/metadata';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 import { LEADERBOARDS } from '@/lib/seo/leaderboards';
 import StockScreener from '@/components/StockScreener';
+import { runScreener } from '@/lib/screener/runScreener';
 
 const baseUrl = 'https://premarketprice.com';
 
@@ -31,6 +32,19 @@ export const metadata: Metadata = generatePageMetadata({
 });
 
 export default async function ScreenerPage() {
+  // SSR first-page results — the client useScreener refetches on mount anyway,
+  // so this only removes the "Searching..." blank-table flash (and puts real
+  // rows into SSR HTML). Same pipeline + Redis cache as /api/analysis/screener,
+  // no localhost hop. Default params mirror the client's first request
+  // (all score ranges sent explicitly as 0–100).
+  const DEFAULT_PARAMS =
+    'sort=ticker.lastMarketCap:desc&limit=25&page=1' +
+    '&minHealth=0&maxHealth=100&minProfitability=0&maxProfitability=100' +
+    '&minValuation=0&maxValuation=100&minGrowth=0&maxGrowth=100' +
+    '&minQuality=0&maxQuality=100&minOverall=0&maxOverall=100';
+  const initial = await runScreener(new URLSearchParams(DEFAULT_PARAMS));
+  const initialData = Array.isArray(initial?.results) ? initial.results : undefined;
+
   // CollectionPage + ItemList of the curated leaderboard screens (matches on-page links)
   const collectionSchema = {
     '@context': 'https://schema.org',
@@ -82,7 +96,7 @@ export default async function ScreenerPage() {
           </div>
         </div>
 
-<StockScreener />
+<StockScreener {...(initialData ? { initialData } : {})} />
 
         {/* Curated leaderboard screens — internal links for the SEO pages */}
         <div className="mt-8">

@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/db/prisma';
 import { getProjectTickers } from '@/data/defaultTickers';
 
@@ -15,15 +16,23 @@ import { getProjectTickers } from '@/data/defaultTickers';
  * Falls back to the hardcoded getProjectTickers('pmp') list (~360) if the DB query
  * fails, so builds never break due to DB unavailability.
  */
-export async function getEligibleAnalysisTickers(): Promise<string[]> {
-  try {
-    const rows = await prisma.ticker.findMany({
-      where: {
-        analysisCache: { isNot: null },
-      },
+// Data-Cache-backed: the eligibility list changes at most when analysis
+// scores recompute, so one DB query per 5 minutes is plenty — previously it
+// ran on every ISR revalidation of the homepage (every ~30s under traffic).
+const queryEligibleSymbols = unstable_cache(
+  async () =>
+    prisma.ticker.findMany({
+      where: { analysisCache: { isNot: null } },
       select: { symbol: true },
       orderBy: { symbol: 'asc' },
-    });
+    }),
+  ['eligible-analysis-tickers'],
+  { revalidate: 300 }
+);
+
+export async function getEligibleAnalysisTickers(): Promise<string[]> {
+  try {
+    const rows = await queryEligibleSymbols();
     const symbols = rows.map((r) => r.symbol);
     if (symbols.length === 0) {
       // Fallback to hardcoded list

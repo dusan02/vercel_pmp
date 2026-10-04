@@ -4,6 +4,9 @@ import { dedupeShareClasses } from '@/lib/companyNames';
 import type { StatementRow } from '@/components/company/analysis/sections/FinancialFlowsSection';
 import { detectSession } from '@/lib/utils/timeUtils';
 import { nowET } from '@/lib/utils/dateET';
+import { getAnalysisResponse } from './analysisResponse';
+import { getHistoryResponse } from './historyResponse';
+import { getTickerNews } from './newsService';
 
 export const getAnalysisQuote = cache((data: {
   lastPrice: number | null;
@@ -254,28 +257,25 @@ export async function get52WeekRange(symbol: string) {
   }
 }
 
-/** Shared localhost self-fetch — SSR prefetch of our own API routes. */
-async function fetchApiJson(path: string, revalidate: number) {
+/** SSR pre-fetch analysis data — same Redis-cache + compute pipeline as
+ *  /api/analysis/[ticker] (origin passed so stale-cache revalidation still
+ *  fires), without a localhost HTTP hop on every cold ISR render. */
+export async function prefetchAnalysisData(symbol: string): Promise<any> {
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
-      signal: AbortSignal.timeout(5000),
-      next: { revalidate },
-    });
-    if (!res.ok) return null;
-    return await res.json();
+    return await getAnalysisResponse(symbol, { origin: API_BASE });
   } catch {
     return null;
   }
 }
 
-/** SSR pre-fetch analysis API — eliminates client-side fetch waterfall. */
-export function prefetchAnalysisData(symbol: string) {
-  return fetchApiJson(`/api/analysis/${symbol}`, 60);
-}
-
-/** SSR pre-fetch history API — chart data for valuation, price, per-share. */
-export function prefetchHistoryData(symbol: string) {
-  return fetchApiJson(`/api/analysis/${symbol}/history`, 60);
+/** SSR pre-fetch history data — same Redis-cached pipeline as
+ *  /api/analysis/[ticker]/history, no HTTP hop. */
+export async function prefetchHistoryData(symbol: string): Promise<any> {
+  try {
+    return await getHistoryResponse(symbol);
+  } catch {
+    return null;
+  }
 }
 
 export interface TopNewsItem {
@@ -290,8 +290,8 @@ export interface TopNewsItem {
  * strip when there is no AI mover insight.
  */
 export async function prefetchTopNews(symbol: string): Promise<TopNewsItem | null> {
-  const json = await fetchApiJson(`/api/analysis/${symbol}/news`, 300);
-  const first = Array.isArray(json?.news) ? json.news[0] : null;
+  const news = await getTickerNews(symbol);
+  const first = news[0] ?? null;
   return first && first.headline
     ? {
         headline: String(first.headline),
