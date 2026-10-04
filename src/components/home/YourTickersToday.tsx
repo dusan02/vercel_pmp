@@ -42,10 +42,13 @@ export function YourTickersToday() {
                         });
                     }
                 }
+                // Sorted by today's move desc (gainers first, no-data last) —
+                // the strip answers "which of my tickers moved most today".
                 const ordered = key
                     .split(',')
                     .map((t) => byTicker.get(t))
-                    .filter((r): r is FavoriteQuote => !!r);
+                    .filter((r): r is FavoriteQuote => !!r)
+                    .sort((a, b) => (b.percentChange ?? -Infinity) - (a.percentChange ?? -Infinity));
                 setRows(ordered.length > 0 ? ordered : null);
             })
             .catch(() => {});
