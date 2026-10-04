@@ -300,7 +300,10 @@ const NAME_STOPWORDS = new Set([
 ]);
 
 function isAboutTicker(item: TickerNewsItem, symbol: string, companyName: string | null): boolean {
-  const text = `${item.headline ?? ''} ${item.summary ?? ''}`;
+  // Headline only — summaries mention the company tangentially ("he left a
+  // job at Meta to build a game") which passes the check while the story is
+  // not about the stock.
+  const text = item.headline ?? '';
   // Ticker mention — case-sensitive: "META" in a headline means the symbol,
   // lowercase "meta" is just a word. Only checked for tickers ≥3 chars where
   // a bare symbol is unambiguous enough to mention.
