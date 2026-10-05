@@ -246,7 +246,7 @@ export class SocialDistributorService {
             if (!orgId) return (this.bufferChannels = null) ?? [];
 
             const channels = await this.bufferGraphql(
-                'query($orgId: OrganizationId!) { channels(input: { organizationId: $orgId }) { id service } }',
+                'query($orgId: OrganizationId!) { channels(input: { organizationId: $orgId }) { id service name displayName isDisconnected } }',
                 { orgId }
             );
             const wanted = new Set(['twitter', 'x', 'threads', 'bluesky']);
@@ -257,6 +257,7 @@ export class SocialDistributorService {
             const brand = (process.env.BUFFER_BRAND_NAME || 'premarketprice').toLowerCase();
             this.bufferChannels = (channels?.data?.channels ?? [])
                 .filter((c: any) => wanted.has(c.service))
+                .filter((c: any) => !c.isDisconnected)
                 .filter((c: any) => `${c.name} ${c.displayName}`.toLowerCase().includes(brand));
         } catch (e) {
             console.warn('⚠️ SocialDistributorService: Buffer channel lookup failed', e);
