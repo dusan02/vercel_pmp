@@ -47,7 +47,9 @@ const PERIODS = [
   { label: '1Y', years: 1 },
   { label: '3Y', years: 3 },
   { label: '5Y', years: 5 },
-  { label: '10Y', years: 10 },
+  // Polygon Starter caps aggregates at ~5y — 'All' shows whatever the
+  // series covers without promising a span the plan can't deliver.
+  { label: 'All', years: 99 },
 ] as const;
 
 type PeriodLabel = (typeof PERIODS)[number]['label'];
@@ -159,7 +161,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   const [allCandles, setAllCandles] = useState<Candle[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState<PeriodLabel>('10Y');
+  const [period, setPeriod] = useState<PeriodLabel>('5Y');
   const [inds, setInds] = useState<Set<IndKey>>(new Set());
   // Narrow viewport → tighter chart margins / axis so the plot claims more
   // of the mobile screen (390px phone otherwise plots in ~64% of width).
@@ -221,7 +223,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     // 40 weekly bars ≈ the 200-day average investors actually mean by SMA200
     const sma200 = rollingMean(sorted.map((c) => c.c), 40);
     const volSma = rollingMean(sorted.map((c) => c.v || 0), 20);
-    const years = PERIODS.find((p) => p.label === period)?.years ?? 10;
+    const years = PERIODS.find((p) => p.label === period)?.years ?? 5;
     const cutoff = Date.now() - years * 365.25 * 24 * 60 * 60 * 1000;
     const out: ChartPoint[] = [];
     for (let i = 0; i < sorted.length; i++) {
