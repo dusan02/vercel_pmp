@@ -7,6 +7,7 @@ import {
   fetchCachedStockData,
   fetchPrevCloseOnDemand,
   fetchWeekRefCloses,
+  fetchLastSessionRefs,
   fetchPerfRefCloses,
   computeDateBoundaries,
   deduplicateSessionPrices,
@@ -178,6 +179,7 @@ export async function getHeatmapData(query: HeatmapQuery = {}): Promise<HeatmapS
       { sessionPrices: rawSessionPrices, dailyRefs: rawDailyRefs },
       cachedStockDataMap,
       slimWeekRefs,
+      lastSessionRefs,
       perfRefs
     ] = await Promise.all([
       fetchPriceData(tickerSymbols, canUseFastPath, timeframe, dayAgo, tomorrow, weekRefLookback, today),
@@ -185,6 +187,10 @@ export async function getHeatmapData(query: HeatmapQuery = {}): Promise<HeatmapS
       // Fast path skips the full DailyRef query — fetch a slim week-reference
       // projection so the 'week' metric still has data.
       canUseFastPath ? fetchWeekRefCloses(tickerSymbols, weekRefLookback, today) : Promise.resolve(null),
+      // Last completed session's DailyRef pair (close + prevClose) — lets the
+      // transformer substitute Friday's real move during the pre-open gap
+      // when tickers carry no post-flip print yet (price == new prevClose → 0%).
+      fetchLastSessionRefs(tickerSymbols, dayAgo),
       // Longer-term perf refs (1M/YTD/1Y) from DailyValuationHistory — always
       // fetched (3 small windowed queries) so the shared cache payload carries
       // all metrics regardless of which one the requesting client selected.
@@ -233,7 +239,7 @@ export async function getHeatmapData(query: HeatmapQuery = {}): Promise<HeatmapS
       tickerSymbols, tickerMap, sessionPrices, rawDailyRefs,
       cachedStockDataMap, prevCloseBatchMap, ctx, now, debug,
       slimWeekRefs ?? undefined, perfRefs,
-      { previousCloseMap: prelimPrevCloseMaps.previousCloseMap, regularCloseMap: prelimPrevCloseMaps.regularCloseMap, priceMap }
+      { previousCloseMap: prelimPrevCloseMaps.previousCloseMap, regularCloseMap: prelimPrevCloseMaps.regularCloseMap, priceMap, lastSessionRefMap: lastSessionRefs }
     );
 
     console.log(`✅ Processed ${transformResult.processed} tickers (${transformResult.cacheHits} from cache, ${transformResult.dbHits} from DB), skipped ${transformResult.skippedNoPrice} (no price), ${transformResult.skippedNoMarketCap} (no market cap)`);

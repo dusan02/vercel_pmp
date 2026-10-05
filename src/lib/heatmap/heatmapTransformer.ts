@@ -224,6 +224,9 @@ export function transformToHeatmap(
     previousCloseMap: Map<string, number>;
     regularCloseMap: Map<string, number>;
     priceMap: Map<string, { price: number; changePct: number; tsMs: number; source: 'ticker' | 'session' }>;
+    /** Last completed session per symbol (D-1 regularClose + prevClose) —
+     *  used to keep tiles colored across the pre-open re-anchor gap. */
+    lastSessionRefMap?: Map<string, { close: number; prevClose: number }>;
   }
 ): TransformResult {
   // Use precomputed maps if available, otherwise compute from scratch
@@ -334,8 +337,11 @@ export function transformToHeatmap(
       priceTsMs = priceInfo?.tsMs || 0;
       priceSource = priceInfo?.source || 'unknown';
 
-      // When market is closed (weekend, holiday, or pre-market hours), allow prices up to 72h old (Friday close)
-      const maxAgeMs = (ctx.isNonTradingClosedDay || ctx.session === 'closed') ? 72 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+      // When market is closed (weekend, holiday, or pre-market hours), allow prices up to 72h old (Friday close).
+      // 'pre' needs the same window: at the pre-open re-anchor tickers still
+      // carry last-session prices (~up to 60h old on Monday) until the first
+      // real pre-market print arrives.
+      const maxAgeMs = (ctx.isNonTradingClosedDay || ctx.session === 'closed' || ctx.session === 'pre') ? 72 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
       if (priceTsMs === 0 || (now.getTime() - priceTsMs) > maxAgeMs) {
         skippedNoPrice++; continue;
       }
@@ -387,6 +393,24 @@ export function transformToHeatmap(
 
     if (currentPrice === 0) { skippedNoPrice++; continue; }
     if (marketCap <= 0) { skippedNoMarketCap++; continue; }
+
+    // Session-boundary re-anchor gap: when the session clock flips to a new
+    // trading day, the prevClose reference becomes the last session's close —
+    // so any ticker without a post-flip print reports price == prevClose →
+    // change 0, which grayed the whole map every pre-open. While the market
+    // isn't live, substitute the completed session's real move (D-1 close vs
+    // D-2 prevClose from DailyRef) until a real print arrives.
+    if (ctx.session !== 'live' && Math.abs(changePercent) < 0.01
+        && currentPrice > 0 && previousClose > 0
+        && Math.abs(currentPrice - previousClose) < 0.001) {
+      const lastSess = precomputedMaps?.lastSessionRefMap?.get(ticker);
+      if (lastSess) {
+        changePercent = Math.round(((lastSess.close / lastSess.prevClose) - 1) * 10000) / 100;
+        const sh = tickerInfo.sharesOutstanding || 0;
+        if (sh > 0) marketCapDiff = computeMarketCapDiff(currentPrice, lastSess.prevClose, sh);
+      }
+    }
+
     if (!validateMarketCap(marketCap, ticker)) { skippedNoMarketCap++; continue; }
     if (!validatePercentChange(changePercent, ticker)) { skippedNoPrice++; continue; }
 

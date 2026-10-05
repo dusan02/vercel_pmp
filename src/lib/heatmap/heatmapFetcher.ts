@@ -207,6 +207,31 @@ export async function fetchPriceData(
 }
 
 /**
+ * Slim DailyRef fetch of the LAST COMPLETED trading session — returns
+ * symbol → {regularClose, previousClose} for `dayAgo` (D-1). Needed on
+ * every path: at pre-market open the prevClose reference re-anchors to the
+ * new day and untraded tickers report price == prevClose → change 0, which
+ * would erase the last session's real moves from the map. The substitution
+ * in transformToHeatmap reads this map instead.
+ */
+export async function fetchLastSessionRefs(
+  tickerSymbols: string[],
+  dayAgo: Date
+): Promise<Map<string, { close: number; prevClose: number }>> {
+  const rows = await prisma.dailyRef.findMany({
+    where: { symbol: { in: tickerSymbols }, date: dayAgo },
+    select: { symbol: true, regularClose: true, previousClose: true },
+  });
+  const map = new Map<string, { close: number; prevClose: number }>();
+  for (const r of rows) {
+    if (r.regularClose && r.regularClose > 0 && r.previousClose && r.previousClose > 0) {
+      map.set(r.symbol, { close: r.regularClose, prevClose: r.previousClose });
+    }
+  }
+  return map;
+}
+
+/**
  * Slim DailyRef fetch for the 1-week metric on the fast path
  * (where the full DailyRef query is skipped). Returns only the
  * fields buildWeekRefCloseMap needs, ordered newest first.
