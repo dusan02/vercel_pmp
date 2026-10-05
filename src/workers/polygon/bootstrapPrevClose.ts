@@ -50,9 +50,46 @@ export async function bootstrapPreviousCloses(
     return;
   }
 
+  // Self-heal from our own write-once regularClose before touching Polygon —
+  // the authoritative prevClose for the previous session (same source
+  // resolvePrevCloses uses). Polygon's snapshot.prevDay occasionally returns
+  // an undated/wrong bar (Oct 5 incident: PSKY prevDay.c=$4.75 vs real $9.5),
+  // so Polygon must only fill tickers we don't track ourselves.
+  const selfHealed = new Set<string>();
+  try {
+    const { prisma } = await import('@/lib/db/prisma');
+    const refRows = await prisma.dailyRef.findMany({
+      where: {
+        symbol: { in: tickersToProcess },
+        date: prevTradingDay,
+        regularClose: { not: null }
+      },
+      select: { symbol: true, regularClose: true }
+    });
+    for (const ref of refRows) {
+      if (ref.regularClose && ref.regularClose > 0) {
+        await writePrevCloseForToday(calendarDateET, ref.symbol, ref.regularClose, {
+          dbRetry: (fn) => dbWriteRetry(fn, `writePrevCloseForToday:selfheal:${ref.symbol}`),
+          skipTickerUpdate: true
+        }).catch(() => {});
+        selfHealed.add(ref.symbol);
+      }
+    }
+  } catch (err) {
+    console.warn('regularClose self-heal in bootstrap failed:', err);
+  }
+  const remaining = tickersToProcess.filter(t => !selfHealed.has(t));
+  if (selfHealed.size > 0) {
+    console.log(`✅ Self-healed ${selfHealed.size} prevCloses from ${expectedPrevYMD} regularClose`);
+  }
+  if (remaining.length === 0) {
+    console.log('✅ Bootstrap complete (all from regularClose self-heal)');
+    return;
+  }
+
   // 1. Fetch snapshots in large batches
-  console.log(`📥 Fetching snapshots for ${tickersToProcess.length} tickers...`);
-  const snapshots = await fetchPolygonSnapshot(tickersToProcess, apiKey);
+  console.log(`📥 Fetching snapshots for ${remaining.length} tickers...`);
+  const snapshots = await fetchPolygonSnapshot(remaining, apiKey);
   const snapshotMap = new Map<string, PolygonSnapshot>();
   snapshots.forEach(s => snapshotMap.set(s.ticker, s));
   console.log(`✅ Received ${snapshots.length} snapshots`);
@@ -76,9 +113,13 @@ export async function bootstrapPreviousCloses(
       // (Sep 30 incident: DailyRef.previousClose=739.77 instead of D-1=737.93).
       // Reject only a verifiably NEWER bar (rolled-forward corruption); an
       // older bar is still the correct prev close (halted/suspended tickers).
+      // An UNDATED bar (no prevDay.t) is unverifiable — Polygon emits those
+      // with wrong closes (Oct 5 incident: PSKY prevDay.c=$4.75, no t, real
+      // prev close $9.5; ADNH prevDay.c=$0.0003, no t). Reject → aggs
+      // fallback returns the true dated bar or nothing (never a garbage ref).
       const prevDayTs = snapshot?.prevDay?.t;
       const prevDayYMD = prevDayTs ? getDateET(new Date(nsToMs(prevDayTs))) : null;
-      if (snapshot?.prevDay?.c && snapshot.prevDay.c > 0 && (!prevDayYMD || prevDayYMD <= expectedPrevYMD)) {
+      if (snapshot?.prevDay?.c && snapshot.prevDay.c > 0 && prevDayYMD && prevDayYMD <= expectedPrevYMD) {
         rawPrevDayClose = snapshot.prevDay.c;
       }
       if (snapshot?.day?.c && snapshot.day.c > 0) {
