@@ -29,13 +29,18 @@ import { dbWriteRetry as dbWrite } from '../src/lib/db/writeRetry';
 
 const dryRun = process.argv.includes('--dry-run');
 const symbolArg = process.argv.find(a => a.startsWith('--symbol='));
+const symbolsArg = process.argv.find(a => a.startsWith('--symbols='));
 const limitArg = process.argv.find(a => a.startsWith('--limit='));
+const afterArg = process.argv.find(a => a.startsWith('--after='));
 const ONLY_SYMBOL = symbolArg ? symbolArg.split('=')[1]!.toUpperCase() : null;
+const SYMBOL_LIST = symbolsArg ? symbolsArg.split('=')[1]!.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) : null;
 const LIMIT = limitArg ? parseInt(limitArg.split('=')[1], 10) : null;
+const AFTER = afterArg ? new Date(afterArg.split('=')[1]!) : null;
 
 async function main() {
+    const wanted = ONLY_SYMBOL ? [ONLY_SYMBOL] : SYMBOL_LIST;
     const symbols = await prisma.dailyValuationHistory.findMany({
-        where: ONLY_SYMBOL ? { symbol: ONLY_SYMBOL } : {},
+        where: wanted ? { symbol: { in: wanted } } : {},
         select: { symbol: true },
         distinct: ['symbol'],
         orderBy: { symbol: 'asc' },
@@ -103,7 +108,7 @@ async function main() {
         const normalized = splitEvents.length > 0;
 
         const rows = await prisma.dailyValuationHistory.findMany({
-            where: { symbol },
+            where: { symbol, ...(AFTER ? { date: { gte: AFTER } } : {}) },
             orderBy: { date: 'asc' },
         });
         if (rows.length === 0) continue;

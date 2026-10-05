@@ -371,7 +371,6 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
             sbc: ttmSbc
         },
         metrics: {
-            zScore: altmanZ,
             altmanZ,
             debtRepaymentTime: debtRepaymentYears,
             debtRepaymentYears,

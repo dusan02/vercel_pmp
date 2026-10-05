@@ -545,6 +545,10 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
           ))}
         </div>
       )}
+
+      <p className="mt-2 text-[11px] leading-snug text-gray-400 dark:text-gray-500">
+        Historical prices are adjusted for splits and dividends.
+      </p>
     </div>
   );
 }

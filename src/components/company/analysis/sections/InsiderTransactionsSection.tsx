@@ -103,6 +103,7 @@ function TransactionsTable({ transactions, label }: InsiderTransactionsSectionPr
 export function InsiderTransactionsBody({ transactions }: InsiderTransactionsSectionProps) {
   const visible = transactions.slice(0, MAX_ROWS);
   const remaining = transactions.length - visible.length;
+  const hasOptionExercise = transactions.some((tx) => tx.transactionCode === 'M');
 
   return (
     <>
@@ -118,6 +119,11 @@ export function InsiderTransactionsBody({ transactions }: InsiderTransactionsSec
           </summary>
           <TransactionsTable transactions={transactions.slice(MAX_ROWS)} label="Additional recent insider transactions" />
         </details>
+      )}
+      {hasOptionExercise && (
+        <p className="px-3 py-2 border-t border-gray-100 dark:border-gray-700 text-[11px] leading-snug text-gray-400 dark:text-gray-500">
+          Option exercise (M) rows report a derivative leg, not an open-market sale — a paired negative entry is the option position being consumed.
+        </p>
       )}
     </>
   );
