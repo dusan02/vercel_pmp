@@ -143,11 +143,17 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     // P/E: our own TTM EPS is the production source. Finnhub's peRatio can be
     // computed on a stale EPS basis — e.g. MU showed 129x (FY-ago EPS) while
     // fresh statements gave ~23x. Finnhub stays exported as diagnostics only.
+    //
+    // Share basis: current multiples MUST use the trusted ticker-level count
+    // (same basis as lastMarketCap) — mixing the latest statement's count
+    // with ticker market cap made P/E, EPS and P/S silently diverge
+    // (PSX: 403.27M stmt shares vs 399.02M ticker → two implied mcaps).
+    const currentShareCount = trustedShares ?? sharesOutstanding;
     const effectivePrice = tickerRecord?.lastPrice || latestValuation?.closePrice || 0;
     const effectiveNI = ttmNetIncome ?? latestStmt?.netIncome ?? null;
     let currentPe: number | null = null;
-    if (effectivePrice > 0 && sharesOutstanding && sharesOutstanding > 0 && effectiveNI && effectiveNI > 0) {
-        currentPe = (effectivePrice * sharesOutstanding) / effectiveNI;
+    if (effectivePrice > 0 && currentShareCount && currentShareCount > 0 && effectiveNI && effectiveNI > 0) {
+        currentPe = (effectivePrice * currentShareCount) / effectiveNI;
     }
     if (currentPe === null) {
         currentPe = latestValuation?.peRatio || null;
@@ -155,8 +161,8 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
 
     // EPS: same NI basis as P/E — mixing Finnhub EPS with our P/E would break
     // the price/EPS reconciliation the UI asserts.
-    const currentEps = (effectiveNI !== null && effectiveNI > 0 && sharesOutstanding !== null && sharesOutstanding > 0)
-        ? effectiveNI / sharesOutstanding
+    const currentEps = (effectiveNI !== null && effectiveNI > 0 && currentShareCount !== null && currentShareCount > 0)
+        ? effectiveNI / currentShareCount
         : finnhubMetrics?.netIncomePerShare ?? null;
 
     // P/E is meaningless for loss-making companies (negative TTM EPS).
@@ -172,7 +178,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     // ticker snapshot (same source the table uses), falls back to price×shares.
     const mcapNow = (tickerRecord?.lastMarketCap && tickerRecord.lastMarketCap > 0)
         ? tickerRecord.lastMarketCap * 1e9
-        : (effectivePrice > 0 && sharesOutstanding && sharesOutstanding > 0 ? effectivePrice * sharesOutstanding : null);
+        : (effectivePrice > 0 && currentShareCount && currentShareCount > 0 ? effectivePrice * currentShareCount : null);
     const currentPs = (mcapNow !== null && mcapNow > 0 && ttmRevenue !== null && ttmRevenue > 0)
         ? mcapNow / ttmRevenue : null;
     const evNow = (mcapNow !== null && totalDebt !== null && cash !== null)
@@ -185,12 +191,16 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         ? ttmFcf / mcapNow : null;
 
     // FCF Yield: own TTM basis (same period as FCF margin). Fallbacks: latest
-    // daily snapshot, then Finnhub P/FCF inverse.
+    // daily snapshot, then Finnhub P/FCF inverse — track the source so the UI
+    // tooltip cannot claim a TTM basis for a Finnhub-derived value.
+    const fcfYieldSource: 'ttm' | 'history' | 'finnhub' | null =
+        currentFcfYield !== null ? 'ttm'
+        : latestValuation?.fcfYield != null ? 'history'
+        : (finnhubMetrics?.priceFreeCashFlow != null && finnhubMetrics.priceFreeCashFlow > 0) ? 'finnhub'
+        : null;
     const fcfYield = currentFcfYield
         ?? latestValuation?.fcfYield
-        ?? (finnhubMetrics?.priceFreeCashFlow != null && finnhubMetrics.priceFreeCashFlow > 0
-            ? 1 / finnhubMetrics.priceFreeCashFlow
-            : null);
+        ?? (fcfYieldSource === 'finnhub' ? 1 / finnhubMetrics!.priceFreeCashFlow! : null);
 
     // Historical percentile stats vs own 10Y daily history (our TTM basis).
     const valuationHistoryStats = valuationRows.length > 0
@@ -242,7 +252,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     // Calculate Dilution (Share Count change)
     // Compare same fiscal period one year (or 5 years) earlier — not just any
     // statement older than N days. This matches ShareDilutionChart logic.
-    const currentShares = sharesOutstanding; // guarded — corrupt counts replaced by Ticker-level count
+    const currentShares = currentShareCount; // trusted ticker count — current real basis, not the stale statement's
     const currentFP = latestStmt?.fiscalPeriod ?? null;
     const currentFY = latestStmt?.fiscalYear ?? null;
 
@@ -366,6 +376,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
             debtRepaymentTime: debtRepaymentYears,
             debtRepaymentYears,
             fcfYield,
+            fcfYieldSource,
             currentEps,
             currentPe,
             psRatio: currentPs,

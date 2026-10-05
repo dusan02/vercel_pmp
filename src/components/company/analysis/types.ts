@@ -63,6 +63,9 @@ export interface AnalysisMetrics {
     debtRepaymentTime: number | null;
     debtRepaymentYears: number | null;
     fcfYield: number | null;
+    /** Which fallback produced fcfYield: own TTM, last daily snapshot, or
+     *  Finnhub P/FCF inverse (drives the honesty of the UI tooltip). */
+    fcfYieldSource?: 'ttm' | 'history' | 'finnhub' | null;
     currentEps: number | null;
     currentPe: number | null;
     /** Own TTM P/S (mcap / TTM revenue) — null when TTM revenue unavailable. */

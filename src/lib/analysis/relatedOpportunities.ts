@@ -52,7 +52,7 @@ export interface RelatedCandidates {
 export function assembleRelatedGroups(c: RelatedCandidates): RelatedOpportunities {
   const seen = new Set<string>();
   const take = (items: RelatedStock[], n: number) =>
-    items.filter((i) => !seen.has(i.symbol) && (seen.add(i.symbol), true)).slice(0, n);
+    items.filter((i) => !seen.has(i.symbol) && seen.add(i.symbol)).slice(0, n);
 
   const groups: RelatedGroup[] = ([
     {

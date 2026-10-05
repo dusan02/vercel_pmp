@@ -75,11 +75,13 @@ export async function hasValuationData(symbol: string): Promise<boolean> {
  */
 export async function getValuationHistory(symbol: string) {
   try {
-    // Get the most recent 500 observations (descending then reverse for chronological order)
+    // Full history — MUST match the window used by analysis
+    // (valuationHistoryStats over the whole DailyValuationHistory series),
+    // otherwise the two pages answer "percentile vs history" over different
+    // samples (PSX: 81st on 5Y vs 58th on ~2Y from the old take:500).
     const rows = await prisma.dailyValuationHistory.findMany({
       where: { symbol },
       orderBy: { date: 'desc' },
-      take: 500,
       select: {
         date: true,
         peRatio: true,

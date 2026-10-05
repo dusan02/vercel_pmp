@@ -166,8 +166,22 @@ export function buildVerdict(input: VerdictInput): Verdict | null {
         !distorted && input.pePercentile != null
             ? input.pePercentile
             : input.psPercentile ?? null;
-    const valuation = valLevel(effectivePercentile, p?.valuation?.score ?? null);
+    const rawValuation = valLevel(effectivePercentile, p?.valuation?.score ?? null);
     const fundamentals = fundLevel(p);
+
+    // Cyclical-recovery guard (#31): when the market prices a forward P/E at
+    // less than half the TTM P/E, the TTM basis is cyclically depressed —
+    // calling the stock "expensive" on that multiple alone is misleading
+    // (PSX: TTM P/E 26× vs fwd 9.9× → recovery already priced in). Only when
+    // the P/E itself drove the valuation call — a distorted P/E already fell
+    // back to P/S, which prices a different question entirely.
+    const peDroveValuation = !distorted && input.pePercentile != null;
+    const cyclicalRecovery =
+        peDroveValuation &&
+        input.forwardPe != null && input.forwardPe > 0 &&
+        input.peCurrent != null && input.peCurrent > 0 &&
+        input.peCurrent / input.forwardPe >= 2;
+    const valuation: ValLevel = cyclicalRecovery && rawValuation === 'expensive' ? 'fair' : rawValuation;
 
     // ── Strengths / Risks (max 2 each) ────────────────────────────────────
     const fundPillars = p
@@ -204,6 +218,9 @@ export function buildVerdict(input: VerdictInput): Verdict | null {
         }
     } else if (input.pePercentile != null && input.peCurrent != null) {
         evidence.push(`P/E ${input.peCurrent.toFixed(0)}× · ${ordinal(input.pePercentile)} pctl`);
+        if (cyclicalRecovery && input.forwardPe != null) {
+            evidence.push(`Fwd P/E ${input.forwardPe.toFixed(1)}× — depressed TTM`);
+        }
     } else if (input.psPercentile != null) {
         evidence.push(`P/S ${ordinal(input.psPercentile)} percentile`);
     } else if (input.forwardPe != null) {

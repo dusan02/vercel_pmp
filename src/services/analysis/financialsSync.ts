@@ -74,8 +74,8 @@ function extractSAFinancialData(html: string): SAData | null {
     return data;
 }
 
-async function fetchSAData(symbol: string, statement: string): Promise<SAData | null> {
-    const url = `${SA_BASE}/${symbol.toLowerCase()}/financials/${statement}/`;
+async function fetchSAData(symbol: string, statement: string, quarterly = false): Promise<SAData | null> {
+    const url = `${SA_BASE}/${symbol.toLowerCase()}/financials/${statement}/${quarterly ? '?p=quarterly' : ''}`;
     try {
         const resp = await fetch(url, { headers: SA_HEADERS });
         if (!resp.ok) {
@@ -94,25 +94,205 @@ async function fetchSAData(symbol: string, statement: string): Promise<SAData | 
     }
 }
 
-function saNumArr(data: SAData, key: string, i: number): number | null {
-    if (!data[key]) return null;
+function saNumArr(data: SAData | null, key: string, i: number): number | null {
+    if (!data?.[key] || i < 0) return null;
     const v = data[key][i];
     if (v === null || v === undefined || isNaN(v)) return null;
     return Number(v);
 }
 
-async function syncFromStockAnalysis(symbol: string): Promise<number> {
-    const [income, balance, cashflow] = await Promise.all([
+interface SaStmtData {
+    endDate: Date;
+    revenue: number | null;
+    netIncome: number | null;
+    ebit: number | null;
+    grossProfit: number | null;
+    operatingCashFlow: number | null;
+    capex: number | null;
+    totalAssets: number | null;
+    totalLiabilities: number | null;
+    currentAssets: number | null;
+    currentLiabilities: number | null;
+    retainedEarnings: number | null;
+    totalEquity: number | null;
+    sharesOutstanding: number | null;
+    sbc: number | null;
+    interestExpense: number | null;
+    totalDebt: number | null;
+    cashAndEquivalents: number | null;
+    netPPE: number | null;
+}
+
+function firstNum(data: SAData | null, keys: string[], i: number): number | null {
+    if (!data) return null;
+    for (const k of keys) {
+        const v = saNumArr(data, k, i);
+        if (v !== null) return v;
+    }
+    return null;
+}
+
+/** Index of a (datekey) inside an SA page payload, for cross-page joins. */
+function saIndexByDate(data: SAData | null): Map<string, number> {
+    const m = new Map<string, number>();
+    if (!data) return m;
+    data.datekey.forEach((d, i) => { if (d) m.set(String(d), i); });
+    return m;
+}
+
+/** Sum a flow key over quarters Q1..q of one fiscal year (YTD conversion).
+ *  Uses the page's own fiscalYear/fiscalQuarter arrays. */
+function saYtdSum(data: SAData | null, keys: string[], upToQuarter: string, fiscalYear: number): number | null {
+    if (!data) return null;
+    const order = ['Q1', 'Q2', 'Q3'];
+    const wanted = order.slice(0, order.indexOf(upToQuarter) + 1);
+    let sum = 0;
+    let found = false;
+    for (let i = 0; i < data.datekey.length; i++) {
+        if (parseInt(data.fiscalYear[i] ?? '', 10) !== fiscalYear) continue;
+        if (!wanted.includes(data.fiscalQuarter[i] ?? '')) continue;
+        for (const k of keys) {
+            const v = saNumArr(data, k, i);
+            if (v !== null) { sum += v; found = true; break; }
+        }
+    }
+    return found ? sum : null;
+}
+
+async function mergeSAPage(
+    symbol: string,
+    income: SAData,
+    balance: SAData | null,
+    cashflow: SAData | null,
+    opts: { quarterly: boolean; gapfill: boolean },
+): Promise<{ inserted: number; updated: number }> {
+    const balIdx = saIndexByDate(balance);
+    const cfIdx = saIndexByDate(cashflow);
+    let inserted = 0;
+    let updated = 0;
+
+    for (let i = 0; i < income.datekey.length; i++) {
+        const dateStr = income.datekey[i]!;
+        if (dateStr === 'TTM') continue;
+        const fiscalYear = parseInt(income.fiscalYear[i] ?? '', 10);
+        const fiscalQuarter = income.fiscalQuarter[i] ?? 'FY';
+        if (!fiscalYear) continue;
+        // Quarterly page Q4 rows would collide with the FY row convention —
+        // annual page supplies FY periods instead.
+        if (opts.quarterly && (fiscalQuarter === 'Q4' || fiscalQuarter === 'FY')) continue;
+        const fiscalPeriod = (fiscalQuarter === 'Q4' || fiscalQuarter === 'FY') ? 'FY' : fiscalQuarter;
+        const endDate = new Date(dateStr + 'T00:00:00Z');
+
+        const bi = balIdx.get(dateStr);
+        const ci = cfIdx.get(dateStr);
+        // Discrete SA value on the row's own index (for shares derivation).
+        const niDiscrete = saNumArr(income, 'netinccmn', i);
+        const epsdil = saNumArr(income, 'epsdil', i);
+        const sharesFromEps = niDiscrete !== null && epsdil !== null && epsdil > 0 ? niDiscrete / epsdil : null;
+
+        const qd = opts.quarterly;
+        const stmtData: SaStmtData = {
+            endDate,
+            revenue: qd ? saYtdSum(income, ['revenue'], fiscalQuarter, fiscalYear) : saNumArr(income, 'revenue', i),
+            netIncome: qd ? saYtdSum(income, ['netinccmn'], fiscalQuarter, fiscalYear) : niDiscrete,
+            ebit: qd ? saYtdSum(income, ['opinc'], fiscalQuarter, fiscalYear) : saNumArr(income, 'opinc', i),
+            grossProfit: qd ? saYtdSum(income, ['gp'], fiscalQuarter, fiscalYear) : saNumArr(income, 'gp', i),
+            operatingCashFlow: qd
+                ? saYtdSum(cashflow, ['ncfo', 'cfo'], fiscalQuarter, fiscalYear)
+                : firstNum(cashflow, ['ncfo', 'cfo'], ci ?? -1),
+            capex: qd
+                ? saYtdSum(cashflow, ['capex', 'cash_flow_statement_capital_expenditure'], fiscalQuarter, fiscalYear)
+                : firstNum(cashflow, ['capex', 'cash_flow_statement_capital_expenditure'], ci ?? -1),
+            sbc: qd
+                ? saYtdSum(cashflow, ['sbcomp', 'sbc'], fiscalQuarter, fiscalYear)
+                : firstNum(cashflow, ['sbcomp', 'sbc'], ci ?? -1),
+            interestExpense: qd ? saYtdSum(income, ['interestexpense'], fiscalQuarter, fiscalYear) : saNumArr(income, 'interestexpense', i),
+            totalAssets: bi != null ? saNumArr(balance, 'assets', bi) : null,
+            totalLiabilities: bi != null ? saNumArr(balance, 'liabilities', bi) : null,
+            currentAssets: bi != null ? saNumArr(balance, 'assetsc', bi) : null,
+            currentLiabilities: bi != null ? saNumArr(balance, 'currentLiabilities', bi) ?? saNumArr(balance, 'liabilitiesc', bi) : null,
+            retainedEarnings: bi != null ? saNumArr(balance, 'retearn', bi) ?? saNumArr(balance, 'balance_sheet_retained_earnings', bi) : null,
+            totalEquity: bi != null ? saNumArr(balance, 'equity', bi) : null,
+            sharesOutstanding: sharesFromEps ?? (bi != null ? saNumArr(balance, 'sharesOutTotalCommon', bi) : null),
+            totalDebt: bi != null ? saNumArr(balance, 'debt', bi) : null,
+            cashAndEquivalents: bi != null ? saNumArr(balance, 'totalcash', bi) ?? saNumArr(balance, 'cashneq', bi) : null,
+            netPPE: bi != null ? saNumArr(balance, 'netPPE', bi) ?? saNumArr(balance, 'balance_sheet_net_property_plant_and_equipment', bi) : null,
+        };
+
+        if (!opts.gapfill) {
+            await prisma.financialStatement.upsert({
+                where: { symbol_fiscalYear_fiscalPeriod: { symbol, fiscalYear, fiscalPeriod } },
+                update: stmtData,
+                create: { symbol, period: fiscalPeriod, fiscalYear, fiscalPeriod, ...stmtData },
+            });
+            inserted++;
+            continue;
+        }
+
+        const existing = await prisma.financialStatement.findUnique({
+            where: { symbol_fiscalYear_fiscalPeriod: { symbol, fiscalYear, fiscalPeriod } },
+        });
+
+        if (!existing) {
+            await prisma.financialStatement.create({
+                data: { symbol, period: fiscalPeriod, fiscalYear, fiscalPeriod, ...stmtData },
+            });
+            inserted++;
+            continue;
+        }
+
+        // Existing Finnhub row: fill only null fields; never regress a
+        // non-null value — except `ebit`, where a >50% divergence from SA's
+        // real operating income means the stored value came from the
+        // pretax/GP−SGA fabrication chain (PSX FY25: 13.8B vs opinc ~3.8B).
+        const patch: Record<string, any> = {};
+        for (const [k, v] of Object.entries(stmtData)) {
+            if (k === 'endDate' || k === 'ebit') continue;
+            if (v !== null && (existing as any)[k] === null) patch[k] = v;
+        }
+        const saEbit = stmtData.ebit;
+        const curEbit = existing.ebit;
+        if (saEbit !== null && curEbit !== null && saEbit !== 0
+            && Math.abs(curEbit / saEbit - 1) > 0.5) {
+            patch.ebit = saEbit;
+        } else if (saEbit !== null && curEbit === null) {
+            patch.ebit = saEbit;
+        }
+        if (Object.keys(patch).length > 0) {
+            await prisma.financialStatement.update({
+                where: { symbol_fiscalYear_fiscalPeriod: { symbol, fiscalYear, fiscalPeriod } },
+                data: patch,
+            });
+            updated++;
+        }
+    }
+    return { inserted, updated };
+}
+
+type SaMode = 'full' | 'gapfill';
+
+/**
+ * stockanalysis.com merge.
+ *  - mode 'full': Finnhub produced nothing → upsert every row (ADR/foreign path).
+ *  - mode 'gapfill': Finnhub lags (latest quarterly stale) → insert only
+ *    missing periods, fill null fields, and repair wildly divergent `ebit`.
+ */
+async function syncFromStockAnalysis(symbol: string, mode: SaMode = 'full'): Promise<number> {
+    const gapfill = mode === 'gapfill';
+    const [incomeA, balanceA, cashflowA, incomeQ, balanceQ, cashflowQ] = await Promise.all([
         fetchSAData(symbol, ''),
         fetchSAData(symbol, 'balance-sheet'),
         fetchSAData(symbol, 'cash-flow-statement'),
+        fetchSAData(symbol, '', true),
+        fetchSAData(symbol, 'balance-sheet', true),
+        fetchSAData(symbol, 'cash-flow-statement', true),
     ]);
-    if (!income) return 0;
+    if (!incomeA && !incomeQ) return 0;
 
     // SA serves statements in the company's reporting currency (e.g. TSM in
     // TWD). FinancialStatement rows imply USD — skip non-USD companies
     // rather than store mislabeled numbers.
-    const currency = income.currency;
+    const currency = incomeA?.currency ?? incomeQ?.currency;
     if (currency && currency !== 'USD') {
         console.log(`[syncFinancials] ${symbol}: SA statements are ${currency}, skipping (USD-only storage)`);
         return 0;
@@ -124,53 +304,16 @@ async function syncFromStockAnalysis(symbol: string): Promise<number> {
         create: { symbol, name: symbol },
     });
 
-    let upserted = 0;
-    for (let i = 0; i < income.datekey.length; i++) {
-        const dateStr = income.datekey[i]!;
-        if (dateStr === 'TTM') continue;
-        const fiscalYear = parseInt(income.fiscalYear[i] ?? '', 10);
-        const fiscalQuarter = income.fiscalQuarter[i] ?? 'FY';
-        if (!fiscalYear) continue;
-        const fiscalPeriod = (fiscalQuarter === 'Q4' || fiscalQuarter === 'FY') ? 'FY' : fiscalQuarter;
-        const endDate = new Date(dateStr + 'T00:00:00Z');
-
-        // Diluted shares from net income / diluted EPS when both are valid.
-        const ni = saNumArr(income, 'netinccmn', i);
-        const epsdil = saNumArr(income, 'epsdil', i);
-        const sharesFromEps = ni !== null && epsdil !== null && epsdil > 0 ? ni / epsdil : null;
-        const sharesOutstanding =
-            sharesFromEps ?? (balance ? saNumArr(balance, 'sharesOutTotalCommon', i) : null);
-
-        const stmtData = {
-            endDate,
-            revenue: saNumArr(income, 'revenue', i),
-            netIncome: ni,
-            ebit: saNumArr(income, 'opinc', i),
-            grossProfit: saNumArr(income, 'gp', i),
-            operatingCashFlow: cashflow ? (saNumArr(cashflow, 'ncfo', i) ?? saNumArr(cashflow, 'cfo', i)) : null,
-            capex: cashflow ? (saNumArr(cashflow, 'capex', i) ?? saNumArr(cashflow, 'cash_flow_statement_capital_expenditure', i)) : null,
-            totalAssets: balance ? saNumArr(balance, 'assets', i) : null,
-            totalLiabilities: balance ? saNumArr(balance, 'liabilities', i) : null,
-            currentAssets: balance ? saNumArr(balance, 'assetsc', i) : null,
-            currentLiabilities: balance ? (saNumArr(balance, 'currentLiabilities', i) ?? saNumArr(balance, 'liabilitiesc', i)) : null,
-            retainedEarnings: balance ? (saNumArr(balance, 'retearn', i) ?? saNumArr(balance, 'balance_sheet_retained_earnings', i)) : null,
-            totalEquity: balance ? saNumArr(balance, 'equity', i) : null,
-            sharesOutstanding,
-            sbc: cashflow ? (saNumArr(cashflow, 'sbcomp', i) ?? saNumArr(cashflow, 'sbc', i)) : null,
-            interestExpense: saNumArr(income, 'interestexpense', i),
-            totalDebt: balance ? saNumArr(balance, 'debt', i) : null,
-            cashAndEquivalents: balance ? (saNumArr(balance, 'totalcash', i) ?? saNumArr(balance, 'cashneq', i)) : null,
-            netPPE: balance ? (saNumArr(balance, 'netPPE', i) ?? saNumArr(balance, 'balance_sheet_net_property_plant_and_equipment', i)) : null,
-        };
-
-        await prisma.financialStatement.upsert({
-            where: { symbol_fiscalYear_fiscalPeriod: { symbol, fiscalYear, fiscalPeriod } },
-            update: stmtData,
-            create: { symbol, period: fiscalPeriod, fiscalYear, fiscalPeriod, ...stmtData },
-        });
-        upserted++;
+    let touched = 0;
+    if (incomeA) {
+        const r = await mergeSAPage(symbol, incomeA, balanceA, cashflowA, { quarterly: false, gapfill });
+        touched += r.inserted + r.updated;
     }
-    return upserted;
+    if (incomeQ) {
+        const r = await mergeSAPage(symbol, incomeQ, balanceQ, cashflowQ, { quarterly: true, gapfill });
+        touched += r.inserted + r.updated;
+    }
+    return touched;
 }
 
 // ─── XBRL extraction helpers (module-level for reusability) ──────────
@@ -185,6 +328,17 @@ function extract(report: any, section: string, concepts: string[]): number | nul
         const shortConcept = concept.replace(/^us-gaap_/, '');
         const foundShort = list.find((item: any) => item.concept === shortConcept);
         if (foundShort && isValidValue(foundShort.value)) return foundShort.value;
+    }
+    return null;
+}
+
+/** Match a concept by its suffix regardless of taxonomy prefix — catches
+ *  company-specific tags like `psx_CapitalExpendituresAndInvestments`. */
+function extractByConceptSuffix(report: any, section: string, suffixes: string[]): number | null {
+    const list = report[section] || [];
+    for (const suffix of suffixes) {
+        const found = list.find((item: any) => item.concept?.endsWith(suffix) && isValidValue(item.value));
+        if (found) return found.value;
     }
     return null;
 }
@@ -320,13 +474,17 @@ export async function syncFinancials(symbol: string): Promise<void> {
                     }
                 }
                 
+                // EBIT = OPERATING income only. The pretax-income XBRL tag
+                // (IncomeLossFromContinuingOperationsBeforeIncomeTaxes…)
+                // is deliberately NOT a fallback — it silently promoted
+                // pretax income (incl. equity earnings, gains, interest
+                // income) to "EBIT" (PSX FY25 stored 13.8B vs real opinc
+                // ~3.8B → op margin 10.7% vs real ~4%).
                 let ebit = extract(report, 'ic', [
                     'us-gaap_OperatingIncomeLoss',
-                    'us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest',
                     'us-gaap_OperatingIncomeLossFromContinuingOperations',
                     // Without prefix
-                    'OperatingIncomeLoss',
-                    'IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest'
+                    'OperatingIncomeLoss'
                 ]);
                 if (ebit === null && grossProfit !== null) {
                     const rnde = extract(report, 'ic', ['us-gaap_ResearchAndDevelopmentExpense']) || 0;
@@ -356,6 +514,11 @@ export async function syncFinancials(symbol: string): Promise<void> {
                     // Without prefix
                     'PaymentsToAcquirePropertyPlantAndEquipment', 'PaymentsToAcquireProductiveAssets',
                     'CapitalExpenditureIncurredForPropertyPlantAndEquipment'
+                ]) ?? extractByConceptSuffix(report, 'cf', [
+                    // Company-specific taxonomy (PSX files capex as
+                    // psx_CapitalExpendituresAndInvestments).
+                    'CapitalExpendituresAndInvestments',
+                    'PaymentsForCapitalImprovements',
                 ]);
                 
                 const totalAssets = extract(report, 'bs', ['us-gaap_Assets']);
@@ -496,16 +659,32 @@ export async function syncFinancials(symbol: string): Promise<void> {
     }
 
     // Fallback: if Finnhub produced no usable statements (ADR/foreign
-    // tickers, or rows that exist but carry no revenue at all), try the
-    // stockanalysis.com scraper. Upserts then fill/refresh the rows.
+    // tickers, or rows that exist but carry no revenue at all), scrape
+    // stockanalysis.com fully. If Finnhub data EXISTS but is stale (its
+    // reported filings lag ~1 quarter behind SEC — PSX Q2'26 filed Aug-5
+    // still absent in Oct), gap-fill missing periods + null fields instead.
     const stmtsWithRevenue = await prisma.financialStatement.count({
         where: { symbol, revenue: { not: null } },
     });
     if (stmtsWithRevenue === 0) {
-        const saCount = await syncFromStockAnalysis(symbol);
+        const saCount = await syncFromStockAnalysis(symbol, 'full');
         console.log(`[syncFinancials] ${symbol}: SA fallback rows=${saCount}`);
         if (saCount > 0) {
             console.log(`[syncFinancials] ${symbol}: Finnhub had 0 statements, scraped ${saCount} from stockanalysis.com`);
+        }
+        return;
+    }
+
+    const latestQuarterly = await prisma.financialStatement.findFirst({
+        where: { symbol, fiscalPeriod: { not: 'FY' } },
+        orderBy: { endDate: 'desc' },
+        select: { endDate: true },
+    });
+    const STALE_MS = 100 * 24 * 60 * 60 * 1000; // ~1 quarter + reporting lag
+    if (latestQuarterly && Date.now() - latestQuarterly.endDate.getTime() > STALE_MS) {
+        const saCount = await syncFromStockAnalysis(symbol, 'gapfill');
+        if (saCount > 0) {
+            console.log(`[syncFinancials] ${symbol}: SA gapfill touched ${saCount} rows (latest Finnhub q=${latestQuarterly.endDate.toISOString().slice(0, 10)})`);
         }
     }
 }

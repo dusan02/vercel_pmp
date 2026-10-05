@@ -83,13 +83,16 @@ export async function GET(
 
     // Downsample daily → weekly: proper OHLC aggregation
     // open = first trading day's open, high = week max, low = week min,
-    // close = last trading day's close, volume = sum, t = first day's timestamp
+    // close = last trading day's close, volume = sum, t = first day's timestamp.
+    // Epoch weeks are Thursday-anchored — shift by 4d so buckets are
+    // Monday–Sunday calendar weeks instead.
     const MS_WEEK = 7 * 24 * 60 * 60 * 1000;
+    const MS_MONDAY_OFFSET = 4 * 24 * 60 * 60 * 1000;
     type WeekBucket = { t: number; o: number; h: number; l: number; c: number; v: number };
     const weekMap = new Map<number, WeekBucket>();
     for (const agg of aggs) {
       if (!agg || agg.o <= 0) continue;
-      const weekKey = Math.floor(agg.t / MS_WEEK);
+      const weekKey = Math.floor((agg.t - MS_MONDAY_OFFSET) / MS_WEEK);
       const existing = weekMap.get(weekKey);
       if (!existing) {
         weekMap.set(weekKey, { t: agg.t, o: agg.o, h: agg.h, l: agg.l, c: agg.c, v: agg.v });

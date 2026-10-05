@@ -416,24 +416,36 @@ export default async function FinancialsPage({ params }: PageProps) {
               </table>
             </div>
 
-            {/* Balance sheet summary */}
-            {trendData.length >= 2 && (
+            {/* Balance sheet summary — the actual latest statement (any
+                period), not the latest FY row: BS fields are point-in-time
+                snapshots, so Q1 FY2026 is fresher than FY2025. */}
+            {(() => {
+              const latestBs = [...statements]
+                .filter((s) => s.totalAssets != null || s.totalDebt != null || s.totalEquity != null)
+                .sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime())
+                .pop();
+              if (!latestBs) return null;
+              const latestBsLabel = latestBs.fiscalPeriod === 'FY'
+                ? `FY${latestBs.fiscalYear}`
+                : `${latestBs.fiscalPeriod} FY${latestBs.fiscalYear}`;
+              return (
               <>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 mt-6">
-                  Balance Sheet Summary (Latest Period)
+                  Balance Sheet Summary ({latestBsLabel})
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                  <BalanceSheetItem label="Total Assets" value={trendData[trendData.length - 1]!.totalAssets} />
-                  <BalanceSheetItem label="Total Liabilities" value={trendData[trendData.length - 1]!.totalLiabilities} />
-                  <BalanceSheetItem label="Total Equity" value={trendData[trendData.length - 1]!.totalEquity} />
-                  <BalanceSheetItem label="Cash & Equivalents" value={trendData[trendData.length - 1]!.cashAndEquivalents} />
-                  <BalanceSheetItem label="Total Debt" value={trendData[trendData.length - 1]!.totalDebt} />
-                  <BalanceSheetItem label="Current Assets" value={trendData[trendData.length - 1]!.currentAssets} />
-                  <BalanceSheetItem label="Current Liabilities" value={trendData[trendData.length - 1]!.currentLiabilities} />
-                  <BalanceSheetItem label="Retained Earnings" value={trendData[trendData.length - 1]!.retainedEarnings} />
+                  <BalanceSheetItem label="Total Assets" value={latestBs.totalAssets} />
+                  <BalanceSheetItem label="Total Liabilities" value={latestBs.totalLiabilities} />
+                  <BalanceSheetItem label="Total Equity" value={latestBs.totalEquity} />
+                  <BalanceSheetItem label="Cash & Equivalents" value={latestBs.cashAndEquivalents} />
+                  <BalanceSheetItem label="Total Debt" value={latestBs.totalDebt} />
+                  <BalanceSheetItem label="Current Assets" value={latestBs.currentAssets} />
+                  <BalanceSheetItem label="Current Liabilities" value={latestBs.currentLiabilities} />
+                  <BalanceSheetItem label="Retained Earnings" value={latestBs.retainedEarnings} />
                 </div>
               </>
-            )}
+              );
+            })()}
 
             {/* Quick stats */}
             {(data?.lastPrice != null || data?.lastMarketCap != null) && (

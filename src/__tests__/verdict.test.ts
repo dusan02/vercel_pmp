@@ -131,3 +131,26 @@ describe('buildVerdict (V2)', () => {
         expect(v?.risks.length).toBeLessThanOrEqual(2);
     });
 });
+
+describe('cyclical-recovery guard (#31)', () => {
+    it('PSX-like: fwd P/E < half of TTM P/E downgrades expensive → fair', () => {
+        const v = buildVerdict({
+            pillars: pillars({ growth: 80, profitability: 60, health: 65, quality: 75, valuation: 60 }),
+            pePercentile: 81, peCurrent: 26.4, peMedian: 14, peYears: 5,
+            forwardPe: 9.9,
+        });
+        // TTM P/E is cyclically depressed relative to forward — not "expensive"
+        expect(v?.headline).toBe('High quality, fairly valued');
+        expect(v?.evidence.join(' ')).toContain('Fwd P/E 9.9×');
+    });
+
+    it('does not apply when valuation came from distorted-P/E P/S fallback', () => {
+        const v = buildVerdict({
+            pillars: pillars({ growth: 30, profitability: 40, health: 60, quality: 55, valuation: 45 }),
+            pePercentile: 99, peCurrent: 308, peMedian: 15,
+            psPercentile: 82,
+            forwardPe: 22.6,
+        });
+        expect(v?.headline).toContain('expensive');
+    });
+});
