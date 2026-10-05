@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { event } from '@/lib/ga';
 
@@ -51,12 +52,39 @@ function TickerChip({ t }: { t: RecapTicker }) {
  * Promotes the existing daily blog as a landing node: chips link straight
  * to analysis pages, CTA opens the full recap.
  */
-export function DailyRecapCard({ recap }: { recap: DailyRecapData }) {
-  const up = recap.gainers.slice(0, 3);
-  const down = recap.losers.slice(0, 3);
-  if (!recap.date || (up.length === 0 && down.length === 0)) return null;
+export function DailyRecapCard({ recap }: { recap: DailyRecapData | null }) {
+  const [data, setData] = useState<DailyRecapData | null>(recap);
 
-  const m = recap.bigMover;
+  // SSR prop may be empty (timeout / ISR-stale page) — self-heal by fetching
+  // the snapshots API once on mount so the card always appears when a daily
+  // snapshot exists.
+  useEffect(() => {
+    if (data) return;
+    fetch('/api/blog/snapshots')
+      .then((r) => r.json())
+      .then((d) => {
+        const snap = (d.snapshots ?? []).find(
+          (s: any) => s?.date && !String(s.date).startsWith('weekly-'),
+        );
+        if (!snap) return;
+        const overview = JSON.parse(snap.overviewJson || '{}');
+        setData({
+          date: snap.date,
+          sentiment: overview.sentiment,
+          gainers: JSON.parse(snap.gainersJson || '[]'),
+          losers: JSON.parse(snap.losersJson || '[]'),
+          bigMover: JSON.parse(snap.mcapMoversJson || '[]')[0] ?? null,
+        });
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const up = (data?.gainers ?? []).slice(0, 3);
+  const down = (data?.losers ?? []).slice(0, 3);
+  if (!data || !data.date || (up.length === 0 && down.length === 0)) return null;
+
+  const m = data.bigMover;
   return (
     <section
       aria-label="Today's market recap"
@@ -64,10 +92,10 @@ export function DailyRecapCard({ recap }: { recap: DailyRecapData }) {
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
         <h2 className="text-base font-bold text-gray-900 dark:text-white">Today's Market Recap</h2>
-        <span className="text-xs text-gray-400">{recap.date}</span>
-        {recap.sentiment && (
-          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${TONE_CHIP[recap.sentiment] ?? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'}`}>
-            {recap.sentiment}
+        <span className="text-xs text-gray-400">{data.date}</span>
+        {data.sentiment && (
+          <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${TONE_CHIP[data.sentiment] ?? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'}`}>
+            {data.sentiment}
           </span>
         )}
       </div>
@@ -96,7 +124,7 @@ export function DailyRecapCard({ recap }: { recap: DailyRecapData }) {
           </Link>
         )}
         <Link
-          href={`/blog/${recap.date}`}
+          href={`/blog/${data.date}`}
           onClick={() => event('recap_open', { click_source: 'daily_recap_card' })}
           className="ml-auto text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap"
         >

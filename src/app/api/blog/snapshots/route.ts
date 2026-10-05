@@ -6,7 +6,13 @@ export async function GET() {
     const snapshots = await prisma.dailyBlogSnapshot.findMany({
       orderBy: { date: 'desc' },
       take: 30,
-      select: { date: true, overviewJson: true },
+      select: {
+        date: true,
+        overviewJson: true,
+        gainersJson: true,
+        losersJson: true,
+        mcapMoversJson: true,
+      },
     });
     return NextResponse.json({ snapshots });
   } catch {
