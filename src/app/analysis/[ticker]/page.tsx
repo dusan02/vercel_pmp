@@ -319,32 +319,34 @@ export default async function AnalysisPage({ params }: PageProps) {
               />
               {/* Thesis on one screen — strengths evidence beside the live
                   intraday chart; risks list moved into the right rail so the
-                  rail stays a compact scannable column. */}
+                  rail stays a compact scannable column. The market-context
+                  strip stacks under Strengths — the chart is taller than the
+                  list, so the strip fills what would be dead space. */}
               <div className="flex flex-col lg:flex-row gap-3">
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 flex flex-col gap-3">
                   <ThesisCard
                     analysisData={analysisData}
                     cache={data?.analysisCache ?? null}
                     roe={roeStat}
                     only="strengths"
                   />
+                  <MoverInsightSection
+                    ticker={tickerUpper}
+                    moversReason={data?.moversReason ?? null}
+                    moversCategory={data?.moversCategory ?? null}
+                    aiConfidence={data?.aiConfidence ?? null}
+                    isSbcAlert={data?.isSbcAlert ?? null}
+                    changePct={displayChangePct}
+                    topNews={topNews}
+                    earningsDate={nextEarnings?.date ?? null}
+                    earningsDays={earningsDays}
+                    lastMove={recentMoves[0] ?? null}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <IntradayChart ticker={tickerUpper} />
                 </div>
               </div>
-              <MoverInsightSection
-                ticker={tickerUpper}
-                moversReason={data?.moversReason ?? null}
-                moversCategory={data?.moversCategory ?? null}
-                aiConfidence={data?.aiConfidence ?? null}
-                isSbcAlert={data?.isSbcAlert ?? null}
-                changePct={displayChangePct}
-                topNews={topNews}
-                earningsDate={nextEarnings?.date ?? null}
-                earningsDays={earningsDays}
-                lastMove={recentMoves[0] ?? null}
-              />
             </div>
             <div className="min-w-0 space-y-6">
               {hasPillars && <PillarsRadar pillars={analysisData!.pillars!} />}

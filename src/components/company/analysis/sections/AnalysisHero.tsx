@@ -111,8 +111,14 @@ export function AnalysisHero({
             loading="eager"
           />
           <div>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-0.5">
+              Stock Analysis
+            </p>
             <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-              {companyName} ({ticker})<span className="hidden sm:inline"> Stock Analysis</span>
+              {companyName}
+              <span className="ml-2.5 align-middle inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[0.6em] font-semibold tracking-wide text-gray-500 dark:text-gray-400">
+                {ticker}
+              </span>
             </h1>
           </div>
           <AddToWatchlist ticker={ticker} />
