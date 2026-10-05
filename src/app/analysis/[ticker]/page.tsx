@@ -29,7 +29,8 @@ import PillarsRadar, { PillarChips } from '@/components/company/analysis/Pillars
 import { EarningsSection } from '@/components/company/analysis/sections/EarningsSection';
 import { EarningsBanner } from '@/components/company/analysis/sections/EarningsBanner';
 import { RecentMovesSection } from '@/components/company/analysis/sections/RecentMovesSection';
-import { RelatedStocksSection } from '@/components/company/analysis/sections/RelatedStocksSection';
+import { RelatedOpportunities } from '@/components/company/analysis/sections/RelatedOpportunities';
+import { getRelatedOpportunities } from '@/lib/analysis/relatedOpportunities';
 import { PriceHistorySection } from '@/components/company/analysis/sections/PriceHistorySection';
 import { KeyMetricsTable } from '@/components/company/analysis/KeyMetricsTable';
 import { AnalysisFaqSection, buildAnalysisFaq, buildFaqSchema } from '@/components/company/analysis/sections/AnalysisFaqSection';
@@ -116,10 +117,11 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   // Fetch everything in parallel (independent queries).
   // Includes SSR pre-fetch of analysis API + history for instant client hydration.
-  const [earningsData, recentMoves, sectorPeers, analysisData, historyData, flowStatements, week52, topNews, matchedScreens] = await Promise.all([
+  const [earningsData, recentMoves, sectorPeers, relatedOpps, analysisData, historyData, flowStatements, week52, topNews, matchedScreens] = await Promise.all([
     getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
     getSectorPeers(data?.sector, tickerUpper),
+    getRelatedOpportunities(tickerUpper),
     prefetchAnalysisData(tickerUpper),
     prefetchHistoryData(tickerUpper),
     getFinancialFlowsData(tickerUpper),
@@ -467,9 +469,9 @@ export default async function AnalysisPage({ params }: PageProps) {
             description={data?.description}
           />
 
-          {/* Sector peers — discovery/internal links at the bottom, after the
-              analysis content */}
-          <RelatedStocksSection ticker={tickerUpper} sector={data?.sector} peers={sectorPeers} />
+          {/* Related opportunities — grouped discovery links (same-industry,
+              sector movers, cheaper/similar alternatives) */}
+          <RelatedOpportunities ticker={tickerUpper} related={relatedOpps} />
 
           {/* Latest news — at the very bottom, client-side fetch from Finnhub, cached 30min */}
           <NewsSection ticker={tickerUpper} />

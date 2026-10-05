@@ -10,6 +10,9 @@ import ShareButtons from '@/components/ShareButtons';
 import { MoveAlertButton } from '@/components/notifications/MoveAlertButton';
 import { TrackPageEvent } from '@/components/analytics/TrackPageEvent';
 import { IntradayChart } from '@/components/company/IntradayChart';
+import { ExploreStockNav } from '@/components/company/analysis/sections/ExploreStockNav';
+import { RelatedOpportunities } from '@/components/company/analysis/sections/RelatedOpportunities';
+import { getRelatedOpportunities } from '@/lib/analysis/relatedOpportunities';
 import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 // Revalidate every 5 minutes — mover data is fairly stable post-session
@@ -233,7 +236,10 @@ export default async function MoverSymbolPage({ params }: PageProps) {
   }
 
   const companyName = data.name || getCompanyName(tickerUpper) || tickerUpper;
-  const moves = await getRecentMoves(tickerUpper);
+  const [moves, relatedOpps] = await Promise.all([
+    getRecentMoves(tickerUpper),
+    getRelatedOpportunities(tickerUpper),
+  ]);
   const hasEnoughData = moves.length >= MIN_MOVES_FOR_INDEX;
 
   const currentPrice = data.lastPrice;
@@ -517,6 +523,12 @@ export default async function MoverSymbolPage({ params }: PageProps) {
               </Link>
             </div>
           </nav>
+
+          {/* Explore + related opportunities — internal discovery funnel */}
+          <div className="mt-8">
+            <ExploreStockNav ticker={tickerUpper} current="premarket" />
+            <RelatedOpportunities ticker={tickerUpper} related={relatedOpps} />
+          </div>
         </main>
       </div>
     </>

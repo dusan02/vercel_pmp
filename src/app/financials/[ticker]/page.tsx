@@ -10,6 +10,9 @@ import {
 } from '@/lib/seo/eligibleFinancials';
 import { filterStatementsByViewMode } from '@/lib/utils/chartUtils';
 import { FinancialsSeoText } from '@/components/company/FinancialsSeoText';
+import { ExploreStockNav } from '@/components/company/analysis/sections/ExploreStockNav';
+import { RelatedOpportunities } from '@/components/company/analysis/sections/RelatedOpportunities';
+import { getRelatedOpportunities } from '@/lib/analysis/relatedOpportunities';
 import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 export const revalidate = 3600; // 1 hour
@@ -135,7 +138,10 @@ export default async function FinancialsPage({ params }: PageProps) {
   }
 
   const companyName = data?.name || getCompanyName(tickerUpper) || tickerUpper;
-  const statements = await getFinancialStatements(tickerUpper);
+  const [statements, relatedOpps] = await Promise.all([
+    getFinancialStatements(tickerUpper),
+    getRelatedOpportunities(tickerUpper),
+  ]);
 
   if (statements.length < 4) {
     return (
@@ -512,6 +518,12 @@ export default async function FinancialsPage({ params }: PageProps) {
                 />
               );
             })()}
+
+            {/* Explore + related opportunities — internal discovery funnel */}
+            <div className="mt-8">
+              <ExploreStockNav ticker={tickerUpper} current="financials" />
+              <RelatedOpportunities ticker={tickerUpper} related={relatedOpps} />
+            </div>
           </section>
         </main>
       </div>

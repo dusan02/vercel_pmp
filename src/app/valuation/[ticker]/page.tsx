@@ -10,6 +10,9 @@ import {
   getValuationHistory,
 } from '@/lib/seo/eligibleValuation';
 import { ValuationSeoText } from '@/components/company/ValuationSeoText';
+import { ExploreStockNav } from '@/components/company/analysis/sections/ExploreStockNav';
+import { RelatedOpportunities } from '@/components/company/analysis/sections/RelatedOpportunities';
+import { getRelatedOpportunities } from '@/lib/analysis/relatedOpportunities';
 import { TrackPageEvent } from '@/components/analytics/TrackPageEvent';
 import { StandaloneHeader } from '@/components/StandaloneHeader';
 
@@ -153,7 +156,10 @@ export default async function ValuationPage({ params }: PageProps) {
   }
 
   const companyName = data?.name || getCompanyName(tickerUpper) || tickerUpper;
-  const history = await getValuationHistory(tickerUpper);
+  const [history, relatedOpps] = await Promise.all([
+    getValuationHistory(tickerUpper),
+    getRelatedOpportunities(tickerUpper),
+  ]);
 
   if (history.length < 20) {
     // Not enough data — show minimal page with noindex (handled by generateMetadata)
@@ -427,6 +433,12 @@ export default async function ValuationPage({ params }: PageProps) {
               hasAnalysis={true}
               hasFinancials={true}
             />
+
+            {/* Explore + related opportunities — internal discovery funnel */}
+            <div className="mt-8">
+              <ExploreStockNav ticker={tickerUpper} current="valuation" />
+              <RelatedOpportunities ticker={tickerUpper} related={relatedOpps} />
+            </div>
           </section>
         </main>
       </div>
