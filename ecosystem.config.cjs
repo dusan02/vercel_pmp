@@ -343,6 +343,46 @@ module.exports = {
       autorestart: false,
     },
     {
+      name: "cron-social-premarket",
+      script: "scripts/trigger-post-social-premarket.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-social-premarket-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-social-premarket-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // 14:45 server time (Europe/Prague) = 08:45 ET — mid pre-market, before
+      // the 09:30 open. One "Before the open" movers post per weekday.
+      cron_restart: "45 14 * * 1-5",
+      autorestart: false,
+    },
+    {
+      name: "cron-social-recap",
+      script: "scripts/trigger-post-social-recap.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-social-recap-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-social-recap-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // 22:05 server time (Europe/Prague) = 16:05 ET — right after the regular
+      // close. One "Today's biggest movers" recap post per weekday.
+      cron_restart: "5 22 * * 1-5",
+      autorestart: false,
+    },
+    {
       name: "cron-verify-sector-industry",
       script: "scripts/trigger-verify-sector-industry.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",

@@ -1,0 +1,34 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { withCronHandler, verifyCronAuthOptional } from '@/lib/utils/cronAuth';
+import { socialDistributorService } from '@/services/socialDistributorService';
+import { handleCronError, createCronSuccessResponse } from '@/lib/utils/cronErrorHandler';
+import { updateCronStatus } from '@/lib/utils/cronStatus';
+
+/**
+ * Pre-market movers summary post ("Before the open") — once per weekday.
+ */
+export const POST = withCronHandler('post-social-premarket', async () => {
+    const startTime = Date.now();
+    const results = await socialDistributorService.postPremarketSummary();
+    await updateCronStatus('social_premarket');
+    return createCronSuccessResponse({
+        message: 'Social premarket digest completed',
+        results,
+        summary: {
+            duration: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
+            action: results.posted.length > 0 ? `Posted ${results.posted.join(', ')}` : 'Nothing posted',
+        },
+    });
+});
+
+// GET endpoint for manual testing (requires CRON_SECRET_KEY in production)
+export async function GET(request: NextRequest) {
+    const authError = verifyCronAuthOptional(request, true);
+    if (authError) return authError;
+
+    try {
+        return await POST(request);
+    } catch (error) {
+        return handleCronError(error, 'test social premarket digest');
+    }
+}

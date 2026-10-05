@@ -117,6 +117,106 @@ export class SocialDistributorService {
         return results;
     }
 
+    /** Pre-market movers summary (~08:45 ET). One post per day. */
+    async postPremarketSummary(): Promise<{ posted: string[]; skipped: number; errors: number }> {
+        return this.postMoversDigest('premarket');
+    }
+
+    /** Post-close recap (~16:05 ET). One post per day. */
+    async postDailyRecap(): Promise<{ posted: string[]; skipped: number; errors: number }> {
+        return this.postMoversDigest('recap');
+    }
+
+    /**
+     * Daily list post (premarket preview / close recap). Separate daily lock
+     * per kind, independent of the 4/day single-mover quota — these are anchor
+     * content, not part of the signal stream.
+     */
+    private async postMoversDigest(kind: 'premarket' | 'recap'): Promise<{ posted: string[]; skipped: number; errors: number }> {
+        const date = getDateET();
+        const results = { posted: [] as string[], skipped: 0, errors: 0 };
+
+        const lockKey = `social:${kind}:${date}`;
+        if (await redisClient.get(lockKey)) {
+            console.log(`ℹ️ SocialDistributorService: ${kind} digest already posted today`);
+            return results;
+        }
+
+        // Biggest movers by |day change| — $1+ price and ±100% cap keep
+        // zombie tickers (sub-penny, stale refs) off the recap.
+        const select = {
+            symbol: true, name: true, lastPrice: true, lastChangePct: true,
+            latestMoversZScore: true, latestMoversRVOL: true,
+            moversReason: true, socialCopy: true, moversCategory: true,
+            isSbcAlert: true, aiConfidence: true
+        } as const;
+        const [gainers, losers] = await Promise.all([
+            prisma.ticker.findMany({
+                where: { lastPrice: { gte: 1 }, lastChangePct: { gt: 0, lte: 100 } },
+                orderBy: { lastChangePct: 'desc' }, take: 3, select
+            }),
+            prisma.ticker.findMany({
+                where: { lastPrice: { gte: 1 }, lastChangePct: { lt: 0, gte: -100 } },
+                orderBy: { lastChangePct: 'asc' }, take: 2, select
+            }),
+        ]);
+        const movers = [...gainers, ...losers]
+            .sort((a, b) => Math.abs(b.lastChangePct ?? 0) - Math.abs(a.lastChangePct ?? 0))
+            .slice(0, 4);
+
+        if (movers.length === 0) {
+            console.log(`ℹ️ SocialDistributorService: no movers for ${kind} digest`);
+            return results;
+        }
+
+        const lines = movers.map(m => {
+            const pct = m.lastChangePct ?? 0;
+            const emoji = pct >= 0 ? '📈' : '📉';
+            const reason = this.extractCatalyst(m);
+            return `${emoji} $${m.symbol} ${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%${reason ? ` — ${reason}` : ''}`;
+        });
+        const header = kind === 'premarket' ? '🔔 Before the open:' : "📊 Today's biggest movers:";
+        const cta = kind === 'premarket' ? 'Watch the open' : 'Full movers board';
+        const text = `${header}\n\n${lines.join('\n')}\n\n${cta} → https://premarketprice.com/premarket-movers`;
+
+        const poster = await this.getPoster();
+        if (!poster) {
+            console.warn('⚠️ SocialDistributorService: No posting channel configured, skipping digest');
+            return results;
+        }
+
+        try {
+            // OG card shows the top mover — the post's headline stock.
+            await poster(movers[0], text);
+            await redisClient.set(lockKey, '1', { EX: 86400 });
+            results.posted = movers.map(m => m.symbol);
+            console.log(`✅ SocialDistributorService: ${kind} digest posted (${results.posted.join(', ')})`);
+        } catch (error) {
+            console.error(`❌ SocialDistributorService: ${kind} digest failed:`, error);
+            results.errors++;
+        }
+        return results;
+    }
+
+    /**
+     * Short catalyst phrase for a digest line — prefer the LLM socialCopy
+     * lead (already "% + short catalyst"), fall back to moversReason, then
+     * quantitative labels. ~40 chars max, word-boundary truncated.
+     */
+    private extractCatalyst(mover: any): string {
+        const line1 = (mover.socialCopy || '').split('\n')[0] || '';
+        let s = line1
+            .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F]/gu, '')
+            .replace(new RegExp(`\\$?${mover.symbol}\\b`, 'g'), '')
+            .replace(/[+-]?\d+(?:\.\d+)?\s*%/g, '')
+            .trim();
+        if (!s && mover.moversReason) s = String(mover.moversReason).trim();
+        if (!s && (mover.latestMoversRVOL ?? 0) >= 4) s = 'unusual volume';
+        if (!s && Math.abs(mover.latestMoversZScore ?? 0) >= 4) s = 'statistical outlier';
+        if (s.length > 42) s = s.slice(0, 42).replace(/\s+\S*$/, '').replace(/[.,;:\s]+$/, '') + '…';
+        return s;
+    }
+
     private getTwitterClient() {
         if (!process.env.TWITTER_API_KEY ||
             !process.env.TWITTER_API_SECRET ||
@@ -148,9 +248,19 @@ export class SocialDistributorService {
      */
     private withChannelUtm(text: string, source: string): string {
         return text.replace(
-            /https:\/\/premarketprice\.com\/analysis\/([A-Za-z]+)/g,
-            `https://premarketprice.com/analysis/$1?utm_source=${source}&utm_medium=social&utm_campaign=movers`
+            /https:\/\/premarketprice\.com\/(analysis\/[A-Za-z]+|premarket-movers)\b/g,
+            `https://premarketprice.com/$1?utm_source=${source}&utm_medium=social&utm_campaign=movers`
         );
+    }
+
+    /** Public OG-card URL — Buffer's crawler can't reach the loopback base. */
+    private publicOgImageUrl(ticker: any): string {
+        return this.generateOgImageUrl(ticker).replace(/^https?:\/\/[^/]+/, this.publicSiteUrl());
+    }
+
+    private publicSiteUrl(): string {
+        const base = process.env.NEXT_PUBLIC_APP_URL || '';
+        return !base || /localhost|127\.0\.0\.1/.test(base) ? 'https://premarketprice.com' : base;
     }
 
     private utmSourceForService(service: string): string {
@@ -167,7 +277,7 @@ export class SocialDistributorService {
             const channels = await this.getBufferChannels();
             if (channels.length > 0) {
                 bufferCoversBluesky = channels.some(c => c.service === 'bluesky');
-                posters.push((_mover, text) => this.postViaBuffer(channels, text));
+                posters.push((mover, text) => this.postViaBuffer(channels, text, mover));
             } else {
                 console.warn('⚠️ SocialDistributorService: BUFFER_ACCESS_TOKEN set but no channels found in Buffer');
             }
@@ -267,19 +377,29 @@ export class SocialDistributorService {
     }
 
     /** Publish immediately (shareNow) to all connected channels. Throws if every channel fails. */
-    private async postViaBuffer(channels: { id: string; service: string }[], text: string): Promise<void> {
+    private async postViaBuffer(channels: { id: string; service: string }[], text: string, mover?: any): Promise<void> {
+        // OG card image — Buffer fetches the URL server-side, so it must be
+        // the public origin (NEXT_PUBLIC_APP_URL is 127.0.0.1 on prod).
+        const imageUrl = mover ? this.publicOgImageUrl(mover) : null;
         let successes = 0;
         let lastError: unknown;
         for (const channel of channels) {
             const channelText = this.withChannelUtm(text, this.utmSourceForService(channel.service));
+            const input: Record<string, unknown> = {
+                channelId: channel.id,
+                text: channelText,
+                schedulingType: 'automatic',
+                mode: 'shareNow',
+            };
+            if (imageUrl) input.assets = [{ image: { url: imageUrl } }];
             const res = await this.bufferGraphql(
-                `mutation($channelId: ChannelId!, $text: String!) {
-                  createPost(input: { channelId: $channelId, text: $text, schedulingType: automatic, mode: shareNow }) {
+                `mutation($input: CreatePostInput!) {
+                  createPost(input: $input) {
                     ... on PostActionSuccess { post { id status } }
                     ... on MutationError { message }
                   }
                 }`,
-                { channelId: channel.id, text: channelText }
+                { input }
             ).catch(e => ({ __error: e }));
 
             const err = (res as any)?.__error ?? res?.errors?.[0]?.message ?? res?.data?.createPost?.message;
