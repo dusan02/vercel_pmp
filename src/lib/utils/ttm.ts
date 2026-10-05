@@ -39,16 +39,20 @@ export function computeTTM(stmts: FinancialStatement[]): TTMResult {
 
     const canTtm = !!(latestQ && matchingFY && prevYearSameQ);
 
-    function ttmVal(field: keyof FinancialStatement): number | null {
+    function ttmVal(field: keyof FinancialStatement, absFields = false): number | null {
         if (canTtm && latestQ && latestFY && prevYearSameQ) {
             const qVal = latestQ[field] as number | null;
             const fyVal = latestFY[field] as number | null;
             const prevQVal = prevYearSameQ[field] as number | null;
             if (qVal != null && fyVal != null && prevQVal != null) {
+                // capex/sbc sign conventions differ between providers (Finnhub
+                // positive outflow vs SimFin raw negative) — use magnitudes.
+                if (absFields) return Math.abs(qVal) + Math.abs(fyVal) - Math.abs(prevQVal);
                 return qVal + fyVal - prevQVal;
             }
         }
-        return (latestFY as any)?.[field] as number | null ?? null;
+        const fb = (latestFY as any)?.[field] as number | null;
+        return fb != null && absFields ? Math.abs(fb) : fb ?? null;
     }
 
     return {
@@ -57,8 +61,8 @@ export function computeTTM(stmts: FinancialStatement[]): TTMResult {
         ebit: ttmVal('ebit'),
         grossProfit: ttmVal('grossProfit'),
         operatingCashFlow: ttmVal('operatingCashFlow'),
-        capex: ttmVal('capex'),
-        sbc: ttmVal('sbc'),
+        capex: ttmVal('capex', true),
+        sbc: ttmVal('sbc', true),
     };
 }
 
@@ -107,16 +111,18 @@ export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
     // (missing matching FY or prevYearSameQ). Slightly stale, correct magnitude.
     const fallbackFY = annualBeforeDate[0] ?? null;
 
-    function field(name: 'netIncome' | 'revenue' | 'ebit' | 'operatingCashFlow' | 'capex'): number | null {
+    function field(name: 'netIncome' | 'revenue' | 'ebit' | 'operatingCashFlow' | 'capex', absField = false): number | null {
         if (latestQ && matchingFY && prevYearSameQ) {
             const q = latestQ[name];
             const fy = matchingFY[name];
             const pq = prevYearSameQ[name];
             if (q != null && fy != null && pq != null) {
+                if (absField) return Math.abs(q) + Math.abs(fy) - Math.abs(pq);
                 return q + fy - pq;
             }
         }
-        return fallbackFY?.[name] ?? null;
+        const fb = fallbackFY?.[name];
+        return fb != null && absField ? Math.abs(fb) : fb ?? null;
     }
 
     return {
@@ -124,6 +130,6 @@ export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
         revenue: field('revenue'),
         ebit: field('ebit'),
         operatingCashFlow: field('operatingCashFlow'),
-        capex: field('capex'),
+        capex: field('capex', true),
     };
 }

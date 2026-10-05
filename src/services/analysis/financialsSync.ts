@@ -123,6 +123,10 @@ interface SaStmtData {
     netPPE: number | null;
 }
 
+function absOrNull(v: number | null): number | null {
+    return v === null ? null : Math.abs(v);
+}
+
 function firstNum(data: SAData | null, keys: string[], i: number): number | null {
     if (!data) return null;
     for (const k of keys) {
@@ -200,12 +204,15 @@ async function mergeSAPage(
             operatingCashFlow: qd
                 ? saYtdSum(cashflow, ['ncfo', 'cfo'], fiscalQuarter, fiscalYear)
                 : firstNum(cashflow, ['ncfo', 'cfo'], ci ?? -1),
-            capex: qd
+            // capex/sbc are stored as positive magnitudes (DB convention —
+            // Finnhub XBRL tags are positive, SA raw values are negative
+            // outflows). Mixed signs would collapse the TTM arithmetic.
+            capex: absOrNull(qd
                 ? saYtdSum(cashflow, ['capex', 'cash_flow_statement_capital_expenditure'], fiscalQuarter, fiscalYear)
-                : firstNum(cashflow, ['capex', 'cash_flow_statement_capital_expenditure'], ci ?? -1),
-            sbc: qd
+                : firstNum(cashflow, ['capex', 'cash_flow_statement_capital_expenditure'], ci ?? -1)),
+            sbc: absOrNull(qd
                 ? saYtdSum(cashflow, ['sbcomp', 'sbc'], fiscalQuarter, fiscalYear)
-                : firstNum(cashflow, ['sbcomp', 'sbc'], ci ?? -1),
+                : firstNum(cashflow, ['sbcomp', 'sbc'], ci ?? -1)),
             interestExpense: qd ? saYtdSum(income, ['interestexpense'], fiscalQuarter, fiscalYear) : saNumArr(income, 'interestexpense', i),
             totalAssets: bi != null ? saNumArr(balance, 'assets', bi) : null,
             totalLiabilities: bi != null ? saNumArr(balance, 'liabilities', bi) : null,
@@ -637,18 +644,20 @@ export async function syncFinancials(symbol: string): Promise<void> {
                     },
                     update: {
                         endDate: new Date(endDate),
-                        revenue, netIncome, ebit, operatingCashFlow, capex,
+                        revenue, netIncome, ebit, operatingCashFlow,
+                        capex: absOrNull(capex),
                         totalAssets, totalLiabilities, currentAssets, currentLiabilities,
                         retainedEarnings, totalEquity, sharesOutstanding,
-                        sbc, interestExpense, totalDebt, cashAndEquivalents, grossProfit, netPPE
+                        sbc: absOrNull(sbc), interestExpense, totalDebt, cashAndEquivalents, grossProfit, netPPE
                     },
                     create: {
                         symbol, period: fiscalPeriod, endDate: new Date(endDate),
                         fiscalYear, fiscalPeriod,
-                        revenue, netIncome, ebit, operatingCashFlow, capex,
+                        revenue, netIncome, ebit, operatingCashFlow,
+                        capex: absOrNull(capex),
                         totalAssets, totalLiabilities, currentAssets, currentLiabilities,
                         retainedEarnings, totalEquity, sharesOutstanding,
-                        sbc, interestExpense, totalDebt, cashAndEquivalents, grossProfit, netPPE
+                        sbc: absOrNull(sbc), interestExpense, totalDebt, cashAndEquivalents, grossProfit, netPPE
                     }
                 });
             }
