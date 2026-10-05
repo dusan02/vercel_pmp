@@ -209,6 +209,7 @@ export class SocialDistributorService {
             .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F]/gu, '')
             .replace(new RegExp(`\\$?${mover.symbol}\\b`, 'g'), '')
             .replace(/[+-]?\d+(?:\.\d+)?\s*%/g, '')
+            .replace(/^\s*(?:on|with|amid)\s+/i, '')
             .trim();
         if (!s && mover.moversReason) s = String(mover.moversReason).trim();
         if (!s && (mover.latestMoversRVOL ?? 0) >= 4) s = 'unusual volume';

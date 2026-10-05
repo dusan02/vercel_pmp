@@ -9,6 +9,8 @@ import {
   CartesianGrid,
   Tooltip,
   Bar,
+  Line,
+  ReferenceLine,
 } from 'recharts';
 import { CHART_FONT } from '@/components/charts/chartTheme';
 
@@ -23,6 +25,9 @@ interface Candle {
 
 interface ChartPoint extends Candle {
   date: string; // ISO yyyy-mm-dd (category key)
+  sma20?: number | null;
+  sma50?: number | null;
+  volSpike?: boolean;
 }
 
 interface PriceCandlestickChartProps {
@@ -45,6 +50,32 @@ type PeriodLabel = (typeof PERIODS)[number]['label'];
 
 const UP = '#16a34a'; // green
 const DOWN = '#dc2626'; // red
+const MA20 = '#2563eb'; // blue
+const MA50 = '#7c3aed'; // violet
+const VOL_SPIKE = '#d97706'; // amber — volume ≫ its own norm
+const REF52 = '#94a3b8'; // slate — 52W hi/lo lines
+
+// User-togglable indicator set; persisted per-browser, default off.
+const IND_KEY = 'pmp:pricechart:indicators';
+type IndKey = 'ma20' | 'ma50' | 'w52' | 'volspike';
+const INDICATORS: { key: IndKey; label: string; color: string }[] = [
+  { key: 'ma20', label: 'MA 20w', color: MA20 },
+  { key: 'ma50', label: 'MA 50w', color: MA50 },
+  { key: 'w52', label: '52W hi/lo', color: REF52 },
+  { key: 'volspike', label: 'Vol spike', color: VOL_SPIKE },
+];
+
+// Rolling mean — null until `n` observations exist (line starts later).
+function rollingMean(vals: number[], n: number): (number | null)[] {
+  const out: (number | null)[] = new Array(vals.length).fill(null);
+  let sum = 0;
+  for (let i = 0; i < vals.length; i++) {
+    sum += vals[i]!;
+    if (i >= n) sum -= vals[i - n]!;
+    if (i >= n - 1) out[i] = sum / n;
+  }
+  return out;
+}
 
 function formatXTick(dateStr: string) {
   const d = new Date(dateStr);
@@ -83,7 +114,21 @@ function CandleTooltip({ active, payload }: any) {
           ${p.c.toFixed(2)} ({changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%)
         </span>
         <span className="text-gray-500 dark:text-gray-400">Volume</span>
-        <span className="text-right text-gray-700 dark:text-gray-300">{fmtVol(p.v)}</span>
+        <span className="text-right text-gray-700 dark:text-gray-300">
+          {fmtVol(p.v)}{p.volSpike ? ' ⚡' : ''}
+        </span>
+        {p.sma20 != null && (
+          <>
+            <span style={{ color: MA20 }}>MA 20w</span>
+            <span className="text-right text-gray-700 dark:text-gray-300">${p.sma20.toFixed(2)}</span>
+          </>
+        )}
+        {p.sma50 != null && (
+          <>
+            <span style={{ color: MA50 }}>MA 50w</span>
+            <span className="text-right text-gray-700 dark:text-gray-300">${p.sma50.toFixed(2)}</span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -95,6 +140,24 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<PeriodLabel>('5Y');
+  const [inds, setInds] = useState<Set<IndKey>>(new Set());
+
+  // Hydrate indicator toggles from localStorage after mount (SSR-safe).
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(IND_KEY);
+      if (raw) setInds(new Set(JSON.parse(raw) as IndKey[]));
+    } catch { /* ignore corrupt value */ }
+  }, []);
+
+  const toggleInd = (k: IndKey) => {
+    setInds((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k); else next.add(k);
+      try { localStorage.setItem(IND_KEY, JSON.stringify([...next])); } catch { /* private mode */ }
+      return next;
+    });
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -121,14 +184,38 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
 
   const data: ChartPoint[] = useMemo(() => {
     if (!allCandles) return [];
+    // Sort the full series first — SMA must see consecutive candles.
+    const sorted = [...allCandles].sort((a, b) => a.t - b.t);
+    const sma20 = rollingMean(sorted.map((c) => c.c), 20);
+    const sma50 = rollingMean(sorted.map((c) => c.c), 50);
+    const volSma = rollingMean(sorted.map((c) => c.v || 0), 20);
     const years = PERIODS.find((p) => p.label === period)?.years ?? 5;
     const cutoff = Date.now() - years * 365.25 * 24 * 60 * 60 * 1000;
-    return allCandles
-      .filter((c) => c.t >= cutoff)
-      // Sort defensively — out-of-order candles would render out of sequence
-      .sort((a, b) => a.t - b.t)
-      .map((c) => ({ ...c, date: new Date(c.t).toISOString().slice(0, 10) }));
+    const out: ChartPoint[] = [];
+    for (let i = 0; i < sorted.length; i++) {
+      const c = sorted[i]!;
+      if (c.t < cutoff) continue;
+      const va = volSma[i];
+      out.push({
+        ...c,
+        date: new Date(c.t).toISOString().slice(0, 10),
+        sma20: sma20[i] ?? null,
+        sma50: sma50[i] ?? null,
+        // Spike = this week's volume > 2× its own trailing 20w mean (≈ RVOL 2)
+        volSpike: va != null && va > 0 && (c.v || 0) > 2 * va,
+      });
+    }
+    return out;
   }, [allCandles, period]);
+
+  // Trailing 52-week high/low over the FULL series (window-independent).
+  const hiLo52 = useMemo(() => {
+    if (!allCandles?.length) return null;
+    const last52 = [...allCandles].sort((a, b) => a.t - b.t).slice(-52);
+    let hi = -Infinity, lo = Infinity;
+    for (const c of last52) { if (c.h > hi) hi = c.h; if (c.l < lo) lo = c.l; }
+    return Number.isFinite(hi) ? { hi, lo } : null;
+  }, [allCandles]);
 
   // Pre-computed ONCE — the previous per-candle Math.max(...data.map(...))
   // inside the Bar shape was O(n²) per render (~67k iterations for 5Y weekly).
@@ -148,6 +235,12 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     for (const d of data) {
       if (d.l < min) min = d.l;
       if (d.h > max) max = d.h;
+      if (inds.has('ma20') && d.sma20 != null) { if (d.sma20 < min) min = d.sma20; if (d.sma20 > max) max = d.sma20; }
+      if (inds.has('ma50') && d.sma50 != null) { if (d.sma50 < min) min = d.sma50; if (d.sma50 > max) max = d.sma50; }
+    }
+    if (inds.has('w52') && hiLo52) {
+      if (hiLo52.lo < min) min = hiLo52.lo;
+      if (hiLo52.hi > max) max = hiLo52.hi;
     }
     const pad = (max - min) * 0.06 || 1;
     // Round to whole $10 steps — recharts otherwise adds an unrounded domain-
@@ -160,7 +253,17 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     const domMin = Math.max(0, (lo - 0.16 * hi) / 0.84);
     const volFrac = Math.max(0, Math.min(0.4, (lo - domMin) / (hi - domMin)));
     return { yDomain: [domMin, hi] as [number, number], volFrac };
-  }, [data]);
+  }, [data, inds, hiLo52]);
+
+  // Distance of latest close from enabled MAs — the "how stretched" sentence.
+  const maDistances = useMemo(() => {
+    const last = data[data.length - 1];
+    if (!last) return null;
+    const out: { label: string; pct: number; color: string }[] = [];
+    if (inds.has('ma20') && last.sma20) out.push({ label: '20W', pct: ((last.c - last.sma20) / last.sma20) * 100, color: MA20 });
+    if (inds.has('ma50') && last.sma50) out.push({ label: '50W', pct: ((last.c - last.sma50) / last.sma50) * 100, color: MA50 });
+    return out.length ? out : null;
+  }, [data, inds]);
 
   const stats = useMemo(() => {
     if (!data.length) return null;
@@ -212,21 +315,45 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             )}
           </div>
         )}
-        <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
-          {PERIODS.map((p) => (
-            <button
-              key={p.label}
-              type="button"
-              onClick={() => setPeriod(p.label)}
-              className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
-                period === p.label
-                  ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Indicator toggles — colored dot doubles as the line legend */}
+          <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
+            {INDICATORS.map((ind) => (
+              <button
+                key={ind.key}
+                type="button"
+                onClick={() => toggleInd(ind.key)}
+                title={ind.key === 'volspike' ? 'Highlight weeks with volume > 2× the 20-week average' : undefined}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
+                  inds.has(ind.key)
+                    ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
+                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+                }`}
+              >
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: inds.has(ind.key) ? ind.color : 'rgba(148,163,184,0.4)' }}
+                />
+                {ind.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
+            {PERIODS.map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => setPeriod(p.label)}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
+                  period === p.label
+                    ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -298,7 +425,8 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               
               // Bar width clamp
               const bodyW = Math.max(1, Math.min(width * 0.7, 14));
-              
+              const spike = inds.has('volspike') && d.volSpike;
+
               return (
                 <g key={d.t}>
                   {/* volume */}
@@ -307,8 +435,8 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                     y={yBottom - vH}
                     width={bodyW}
                     height={vH}
-                    fill={color}
-                    opacity={0.18}
+                    fill={spike ? VOL_SPIKE : color}
+                    opacity={spike ? 0.55 : 0.18}
                   />
                   {/* wick */}
                   <line x1={cx} x2={cx} y1={yHigh} y2={yLow} stroke={color} strokeWidth={1} />
@@ -316,10 +444,49 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                   <rect x={cx - bodyW / 2} y={bodyTop} width={bodyW} height={bodyH} fill={color} />
                 </g>
               );
-            }} 
+            }}
           />
+          {/* Moving averages — values precomputed on the full candle series */}
+          {inds.has('ma20') && (
+            <Line type="monotone" dataKey="sma20" stroke={MA20} strokeWidth={1.5} dot={false} isAnimationActive={false} />
+          )}
+          {inds.has('ma50') && (
+            <Line type="monotone" dataKey="sma50" stroke={MA50} strokeWidth={1.5} dot={false} isAnimationActive={false} />
+          )}
+          {/* Trailing 52-week high/low reference levels */}
+          {inds.has('w52') && hiLo52 && (
+            <>
+              <ReferenceLine
+                y={hiLo52.hi}
+                stroke={REF52}
+                strokeDasharray="6 4"
+                label={{ value: `52W High $${hiLo52.hi.toFixed(2)}`, position: 'insideTopLeft', fontSize: 10, fill: REF52 }}
+              />
+              <ReferenceLine
+                y={hiLo52.lo}
+                stroke={REF52}
+                strokeDasharray="6 4"
+                label={{ value: `52W Low $${hiLo52.lo.toFixed(2)}`, position: 'insideBottomLeft', fontSize: 10, fill: REF52 }}
+              />
+            </>
+          )}
         </ComposedChart>
       </ResponsiveContainer>
+
+      {/* "How stretched vs trend" — one line, only for enabled MAs */}
+      {maDistances && (
+        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-3 flex-wrap">
+          {maDistances.map((d) => (
+            <span key={d.label} className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
+              <span className="tabular-nums font-medium text-gray-700 dark:text-gray-300">
+                {d.pct >= 0 ? '+' : ''}{d.pct.toFixed(1)}%
+              </span>
+              {d.pct >= 0 ? 'above' : 'below'} {d.label} MA
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
