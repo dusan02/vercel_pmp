@@ -50,6 +50,8 @@ export const getTickerData = cache(async function getTickerData(symbol: string) 
         latestPrevClose: true,
         moversReason: true,
         moversCategory: true,
+        latestMoversZScore: true,
+        latestMoversRVOL: true,
         aiConfidence: true,
         isSbcAlert: true,
         analysisCache: {

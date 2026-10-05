@@ -313,10 +313,15 @@ export default async function AnalysisPage({ params }: PageProps) {
                 peCurrent={displayPeRatio}
                 peMedian={analysisData?.valuationHistoryStats?.pe?.median ?? null}
                 peYears={analysisData?.valuationHistoryStats?.pe?.years ?? null}
+                psPercentile={analysisData?.valuationHistoryStats?.ps?.percentile ?? null}
+                forwardPe={analysisData?.finnhubMetrics?.forwardPe ?? null}
+                revenueGrowthYoY={analysisData?.finnhubMetrics?.revenueGrowth ?? null}
+                revenueCagr={analysisData?.revenueCagr ?? null}
                 changePct={displayChangePct}
                 moversReason={data?.moversReason ?? null}
                 moversCategory={data?.moversCategory ?? null}
-                modelVerdict={data?.analysisCache?.verdictText ?? null}
+                moversZScore={data?.latestMoversZScore ?? null}
+                moversRvol={data?.latestMoversRVOL ?? null}
               />
               {/* Thesis on one screen — strengths evidence beside the live
                   intraday chart; risks list moved into the right rail so the

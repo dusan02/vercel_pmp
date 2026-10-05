@@ -16,90 +16,118 @@ function pillars(scores: Record<string, number>): PillarScores {
     };
 }
 
-describe('buildVerdict', () => {
+describe('buildVerdict (V2)', () => {
     it('returns null when there is no data at all', () => {
         expect(buildVerdict({})).toBeNull();
     });
 
-    it('headline: exceptional fundamentals + expensive valuation', () => {
+    it('NVDA-style: high quality + expensive', () => {
         const v = buildVerdict({
-            pillars: pillars({ growth: 90, profitability: 85, health: 80, quality: 78, valuation: 15 }),
-            pePercentile: 92, peCurrent: 38, peYears: 10,
+            pillars: pillars({ growth: 56, profitability: 100, health: 71, quality: 90, valuation: 15 }),
+            pePercentile: 94, peCurrent: 55, peMedian: 35, peYears: 5,
+            revenueGrowthYoY: 62,
         });
-        expect(v?.headline).toBe('Exceptional fundamentals, expensive vs its own history.');
-        expect(v?.lines.some(l => l.tone === 'pos' && l.text.includes('Growth'))).toBe(true);
-        expect(v?.lines.some(l => l.tone === 'neg' && l.text.includes('Valuation'))).toBe(true);
-        expect(v?.lines.some(l => l.tone === 'warn' && l.text.includes('P/E 38.0'))).toBe(true);
+        expect(v?.tone).toBe('warn');
+        expect(v?.headline).toBe('High quality, but expensive');
+        expect(v?.bottomLine).toBe('Excellent business. Weak entry price.');
+        expect(v?.strengths[0]?.label).toBe('Profitability');
+        expect(v?.risks[0]?.label).toBe('Valuation');
+        expect(v?.evidence.some(e => e.includes('Revenue +62.0%'))).toBe(true);
+        expect(v?.evidence.some(e => e.includes('P/E 55× · 94th pctl'))).toBe(true);
     });
 
-    it('headline: cheap percentile produces cheap clause', () => {
+    it('quality + cheap → attractive', () => {
         const v = buildVerdict({
-            pillars: pillars({ growth: 20, profitability: 30, health: 45, quality: 50, valuation: 80 }),
-            pePercentile: 12,
+            pillars: pillars({ growth: 78, profitability: 85, health: 80, quality: 82, valuation: 85 }),
+            pePercentile: 12, peCurrent: 14, peMedian: 22, peYears: 8,
         });
-        expect(v?.headline).toContain('cheap vs its own history');
-        expect(v?.headline).toContain('Weak fundamentals');
+        expect(v?.tone).toBe('pos');
+        expect(v?.headline).toBe('Strong business, attractive price');
+        expect(v?.bottomLine).toBe('High-quality business at an attractive price.');
     });
 
-    it('falls back to valuation pillar score when percentile is missing', () => {
+    it('weak + cheap → cheap for a reason', () => {
         const v = buildVerdict({
-            pillars: pillars({ growth: 50, profitability: 50, health: 50, quality: 50, valuation: 25 }),
-            pePercentile: null,
+            pillars: pillars({ growth: 20, profitability: 30, health: 40, quality: 35, valuation: 80 }),
+            pePercentile: 10, peCurrent: 8, peMedian: 18, peYears: 10,
         });
-        expect(v?.headline).toBe('Mixed fundamentals, expensive.');
+        expect(v?.headline).toBe('Cheap for a reason — weak fundamentals');
+        expect(v?.bottomLine).toBe('Cheap for a reason — fundamentals remain weak.');
+        expect(v?.risks.map(r => r.label)).toContain('Growth');
     });
 
-    it('mixed fundamentals wording when neither strong nor weak dominates', () => {
-        const v = buildVerdict({ pillars: pillars({ growth: 78, health: 55, valuation: 55 }) });
-        expect(v?.headline).toMatch(/^Mixed fundamentals/);
-    });
-
-    it('adds mover context line for notable moves with a reason', () => {
+    it('weak + expensive → weakest combination', () => {
         const v = buildVerdict({
-            pillars: pillars({ valuation: 50 }),
-            changePct: 6.2, moversReason: 'Analyst upgrade to Buy',
+            pillars: pillars({ growth: 20, profitability: 25, health: 35, quality: 30, valuation: 10 }),
+            pePercentile: 90, peCurrent: 60, peMedian: 25, peYears: 10,
         });
-        expect(v?.lines.some(l => l.tone === 'info' && l.text.includes('+6.2%') && l.text.includes('Analyst upgrade'))).toBe(true);
+        expect(v?.tone).toBe('neg');
+        expect(v?.headline).toBe('Weak fundamentals, expensive');
+        expect(v?.bottomLine).toBe('Weak fundamentals at a demanding price.');
     });
 
-    it('flags flow-driven move when no catalyst and move >= 5%', () => {
-        const v = buildVerdict({ changePct: -7.4 });
-        expect(v).not.toBeNull();
-        expect(v?.lines[0]?.text).toContain('-7.4%');
-        expect(v?.lines[0]?.text).toContain('flow-driven');
-    });
-
-    it('leads with the model verdict line when provided', () => {
+    it('STM: distorted P/E never leaks a fake percentile into evidence', () => {
         const v = buildVerdict({
-            pillars: pillars({ growth: 90, profitability: 85, health: 80 }),
-            modelVerdict: 'Strong Buy',
+            pillars: pillars({ growth: 30, profitability: 40, health: 60, quality: 55, valuation: 45 }),
+            pePercentile: 99, peCurrent: 308, peMedian: 15, peYears: 5,
+            psPercentile: 82,
+            forwardPe: 22.6,
         });
-        expect(v?.lines[0]?.text).toBe('Model verdict: Strong Buy');
-        expect(v?.lines[0]?.tone).toBe('info');
+        // EPS depression noted; P/S percentile used instead of P/E 308
+        expect(v?.evidence).toContain('EPS temporarily depressed');
+        expect(v?.evidence).toContain('P/S 82nd percentile');
+        expect(v?.evidence.join(' ')).not.toContain('308');
+        // Valuation reads from P/S (82nd pctl = expensive), not the inflated P/E
+        expect(v?.headline).toContain('expensive');
     });
 
-    it('ignores small moves without a reason', () => {
-        const v = buildVerdict({ changePct: 1.2 });
-        expect(v).toBeNull();
-    });
-
-    it('flags depressed-EPS distorted P/E instead of calling it expensive', () => {
-        // STM pattern: TTM EPS collapsed → P/E ~308× vs ~15× median
+    it('distorted P/E without P/S stats falls back to forward P/E', () => {
         const v = buildVerdict({
-            pillars: pillars({ growth: 30, profitability: 40, health: 60, quality: 55 }),
-            pePercentile: 99, peCurrent: 308, peMedian: 15, peYears: 10,
+            pePercentile: 99, peCurrent: 308, peMedian: 15,
+            forwardPe: 22.6,
+            revenueGrowthYoY: 12,
         });
-        expect(v?.lines.some(l => l.tone === 'warn' && l.text.includes('not meaningful'))).toBe(true);
-        // Must NOT claim "top of history" — the percentile is inflated by the trough
-        expect(v?.lines.some(l => l.text.includes('of 10-year history'))).toBe(false);
-        // Headline defers to the valuation pillar rather than the PE percentile
-        expect(v?.headline).not.toContain('expensive vs its own history');
+        expect(v?.evidence).toContain('EPS temporarily depressed');
+        expect(v?.evidence).toContain('Forward P/E 23×');
     });
 
-    it('normal high P/E still reports the percentile line', () => {
+    it('works with no mover event — marketContext is null', () => {
         const v = buildVerdict({
-            pePercentile: 92, peCurrent: 38, peMedian: 30, peYears: 10,
+            pillars: pillars({ growth: 70, profitability: 80, health: 75, quality: 72 }),
+            pePercentile: 50, peCurrent: 20, peMedian: 19,
+            changePct: 0.4,
         });
-        expect(v?.lines.some(l => l.text.includes('P/E 38.0'))).toBe(true);
+        expect(v?.marketContext).toBeNull();
+        expect(v?.headline).toBe('High quality, fairly valued');
+    });
+
+    it('no usable P/E → no fake percentile evidence', () => {
+        const v = buildVerdict({
+            pillars: pillars({ growth: 70, profitability: 80, health: 75, quality: 72 }),
+            changePct: 1,
+        });
+        expect(v?.evidence.join(' ')).not.toMatch(/P\/E|pctl|percentile/);
+    });
+
+    it('market context carries z-score and reason separately from fundamentals', () => {
+        const v = buildVerdict({
+            pillars: pillars({ growth: 80, profitability: 85, health: 80, quality: 85 }),
+            changePct: 8.4,
+            moversZScore: 4.2,
+            moversReason: 'Acquisition announcement',
+        });
+        expect(v?.marketContext?.zScore).toBe(4.2);
+        expect(v?.marketContext?.reason).toBe('Acquisition announcement');
+        // And the headline stays a fundamentals statement, not hype
+        expect(v?.headline).not.toContain('8.4');
+    });
+
+    it('strengths/risks stay capped at 2 each', () => {
+        const v = buildVerdict({
+            pillars: pillars({ growth: 90, profitability: 88, health: 85, quality: 82, valuation: 20 }),
+            pePercentile: 95, peCurrent: 70, peMedian: 30,
+        });
+        expect(v?.strengths.length).toBeLessThanOrEqual(2);
+        expect(v?.risks.length).toBeLessThanOrEqual(2);
     });
 });
