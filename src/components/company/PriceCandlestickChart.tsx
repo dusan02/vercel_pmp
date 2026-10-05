@@ -230,7 +230,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={360}>
+      <ResponsiveContainer width="100%" height={420}>
         <ComposedChart data={data} margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.18)" vertical={false} />
           <XAxis
@@ -272,7 +272,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               const [minY, maxY] = yDomain;
               const range = maxY - minY;
               const top = 8;
-              const plotHeight = 360 - 8 - 4; // height - top - bottom
+              const plotHeight = 420 - 8 - 4; // height - top - bottom
               
               const getY = (val: number) => {
                 if (range === 0) return top + plotHeight / 2;

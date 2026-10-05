@@ -345,12 +345,6 @@ export default async function AnalysisPage({ params }: PageProps) {
                 earningsDays={earningsDays}
                 lastMove={recentMoves[0] ?? null}
               />
-              <PriceHistorySection
-                ticker={tickerUpper}
-                currentPrice={displayPrice}
-                currentChangePct={displayChangePct}
-                changeLabel={marketSession === 'closed' ? 'at last close' : marketSession === 'pre' ? 'pre-market' : marketSession === 'after' ? 'after-hours' : 'day'}
-              />
             </div>
             <div className="min-w-0 space-y-6">
               {hasPillars && <PillarsRadar pillars={analysisData!.pillars!} />}
@@ -371,6 +365,17 @@ export default async function AnalysisPage({ params }: PageProps) {
               />
             </div>
           </div>
+
+          {/* Price history — full-width section below the two-column block.
+              Inside the left column it left dead space under the shorter
+              right rail; a wide candle chart is the natural element to span
+              the whole row, so nothing sits empty beside it. */}
+          <PriceHistorySection
+            ticker={tickerUpper}
+            currentPrice={displayPrice}
+            currentChangePct={displayChangePct}
+            changeLabel={marketSession === 'closed' ? 'at last close' : marketSession === 'pre' ? 'pre-market' : marketSession === 'after' ? 'after-hours' : 'day'}
+          />
 
           {/* Key metrics — rendered at page level (not inside the ssr:false
               tab) so the numbers land in SSR HTML for crawlers AND sit

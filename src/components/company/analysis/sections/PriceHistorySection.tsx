@@ -21,7 +21,7 @@ export function PriceHistorySection({ ticker, currentPrice, currentChangePct, ch
                     subtitle="5-Year Weekly Candlestick Chart"
                     as="h2"
                 >
-                    <Suspense fallback={<div className="flex justify-center items-center" style={{ height: 360 }}><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500" /></div>}>
+                    <Suspense fallback={<div className="flex justify-center items-center" style={{ height: 420 }}><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500" /></div>}>
                         <PriceCandlestickChart ticker={ticker} currentPrice={currentPrice ?? null} currentChangePct={currentChangePct ?? null} changeLabel={changeLabel ?? 'day'} />
                     </Suspense>
                 </ChartSection>
