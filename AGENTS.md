@@ -18,6 +18,8 @@
 
 - **ISR cache-uje aj notFound/500-voľné rendery** — `catch { return null }` + `notFound()` mení transient DB chybu (napr. `prisma generate` počas aktivácie) na cache-ovanú 404. DB error má skončiť ako 500/throw, nie null→404. Rovnako sitemap: `catch→[]` v `getEligible*` produkuje cache-ovanú oklieštenú sitemap (guard v `sitemap.ts` throw-uje, aby ISR držal poslednú dobrú verziu)
 
+- **Dátová oprava ≠ fresh stránka (PSX incident 2026-10-06)** — ISR artefakty žijú v `.next/server/app/**/*.html|.rsc|.meta` na disku a DB-only opravy (sync, repair scripty) ich neinvalidujú; deploy `.next` swap ich zmaže. Reťazec: DB → computeMetrics → Next render → ISR disk → response. On-demand purge: `POST /api/admin/cache/invalidate` s `x-admin-key` + `{"symbol":"PSX"}` (expandne na 4 page typy) alebo `{"paths":[...]}`; POST `/api/analysis/[ticker]` to robí automaticky po recompute. Nouzovo: `rm .next/server/app/<page>/<SYM>.{html,rsc,meta}` + `.segments/` dir.
+
 - **pnpm v10 blokuje native build skripty** (better-sqlite3) → build padá na "Failed to collect page data". Server má byť na npm; `vps-deploy.sh` maže `node_modules/.pnpm` pri detekcii (one-time migration guard)
 - **`pkill -f "next build"` v ssh-action skripte SA ZABÍJA** — ssh-action posiela celý skript ako argv shellu, takže literal pattern matchne vlastný shell → exit 143. Používaj bracket trick `[n]ext buil[d]` a nikdy nepíš process name do komentárov inline skriptu
 - **Aktivácia beží detached** (setsid+nohup → `/var/log/pmp-deploy.log`, Actions poll-uje `=== Done ===`/`ACTIVATION_FAILED`) — synchrónne ssh sa ukázalo ako nespoľahlivé: session dropne a zabije inak úspešný deploy

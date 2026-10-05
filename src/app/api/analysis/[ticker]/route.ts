@@ -99,7 +99,17 @@ export async function POST(
         // Invalidate Redis caches so next GET fetches fresh data
         try {
             const { del } = await import('@/lib/redis/operations');
-            await del([`analysis:cache:${symbol}`, `analysis:history:${symbol}`, `analysis:history:v2:${symbol}`]);
+            await del([`analysis:cache:${symbol}`, `analysis:history:${symbol}`, `analysis:history:v2:${symbol}`, `candles:${symbol}`]);
+        } catch {}
+
+        // Invalidate ISR pages — without this a successful data refresh
+        // still serves stale pre-rendered HTML until TTL expiry (PSX
+        // incident: fixed DB + fresh API but /analysis kept old render).
+        try {
+            const { revalidatePath } = await import('next/cache');
+            for (const p of [`/analysis/${symbol}`, `/valuation/${symbol}`, `/financials/${symbol}`, `/premarket/${symbol}`]) {
+                revalidatePath(p);
+            }
         } catch {}
 
         console.log(`[Analysis API] Deep analysis complete for ${symbol}`);

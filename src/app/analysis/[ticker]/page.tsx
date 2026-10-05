@@ -145,9 +145,14 @@ export default async function AnalysisPage({ params }: PageProps) {
     ? (analysisData.metrics?.currentPe ?? null)
     : (data?.finnhubMetrics?.peRatio ?? null);
 
+  // Middle crumb = sector landing (a real navigational parent that links
+  // into the sector funnel); falls back to the flat stock index.
+  const breadcrumbMid = data?.sector
+    ? { name: data.sector, url: `${baseUrl}/sectors/${encodeURIComponent(data.sector)}` }
+    : { name: 'Stocks', url: `${baseUrl}/stocks` };
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: 'Home', url: baseUrl },
-    { name: 'Stocks', url: `${baseUrl}/stocks` },
+    breadcrumbMid,
     { name: `${companyName} (${tickerUpper})`, url: `${baseUrl}/analysis/${tickerUpper}` },
   ]);
   const stockSchema = buildStockSchema({
@@ -231,7 +236,7 @@ export default async function AnalysisPage({ params }: PageProps) {
             <ol className="flex items-center space-x-2 text-sm min-w-0">
               <li><Link href="/" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Home</Link></li>
               <li className="text-gray-500" aria-hidden="true">/</li>
-              <li><Link href="/stocks" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Stocks</Link></li>
+              <li><Link href={breadcrumbMid.url.replace(baseUrl, '')} className="text-gray-500 hover:text-blue-600 dark:text-gray-400 truncate max-w-[10rem] sm:max-w-none">{breadcrumbMid.name}</Link></li>
               <li className="text-gray-500" aria-hidden="true">/</li>
               <li className="text-gray-900 dark:text-gray-100 font-medium" aria-current="page">{tickerUpper}</li>
             </ol>

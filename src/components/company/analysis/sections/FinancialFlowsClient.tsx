@@ -338,8 +338,11 @@ export function SankeyCell({ kind, annual, quarterly }: { kind: FlowKind; annual
     if (!spec) return <p className="text-sm text-gray-500 dark:text-gray-500 italic py-8 text-center">No data</p>;
     // SVG is w-full h-auto → displayed height = svgW * viewH / viewW. Solve
     // viewH so the rendered diagram exactly fills the measured slot height.
-    const viewW = sankeyViewBoxWidth(spec.columns.length);
-    const svgW = slot ? Math.max(560, slot.w) : viewW;
+    // Compact column gaps on narrow viewports — a 560px+ viewBox rendered
+    // into ~350px shrinks labels to ~7px and forces horizontal scrolling.
+    const compact = slot ? slot.w < 560 : false;
+    const viewW = sankeyViewBoxWidth(spec.columns.length, compact);
+    const svgW = slot ? Math.max(viewW, slot.w) : viewW;
     const chartH = slot ? Math.max(240, Math.floor(slot.h * (viewW / svgW))) : 300;
     return (
         <ChartBody>
@@ -360,7 +363,7 @@ export function SankeyCell({ kind, annual, quarterly }: { kind: FlowKind; annual
             </ChartControls>
             <ChartPlot minHeight={240}>
                 <div ref={boxRef} className="h-full overflow-x-auto">
-                    <SankeyChart columns={spec.columns} links={spec.links} total={spec.total} formatValue={fmt$} height={chartH} />
+                    <SankeyChart columns={spec.columns} links={spec.links} total={spec.total} formatValue={fmt$} height={chartH} compact={compact} />
                 </div>
                 {overflows && (
                     <div className="absolute inset-y-0 right-0 w-14 pointer-events-none bg-gradient-to-l from-white dark:from-gray-800 to-transparent flex items-center justify-end pr-1.5">

@@ -21,12 +21,15 @@ interface Candle {
   l: number;
   c: number;
   v: number;
+  pe?: number | null; // TTM P/E on the candle's close day
 }
 
 interface ChartPoint extends Candle {
   date: string; // ISO yyyy-mm-dd (category key)
   sma20?: number | null;
   sma50?: number | null;
+  sma200?: number | null;
+  peFair?: number | null;
   volSpike?: boolean;
 }
 
@@ -44,6 +47,7 @@ const PERIODS = [
   { label: '1Y', years: 1 },
   { label: '3Y', years: 3 },
   { label: '5Y', years: 5 },
+  { label: '10Y', years: 10 },
 ] as const;
 
 type PeriodLabel = (typeof PERIODS)[number]['label'];
@@ -52,15 +56,19 @@ const UP = '#16a34a'; // green
 const DOWN = '#dc2626'; // red
 const MA20 = '#2563eb'; // blue
 const MA50 = '#7c3aed'; // violet
+const MA200 = '#0891b2'; // teal — 200-day ≈ 40 weekly bars
+const PE_FAIR = '#db2777'; // pink — price-at-median-P/E overlay
 const VOL_SPIKE = '#d97706'; // amber — volume ≫ its own norm
 const REF52 = '#64748b'; // slate-500 — 52W hi/lo lines (400 was too light on white)
 
 // User-togglable indicator set; persisted per-browser, default off.
 const IND_KEY = 'pmp:pricechart:indicators';
-type IndKey = 'ma20' | 'ma50' | 'w52' | 'volspike';
+type IndKey = 'ma20' | 'ma50' | 'ma200' | 'pefair' | 'w52' | 'volspike';
 const INDICATORS: { key: IndKey; label: string; color: string }[] = [
   { key: 'ma20', label: 'MA 20w', color: MA20 },
   { key: 'ma50', label: 'MA 50w', color: MA50 },
+  { key: 'ma200', label: 'MA 200d', color: MA200 },
+  { key: 'pefair', label: 'Med P/E', color: PE_FAIR },
   { key: 'w52', label: '52W hi/lo', color: REF52 },
   { key: 'volspike', label: 'Vol spike', color: VOL_SPIKE },
 ];
@@ -129,6 +137,18 @@ function CandleTooltip({ active, payload }: any) {
             <span className="text-right text-gray-700 dark:text-gray-300">${p.sma50.toFixed(2)}</span>
           </>
         )}
+        {p.sma200 != null && (
+          <>
+            <span style={{ color: MA200 }}>MA 200d</span>
+            <span className="text-right text-gray-700 dark:text-gray-300">${p.sma200.toFixed(2)}</span>
+          </>
+        )}
+        {p.peFair != null && (
+          <>
+            <span style={{ color: PE_FAIR }}>@med P/E</span>
+            <span className="text-right text-gray-700 dark:text-gray-300">${p.peFair.toFixed(2)}</span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -139,8 +159,18 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   const [allCandles, setAllCandles] = useState<Candle[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState<PeriodLabel>('5Y');
+  const [period, setPeriod] = useState<PeriodLabel>('10Y');
   const [inds, setInds] = useState<Set<IndKey>>(new Set());
+  // Narrow viewport → tighter chart margins / axis so the plot claims more
+  // of the mobile screen (390px phone otherwise plots in ~64% of width).
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)');
+    const update = () => setNarrow(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   // Hydrate indicator toggles from localStorage after mount (SSR-safe).
   useEffect(() => {
@@ -188,8 +218,10 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     const sorted = [...allCandles].sort((a, b) => a.t - b.t);
     const sma20 = rollingMean(sorted.map((c) => c.c), 20);
     const sma50 = rollingMean(sorted.map((c) => c.c), 50);
+    // 40 weekly bars ≈ the 200-day average investors actually mean by SMA200
+    const sma200 = rollingMean(sorted.map((c) => c.c), 40);
     const volSma = rollingMean(sorted.map((c) => c.v || 0), 20);
-    const years = PERIODS.find((p) => p.label === period)?.years ?? 5;
+    const years = PERIODS.find((p) => p.label === period)?.years ?? 10;
     const cutoff = Date.now() - years * 365.25 * 24 * 60 * 60 * 1000;
     const out: ChartPoint[] = [];
     for (let i = 0; i < sorted.length; i++) {
@@ -201,12 +233,26 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         date: new Date(c.t).toISOString().slice(0, 10),
         sma20: sma20[i] ?? null,
         sma50: sma50[i] ?? null,
+        sma200: sma200[i] ?? null,
         // Spike = this week's volume > 2× its own trailing 20w mean (≈ RVOL 2)
         volSpike: va != null && va > 0 && (c.v || 0) > 2 * va,
       });
     }
+    // "Price at median P/E" — rescales each weekly close by medianPE/pe(t);
+    // the line is where the stock would trade on unchanged earnings at its
+    // own median multiple. Median is taken over the *displayed* range so the
+    // reference follows the selected period, not a fixed all-time figure.
+    if (inds.has('pefair')) {
+      const pes = out.map((p) => p.pe).filter((v): v is number => v != null && v > 0).sort((a, b) => a - b);
+      const medPe = pes.length ? pes[Math.floor(pes.length / 2)]! : null;
+      if (medPe != null) {
+        for (const p of out) {
+          p.peFair = p.pe != null && p.pe > 0 ? (p.c / p.pe) * medPe : null;
+        }
+      }
+    }
     return out;
-  }, [allCandles, period]);
+  }, [allCandles, period, inds]);
 
   // Trailing 52-week high/low over the FULL series (window-independent).
   const hiLo52 = useMemo(() => {
@@ -237,6 +283,8 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       if (d.h > max) max = d.h;
       if (inds.has('ma20') && d.sma20 != null) { if (d.sma20 < min) min = d.sma20; if (d.sma20 > max) max = d.sma20; }
       if (inds.has('ma50') && d.sma50 != null) { if (d.sma50 < min) min = d.sma50; if (d.sma50 > max) max = d.sma50; }
+      if (inds.has('ma200') && d.sma200 != null) { if (d.sma200 < min) min = d.sma200; if (d.sma200 > max) max = d.sma200; }
+      if (inds.has('pefair') && d.peFair != null) { if (d.peFair < min) min = d.peFair; if (d.peFair > max) max = d.peFair; }
     }
     if (inds.has('w52') && hiLo52) {
       if (hiLo52.lo < min) min = hiLo52.lo;
@@ -359,8 +407,8 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={420}>
-        <ComposedChart data={data} margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
+      <ResponsiveContainer width="100%" height={narrow ? 340 : 420}>
+        <ComposedChart data={data} margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 24 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.18)" vertical={false} />
           <XAxis
             dataKey="date"
@@ -380,7 +428,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             className="text-gray-500 dark:text-gray-500"
             tickLine={false}
             axisLine={false}
-            width={52}
+            width={narrow ? 40 : 52}
           />
           <Tooltip
             content={<CandleTooltip />}
@@ -401,7 +449,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               const [minY, maxY] = yDomain;
               const range = maxY - minY;
               const top = 8;
-              const plotHeight = 420 - 8 - 4; // height - top - bottom
+              const plotHeight = (narrow ? 340 : 420) - 8 - 4; // height - top - bottom
               
               const getY = (val: number) => {
                 if (range === 0) return top + plotHeight / 2;
@@ -454,6 +502,12 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
           )}
           {inds.has('ma50') && (
             <Line type="monotone" dataKey="sma50" stroke={MA50} strokeWidth={2} dot={false} isAnimationActive={false} />
+          )}
+          {inds.has('ma200') && (
+            <Line type="monotone" dataKey="sma200" stroke={MA200} strokeWidth={1.5} dot={false} isAnimationActive={false} />
+          )}
+          {inds.has('pefair') && (
+            <Line type="monotone" dataKey="peFair" stroke={PE_FAIR} strokeWidth={1.5} strokeDasharray="5 3" dot={false} isAnimationActive={false} connectNulls={false} />
           )}
           {/* Trailing 52-week high/low reference levels */}
           {inds.has('w52') && hiLo52 && (

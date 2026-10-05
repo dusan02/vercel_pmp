@@ -10,6 +10,9 @@ interface ChartSectionProps {
     hasData?: boolean;
     /** Heading level — h3 inside the AnalysisTab grid, h2 for top-level sections */
     as?: 'h2' | 'h3';
+    /** Edge-to-edge card on mobile — the plot claims the full viewport width
+     *  instead of sitting inside px-4 page + p-4 card gutters (~25% width). */
+    bleed?: boolean;
 }
 
 export function ChartSection({
@@ -21,9 +24,14 @@ export function ChartSection({
     emptyMessage,
     hasData = true,
     as: H = 'h3',
+    bleed = false,
 }: ChartSectionProps) {
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-6 overflow-visible h-full flex flex-col">
+        <div className={`bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 overflow-visible h-full flex flex-col ${
+            bleed
+                ? '-mx-4 rounded-none border-x-0 p-3 sm:mx-0 sm:rounded-xl sm:border-x sm:p-6'
+                : 'rounded-xl p-3 sm:p-6'
+        }`}>
             <div className="flex items-center gap-2.5 sm:gap-3 mb-4 sm:mb-6">
                 <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${iconBgClass}`}>
                     {icon}

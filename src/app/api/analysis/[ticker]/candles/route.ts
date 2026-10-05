@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
+import { prisma } from '@/lib/db/prisma';
 
 export const revalidate = 3600;
 
@@ -21,12 +22,16 @@ export interface Candle {
   l: number;
   c: number;
   v: number;
+  /** TTM P/E on the candle's close day (DailyValuationHistory) — null outside coverage */
+  pe?: number | null;
 }
 
 /**
- * Returns ~5 years of weekly OHLC candles for the given ticker.
+ * Returns ~10 years of weekly OHLC candles for the given ticker.
  * Sources daily aggregates from Polygon (to avoid DELAYED status on weekly),
  * then downsamples to weekly in code. Cached aggressively at the edge.
+ * Each candle carries the TTM P/E known that week so the client can draw a
+ * "price at median P/E" overlay without a second request.
  */
 export async function GET(
   _request: Request,
@@ -51,7 +56,7 @@ export async function GET(
 
   const toDate = new Date();
   const fromDate = new Date();
-  fromDate.setFullYear(toDate.getFullYear() - 5);
+  fromDate.setFullYear(toDate.getFullYear() - 10);
 
   const fromStr = fromDate.toISOString().slice(0, 10);
   const toStr = toDate.toISOString().slice(0, 10);
@@ -115,6 +120,29 @@ export async function GET(
         c: parseFloat(a.c.toFixed(2)),
         v: Math.round(a.v),
       }));
+
+    // Attach TTM P/E per candle — the client draws a "price at historical
+    // median P/E" line from this without a second request. peRatio rows are
+    // daily; each candle takes the value of its close day (last row ≤ t).
+    try {
+      const valRows = await prisma.dailyValuationHistory.findMany({
+        where: { symbol, date: { gte: fromDate }, peRatio: { not: null } },
+        orderBy: { date: 'asc' },
+        select: { date: true, peRatio: true },
+      });
+      if (valRows.length) {
+        const times = valRows.map(r => r.date.getTime());
+        const pes = valRows.map(r => r.peRatio!);
+        let vi = 0;
+        for (const c of candles) {
+          // candle t = first trading day; close happens at end of week —
+          // a P/E row up to 4 days after t still belongs to this week.
+          const end = c.t + 4 * 24 * 60 * 60 * 1000;
+          while (vi < times.length - 1 && times[vi + 1]! <= end) vi++;
+          c.pe = times[vi]! <= end ? pes[vi]! : c.pe ?? null;
+        }
+      }
+    } catch { /* valuation overlay is optional — candles still render */ }
 
     const responseBody = { symbol, candles };
 

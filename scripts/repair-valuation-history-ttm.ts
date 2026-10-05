@@ -176,6 +176,14 @@ async function main() {
     for (const [k, s] of Object.entries(drift)) {
         console.log(`  ${k}: n=${s.n} avg|Δ|=${(s.sumAbsDelta / s.n).toFixed(4)} max|Δ|=${s.maxAbsDelta.toFixed(4)}`);
     }
+
+    // ISR pages keep serving the pre-repair render until TTL — bust them.
+    if (!dryRun && totalChanged > 0) {
+        console.log(`\n[repair] NOTE: invalidate ISR for repaired tickers:`);
+        console.log(`  curl -X POST http://localhost:3001/api/admin/cache/invalidate \\`);
+        console.log(`    -H "x-admin-key: $ADMIN_SECRET_KEY" -H "content-type: application/json" \\`);
+        console.log(`    -d '{"symbol":"<SYMBOL>"}'  # per ticker`);
+    }
 }
 
 main().catch(e => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());

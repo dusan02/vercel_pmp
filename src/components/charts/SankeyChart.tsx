@@ -35,6 +35,9 @@ interface SankeyChartProps {
     total: number;
     formatValue: (v: number) => string;
     height?: number;
+    /** Narrow viewport — tighter column gaps so the diagram fits without
+     *  heavy downscaling or a wide horizontal scroll. */
+    compact?: boolean;
 }
 
 const NODE_W = 12;
@@ -49,6 +52,9 @@ const PAD_R = 10;
 // gaps keep the viewBox tight, which keeps the rendered font effective
 // (a 6-column balance sheet at 190px gaps shrinks text to ~7px).
 const COL_GAP = 145;
+// Narrow viewports: tighter gaps keep labels legible — a 560px viewBox
+// squeezed into ~350px rendered width shrinks text to ~7px.
+const COL_GAP_COMPACT = 100;
 const PAD_T = 10;
 const PAD_B = 10;
 // Minimum node heights for label rows to fit without crowding
@@ -59,8 +65,9 @@ const LABEL_BLOCK_1 = 16; // label only
 
 /** viewBox width the chart will use for a given column count — callers
  *  need it to back-compute a viewBox height that fills a measured box. */
-export function sankeyViewBoxWidth(colCount: number) {
-    return Math.max(560, PAD_L + PAD_R + NODE_W + (colCount - 1) * COL_GAP);
+export function sankeyViewBoxWidth(colCount: number, compact = false) {
+    const gap = compact ? COL_GAP_COMPACT : COL_GAP;
+    return Math.max(compact ? 360 : 560, PAD_L + PAD_R + NODE_W + (colCount - 1) * gap);
 }
 
 interface Laid {
@@ -70,9 +77,9 @@ interface Laid {
     h: number;
 }
 
-export default function SankeyChart({ columns, links, total, formatValue, height = 250 }: SankeyChartProps) {
+export default function SankeyChart({ columns, links, total, formatValue, height = 250, compact = false }: SankeyChartProps) {
     const colCount = columns.length;
-    const W = sankeyViewBoxWidth(colCount);
+    const W = sankeyViewBoxWidth(colCount, compact);
     const bandH = height - PAD_T - PAD_B;
     // Tallest column fills ~62% of the band — single-node "total" pillars
     // (Total Assets, FCF) then render as a centered bar instead of a
@@ -140,7 +147,8 @@ export default function SankeyChart({ columns, links, total, formatValue, height
     return (
         <svg
             viewBox={`0 0 ${W} ${height}`}
-            className="w-full h-auto select-none min-w-[560px]"
+            className="w-full h-auto select-none"
+            style={{ minWidth: W }}
             role="img"
             aria-label="Financial flows diagram"
         >
