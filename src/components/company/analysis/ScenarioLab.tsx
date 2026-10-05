@@ -119,7 +119,7 @@ export function ScenarioLab({
                     {/* Compact summary — hero card */}
                     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900/50 dark:to-gray-800/50 rounded-xl p-5 sm:p-6 border border-blue-100 dark:border-gray-800">
                         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-1">
-                            Estimated {m.targetYear} Value <span className="text-gray-500 dark:text-gray-500">(base case)</span>
+                            PMP {m.targetYear} base-case scenario <span className="text-gray-500 dark:text-gray-500">— model output, not a price target</span>
                         </p>
                         <div className="flex items-baseline gap-3 mb-2 flex-wrap">
                             <p className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white tabular-nums">
@@ -140,7 +140,7 @@ export function ScenarioLab({
                         )}
                         <p className="text-xs text-gray-500 dark:text-gray-500">
                             Based on {m.ddBaseIsForward ? 'forward EPS (next-year estimate)' : 'current EPS'}, scenario-based EPS growth, and
-                            {m.peWasNormalized ? ' mean-reverted' : ' 5Y historical'} P/E distribution
+                            {m.peWasNormalized ? ' mean-reverted' : ' 5Y historical'} P/E distribution. Illustrative — not a prediction or price target.
                         </p>
                         <button
                             onClick={() => m.setShowMethodology(!m.showMethodology)}

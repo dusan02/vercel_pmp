@@ -5,6 +5,7 @@ interface PmpVerdictProps {
     pillars?: PillarScores | null;
     pePercentile?: number | null;
     peCurrent?: number | null;
+    peMedian?: number | null;
     peYears?: number | null;
     changePct?: number | null;
     moversReason?: string | null;

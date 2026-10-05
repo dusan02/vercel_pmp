@@ -311,6 +311,7 @@ export default async function AnalysisPage({ params }: PageProps) {
                 pillars={analysisData?.pillars ?? null}
                 pePercentile={analysisData?.valuationHistoryStats?.pe?.percentile ?? null}
                 peCurrent={displayPeRatio}
+                peMedian={analysisData?.valuationHistoryStats?.pe?.median ?? null}
                 peYears={analysisData?.valuationHistoryStats?.pe?.years ?? null}
                 changePct={displayChangePct}
                 moversReason={data?.moversReason ?? null}

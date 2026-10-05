@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { AnalysisData, ValuationHistoryStat } from './types';
 import { MetricCardDef, StatusType, StatusBadge, VALUE_COLORS } from '../shared/MetricCard';
 import { summarizeLossYears } from '@/lib/utils/analysisMath';
+import { isPeDistorted } from '@/lib/analysis/peDistortion';
 import { buildSnapshotCells } from './sections/FinancialSnapshot';
 import { InsiderTransactionsBody, type InsiderTransactionData } from './sections/InsiderTransactionsSection';
 
@@ -112,6 +113,9 @@ export function buildMetrics(data: AnalysisData) {
     const evEbitda = evEbit ?? fh?.evEbitda ?? null;
     const evLabel = evEbit != null ? 'EV/EBIT' : 'EV/EBITDA';
     const vh = data.valuationHistoryStats;
+    // Depressed-EPS distortion: a collapsed TTM EPS inflates the multiple
+    // (STM ~308×) — label it instead of reading it as plain "expensive".
+    const peDistorted = isPeDistorted(pe, vh?.pe?.median ?? null);
     // Finnhub's PEG derives from their own P/E basis. When their P/E diverges
     // >2× from our displayed TTM P/E, their PEG answers a different question —
     // showing it next to our P/E would be internally contradictory.
@@ -164,7 +168,9 @@ export function buildMetrics(data: AnalysisData) {
     // Grouped by the five pillars — the first rows of each group are the
     // actual leg inputs that produce that pillar's radar score.
     const valuation: MetricCardDef[] = [
-        def('P/E (TTM)', pe != null ? `${pe.toFixed(1)}x` : 'N/A', pe == null ? 'neutral' : pe < 15 ? 'good' : pe <= 25 ? 'neutral' : pe <= 35 ? 'warn' : 'bad', pe == null ? '-' : pe < 15 ? 'Cheap' : pe <= 25 ? 'Fair' : 'Expensive', `Price / TTM EPS (own statements)${histTip(vh?.pe, 'x')}`, true),
+        peDistorted
+            ? def('P/E (TTM)', `${pe!.toFixed(0)}x`, 'warn', 'Distorted', `TTM earnings are temporarily depressed — this multiple overstates expensiveness. Forward P/E is a better guide${histTip(vh?.pe, 'x')}`, true)
+            : def('P/E (TTM)', pe != null ? `${pe.toFixed(1)}x` : 'N/A', pe == null ? 'neutral' : pe < 15 ? 'good' : pe <= 25 ? 'neutral' : pe <= 35 ? 'warn' : 'bad', pe == null ? '-' : pe < 15 ? 'Cheap' : pe <= 25 ? 'Fair' : 'Expensive', `Price / TTM EPS (own statements)${histTip(vh?.pe, 'x')}`, true),
         def('P/FCF', pfcf != null ? `${pfcf.toFixed(1)}x` : 'N/A', pfcf == null ? 'neutral' : pfcf < 0 ? 'bad' : pfcf < 15 ? 'good' : pfcf <= 30 ? 'neutral' : pfcf <= 45 ? 'warn' : 'bad', pfcf == null ? '-' : pfcf < 0 ? 'Negative FCF' : pfcf < 15 ? 'Cheap' : pfcf <= 30 ? 'Fair' : 'Expensive', 'Price / Free Cash Flow per share (Finnhub). Inverse of FCF yield — negative when FCF is negative'),
         def('FCF Yield', pct(fcfY), fcfY == null ? 'neutral' : fcfY > 0.05 ? 'good' : fcfY < 0 ? 'bad' : 'warn', fcfY == null ? '-' : fcfY > 0.05 ? 'Value' : fcfY < 0 ? 'Negative' : 'Low', `TTM FCF / Market Cap${histTip(vh?.fcfYield, '%')}`),
         def('P/S (TTM)', psRatio != null ? `${psRatio.toFixed(2)}x` : 'N/A', psRatio == null ? 'neutral' : psRatio < 2 ? 'good' : psRatio <= 5 ? 'neutral' : psRatio <= 10 ? 'warn' : 'bad', psRatio == null ? '-' : psRatio < 2 ? 'Cheap' : psRatio <= 5 ? 'Fair' : 'Expensive', `Price / TTM Revenue (own statements)${histTip(vh?.ps, 'x')}`),

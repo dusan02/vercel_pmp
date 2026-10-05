@@ -1,4 +1,5 @@
 import type { PillarScores, PillarKey } from '@/services/analysis/pillars';
+import { isPeDistorted } from '@/lib/analysis/peDistortion';
 
 /**
  * PMP Verdict — deterministic one-glance summary composed from data the page
@@ -11,6 +12,7 @@ export interface VerdictInput {
     pillars?: PillarScores | null;
     pePercentile?: number | null;   // 0–100 vs own history; low = cheap
     peCurrent?: number | null;
+    peMedian?: number | null;       // own-history median — distortion check
     peYears?: number | null;
     changePct?: number | null;
     moversReason?: string | null;
@@ -62,7 +64,11 @@ export function buildVerdict(input: VerdictInput): Verdict | null {
 
     let valuationClause: string | null = null;
     const pct = input.pePercentile ?? null;
-    if (pct != null) {
+    // Depressed-EPS distortion (STM ~308×): a collapsed TTM EPS inflates the
+    // multiple, making the P/E percentile claim misleading — defer to the
+    // valuation pillar instead.
+    const peDistorted = isPeDistorted(input.peCurrent, input.peMedian ?? null);
+    if (pct != null && !peDistorted) {
         if (pct <= 25) valuationClause = 'cheap vs its own history';
         else if (pct <= 40) valuationClause = 'below its historical range';
         else if (pct >= 80) valuationClause = 'expensive vs its own history';
@@ -98,7 +104,12 @@ export function buildVerdict(input: VerdictInput): Verdict | null {
         });
     }
 
-    if (pct != null && input.peCurrent != null && (pct <= 25 || pct >= 75)) {
+    if (peDistorted) {
+        lines.push({
+            tone: 'warn',
+            text: `P/E ~${input.peCurrent!.toFixed(0)}× not meaningful — TTM earnings are temporarily depressed`,
+        });
+    } else if (pct != null && input.peCurrent != null && (pct <= 25 || pct >= 75)) {
         const side = pct <= 25 ? 'bottom' : 'top';
         const years = input.peYears ? `${Math.round(input.peYears)}-year` : 'multi-year';
         lines.push({

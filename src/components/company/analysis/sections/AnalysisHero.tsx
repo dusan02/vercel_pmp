@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { formatPrice, formatPercent, formatMarketCap } from '@/lib/utils/format';
+import { isPeDistorted } from '@/lib/analysis/peDistortion';
 import { AddToWatchlist } from '@/components/company/AddToWatchlist';
 import { MoveAlertButton } from '@/components/notifications/MoveAlertButton';
 import { AnalystConsensusStrip } from '@/components/company/analysis/sections/AnalystConsensusSection';
@@ -30,6 +31,7 @@ interface AnalysisHeroProps {
     current: number | null;
     min: number | null;
     max: number | null;
+    median: number | null;
     percentile: number | null;
     years: number | null;
   } | null;
@@ -162,7 +164,16 @@ export function AnalysisHero({
       </div>
       {/* P/E vs own history — the "cheap or expensive vs itself" answer at
           a glance; the full percentiles live in Key Metrics tooltips. */}
-      {peHistory?.current != null && peHistory?.percentile != null && (
+      {peHistory?.current != null && peHistory?.percentile != null && isPeDistorted(peHistory.current, peHistory.median) ? (
+        // Distorted multiple — percentile claim would read as "expensive"
+        // when the real story is collapsed TTM EPS.
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 flex flex-wrap items-center gap-x-1.5">
+          <span className="font-semibold text-gray-700 dark:text-gray-300">P/E {formatPrice(peHistory.current)}×</span>
+          <span className="text-amber-600 dark:text-amber-400 font-semibold">
+            · not meaningful — TTM earnings temporarily depressed
+          </span>
+        </p>
+      ) : peHistory?.current != null && peHistory?.percentile != null && (
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 flex flex-wrap items-center gap-x-1.5">
           <span className="font-semibold text-gray-700 dark:text-gray-300">P/E {formatPrice(peHistory.current)}×</span>
           {peHistory.min != null && peHistory.max != null && (

@@ -17,7 +17,8 @@ export const VALID_SECTORS = [
   'Other',
   'Real Estate',
   'Technology',
-  'Utilities'
+  'Utilities',
+  'ETF'
 ] as const;
 
 export type ValidSector = typeof VALID_SECTORS[number];
@@ -55,7 +56,9 @@ export const VALID_INDUSTRIES: Record<ValidSector, string[]> = {
     'Residential Construction',
     'Auto & Truck Dealerships',
     'Specialty Retail',
-    'Packaging & Containers'
+    'Packaging & Containers',
+    'Furnishings, Fixtures & Appliances',
+    'Personal Services'
   ],
   'Healthcare': [
     'Biotechnology',
@@ -77,8 +80,10 @@ export const VALID_INDUSTRIES: Record<ValidSector, string[]> = {
   'Basic Materials': [
     'Chemicals',
     'Specialty Chemicals',
+    'Industrial Metals & Mining',
     'Other Industrial Metals & Mining',
     'Gold',
+    'Silver',
     'Copper'
   ],
   'Industrials': [
@@ -89,7 +94,11 @@ export const VALID_INDUSTRIES: Record<ValidSector, string[]> = {
     'Railroads',
     'Trucking',
     'Waste Management',
-    'Electrical Equipment & Parts'
+    'Electrical Equipment & Parts',
+    'Rental & Leasing Services',
+    'Consulting Services',
+    'Security & Protection Services',
+    'Building Products & Equipment'
   ],
   'Real Estate': [
     'REIT - Retail',
@@ -102,7 +111,9 @@ export const VALID_INDUSTRIES: Record<ValidSector, string[]> = {
   ],
   'Communication Services': [
     'Telecom Services',
-    'Entertainment'
+    'Entertainment',
+    'Publishing',
+    'Internet Content & Information'
   ],
   'Consumer Defensive': [
     'Packaged Foods',
@@ -116,6 +127,9 @@ export const VALID_INDUSTRIES: Record<ValidSector, string[]> = {
   ],
   'Other': [
     'Uncategorized'
+  ],
+  'ETF': [
+    'Exchange Traded Fund'
   ]
 };
 

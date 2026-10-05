@@ -82,4 +82,24 @@ describe('buildVerdict', () => {
         const v = buildVerdict({ changePct: 1.2 });
         expect(v).toBeNull();
     });
+
+    it('flags depressed-EPS distorted P/E instead of calling it expensive', () => {
+        // STM pattern: TTM EPS collapsed → P/E ~308× vs ~15× median
+        const v = buildVerdict({
+            pillars: pillars({ growth: 30, profitability: 40, health: 60, quality: 55 }),
+            pePercentile: 99, peCurrent: 308, peMedian: 15, peYears: 10,
+        });
+        expect(v?.lines.some(l => l.tone === 'warn' && l.text.includes('not meaningful'))).toBe(true);
+        // Must NOT claim "top of history" — the percentile is inflated by the trough
+        expect(v?.lines.some(l => l.text.includes('of 10-year history'))).toBe(false);
+        // Headline defers to the valuation pillar rather than the PE percentile
+        expect(v?.headline).not.toContain('expensive vs its own history');
+    });
+
+    it('normal high P/E still reports the percentile line', () => {
+        const v = buildVerdict({
+            pePercentile: 92, peCurrent: 38, peMedian: 30, peYears: 10,
+        });
+        expect(v?.lines.some(l => l.text.includes('P/E 38.0'))).toBe(true);
+    });
 });

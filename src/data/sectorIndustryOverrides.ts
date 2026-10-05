@@ -653,14 +653,14 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
       name: "Freeport-McMoRan Inc.",
     },
     TCEHY: {
-      sector: "Technology",
+      sector: "Communication Services",
       industry: "Internet Content & Information",
       name: "Tencent Holdings Limited",
     },
     EXPGF: {
-      sector: "Energy",
-      industry: "Oil & Gas Integrated",
-      name: "Exxon Mobil Corporation",
+      sector: "Industrials",
+      industry: "Consulting Services",
+      name: "Experian plc",
     },
     GLCNF: {
       sector: "Basic Materials",
@@ -670,12 +670,12 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
     NPSNY: {
       sector: "Consumer Cyclical",
       industry: "Internet Retail",
-      name: "Nike Inc.",
+      name: "Naspers Limited",
     },
     GMBXF: {
       sector: "Basic Materials",
-      industry: "Other Industrial Metals & Mining",
-      name: "Glencore plc",
+      industry: "Copper",
+      name: "Grupo México",
     },
     NGG: {
       sector: "Utilities",
@@ -1084,4 +1084,74 @@ export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
       industry: "Information Technology Services",
       name: "Gartner, Inc.",
     },
+
+    // ── "Other" sector backfill (2026-10 audit) ──────────────────────────
+    // Mostly foreign issuers/ADRs where Polygon returns no sic_code. Grouped
+    // by target sector; name only where the DB string is ugly ALLCAPS.
+
+    // Technology
+    STM: { sector: "Technology", industry: "Semiconductors", name: "STMicroelectronics N.V." },
+    TSEM: { sector: "Technology", industry: "Semiconductors", name: "Tower Semiconductor Ltd" },
+    GFS: { sector: "Technology", industry: "Semiconductors", name: "GlobalFoundries Inc." },
+    NVMI: { sector: "Technology", industry: "Semiconductors", name: "Nova Ltd." },
+    ENTG: { sector: "Technology", industry: "Semiconductors", name: "Entegris Inc" },
+    CHKP: { sector: "Technology", industry: "Software - Infrastructure", name: "Check Point Software Technologies Ltd" },
+    GRAB: { sector: "Technology", industry: "Software - Application", name: "Grab Holdings Limited" },
+    NBIS: { sector: "Technology", industry: "Software - Infrastructure", name: "Nebius Group N.V." },
+    BSP: { sector: "Technology", industry: "Software - Application", name: "Bending Spoons S.p.A." },
+
+    // Financial Services
+    ARCC: { sector: "Financial Services", industry: "Asset Management", name: "Ares Capital Corporation" },
+    BAP: { sector: "Financial Services", industry: "Banks - Diversified", name: "Credicorp Ltd." },
+    KBCSF: { sector: "Financial Services", industry: "Banks - Diversified", name: "KBC Group NV" },
+    TRU: { sector: "Financial Services", industry: "Credit Services", name: "TransUnion" },
+    BULL: { sector: "Financial Services", industry: "Capital Markets", name: "Webull Corporation" },
+    XP: { sector: "Financial Services", industry: "Capital Markets", name: "XP Inc." },
+
+    // Basic Materials (metals & mining)
+    AG: { sector: "Basic Materials", industry: "Silver", name: "First Majestic Silver Corp." },
+    AGI: { sector: "Basic Materials", industry: "Gold", name: "Alamos Gold Inc." },
+    EGO: { sector: "Basic Materials", industry: "Gold", name: "Eldorado Gold Corporation" },
+    EQX: { sector: "Basic Materials", industry: "Gold", name: "Equinox Gold Corp." },
+    IAG: { sector: "Basic Materials", industry: "Gold", name: "IAMGOLD Corporation" },
+    KGC: { sector: "Basic Materials", industry: "Gold", name: "Kinross Gold Corporation" },
+    PAAS: { sector: "Basic Materials", industry: "Silver", name: "Pan American Silver Corp." },
+    TECK: { sector: "Basic Materials", industry: "Industrial Metals & Mining", name: "Teck Resources Limited" },
+    HBM: { sector: "Basic Materials", industry: "Copper", name: "Hudbay Minerals Inc." },
+
+    // Industrials
+    AER: { sector: "Industrials", industry: "Rental & Leasing Services", name: "AerCap Holdings N.V." },
+    FTAI: { sector: "Industrials", industry: "Rental & Leasing Services", name: "FTAI Aviation Ltd." },
+    SUNB: { sector: "Industrials", industry: "Rental & Leasing Services", name: "Sunbelt Rentals Holdings, Inc." },
+    R: { sector: "Industrials", industry: "Rental & Leasing Services", name: "Ryder System, Inc." },
+    BAH: { sector: "Industrials", industry: "Consulting Services", name: "Booz Allen Hamilton Holding Corporation" },
+    GFL: { sector: "Industrials", industry: "Waste Management", name: "GFL Environmental Inc." },
+    APG: { sector: "Industrials", industry: "Security & Protection Services", name: "APi Group Corporation" },
+    CSL: { sector: "Industrials", industry: "Building Products & Equipment", name: "Carlisle Companies, Inc." },
+    WMS: { sector: "Industrials", industry: "Building Products & Equipment", name: "Advanced Drainage Systems, Inc." },
+    ULS: { sector: "Industrials", industry: "Consulting Services", name: "UL Solutions Inc." },
+    FRO: { sector: "Energy", industry: "Oil & Gas Midstream", name: "Frontline Plc" },
+    ADNH: { sector: "Industrials", industry: "Electrical Equipment & Parts", name: "Advent Technologies Holdings, Inc." },
+
+    // Healthcare
+    ASND: { sector: "Healthcare", industry: "Biotechnology", name: "Ascendis Pharma A/S" },
+    ICLR: { sector: "Healthcare", industry: "Diagnostics & Research", name: "ICON plc" },
+    MEDP: { sector: "Healthcare", industry: "Diagnostics & Research", name: "Medpace Holdings, Inc." },
+
+    // Communication Services
+    NYT: { sector: "Communication Services", industry: "Publishing", name: "The New York Times Company" },
+    TU: { sector: "Communication Services", industry: "Telecom Services", name: "TELUS Corporation" },
+    TIGO: { sector: "Communication Services", industry: "Telecom Services", name: "Millicom International Cellular S.A." },
+
+
+    // Consumer Cyclical
+    STLA: { sector: "Consumer Cyclical", industry: "Auto Manufacturers", name: "Stellantis N.V." },
+    VIK: { sector: "Consumer Cyclical", industry: "Travel Services", name: "Viking Holdings Ltd" },
+    SGI: { sector: "Consumer Cyclical", industry: "Furnishings, Fixtures & Appliances", name: "Somnigroup International Inc." },
+    SCI: { sector: "Consumer Cyclical", industry: "Personal Services", name: "Service Corporation International" },
+
+    // ETFs — Polygon returns no SIC for funds; label them what they are
+    SPY: { sector: "ETF", industry: "Exchange Traded Fund", name: "SPDR S&P 500 ETF Trust" },
+    QQQ: { sector: "ETF", industry: "Exchange Traded Fund", name: "Invesco QQQ Trust" },
+    DIA: { sector: "ETF", industry: "Exchange Traded Fund", name: "SPDR Dow Jones Industrial Average ETF Trust" },
   };

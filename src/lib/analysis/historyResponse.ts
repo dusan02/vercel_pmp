@@ -3,6 +3,7 @@ import { projectForward, pearson, buildStats, type PerSharePoint } from '@/lib/u
 import { computeTTMAtDate } from '@/lib/utils/ttm';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { applySplitAdjustments, applyPostSplitAdjustment, findNearestSplit, COMMON_SPLIT_RATIOS } from '@/lib/utils/splitAdjustment';
+import { isPeDistorted } from '@/lib/analysis/peDistortion';
 
 const HISTORY_CACHE_TTL = 3600; // 1 hour (valuation history changes slowly)
 
@@ -216,13 +217,29 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
             ? epsPerShareFilled.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPE).toFixed(2)) }))
             : [];
 
+        // Depressed-EPS distortion — dates where that day's P/E sits far above
+        // the stock's own median multiple (STM: 308× vs ~15× median). A
+        // PE-based intrinsic at those dates is not meaningful: EPS collapsed,
+        // the price didn't 20×-reprice. Auto mode falls back to P/S there and
+        // the PE series marks them unreliable instead of "200% overvalued".
+        const peRatioByDate = new Map<string, number>();
+        for (const r of weekly) {
+            if (VALID_PE(r.peRatio)) peRatioByDate.set(r.date.toISOString().split('T')[0]!, r.peRatio!);
+        }
+        const distortedPeDates = new Set<string>();
+        if (medianPE != null) {
+            for (const [d, peT] of peRatioByDate) {
+                if (isPeDistorted(peT, medianPE)) distortedPeDates.add(d);
+            }
+        }
+
         // Helper: build valuation history from a given intrinsic series
         // O(n+m) pointer-based — avoids O(n*m) filter inside map
         // Clamps undervaluation to [-200%, +200%] to prevent nonsensical extremes
         // (e.g. INTC with intrinsic $0.42 vs price $103 → -24538% is meaningless).
         // Also marks intrinsic as unreliable (null) when it's < 5% of price —
         // this happens when EPS/revenue is near-zero, making median×per-share meaningless.
-        function buildValuationHistory(intrinsicSrc: { date: string; impliedPrice: number }[]) {
+        function buildValuationHistory(intrinsicSrc: { date: string; impliedPrice: number }[], unreliableDates?: Set<string>) {
             const result: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[] = [];
             let lastIntrinsic: { date: string; impliedPrice: number } | null = null;
             let pi = 0;
@@ -235,7 +252,7 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
                 const intrinsic = lastIntrinsic.impliedPrice;
                 if (intrinsic <= 0) {
                     result.push({ date: p.date, price: p.price, intrinsic: 0, undervaluationPct: null });
-                } else if (intrinsic < p.price * 0.05) {
+                } else if (intrinsic < p.price * 0.05 || unreliableDates?.has(p.date)) {
                     // Intrinsic is < 5% of price — near-zero EPS/revenue makes this meaningless
                     result.push({ date: p.date, price: p.price, intrinsic, undervaluationPct: null });
                 } else {
@@ -248,15 +265,17 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
             return result;
         }
 
-        const valuationHistoryPE = buildValuationHistory(impliedPricePE);
+        const valuationHistoryPE = buildValuationHistory(impliedPricePE, distortedPeDates);
         const valuationHistoryPS = buildValuationHistory(impliedPricePS);
 
-        // Default: per-point PE/PS smart fallback — use PE when > 0, else PS
+        // Default: per-point PE/PS smart fallback — use PE when > 0 and not
+        // depressed-EPS distorted, else PS
         const valuationHistory = priceHistory.map((p, idx) => {
             const pePoint = valuationHistoryPE[idx];
             const psPoint = valuationHistoryPS[idx];
-            // Prefer PE when it has a valid positive intrinsic
-            if (pePoint && pePoint.intrinsic > 0) return pePoint;
+            // Prefer PE when it has a valid positive intrinsic — but skip it
+            // on distorted dates where P/S carries the real signal
+            if (pePoint && pePoint.intrinsic > 0 && !distortedPeDates.has(pePoint.date)) return pePoint;
             if (psPoint && psPoint.intrinsic > 0) return psPoint;
             // Both invalid — return PE point with null undervaluation
             return pePoint ?? psPoint ?? null;
@@ -308,8 +327,13 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
             ? epsForecast.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPE).toFixed(2)), isForecast: true }))
             : [];
 
-        // Default forecast: PE-preferred with PS fallback
-        const intrinsicForecastSeries = impliedPEForecast.length > 0 ? impliedPEForecast : impliedPSForecast;
+        // Default forecast: PE-preferred with PS fallback. When today's P/E is
+        // distorted by depressed EPS, the PE projection starts from a trough
+        // base — P/S projects from revenue, which doesn't have that problem.
+        const latestPeDistorted = isPeDistorted(latestPE, medianPE);
+        const intrinsicForecastSeries = (!latestPeDistorted && impliedPEForecast.length > 0)
+            ? impliedPEForecast
+            : (impliedPSForecast.length > 0 ? impliedPSForecast : impliedPEForecast);
         const intrinsicForecastPE = impliedPEForecast;
         const intrinsicForecastPS = impliedPSForecast;
 
