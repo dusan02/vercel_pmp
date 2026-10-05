@@ -53,7 +53,7 @@ const DOWN = '#dc2626'; // red
 const MA20 = '#2563eb'; // blue
 const MA50 = '#7c3aed'; // violet
 const VOL_SPIKE = '#d97706'; // amber — volume ≫ its own norm
-const REF52 = '#94a3b8'; // slate — 52W hi/lo lines
+const REF52 = '#64748b'; // slate-500 — 52W hi/lo lines (400 was too light on white)
 
 // User-togglable indicator set; persisted per-browser, default off.
 const IND_KEY = 'pmp:pricechart:indicators';
@@ -259,11 +259,13 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   const maDistances = useMemo(() => {
     const last = data[data.length - 1];
     if (!last) return null;
+    // Measure from the same price the header shows (live quote preferred).
+    const px = currentPrice ?? last.c;
     const out: { label: string; pct: number; color: string }[] = [];
-    if (inds.has('ma20') && last.sma20) out.push({ label: '20W', pct: ((last.c - last.sma20) / last.sma20) * 100, color: MA20 });
-    if (inds.has('ma50') && last.sma50) out.push({ label: '50W', pct: ((last.c - last.sma50) / last.sma50) * 100, color: MA50 });
+    if (inds.has('ma20') && last.sma20) out.push({ label: '20W', pct: ((px - last.sma20) / last.sma20) * 100, color: MA20 });
+    if (inds.has('ma50') && last.sma50) out.push({ label: '50W', pct: ((px - last.sma50) / last.sma50) * 100, color: MA50 });
     return out.length ? out : null;
-  }, [data, inds]);
+  }, [data, inds, currentPrice]);
 
   const stats = useMemo(() => {
     if (!data.length) return null;
@@ -451,7 +453,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             <Line type="monotone" dataKey="sma20" stroke={MA20} strokeWidth={1.5} dot={false} isAnimationActive={false} />
           )}
           {inds.has('ma50') && (
-            <Line type="monotone" dataKey="sma50" stroke={MA50} strokeWidth={1.5} dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey="sma50" stroke={MA50} strokeWidth={2} dot={false} isAnimationActive={false} />
           )}
           {/* Trailing 52-week high/low reference levels */}
           {inds.has('w52') && hiLo52 && (
@@ -460,13 +462,13 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                 y={hiLo52.hi}
                 stroke={REF52}
                 strokeDasharray="6 4"
-                label={{ value: `52W High $${hiLo52.hi.toFixed(2)}`, position: 'insideTopLeft', fontSize: 10, fill: REF52 }}
+                label={{ value: `52W High $${hiLo52.hi.toFixed(2)}`, position: 'insideBottomLeft', fontSize: 10, fill: REF52 }}
               />
               <ReferenceLine
                 y={hiLo52.lo}
                 stroke={REF52}
                 strokeDasharray="6 4"
-                label={{ value: `52W Low $${hiLo52.lo.toFixed(2)}`, position: 'insideBottomLeft', fontSize: 10, fill: REF52 }}
+                label={{ value: `52W Low $${hiLo52.lo.toFixed(2)}`, position: 'insideTopLeft', fontSize: 10, fill: REF52 }}
               />
             </>
           )}
