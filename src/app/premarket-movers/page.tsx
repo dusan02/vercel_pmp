@@ -9,6 +9,7 @@ import { prisma } from '@/lib/db/prisma';
 import { NotificationToggle } from '@/components/notifications/NotificationToggle';
 import { MoversExplorer } from '@/components/movers/MoversExplorer';
 import { getMoversData } from '@/services/movers/getMovers';
+import { DailyRecapCard, type DailyRecapData } from '@/components/home/DailyRecapCard';
 import { isMicrocap } from '@/services/movers/liquidity';
 
 export const revalidate = 60;
@@ -76,6 +77,25 @@ export default async function PremarketMoversPage() {
 
   const movers = moversData?.movers ?? [];
   const session = moversData?.session ?? 'closed';
+
+  // Latest daily recap — promotes /blog/[date] as the day's landing node.
+  const recapSnap = await prisma.dailyBlogSnapshot.findFirst({
+    where: { date: { not: { startsWith: 'weekly-' } } },
+    orderBy: { date: 'desc' },
+  }).catch(() => null);
+  let recapData: DailyRecapData | null = null;
+  if (recapSnap) {
+    try {
+      const overview = JSON.parse(recapSnap.overviewJson || '{}');
+      recapData = {
+        date: recapSnap.date,
+        sentiment: overview.sentiment,
+        gainers: JSON.parse(recapSnap.gainersJson || '[]'),
+        losers: JSON.parse(recapSnap.losersJson || '[]'),
+        bigMover: JSON.parse(recapSnap.mcapMoversJson || '[]')[0] ?? null,
+      };
+    } catch { recapData = null; }
+  }
   const gainers = movers.filter(m => (m.lastChangePct ?? 0) > 0.01);
   const losers = movers.filter(m => (m.lastChangePct ?? 0) < -0.01);
   // Liquid-only variants drive the headline/JSON-LD copy — a $0.00 penny
@@ -202,6 +222,12 @@ export default async function PremarketMoversPage() {
             {topLoser && ` Biggest decliner: ${topLoser.name ?? topLoser.symbol} (${topLoser.symbol}) at ${formatPercent(topLoser.lastChangePct ?? 0)}.`}
           </p>
         </div>
+
+        {recapData && (
+          <div className="mb-6">
+            <DailyRecapCard recap={recapData} />
+          </div>
+        )}
 
         {/* Three honest states — never claim "no movers" when data is missing */}
         {dataError ? (

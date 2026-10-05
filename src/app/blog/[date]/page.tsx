@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
+import { buildVerdict, type Verdict } from '@/lib/analysis/verdict';
+import type { PillarScores } from '@/services/analysis/pillars';
 
 export const revalidate = 3600;
 
@@ -123,14 +125,34 @@ function ChangeTag({ value, suffix = '%' }: { value: number; suffix?: string }) 
   );
 }
 
-function TickerRow({ stock, rank, eligible }: { stock: TickerSnapshot; rank: number; eligible: Set<string> }) {
+const VERDICT_DOT: Record<Verdict['tone'], string> = {
+  pos: 'bg-emerald-500',
+  warn: 'bg-amber-500',
+  neg: 'bg-red-500',
+  neutral: 'bg-gray-400',
+};
+
+function TickerRow({ stock, rank, eligible, verdict }: { stock: TickerSnapshot; rank: number; eligible: Set<string>; verdict?: Verdict | null }) {
   const isEligible = eligible.has(stock.ticker);
-  const content = (
+  const tickerLabel = (
     <>
+      <span className={`font-bold ${isEligible ? 'text-blue-600 dark:text-blue-400 group-hover:underline' : 'text-gray-700 dark:text-gray-300'}`}>{stock.ticker}</span>
+      {stock.name && <span className="ml-2 text-sm text-gray-500 dark:text-gray-400 truncate">{stock.name}</span>}
+    </>
+  );
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
       <span className="w-6 text-center text-sm text-gray-400 font-mono">{rank}</span>
       <div className="flex-1 min-w-0">
-        <span className={`font-bold ${isEligible ? 'text-blue-600 dark:text-blue-400 group-hover:underline' : 'text-gray-700 dark:text-gray-300'}`}>{stock.ticker}</span>
-        {stock.name && <span className="ml-2 text-sm text-gray-500 dark:text-gray-400 truncate">{stock.name}</span>}
+        {isEligible ? (
+          <Link href={`/analysis/${stock.ticker}`}>{tickerLabel}</Link>
+        ) : tickerLabel}
+        {verdict && (
+          <div className="mt-0.5 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 truncate">
+            <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${VERDICT_DOT[verdict.tone]}`} aria-hidden="true" />
+            <span className="truncate">{verdict.headline}</span>
+          </div>
+        )}
       </div>
       <div className="text-right shrink-0">
         <div><ChangeTag value={stock.percentChange} /></div>
@@ -140,22 +162,13 @@ function TickerRow({ stock, rank, eligible }: { stock: TickerSnapshot; rank: num
         <div className="text-xs text-gray-400">MCap Δ</div>
         <ChangeTag value={stock.marketCapDiff} suffix="B" />
       </div>
-    </>
-  );
-
-  if (isEligible) {
-    return (
       <Link
-        href={`/analysis/${stock.ticker}`}
-        className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
+        href={`/premarket/${stock.ticker}`}
+        className="shrink-0 text-xs font-medium text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+        title={`${stock.ticker} move history`}
       >
-        {content}
+        Moves →
       </Link>
-    );
-  }
-  return (
-    <div className="flex items-center gap-3 p-3 rounded-lg">
-      {content}
     </div>
   );
 }
@@ -178,6 +191,33 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
   const earnings: EarningsItem[] = Array.isArray(earningsParsed) ? earningsParsed : [];
   const isWeekly = isWeeklyDate(date) || overview.type === 'weekly-earnings';
   const eligibleAnalysis = await getEligibleAnalysisSet();
+
+  // Mini PMP verdicts — one batched AnalysisCache read powers a per-mover
+  // "Strong business, attractive price" chip under each ticker row.
+  const moverTickers = [...new Set([...gainers, ...losers, ...mcapMovers].map((s) => s.ticker))];
+  const verdicts = new Map<string, Verdict>();
+  if (moverTickers.length > 0) {
+    try {
+      const scores = await prisma.analysisCache.findMany({
+        where: { symbol: { in: moverTickers } },
+        select: {
+          symbol: true, valuationScore: true, growthScore: true,
+          profitabilityScore: true, healthScore: true, qualityScore: true,
+        },
+      });
+      for (const s of scores) {
+        const pillars = {
+          valuation: { score: s.valuationScore },
+          growth: { score: s.growthScore },
+          profitability: { score: s.profitabilityScore },
+          health: { score: s.healthScore },
+          quality: { score: s.qualityScore },
+        } as unknown as PillarScores;
+        const v = buildVerdict({ pillars });
+        if (v) verdicts.set(s.symbol, v);
+      }
+    } catch { /* verdicts are decorative — never break the page */ }
+  }
 
   // Parse weekly earnings breakdown if applicable
   let weeklyBreakdown: Array<{ date: string; total: number; preMarket: number; afterMarket: number; timeTbd: number; notable: Array<{ ticker: string; companyName: string | null; time: string; epsEstimate: number | null }> }> = [];
@@ -323,7 +363,7 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
           <section className="mb-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">🚀 Top Gainers</h2>
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {gainers.slice(0, 10).map((s, i) => <TickerRow key={s.ticker} stock={s} rank={i + 1} eligible={eligibleAnalysis} />)}
+              {gainers.slice(0, 10).map((s, i) => <TickerRow key={s.ticker} stock={s} rank={i + 1} eligible={eligibleAnalysis} verdict={verdicts.get(s.ticker) ?? null} />)}
             </div>
           </section>
         )}
@@ -333,7 +373,7 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
           <section className="mb-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">📉 Top Losers</h2>
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {losers.slice(0, 10).map((s, i) => <TickerRow key={s.ticker} stock={s} rank={i + 1} eligible={eligibleAnalysis} />)}
+              {losers.slice(0, 10).map((s, i) => <TickerRow key={s.ticker} stock={s} rank={i + 1} eligible={eligibleAnalysis} verdict={verdicts.get(s.ticker) ?? null} />)}
             </div>
           </section>
         )}
@@ -343,7 +383,7 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
           <section className="mb-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">💰 Biggest Market Cap Movers</h2>
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {mcapMovers.slice(0, 10).map((s, i) => <TickerRow key={s.ticker} stock={s} rank={i + 1} eligible={eligibleAnalysis} />)}
+              {mcapMovers.slice(0, 10).map((s, i) => <TickerRow key={s.ticker} stock={s} rank={i + 1} eligible={eligibleAnalysis} verdict={verdicts.get(s.ticker) ?? null} />)}
             </div>
           </section>
         )}

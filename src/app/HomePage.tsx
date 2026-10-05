@@ -2,7 +2,7 @@
 
 // Client component containing all page logic
 // This is imported by page.tsx (server component)
-import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 
 // All component imports moved to dynamic imports - fixed pattern for named exports
@@ -81,6 +81,10 @@ const WhatMovedToday = dynamic(
   () => import('@/components/home/WhatMovedToday').then((mod) => mod.WhatMovedToday),
   { ssr: true, loading: () => null }
 );
+const DailyRecapCard = dynamic(
+  () => import('@/components/home/DailyRecapCard').then((mod) => mod.DailyRecapCard),
+  { ssr: true, loading: () => null }
+);
 const YourTickersToday = dynamic(
   () => import('@/components/home/YourTickersToday').then((mod) => mod.YourTickersToday),
   { ssr: false, loading: () => null }
@@ -129,6 +133,7 @@ import { useUserPreferences } from '@/hooks/useUserPreferences';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { StockData } from '@/lib/types';
 import type { EarningsWeekDay } from '@/lib/seo/earningsSSR';
+import type { DailyRecapData } from '@/components/home/DailyRecapCard';
 import { autoRepairLocalStorage } from '@/lib/utils/localStorageCache';
 import { detectSession } from '@/lib/utils/timeUtils';
 import { useMobilePrefetch } from '@/hooks/useMobilePrefetch';
@@ -172,6 +177,27 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
   // Heatmap metric state lives here so the chips can render in the header
   // (directly under the tabs) while the map consumes the same selection.
   const { metric: heatmapMetric, setMetric: setHeatmapMetric } = useHeatmapMetric('percent');
+
+  // Today's daily recap — the latest non-weekly DailyBlogSnapshot promotes
+  // /blog/[date] into a daily landing node (gainers/losers → analysis pages).
+  const dailyRecap = useMemo<DailyRecapData | null>(() => {
+    const snap = (initialBlogSnapshots ?? []).find(
+      (s: any) => s?.date && !String(s.date).startsWith('weekly-'),
+    );
+    if (!snap) return null;
+    try {
+      const overview = JSON.parse(snap.overviewJson || '{}');
+      return {
+        date: snap.date,
+        sentiment: overview.sentiment,
+        gainers: JSON.parse(snap.gainersJson || '[]'),
+        losers: JSON.parse(snap.losersJson || '[]'),
+        bigMover: JSON.parse(snap.mcapMoversJson || '[]')[0] ?? null,
+      };
+    } catch {
+      return null;
+    }
+  }, [initialBlogSnapshots]);
 
   const {
     toggleFavorite, isFavorite,
@@ -492,6 +518,7 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                               SSR/anonymous output is identical. */}
                           <YourTickersToday />
                           <WhatMovedToday movers={initialMoversData} eligibleTickers={eligibleTickers} />
+                          {dailyRecap && <DailyRecapCard recap={dailyRecap} />}
                         </KeepAliveTab>
 
                         <KeepAliveTab active={activeSection === 'analysis'} className="tab-content fade-in">

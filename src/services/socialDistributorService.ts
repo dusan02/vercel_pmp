@@ -177,7 +177,14 @@ export class SocialDistributorService {
         });
         const header = kind === 'premarket' ? '🔔 Before the open:' : "📊 Today's biggest movers:";
         const cta = kind === 'premarket' ? 'Watch the open' : 'Full movers board';
-        const text = `${header}\n\n${lines.join('\n')}\n\n${cta} → https://premarketprice.com/premarket-movers`;
+        // When today's daily recap exists, route part of the click traffic to
+        // /blog/[date] — it fans out into analysis/premarket pages from there.
+        let recapLine = '';
+        try {
+          const snap = await prisma.dailyBlogSnapshot.findUnique({ where: { date }, select: { date: true } });
+          if (snap) recapLine = `\nFull recap → https://premarketprice.com/blog/${date}`;
+        } catch { /* link stays optional */ }
+        const text = `${header}\n\n${lines.join('\n')}\n\n${cta} → https://premarketprice.com/premarket-movers${recapLine}`;
 
         const poster = await this.getPoster();
         if (!poster) {
@@ -249,7 +256,7 @@ export class SocialDistributorService {
      */
     private withChannelUtm(text: string, source: string): string {
         return text.replace(
-            /https:\/\/premarketprice\.com\/(analysis\/[A-Za-z]+|premarket-movers)\b/g,
+            /https:\/\/premarketprice\.com\/(analysis\/[A-Za-z]+|premarket-movers|blog\/[A-Za-z0-9-]+)\b/g,
             `https://premarketprice.com/$1?utm_source=${source}&utm_medium=social&utm_campaign=movers`
         );
     }
