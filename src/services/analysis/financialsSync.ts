@@ -382,6 +382,11 @@ export async function syncFinancials(symbol: string): Promise<void> {
 
     const timeframes = ['annual', 'quarterly'];
 
+    // Finnhub has no OperatingIncomeLoss tag for many reporters (PSX) —
+    // their stored ebit is fabricated (GP−SGA etc.) and needs periodic
+    // SA verification even after the quarterly gap closes.
+    let ebitNeedsSaVerify = false;
+
     try {
         // Ensure Ticker row exists (FK requirement for FinancialStatement)
         await prisma.ticker.upsert({
@@ -493,6 +498,11 @@ export async function syncFinancials(symbol: string): Promise<void> {
                     // Without prefix
                     'OperatingIncomeLoss'
                 ]);
+                // True only when EBIT came from a real OperatingIncomeLoss
+                // tag. Fabricated fallbacks (GP−RnD−SGA, revenue−costs) must
+                // not clobber an existing SA-verified value on re-sync —
+                // Finnhub often lacks the opinc tag entirely (PSX).
+                const ebitIsReported = ebit !== null;
                 if (ebit === null && grossProfit !== null) {
                     const rnde = extract(report, 'ic', ['us-gaap_ResearchAndDevelopmentExpense']) || 0;
                     const sgae = extract(report, 'ic', ['us-gaap_SellingGeneralAndAdministrativeExpense']) || 0;
@@ -634,6 +644,16 @@ export async function syncFinancials(symbol: string): Promise<void> {
 
                 const netPPE = extract(report, 'bs', ['us-gaap_PropertyPlantAndEquipmentNet']);
 
+                const existing = await prisma.financialStatement.findUnique({
+                    where: { symbol_fiscalYear_fiscalPeriod: { symbol, fiscalYear, fiscalPeriod } },
+                    select: { ebit: true },
+                });
+                // Fabricated ebit (not OperatingIncomeLoss) may not replace
+                // an existing value — SA gapfill repairs would regress on
+                // every re-sync. Reported ebit and null-fills still write.
+                const writeEbit = ebitIsReported || existing?.ebit == null;
+                if (ebit !== null && !ebitIsReported) ebitNeedsSaVerify = true;
+
                 await prisma.financialStatement.upsert({
                     where: {
                         symbol_fiscalYear_fiscalPeriod: {
@@ -644,11 +664,12 @@ export async function syncFinancials(symbol: string): Promise<void> {
                     },
                     update: {
                         endDate: new Date(endDate),
-                        revenue, netIncome, ebit, operatingCashFlow,
+                        revenue, netIncome, operatingCashFlow,
                         capex: absOrNull(capex),
                         totalAssets, totalLiabilities, currentAssets, currentLiabilities,
                         retainedEarnings, totalEquity, sharesOutstanding,
-                        sbc: absOrNull(sbc), interestExpense, totalDebt, cashAndEquivalents, grossProfit, netPPE
+                        sbc: absOrNull(sbc), interestExpense, totalDebt, cashAndEquivalents, grossProfit, netPPE,
+                        ...(writeEbit ? { ebit } : {}),
                     },
                     create: {
                         symbol, period: fiscalPeriod, endDate: new Date(endDate),
@@ -690,10 +711,11 @@ export async function syncFinancials(symbol: string): Promise<void> {
         select: { endDate: true },
     });
     const STALE_MS = 100 * 24 * 60 * 60 * 1000; // ~1 quarter + reporting lag
-    if (latestQuarterly && Date.now() - latestQuarterly.endDate.getTime() > STALE_MS) {
+    const staleQuarterly = !!(latestQuarterly && Date.now() - latestQuarterly.endDate.getTime() > STALE_MS);
+    if (staleQuarterly || ebitNeedsSaVerify) {
         const saCount = await syncFromStockAnalysis(symbol, 'gapfill');
         if (saCount > 0) {
-            console.log(`[syncFinancials] ${symbol}: SA gapfill touched ${saCount} rows (latest Finnhub q=${latestQuarterly.endDate.toISOString().slice(0, 10)})`);
+            console.log(`[syncFinancials] ${symbol}: SA gapfill touched ${saCount} rows (staleQ=${staleQuarterly}, ebitVerify=${ebitNeedsSaVerify})`);
         }
     }
 }
