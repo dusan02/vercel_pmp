@@ -67,3 +67,33 @@ describe('computeDayRatios — share-count fallback', () => {
         expect(r.fcfYield!).toBeGreaterThan(0);
     });
 });
+
+// V-shaped regression (2026-10): statement shares 1.883B vs trusted ticker
+// shares 1.867B — the ~0.9% drift surfaced as chart EPS $11.92 vs page
+// EPS $12.02 on the same ticker. Rule: trusted basis for dates on/after the
+// latest statement period end (the "current" point), statement shares before.
+const vStatements = [
+    stmt({ fiscalPeriod: 'Q3', fiscalYear: 2026, endDate: new Date('2026-03-28T00:00:00Z'), netIncome: 22.45e9, sharesOutstanding: 1.883e9 }),
+];
+
+describe('computeDayRatios — trusted share basis', () => {
+    const asOf = new Date('2026-04-10T04:00:00Z'); // after latest stmt end
+
+    it('uses trustedShares at the current point → implied EPS matches the page', () => {
+        const r = computeDayRatios(vStatements, 369.71, asOf, 1.867e9);
+        expect(r.marketCap).toBeCloseTo(369.71 * 1.867e9, -5);
+        // implied EPS = 22.45/1.867 ≈ 12.02 → P/E ≈ 30.75 (page-canonical)
+        expect(r.peRatio).toBeCloseTo(369.71 / (22.45e9 / 1.867e9), 1);
+    });
+
+    it('keeps statement shares for dates before the latest statement end', () => {
+        const past = new Date('2026-03-01T00:00:00Z');
+        const r = computeDayRatios(vStatements, 369.71, past, 1.867e9);
+        expect(r.marketCap).toBeCloseTo(369.71 * 1.883e9, -5);
+    });
+
+    it('falls back to statement shares when trustedShares is null/absent', () => {
+        const r = computeDayRatios(vStatements, 369.71, asOf);
+        expect(r.marketCap).toBeCloseTo(369.71 * 1.883e9, -5);
+    });
+});

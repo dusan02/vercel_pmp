@@ -169,6 +169,13 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
             console.warn(`No financials available for ${symbol}, can't calculate complete multiples.`);
         }
 
+        // Trusted share count for the current valuation point — computeDayRatios
+        // applies it only to dates on/after the latest statement period end.
+        const ticker = await prisma.ticker.findUnique({
+            where: { symbol },
+            select: { sharesOutstanding: true },
+        });
+
         const transactions = [];
 
         for (const agg of aggs) {
@@ -181,7 +188,7 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
             // single implementation shared with fillValuationDay (EV leg is
             // EV/EBIT — D&A not available from Finnhub).
             const { marketCap, peRatio, psRatio, evEbitda, fcfYield } =
-                computeDayRatios(statements, closePrice, date);
+                computeDayRatios(statements, closePrice, date, ticker?.sharesOutstanding ?? null);
 
             transactions.push(
                 prisma.dailyValuationHistory.upsert({

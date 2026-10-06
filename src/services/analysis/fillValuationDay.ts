@@ -55,8 +55,16 @@ export interface DayRatios {
  * gating all ratios on the newest row's share count produced null P/E for the
  * whole ticker. We take shares from the most recent statement that reports
  * them; balance-sheet fields still come from the latest statement.
+ *
+ * `trustedShares` (Ticker.sharesOutstanding) applies only on/after the
+ * latest statement's period end: that is the "current" valuation point, and
+ * the read path (computeMetrics' currentShareCount) already uses the trusted
+ * count there — so the stored P/E and the implied EPS match what the analysis
+ * page shows (V: EPS 12.02, not 11.92). Earlier dates keep statement shares:
+ * the share base legitimately differed at those dates (buybacks/splits), so
+ * period shares are the correct historical basis.
  */
-export function computeDayRatios(statements: FinancialStatement[], closePrice: number, asOf: Date): DayRatios {
+export function computeDayRatios(statements: FinancialStatement[], closePrice: number, asOf: Date, trustedShares: number | null = null): DayRatios {
     const out: DayRatios = { marketCap: null, peRatio: null, psRatio: null, evEbitda: null, fcfYield: null };
     const ttm = computeTTMAtDate(statements, asOf);
     const stmtsBeforeDate = statements.filter(s => s.endDate.getTime() <= asOf.getTime());
@@ -66,7 +74,11 @@ export function computeDayRatios(statements: FinancialStatement[], closePrice: n
     // fall back per-field-group to the most recent statement that reports it.
     const latestWith = (pred: (s: FinancialStatement) => boolean) =>
         stmtsBeforeDate.find(pred) ?? statements.find(pred) ?? null;
-    const shares = latestWith((s) => s.sharesOutstanding != null && s.sharesOutstanding > 0)?.sharesOutstanding ?? null;
+    const stmtShares = latestWith((s) => s.sharesOutstanding != null && s.sharesOutstanding > 0)?.sharesOutstanding ?? null;
+    const shares = trustedShares != null && trustedShares > 0
+        && statements.length > 0 && asOf.getTime() >= statements[0]!.endDate.getTime()
+        ? trustedShares
+        : stmtShares;
 
     if (shares) {
         out.marketCap = closePrice * shares;
@@ -134,6 +146,7 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
     // ~1k symbols is fine for Prisma's auto-split, but chunking keeps the bound
     // explicit and memory modest.
     const stmtsBySymbol = new Map<string, FinancialStatement[]>();
+    const trustedSharesBySymbol = new Map<string, number | null>();
     const chunkSize = 400;
     for (let i = 0; i < targets.length; i += chunkSize) {
         const chunk = targets.slice(i, i + chunkSize).map(r => r.symbol);
@@ -145,6 +158,12 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
             const list = stmtsBySymbol.get(row.symbol);
             if (list) list.push(row); else stmtsBySymbol.set(row.symbol, [row]);
         }
+        // Trusted share count — the canonical basis the analysis page uses.
+        const tickers = await prisma.ticker.findMany({
+            where: { symbol: { in: chunk } },
+            select: { symbol: true, sharesOutstanding: true },
+        });
+        for (const t of tickers) trustedSharesBySymbol.set(t.symbol, t.sharesOutstanding);
     }
 
     const inserts: ValuationRow[] = [];
@@ -155,7 +174,7 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
         try {
             const statements = stmtsBySymbol.get(ref.symbol) ?? [];
             const { marketCap, peRatio, psRatio, evEbitda, fcfYield } =
-                computeDayRatios(statements, closePrice, ref.date);
+                computeDayRatios(statements, closePrice, ref.date, trustedSharesBySymbol.get(ref.symbol) ?? null);
 
             if (peRatio === null && psRatio === null) result.priceOnly++;
 
