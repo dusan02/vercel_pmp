@@ -24,6 +24,7 @@
 - **`pkill -f "next build"` v ssh-action skripte SA ZABÍJA** — ssh-action posiela celý skript ako argv shellu, takže literal pattern matchne vlastný shell → exit 143. Používaj bracket trick `[n]ext buil[d]` a nikdy nepíš process name do komentárov inline skriptu
 - **Aktivácia beží detached** (setsid+nohup → `/var/log/pmp-deploy.log`, Actions poll-uje `=== Done ===`/`ACTIVATION_FAILED`) — synchrónne ssh sa ukázalo ako nespoľahlivé: session dropne a zabije inak úspešný deploy
 - `prisma db push` NIKDY s `--accept-data-loss` na produkcii
+- **Production SQLite schema NIE JE Prisma-migration-tracked** — `_prisma_migrations` tabuľka na prode neexistuje (schéma sa historicky robila cez `db push`). Deployment contract pre schema zmeny: (1) additívna zmena v `schema.prisma` + `schema.postgres.prisma`, (2) migration súbor do repa ako dokumentácia, (3) na prode priamy `ALTER TABLE` cez better-sqlite3 (`busy_timeout` zvládne WAL lock). NESPOLIEHAŤ sa na `prisma migrate deploy` na VPS — zlyhá na chýbajúcej migrations tabuľke alebo DB locku. Lokálna dev DB (`prisma/dev.db`) je prázdna — `Error in Screener API` počas `next build` je env noise, nie failure.
 - Sitemap aj blog majú ISR (`revalidate`) — po pridaní nových URL type over, či sitemap nie je statická
 - Docs-only push: pridaj `[skip ci]` do commit message, inak spustí plný rebuild na VPS
 

@@ -19,6 +19,8 @@ import { isPeDistorted } from '@/lib/analysis/peDistortion';
 
 export interface VerdictInput {
     pillars?: PillarScores | null;
+    /** No financial statements at all — distinguish "unavailable" from "weak". */
+    insufficientData?: boolean | null;
     pePercentile?: number | null;   // 0–100 vs own history; low = cheap
     peCurrent?: number | null;
     peMedian?: number | null;
@@ -237,6 +239,22 @@ export function buildVerdict(input: VerdictInput): Verdict | null {
     const marketContext: MarketContext | null = hasContext
         ? { changePct: pctChange ?? 0, zScore: z, rvol: input.moversRvol ?? null, reason: input.moversReason ?? null }
         : null;
+
+    // ── No fundamentals ≠ weak fundamentals ───────────────────────────────
+    // ADR/foreign tickers with zero stored statements (TSM, NVO, BABA) used
+    // to fall through pillar scoring as 0-scores → "Weak fundamentals".
+    // That's a lie: we don't know the fundamentals, we don't have them.
+    if (input.insufficientData) {
+        return {
+            tone: 'neutral',
+            headline: 'Insufficient financial data',
+            strengths: [],
+            risks: [],
+            evidence: [],
+            bottomLine: 'No financial statements on file for this ticker — fundamental scores are not computed.',
+            marketContext,
+        };
+    }
 
     // ── Headline + bottom line ────────────────────────────────────────────
     if (fundamentals == null) {

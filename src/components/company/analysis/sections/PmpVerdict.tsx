@@ -3,6 +3,7 @@ import type { PillarScores } from '@/services/analysis/pillars';
 
 interface PmpVerdictProps {
     pillars?: PillarScores | null;
+    insufficientData?: boolean | null;
     pePercentile?: number | null;
     peCurrent?: number | null;
     peMedian?: number | null;

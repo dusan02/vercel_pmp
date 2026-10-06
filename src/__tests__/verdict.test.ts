@@ -154,3 +154,29 @@ describe('cyclical-recovery guard (#31)', () => {
         expect(v?.headline).toContain('expensive');
     });
 });
+
+describe('insufficient data — ADR/foreign tickers without statements', () => {
+    it('TSM-like: zero statements → "insufficient data", never "weak fundamentals"', () => {
+        const v = buildVerdict({
+            pillars: pillars({ growth: 0, profitability: 50, health: 43, quality: 0, valuation: 0 }),
+            insufficientData: true,
+            forwardPe: 18.9,
+        });
+        expect(v?.headline).toBe('Insufficient financial data');
+        expect(v?.tone).toBe('neutral');
+        expect(v?.strengths).toHaveLength(0);
+        expect(v?.risks).toHaveLength(0);
+        expect(v?.evidence).toHaveLength(0);
+    });
+
+    it('keeps market context even without fundamentals (mover ADR)', () => {
+        const v = buildVerdict({
+            insufficientData: true,
+            changePct: -4.2,
+            moversReason: 'Earnings miss',
+        });
+        expect(v?.headline).toBe('Insufficient financial data');
+        expect(v?.marketContext?.changePct).toBe(-4.2);
+        expect(v?.marketContext?.reason).toBe('Earnings miss');
+    });
+});

@@ -219,7 +219,10 @@ export default async function AnalysisPage({ params }: PageProps) {
   // loads). Analyst consensus renders as a compact strip in the hero.
   // The EW score stays a Key Metrics cell — it is a quant timing signal,
   // not a fundamental pillar.
-  const hasPillars = analysisData?.pillars != null
+  // 0-statement tickers (ADRs Finnhub doesn't cover) get zero pillars —
+  // hide the radar/chips rather than show garbage scores, and let the
+  // verdict say "insufficient data" instead.
+  const hasPillars = analysisData?.pillars != null && !analysisData?.insufficientData
     && (analysisData.statements?.length ?? 0) > 0;
   const ewScore = data?.ewScoreSnapshots?.[0] ?? null;
 
@@ -325,6 +328,7 @@ export default async function AnalysisPage({ params }: PageProps) {
                   context already rendered deeper down the page. */}
               <PmpVerdict
                 pillars={analysisData?.pillars ?? null}
+                insufficientData={analysisData?.insufficientData ?? null}
                 pePercentile={analysisData?.valuationHistoryStats?.pe?.percentile ?? null}
                 peCurrent={displayPeRatio}
                 peMedian={analysisData?.valuationHistoryStats?.pe?.median ?? null}

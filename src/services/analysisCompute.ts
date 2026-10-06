@@ -313,6 +313,11 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         ? ((totalDebt || 0) - (cash || 0)) / totalAssets
         : null;
 
+    // 0 statements with fundamentals ≠ weak fundamentals — ADR/foreign
+    // names Finnhub doesn't cover (TSM, NVO, BABA) must render as
+    // "insufficient data", never as a low-quality company.
+    const insufficientData = !stmts.some(s => s.revenue != null || s.netIncome != null);
+
     const pillarsInput = {
         pePercentile: valuationHistoryStats?.pe.percentile ?? null,
         fcfYield: currentFcfYield ?? latestValuation?.fcfYield ?? null,
@@ -343,6 +348,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
 
     return {
         ...analysis,
+        insufficientData,
         negativeNiYears: summarizeLossYears(stmts).lossYears,
         statements: stmts,
         balanceSheet: {

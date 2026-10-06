@@ -71,6 +71,7 @@ async function main() {
                 : '—';
             const verdict = buildVerdict({
                 pillars,
+                insufficientData: (m as any).insufficientData ?? null,
                 pePercentile: vhs?.pe.percentile ?? null,
                 peCurrent: vhs?.pe.current ?? null,
                 peMedian: vhs?.pe.median ?? null,

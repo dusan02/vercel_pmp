@@ -207,6 +207,8 @@ export interface AnalysisData {
     humanPeInfo?: string | null;
     marginStability?: number | null;
     negativeNiYears?: number | null;
+    /** No statements carry any fundamentals — show "insufficient data", not weak scores. */
+    insufficientData?: boolean | null;
     ticker?: TickerInfo | null;
     balanceSheet?: BalanceSheetSummary | null;
     ttm?: TTMData | null;
