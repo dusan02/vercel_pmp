@@ -101,3 +101,58 @@ describe('computeDayRatios — trusted share basis', () => {
         expect(r.marketCap).toBeCloseTo(369.71 * 1.883e9, -5);
     });
 });
+
+// NFLX-shaped regression (2026-10): ~10:1 split between the Sep-2025
+// (435M shares) and Dec-2025 (4.34B) statements. closePrice is
+// split-adjusted; raw pre-split share counts would understate mcap and
+// every market multiple by ~10× (observed prod: mcap $27B, P/B 1.97 on a
+// 2021 row that should read ~$265B / ~17×).
+const nflxStatements = [
+    stmt({ fiscalPeriod: 'Q2', fiscalYear: 2026, endDate: new Date('2026-06-30T00:00:00Z'), sharesOutstanding: 4.164e9 }),
+    stmt({ fiscalPeriod: 'Q1', fiscalYear: 2026, endDate: new Date('2026-03-30T00:00:00Z'), sharesOutstanding: 4.298e9 }),
+    stmt({ fiscalPeriod: 'Q4', fiscalYear: 2025, endDate: new Date('2025-12-30T00:00:00Z'), sharesOutstanding: 4.344e9, netIncome: 3.2e9, revenue: 12e9 }),
+    stmt({ fiscalPeriod: 'Q3', fiscalYear: 2025, endDate: new Date('2025-09-29T00:00:00Z'), sharesOutstanding: 0.435e9, netIncome: 2.9e9, revenue: 11e9 }),
+    stmt({ fiscalPeriod: 'Q2', fiscalYear: 2025, endDate: new Date('2025-06-30T00:00:00Z'), sharesOutstanding: 0.438e9, netIncome: 3.06e9, revenue: 11e9, totalEquity: 13.9e9 }),
+    stmt({ fiscalPeriod: 'FY', fiscalYear: 2024, endDate: new Date('2024-12-31T00:00:00Z'), sharesOutstanding: 0.44e9, netIncome: 8.7e9 }),
+];
+
+describe('computeDayRatios — split-normalized shares', () => {
+    it('normalizes pre-split statement shares by the detected split factor', () => {
+        // asOf in the pre-split era, split-adjusted close
+        const r = computeDayRatios(nflxStatements, 60, new Date('2025-08-01T04:00:00Z'), 4.164e9);
+        // Q2'25 stmt shares 438M × 10 = 4.38B → mcap ≈ $262.8B (not $26B)
+        expect(r.marketCap).toBeCloseTo(60 * 4.38e9, -9);
+        // P/B uses normalized mcap: 262.8B / 13.9B equity ≈ 18.9
+        expect(r.pbRatio).toBeCloseTo((60 * 4.38e9) / 13.9e9, 0);
+    });
+
+    it('keeps post-split statements unnormalized (factor 1)', () => {
+        const r = computeDayRatios(nflxStatements, 68.69, new Date('2026-01-15T04:00:00Z'), 4.164e9);
+        // latest stmt ≤ asOf is Q4'25 (4.344B, post-split)
+        expect(r.marketCap).toBeCloseTo(68.69 * 4.344e9, -9);
+    });
+
+    it('still prefers trustedShares for dates after the latest statement', () => {
+        const r = computeDayRatios(nflxStatements, 68.69, new Date('2026-10-06T04:00:00Z'), 4.164e9);
+        expect(r.marketCap).toBeCloseTo(68.69 * 4.164e9, -9);
+    });
+
+    it('anchors a split newer than the latest statement on trustedShares', () => {
+        // All statements pre-split (Finnhub not yet updated); ticker count
+        // already reflects the split → anchor boundary after latest stmt.
+        const preSplitOnly = nflxStatements.slice(3); // Q3'25 and older
+        const r = computeDayRatios(preSplitOnly, 60, new Date('2025-08-01T04:00:00Z'), 4.35e9);
+        expect(r.marketCap).toBeCloseTo(60 * 4.38e9, -9);
+    });
+
+    it('does not treat organic share growth (<1.5×) as a split', () => {
+        const organic = [
+            stmt({ fiscalPeriod: 'Q2', fiscalYear: 2026, endDate: new Date('2026-06-30T00:00:00Z'), sharesOutstanding: 1.12e9 }),
+            stmt({ fiscalPeriod: 'Q1', fiscalYear: 2026, endDate: new Date('2026-03-30T00:00:00Z'), sharesOutstanding: 1.10e9 }),
+            stmt({ fiscalPeriod: 'Q4', fiscalYear: 2025, endDate: new Date('2025-12-30T00:00:00Z'), sharesOutstanding: 1.08e9 }),
+        ];
+        const r = computeDayRatios(organic, 50, new Date('2026-04-01T04:00:00Z'), 1.12e9);
+        // latest stmt ≤ asOf is Q1'26 (1.10e9) — unnormalized, factor 1
+        expect(r.marketCap).toBeCloseTo(50 * 1.10e9, -9);
+    });
+});

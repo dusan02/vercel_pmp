@@ -15,6 +15,7 @@
 import type { FinancialStatement } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { computeTTMAtDate } from '@/lib/utils/ttm';
+import { findNearestSplit } from '@/lib/utils/splitAdjustment';
 import { dbWriteRetry as dbWrite } from '@/lib/db/writeRetry';
 
 interface ValuationRow {
@@ -97,7 +98,55 @@ export function computeDayRatios(statements: FinancialStatement[], closePrice: n
     // fall back per-field-group to the most recent statement that reports it.
     const latestWith = (pred: (s: FinancialStatement) => boolean) =>
         stmtsBeforeDate.find(pred) ?? statements.find(pred) ?? null;
-    const stmtShares = latestWith((s) => s.sharesOutstanding != null && s.sharesOutstanding > 0)?.sharesOutstanding ?? null;
+
+    // Split-normalized share counts: close prices are split-adjusted while
+    // statement sharesOutstanding are as-reported — for pre-split dates the
+    // raw pair understates every per-share ratio by the cumulative split
+    // factor (NFLX 2021: mcap $27B instead of ~$265B, P/B ~2 instead of ~17).
+    // Detect split boundaries from consecutive quarterly share-count jumps
+    // (>1.5×, snapped to common ratios) — the same fallback heuristic the TTM
+    // repair script uses when Polygon splits are unavailable. A split newer
+    // than the latest statement is anchored on trustedShares (equivalent of
+    // applyPostSplitAdjustment). No mutation of `statements`.
+    const quarterlyAsc = statements
+        .filter((s) => s.fiscalPeriod && s.fiscalPeriod !== 'FY')
+        .sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
+    const boundaries: { after: number; ratio: number }[] = [];
+    for (let i = 1; i < quarterlyAsc.length; i++) {
+        const prev = quarterlyAsc[i - 1]!.sharesOutstanding;
+        const curr = quarterlyAsc[i]!.sharesOutstanding;
+        if (prev != null && prev > 0 && curr != null && curr > 0) {
+            const jump = curr / prev;
+            if (jump > 1.5) {
+                const nearest = findNearestSplit(jump);
+                if (Math.abs(jump - nearest) / nearest <= 0.15) {
+                    boundaries.push({ after: quarterlyAsc[i - 1]!.endDate.getTime(), ratio: nearest });
+                }
+            }
+        }
+    }
+    const latestQ = quarterlyAsc[quarterlyAsc.length - 1];
+    if (trustedShares != null && trustedShares > 0 && latestQ?.sharesOutstanding != null && latestQ.sharesOutstanding > 0) {
+        const jump = trustedShares / latestQ.sharesOutstanding;
+        if (jump > 1.5) {
+            const nearest = findNearestSplit(jump);
+            if (Math.abs(jump - nearest) / nearest <= 0.15) {
+                boundaries.push({ after: latestQ.endDate.getTime(), ratio: nearest });
+            }
+        }
+    }
+    const shareFactor = (s: FinancialStatement) => {
+        let f = 1;
+        for (const b of boundaries) {
+            if (s.endDate.getTime() <= b.after) f *= b.ratio;
+        }
+        return f;
+    };
+
+    const sharesStmt = latestWith((s) => s.sharesOutstanding != null && s.sharesOutstanding > 0);
+    const stmtShares = sharesStmt?.sharesOutstanding != null
+        ? sharesStmt.sharesOutstanding * shareFactor(sharesStmt)
+        : null;
     const shares = trustedShares != null && trustedShares > 0
         && statements.length > 0 && asOf.getTime() >= statements[0]!.endDate.getTime()
         ? trustedShares
