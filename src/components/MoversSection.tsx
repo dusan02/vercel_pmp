@@ -154,7 +154,7 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
 
         const sigmaLabel = absZ >= 5 ? 'Extreme' : absZ >= 3 ? 'Very unusual' : absZ >= 2 ? 'Unusual' : '';
         return (
-            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border ${colorClass}`}>
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold border ${colorClass}`}>
                 <Zap size={10} fill="currentColor" />
                 <span>{absZ.toFixed(1)}σ{sigmaLabel ? ` ${sigmaLabel}` : ''}</span>
                 {renderConfidenceMeter()}
@@ -165,11 +165,11 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
     const renderContextLine = (a: MoverAnalysis) => {
         const fmt = (v: number | null) => v === null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
         return (
-            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-slate-500 tabular-nums">
-                <span>Sector <span className="font-semibold text-slate-600">{fmt(a.sectorChangePct)}</span></span>
-                <span>Mkt <span className="font-semibold text-slate-600">{fmt(a.marketChangePct)}</span></span>
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
+                <span>Sector <span className="font-semibold text-slate-600 dark:text-slate-300">{fmt(a.sectorChangePct)}</span></span>
+                <span>Mkt <span className="font-semibold text-slate-600 dark:text-slate-300">{fmt(a.marketChangePct)}</span></span>
                 {a.excessMovePct !== null && (
-                    <span>Excess <span className={`font-semibold ${a.excessMovePct >= 0 ? 'text-green-600' : 'text-red-500'}`}>{fmt(a.excessMovePct)}</span></span>
+                    <span>Excess <span className={`font-semibold ${a.excessMovePct >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>{fmt(a.excessMovePct)}</span></span>
                 )}
             </div>
         );
@@ -181,8 +181,8 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
         const dot = c.confidence === 'high' ? 'bg-green-500' : c.confidence === 'medium' ? 'bg-amber-500' : 'bg-slate-400';
         const evidence = c.evidence?.find(e => e.url);
         return (
-            <div className="mt-1.5 text-[11px] leading-snug">
-                <div className="flex items-center gap-1.5 font-semibold text-slate-700">
+            <div className="mt-1.5 text-xs leading-snug">
+                <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-200">
                     <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
                     <span>{c.label}</span>
                     {c.status === 'found' && c.confidence !== 'high' && (
@@ -192,7 +192,7 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                     )}
                 </div>
                 {c.explanation && (
-                    <div className="text-slate-500 mt-0.5">{c.explanation}</div>
+                    <div className="text-slate-500 dark:text-slate-400 mt-0.5">{c.explanation}</div>
                 )}
                 {evidence?.url && (
                     <a href={evidence.url} target="_blank" rel="noopener noreferrer"
@@ -212,7 +212,10 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
         const parts = [seg('V', p.valuation), seg('G', p.growth), seg('P', p.profitability), seg('H', p.health), seg('Q', p.quality)].filter(Boolean);
         if (parts.length === 0) return null;
         return (
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] tabular-nums text-slate-500">
+            <div
+                className="ml-auto flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] tabular-nums text-slate-500 dark:text-slate-400"
+                title="PMP pillar scores — Valuation / Growth / Profitability / Health / Quality (0–100)"
+            >
                 <span className="font-semibold text-slate-400 uppercase tracking-wide">PMP</span>
                 {parts.map((s, i) => <span key={i} className="font-medium">{s}</span>)}
                 {p.ewScore !== null && (
@@ -232,7 +235,7 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
             : 'bg-blue-500/15 text-blue-400 border-blue-500/20';
 
         return (
-            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${colorClass}`}>
+            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border ${colorClass}`}>
                 VOL: {rvol.toFixed(1)}x
             </div>
         );
@@ -259,7 +262,7 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
         };
 
         return (
-            <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider font-black border ${colors[category] || 'bg-gray-500/20 text-gray-300 border-gray-500/30'}`}>
+            <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider font-black border ${colors[category] || 'bg-gray-500/20 text-gray-300 border-gray-500/30'}`}>
                 {category}
             </span>
         );
@@ -277,69 +280,58 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
             Math.abs((mover.lastChangePct || 0) - sectorData.avgChange) > 5;
 
         const companyName = getCompanyName(mover.symbol);
+        const pct = mover.lastChangePct;
+        const pctColor = pct != null && pct >= 0
+            ? 'text-green-600 dark:text-green-400'
+            : 'text-red-500 dark:text-red-400';
+        // Footer strip renders only when there's something to show — cards
+        // without analysis stay compact instead of rendering an empty band.
+        const hasFooter = mover.latestMoversZScore !== null
+            || (mover.latestMoversRVOL ?? 0) >= 1.5
+            || !!mover.analysis;
         return (
             <motion.div
                 key={mover.symbol}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className={`group relative bg-white hover:bg-slate-50 border p-3.5 rounded-2xl transition-all shadow-sm hover:shadow-md ${isIdiosyncratic ? 'border-yellow-400 border-2' : 'border-slate-200'
+                className={`group relative bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 border rounded-2xl transition-all shadow-sm hover:shadow-md overflow-hidden ${isIdiosyncratic ? 'border-yellow-400 border-2' : 'border-slate-200 dark:border-slate-800'
                     }`}
             >
-                {/* Left accent line */}
-                <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full transition-colors ${mover.lastChangePct && mover.lastChangePct >= 0 ? 'bg-green-500' : 'bg-red-500'
+                {/* Left accent line — direction of the move */}
+                <div className={`absolute left-0 top-3 bottom-3 w-1 rounded-r-full transition-colors ${pct != null && pct >= 0 ? 'bg-green-500' : 'bg-red-500'
                     }`} />
 
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 p-3.5 pb-2.5">
                     {/* Logo & Symbol */}
                     <div className="flex-shrink-0 cursor-pointer mt-0.5" onClick={() => onTileClick?.(mover.symbol)}>
                         <CompanyLogo ticker={mover.symbol} logoUrl={mover.logoUrl} size={40} className="rounded-md shadow-sm border border-gray-100 dark:border-gray-800 bg-gray-100 dark:bg-gray-800" />
                     </div>
 
                     <div className="flex-1 min-w-0">
-                        {/* Row 1: Symbol + Name + Category + Price */}
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                            <div className="min-w-0 cursor-pointer" onClick={() => onTileClick?.(mover.symbol)}>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-bold text-base text-gray-900 dark:text-gray-100 leading-tight">{mover.symbol}</span>
-                                    {/* getCompanyName falls back to the ticker — don't print "CTVA CTVA" */}
-                                    {companyName !== mover.symbol && (
-                                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate hidden sm:inline leading-tight">{companyName}</span>
-                                    )}
-                                    {renderCategoryBadge(mover.moversCategory)}
-                                    {isIdiosyncratic && (
-                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wide bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700">
-                                            Idiosyncratic
-                                        </span>
-                                    )}
-                                </div>
-
-                                {/* Row 2: deterministic catalyst (primary) or AI reason */}
-                                {mover.analysis ? renderCatalyst(mover.analysis) : (
-                                    <div className={`mt-1.5 text-[11px] leading-tight font-medium ${!mover.moversReason
-                                        ? 'text-slate-300 italic'
-                                        : mover.lastChangePct && mover.lastChangePct >= 2
-                                            ? 'text-green-700'
-                                            : mover.lastChangePct && mover.lastChangePct <= -2
-                                                ? 'text-red-600'
-                                                : 'text-slate-500'
-                                        }`}>
-                                        {mover.moversReason
-                                            ? `"${mover.moversReason}"`
-                                            : 'Analyzing market catalyst...'}
-                                    </div>
+                        {/* Row 1: identity left, the move right — % leads, price supports */}
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex items-center gap-2 flex-wrap cursor-pointer" onClick={() => onTileClick?.(mover.symbol)}>
+                                <span className="font-bold text-lg text-gray-900 dark:text-gray-100 leading-tight">{mover.symbol}</span>
+                                {/* getCompanyName falls back to the ticker — don't print "CTVA CTVA" */}
+                                {companyName !== mover.symbol && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400 truncate hidden sm:inline leading-tight">{companyName}</span>
+                                )}
+                                {renderCategoryBadge(mover.moversCategory)}
+                                {isIdiosyncratic && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wide bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-700">
+                                        Idiosyncratic
+                                    </span>
                                 )}
                             </div>
 
-                            <div className="flex flex-col items-end min-w-[70px] shrink-0">
-                                <span className="font-mono font-medium text-sm text-gray-900 dark:text-gray-100 tabular-nums">
+                            <div className="flex flex-col items-end shrink-0">
+                                <span className={`tabular-nums font-extrabold text-xl leading-none ${pctColor}`}>
+                                    {pct != null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%` : '—'}
+                                </span>
+                                <span className="font-mono text-xs text-slate-500 dark:text-slate-400 tabular-nums mt-1">
                                     ${mover.lastPrice?.toFixed(2) || '---'}
                                 </span>
-                                <div className={`px-1.5 py-0.5 rounded text-[11px] font-bold mt-0.5 tabular-nums ${mover.lastChangePct && mover.lastChangePct >= 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
-                                    {mover.lastChangePct != null
-                                        ? `${mover.lastChangePct >= 0 ? '+' : ''}${mover.lastChangePct.toFixed(2)}%`
-                                        : '0.00%'}
-                                </div>
                                 {mover.lastVolume != null && mover.lastVolume > 0 && (
                                     <span className="text-[10px] text-slate-400 dark:text-slate-500 tabular-nums mt-0.5 whitespace-nowrap">
                                         Vol {formatCompactNumber(mover.lastVolume)}
@@ -348,19 +340,35 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                             </div>
                         </div>
 
-                        {/* Row 3: Metric Badges + context + pillars */}
-                        <div className="flex flex-wrap gap-2 items-center">
-                            {renderZScoreBadge(mover.latestMoversZScore)}
-                            {renderRVOLBadge(mover.latestMoversRVOL)}
-                        </div>
-                        {mover.analysis && (
-                            <div className="mt-1.5">
-                                {renderContextLine(mover.analysis)}
-                                {renderPillarStrip(mover.analysis)}
+                        {/* Row 2: deterministic catalyst (primary) or AI reason —
+                            full column width, it no longer shares the row with the price */}
+                        {mover.analysis ? renderCatalyst(mover.analysis) : (
+                            <div className={`mt-1.5 text-xs leading-snug font-medium ${!mover.moversReason
+                                ? 'text-slate-300 italic'
+                                : pct != null && pct >= 2
+                                    ? 'text-green-700 dark:text-green-400'
+                                    : pct != null && pct <= -2
+                                        ? 'text-red-600 dark:text-red-400'
+                                        : 'text-slate-500 dark:text-slate-400'
+                                }`}>
+                                {mover.moversReason
+                                    ? `"${mover.moversReason}"`
+                                    : 'Analyzing market catalyst...'}
                             </div>
                         )}
                     </div>
                 </div>
+
+                {/* Anchored stats footer — separated from the narrative so the
+                    microtext reads as one scannable band, not scattered noise */}
+                {hasFooter && (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/40 px-3.5 py-2">
+                        {renderZScoreBadge(mover.latestMoversZScore)}
+                        {renderRVOLBadge(mover.latestMoversRVOL)}
+                        {mover.analysis && renderContextLine(mover.analysis)}
+                        {mover.analysis && renderPillarStrip(mover.analysis)}
+                    </div>
+                )}
             </motion.div>
         );
     };
