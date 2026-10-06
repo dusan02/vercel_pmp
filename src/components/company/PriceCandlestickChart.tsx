@@ -700,10 +700,14 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
 
   return (
     <div>
-      {/* Header: current price (price mode) or current P/E (P/E mode) + period toggle */}
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+      {/* Header: current price (price mode) or current metric (valuation
+          mode) + toolbar. The header row itself never wraps — the headline
+          may wrap internally (last-candle note drops under the number) and
+          the toolbar anchors right with internal wrap — so switching modes
+          never moves the toolbar between lines. */}
+      <div className="flex items-start justify-between mb-3 gap-2">
         {mode === 'pe' && peHeadline ? (
-          <div className="flex items-baseline gap-2 flex-wrap">
+          <div className="flex items-baseline gap-2 flex-wrap flex-1 min-w-0">
             <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
               {peHeadline.peLive != null ? fmtMetric(peHeadline.peLive, activeMetric.unit) : 'n/m'}
             </span>
@@ -720,7 +724,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             )}
           </div>
         ) : stats && (
-          <div className="flex items-baseline gap-2 flex-wrap">
+          <div className="flex items-baseline gap-2 flex-wrap flex-1 min-w-0">
             <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
               ${stats.headline.toFixed(2)}
             </span>
@@ -736,7 +740,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             )}
           </div>
         )}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap justify-end ml-auto">
           {/* View mode — Price chart vs P/E-multiple chart */}
           <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
             <button
