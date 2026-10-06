@@ -139,11 +139,12 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     const labels = [...container.querySelectorAll('button')].map((b) => b.textContent?.trim());
     expect(labels).toEqual(expect.arrayContaining(['P/E', 'P/S', 'P/B', 'EV/EBIT', 'FCF yield']));
     // price-only indicators are hidden in valuation mode — their container
-    // carries `hidden` so toggled state survives the mode round-trip.
+    // carries `invisible` so toggled state survives the mode round-trip and
+    // the slot keeps its width (period buttons don't shift).
     const maBtn = [...container.querySelectorAll('button')].find((b) =>
       b.textContent?.includes('MA 20w'),
     ) as HTMLButtonElement | undefined;
-    expect(maBtn?.closest('div')?.className).toContain('hidden');
+    expect(maBtn?.closest('div')?.className).toContain('invisible');
   });
 
   it('switching metric to P/S changes headline and formula caption', async () => {

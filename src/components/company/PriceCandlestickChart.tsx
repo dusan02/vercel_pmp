@@ -283,16 +283,6 @@ function MetricTooltip({ active, payload, metric, stats }: any) {
             <span className="text-right text-gray-700 dark:text-gray-300">{r.text}</span>
           </React.Fragment>
         ))}
-        {stats && (
-          <>
-            <span style={{ color: PE_FAIR }}>Median</span>
-            <span className="text-right text-gray-700 dark:text-gray-300">{fmtMetric(stats.median, m.unit)}</span>
-            <span className="text-gray-500 dark:text-gray-400">25–75th</span>
-            <span className="text-right text-gray-700 dark:text-gray-300">
-              {fmtMetric(stats.p25, m.unit, 0)}–{fmtMetric(stats.p75, m.unit, 0)}
-            </span>
-          </>
-        )}
         {val != null && stats && (
           <>
             <span className="text-gray-500 dark:text-gray-400">vs median</span>
@@ -775,10 +765,17 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               Valuation
             </button>
           </div>
-          {/* Metric selector — only in Valuation mode; swaps in place of the
-              (disabled) price indicator toggles so the toolbar stays put. */}
-          {mode === 'pe' && (
-            <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
+          {/* Metric chips (valuation) and indicator toggles (price) share one
+              grid cell — the slot always keeps the wider group's width, so the
+              period buttons and everything right of it never shift when the
+              view mode flips. The inactive group is invisible, not unmounted
+              or display:none, precisely so it still holds its width. */}
+          <div className="grid">
+            <div
+              className={`col-start-1 row-start-1 flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5 ${
+                mode === 'pe' ? '' : 'invisible'
+              }`}
+            >
               {METRICS.map((m) => {
                 const has = !!valStats[m.field];
                 return (
@@ -799,16 +796,15 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                 );
               })}
             </div>
-          )}
-          {/* Indicator toggles — colored dot doubles as the line legend.
-              Price-mode only; in Valuation mode the metric chips take this
-              slot (indicators are meaningless on a multiple). Toggled state
-              persists for the return to Price. */}
-          <div
-            className={`items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5 transition-opacity ${
-              mode === 'pe' ? 'hidden' : 'flex'
-            }`}
-          >
+            {/* Indicator toggles — colored dot doubles as the line legend.
+                Price-mode only; in Valuation mode the metric chips take this
+                slot (indicators are meaningless on a multiple). Toggled state
+                persists for the return to Price. */}
+            <div
+              className={`col-start-1 row-start-1 items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5 transition-opacity ${
+                mode === 'pe' ? 'invisible flex' : 'flex'
+              }`}
+            >
             {INDICATORS.map((ind) => (
               <button
                 key={ind.key}
@@ -837,6 +833,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                 {ind.label}
               </button>
             ))}
+            </div>
           </div>
           <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
             {periodChoices.map((p) => (
@@ -886,10 +883,12 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               className="text-gray-500 dark:text-gray-500"
               tickLine={false}
               axisLine={false}
-              width={narrow ? 36 : 48}
+              width={narrow ? 40 : 52}
             />
             <Tooltip content={<MetricTooltip metric={metric} stats={metricStats} />} isAnimationActive={false} />
-            {/* 25th–75th percentile band — the stock's own normal range */}
+            {/* 25th–75th percentile band — the stock's own normal range.
+                activeDot off: a range area renders two hover dots (band
+                edges); only the metric's own dot should appear. */}
             <Area
               type="monotone"
               dataKey="band"
@@ -898,6 +897,8 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               fillOpacity={0.08}
               isAnimationActive={false}
               connectNulls={false}
+              dot={false}
+              activeDot={false}
             />
             {/* The multiple itself — gradient area, finance-charts style */}
             <Area
@@ -934,7 +935,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               tickFormatter={(v: any) => (typeof v === 'string' && v.includes('-') ? formatXTick(v) : '')}
             >
               <AreaChart>
-                <Area type="monotone" dataKey={activeMetric.field} stroke={PE_LINE} strokeWidth={1} fill={PE_LINE} fillOpacity={0.15} isAnimationActive={false} />
+                <Area type="monotone" dataKey={activeMetric.field} stroke={PE_LINE} strokeWidth={1} fill={PE_LINE} fillOpacity={0.15} isAnimationActive={false} dot={false} activeDot={false} />
               </AreaChart>
             </Brush>
           </ComposedChart>
