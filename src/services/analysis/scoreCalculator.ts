@@ -254,11 +254,21 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     // negative TTM EPS.
     if (currentPE !== null && currentEps !== null && currentEps <= 0) currentPE = null;
 
+    // Canonical basis for the percentile claim: the latest stored DVH row
+    // (close basis) — the same snapshot the analysis/valuation pages rank and
+    // display. Ranking a live-price P/E against close-basis history produced
+    // "8th" in the takeaway while the hero showed "12th" on the same page.
+    const latestPeRow = await prisma.dailyValuationHistory.findFirst({
+        where: { symbol, peRatio: { not: null } },
+        orderBy: { date: 'desc' },
+        select: { peRatio: true },
+    });
+    const peForPct = latestPeRow?.peRatio ?? currentPE;
     let pePercentile: number | null = null;
-    if (allValuations.length > 0 && currentPE !== null && currentPE > 0) {
-        const index = allValuations.findIndex(v => v.peRatio !== null && v.peRatio >= currentPE);
+    if (allValuations.length > 0 && peForPct !== null && peForPct > 0) {
+        const index = allValuations.findIndex(v => v.peRatio !== null && v.peRatio >= peForPct);
         pePercentile = index === -1 ? 100 : (index / allValuations.length) * 100;
-        humanPeInfo = formatPePercentile(currentPE, pePercentile);
+        humanPeInfo = formatPePercentile(peForPct, pePercentile);
     }
 
     // fcfYield leg: own TTM basis, then the latest daily snapshot (read path).
