@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { SectionIcon } from './SectionIcon';
@@ -54,8 +54,6 @@ export function PortfolioSection({
   const [portfolioSearchTerm, setPortfolioSearchTerm] = useState('');
   const [portfolioSearchResults, setPortfolioSearchResults] = useState<StockData[]>([]);
   const [showPortfolioSearch, setShowPortfolioSearch] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   const handleRowClick = useCallback((stock: StockData) => {
@@ -114,7 +112,6 @@ export function PortfolioSection({
         getCompanyName(stock.ticker).toLowerCase().includes(term)
     ).slice(0, 10); // Increased from 5 to 10 for better user experience
     setPortfolioSearchResults(results);
-    setSelectedIndex(-1);
   }, [portfolioSearchTerm, allStocks]);
 
   // Column Definitions
@@ -348,7 +345,6 @@ export function PortfolioSection({
       <div className="px-4 mb-4 relative mt-2">
         <div className="relative group">
           <input
-            ref={searchInputRef}
             type="search"
             placeholder="Search stocks to add..."
             value={portfolioSearchTerm}

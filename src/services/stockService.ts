@@ -15,6 +15,34 @@ interface StockServiceResult {
   errors: string[];
 }
 
+/** In-memory sort shared by the Redis fast path and the overlay path.
+ *  API sort names → StockData fields (changePct → percentChange,
+ *  name → companyName, symbol → ticker; strings need localeCompare). */
+function sortStockData(results: StockData[], sort: string, order: 'asc' | 'desc') {
+  const sortKeyMap: Record<string, keyof StockData> = {
+    marketCapDiff: 'marketCapDiff',
+    marketCap: 'marketCap',
+    changePct: 'percentChange',
+    percentChange: 'percentChange',
+    currentPrice: 'currentPrice',
+    name: 'companyName',
+    symbol: 'ticker',
+  };
+  const k = sortKeyMap[sort] ?? 'marketCapDiff';
+  results.sort((a, b) => {
+    const va = a[k];
+    const vb = b[k];
+    if (typeof va === 'string' || typeof vb === 'string') {
+      const sa = String(va ?? '');
+      const sb = String(vb ?? '');
+      return order === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
+    }
+    const na = typeof va === 'number' && isFinite(va) ? va : 0;
+    const nb = typeof vb === 'number' && isFinite(vb) ? vb : 0;
+    return order === 'asc' ? na - nb : nb - na;
+  });
+}
+
 /**
  * Main entry point for stock data - SQL-first implementation using Ticker table
  * @deprecated Use getStocksList directly.
@@ -91,75 +119,45 @@ export async function getStocksList(options: {
             redisOverlayData = dataMap;
             redisOverlayPrev = prevCloseMap;
           } else {
-          const results: StockData[] = [];
-          for (const sym of symbolsToFetch) {
-            const data = dataMap.get(sym);
-            if (data) {
-              const identity = resolveTickerIdentity(sym, data.name, data.sector, data.industry);
-              results.push({
-                ticker: sym,
-                companyName: identity.name,
-                sector: identity.sector,
-                industry: identity.industry,
-                logoUrl: `/logos/${sym.toLowerCase()}-32.webp`,
-                currentPrice: Number(data.p) || 0,
-                closePrice: Number(prevCloseMap.get(sym)) || 0,
-                percentChange: Number(data.change_pct) || 0,
-                marketCap: Number(data.cap) || 0,
-                marketCapDiff: Number(data.cap_diff) || 0,
-                lastUpdated: new Date().toISOString(),
-                volume: Number(data.v) || 0,
-                referenceUsed: 'previousClose',
-                referencePrice: 0,
-                isFrozen: false,
-                isStale: false
-              });
-            }
-          }
-
-            // API sort names → StockData fields (changePct → percentChange,
-            // name → companyName, symbol → ticker; strings need localeCompare)
-            const sortKeyMap: Record<string, keyof StockData> = {
-              marketCapDiff: 'marketCapDiff',
-              marketCap: 'marketCap',
-              changePct: 'percentChange',
-              percentChange: 'percentChange',
-              currentPrice: 'currentPrice',
-              name: 'companyName',
-              symbol: 'ticker',
-            };
-            const k = sortKeyMap[sort] ?? 'marketCapDiff';
-            results.sort((a, b) => {
-              const va = a[k];
-              const vb = b[k];
-              if (typeof va === 'string' || typeof vb === 'string') {
-                const sa = String(va ?? '');
-                const sb = String(vb ?? '');
-                return order === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
+            const results: StockData[] = [];
+            for (const sym of symbolsToFetch) {
+              const data = dataMap.get(sym);
+              if (data) {
+                const identity = resolveTickerIdentity(sym, data.name, data.sector, data.industry);
+                results.push({
+                  ticker: sym,
+                  companyName: identity.name,
+                  sector: identity.sector,
+                  industry: identity.industry,
+                  logoUrl: `/logos/${sym.toLowerCase()}-32.webp`,
+                  currentPrice: Number(data.p) || 0,
+                  closePrice: Number(prevCloseMap.get(sym)) || 0,
+                  percentChange: Number(data.change_pct) || 0,
+                  marketCap: Number(data.cap) || 0,
+                  marketCapDiff: Number(data.cap_diff) || 0,
+                  lastUpdated: new Date().toISOString(),
+                  volume: Number(data.v) || 0,
+                  referenceUsed: 'previousClose',
+                  referencePrice: 0,
+                  isFrozen: false,
+                  isStale: false
+                });
               }
-              const na = typeof va === 'number' && isFinite(va) ? va : 0;
-              const nb = typeof vb === 'number' && isFinite(vb) ? vb : 0;
-              return order === 'asc' ? na - nb : nb - na;
-            });
+            }
 
-          console.log(`🚀 [stockService] Fast path: Served ${results.length} stocks from Redis!`);
+            sortStockData(results, sort, order);
 
-          // If specific tickers were requested but some are missing from Redis
-          // (e.g. ETFs like QQQ/DIA not in universe), fall through to DB/Polygon
-          // fallback for the missing ones instead of returning incomplete data.
-          if (tickers && results.length < tickers.length) {
-            const found = new Set(results.map(r => r.ticker));
-            const missing = tickers.filter(t => !found.has(t));
-            console.log(`🔄 [stockService] ${missing.length} tickers missing from Redis, falling through to DB/Polygon: ${missing.join(',')}`);
-            // Don't return — fall through to slow path which will query DB + Polygon for missing tickers
-            // But we need to keep our Redis results and merge them later
-            // Simplest: set tickers to only the missing ones and continue to slow path
-            // Then merge results at the end
-            // For now, just fall through — the slow path will fetch ALL requested tickers from DB
-            // and the Polygon fallback at the end handles any still-missing ones.
-          } else {
-            return { data: results, errors: [] };
-          }
+            console.log(`🚀 [stockService] Fast path: Served ${results.length} stocks from Redis!`);
+
+            // If specific tickers were requested but some are missing from Redis
+            // (e.g. ETFs like QQQ/DIA not in universe), fall through to the DB path
+            // which refetches ALL requested tickers (and Polygon for still-missing).
+            if (tickers && results.length < tickers.length) {
+              const missing = tickers.filter(t => !results.some(r => r.ticker === t));
+              console.log(`🔄 [stockService] ${missing.length} tickers missing from Redis, falling through to DB/Polygon: ${missing.join(',')}`);
+            } else {
+              return { data: results, errors: [] };
+            }
           }
         }
       }
@@ -422,28 +420,7 @@ export async function getStocksList(options: {
         r.lastUpdated = new Date().toISOString();
       }
 
-      const sortKeyMap: Record<string, keyof StockData> = {
-        marketCapDiff: 'marketCapDiff',
-        marketCap: 'marketCap',
-        changePct: 'percentChange',
-        percentChange: 'percentChange',
-        currentPrice: 'currentPrice',
-        name: 'companyName',
-        symbol: 'ticker',
-      };
-      const k = sortKeyMap[sort] ?? 'marketCapDiff';
-      results.sort((a, b) => {
-        const va = a[k];
-        const vb = b[k];
-        if (typeof va === 'string' || typeof vb === 'string') {
-          const sa = String(va ?? '');
-          const sb = String(vb ?? '');
-          return order === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
-        }
-        const na = typeof va === 'number' && isFinite(va) ? va : 0;
-        const nb = typeof vb === 'number' && isFinite(vb) ? vb : 0;
-        return order === 'asc' ? na - nb : nb - na;
-      });
+      sortStockData(results, sort, order);
     }
 
     if (tickers && tickers.length > 0) {
