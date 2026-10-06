@@ -50,16 +50,13 @@ interface PriceCandlestickChartProps {
   changeLabel?: string;
 }
 
-const PERIODS = [
+const FIXED_PERIODS = [
   { label: '1Y', years: 1 },
   { label: '3Y', years: 3 },
   { label: '5Y', years: 5 },
-  // Polygon Starter caps aggregates at ~5y — 'All' shows whatever the
-  // series covers without promising a span the plan can't deliver.
-  { label: 'All', years: 99 },
 ] as const;
 
-type PeriodLabel = (typeof PERIODS)[number]['label'];
+type PeriodLabel = '1Y' | '3Y' | '5Y' | 'All';
 
 const UP = '#16a34a'; // green
 const DOWN = '#dc2626'; // red
@@ -302,6 +299,27 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     };
   }, [ticker]);
 
+  // Available span decides which period buttons exist — Polygon Starter
+  // returns ~5Y max, so on most tickers "5Y" would show the identical series
+  // as "All" (a dead button). A fixed period is only offered when it trims at
+  // least ~5 weeks; "All" always covers whatever history exists.
+  const spanYears = useMemo(() => {
+    if (!allCandles || allCandles.length < 2) return 0;
+    const sorted = [...allCandles].sort((a, b) => a.t - b.t);
+    return (sorted[sorted.length - 1]!.t - sorted[0]!.t) / (365.25 * 24 * 60 * 60 * 1000);
+  }, [allCandles]);
+
+  const periodChoices = useMemo((): { label: PeriodLabel; years: number }[] => {
+    const fixed = FIXED_PERIODS.filter((p) => p.years < spanYears - 0.1);
+    return [...fixed, { label: 'All' as const, years: 99 }];
+  }, [spanYears]);
+
+  // Selected period may not be offered for this ticker's span (e.g. '5Y'
+  // default on a 2-year IPO) — fall back to 'All' instead of a dead state.
+  const activePeriod: PeriodLabel = periodChoices.some((p) => p.label === period)
+    ? period
+    : 'All';
+
   const data: ChartPoint[] = useMemo(() => {
     if (!allCandles) return [];
     // Sort the full series first — SMA must see consecutive candles.
@@ -327,7 +345,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       }
       return false;
     });
-    const years = PERIODS.find((p) => p.label === period)?.years ?? 5;
+    const years = periodChoices.find((p) => p.label === activePeriod)?.years ?? 99;
     const cutoff = Date.now() - years * 365.25 * 24 * 60 * 60 * 1000;
     const out: ChartPoint[] = [];
     for (let i = 0; i < sorted.length; i++) {
@@ -359,7 +377,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       }
     }
     return out;
-  }, [allCandles, period, inds, peStats]);
+  }, [allCandles, activePeriod, inds, peStats]);
 
   // Trailing 52-week high/low over the FULL series (window-independent).
   const hiLo52 = useMemo(() => {
@@ -486,7 +504,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             <span
               className={`text-sm font-semibold ${stats.up ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
             >
-              {stats.changePct >= 0 ? '+' : ''}{stats.changePct.toFixed(2)}%{currentChangePct == null ? ` (${period})` : ` (${changeLabel})`}
+              {stats.changePct >= 0 ? '+' : ''}{stats.changePct.toFixed(2)}%{currentChangePct == null ? ` (${activePeriod})` : ` (${changeLabel})`}
             </span>
             {currentPrice != null && (
               <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -555,13 +573,13 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             </div>
           )}
           <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
-            {PERIODS.map((p) => (
+            {periodChoices.map((p) => (
               <button
                 key={p.label}
                 type="button"
                 onClick={() => setPeriod(p.label)}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
-                  period === p.label
+                  activePeriod === p.label
                     ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
