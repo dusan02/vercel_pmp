@@ -441,35 +441,62 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                 </div>
             )}
 
-            {/* Direction toggle — one focused list instead of two cramped
-                columns side-by-side (same pattern as /premarket-movers). */}
-            <div className="flex gap-1.5 px-1">
-                {([
-                    ['gainers', 'Gainers', gainers.length, 'text-green-600 dark:text-green-400'],
-                    ['losers', 'Losers', losers.length, 'text-red-500 dark:text-red-400'],
-                ] as const).map(([key, label, count, activeColor]) => (
-                    <button
-                        key={key}
-                        onClick={() => setDirection(key)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${direction === key
-                                ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900'
-                                : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400 dark:bg-transparent dark:text-slate-400 dark:border-white/10'
-                            }`}
-                    >
-                        <span className={direction === key ? '' : activeColor}>{label}</span>
-                        <span className="ml-1.5 text-[10px] font-normal opacity-70">{count}</span>
-                    </button>
-                ))}
-            </div>
-
-            <div className="grid gap-3">
-                {(direction === 'gainers' ? gainers : losers).map((mover, index) => renderMoverCard(mover, index))}
-                {(direction === 'gainers' ? gainers : losers).length === 0 && !isLoading && !error && (
-                    <div className="text-center p-8 text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
-                        No significant {direction}.
+            {/* Desktop: Gainers left / Losers right — the toggle wasted half
+                the viewport on wide screens. Mobile keeps the focused toggle
+                (two ~170px columns would be unreadable). */}
+            {isDesktop ? (
+                <div className="grid grid-cols-2 gap-4">
+                    {([
+                        ['gainers', 'Gainers', gainers, 'text-green-600 dark:text-green-400'],
+                        ['losers', 'Losers', losers, 'text-red-500 dark:text-red-400'],
+                    ] as const).map(([key, label, list, color]) => (
+                        <div key={key}>
+                            <div className={`flex items-baseline gap-2 px-1 pb-2 text-xs font-bold uppercase tracking-wide ${color}`}>
+                                {label}
+                                <span className="text-slate-400 font-semibold normal-case">{list.length}</span>
+                            </div>
+                            <div className="grid gap-3 content-start">
+                                {list.map((mover, index) => renderMoverCard(mover, index))}
+                                {list.length === 0 && !isLoading && !error && (
+                                    <div className="text-center p-8 text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
+                                        No significant {key}.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <>
+                    <div className="flex gap-1.5 px-1">
+                        {([
+                            ['gainers', 'Gainers', gainers.length, 'text-green-600 dark:text-green-400'],
+                            ['losers', 'Losers', losers.length, 'text-red-500 dark:text-red-400'],
+                        ] as const).map(([key, label, count, activeColor]) => (
+                            <button
+                                key={key}
+                                onClick={() => setDirection(key)}
+                                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${direction === key
+                                        ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400 dark:bg-transparent dark:text-slate-400 dark:border-white/10'
+                                    }`}
+                            >
+                                <span className={direction === key ? '' : activeColor}>{label}</span>
+                                <span className="ml-1.5 text-[10px] font-normal opacity-70">{count}</span>
+                            </button>
+                        ))}
                     </div>
-                )}
-            </div>
+
+                    <div className="grid gap-3">
+                        {(direction === 'gainers' ? gainers : losers).map((mover, index) => renderMoverCard(mover, index))}
+                        {(direction === 'gainers' ? gainers : losers).length === 0 && !isLoading && !error && (
+                            <div className="text-center p-8 text-slate-400 bg-slate-50 border border-dashed border-slate-200 rounded-2xl">
+                                No significant {direction}.
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
 
             {/* Methodology Section */}
             <div className="mt-8 pt-6 border-t border-slate-200">
