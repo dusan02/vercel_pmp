@@ -13,6 +13,7 @@ import {
   Area,
   ReferenceLine,
   Brush,
+  AreaChart,
 } from 'recharts';
 import { CHART_FONT } from '@/components/charts/chartTheme';
 
@@ -405,10 +406,20 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     [enriched, periodCutoffMs],
   );
 
-  // P/E-mode window: brush drag overrides; otherwise derived from the period
-  // buttons. Indices are into `enriched`.
+  // P/E-mode window. The Brush is UNCONTROLLED: its startIndex/endIndex props
+  // are only initial values — the chart remounts via `key` on every period
+  // click so a new window is applied. Drag indices are mirrored into peBrush
+  // solely for the y-domain and the header label — they must NOT feed back
+  // into the Brush props (a controlled loop races recharts' internal store
+  // and can leave the displayed slice empty).
   const [peBrush, setPeBrush] = useState<{ startIndex: number; endIndex: number } | null>(null);
+  const [peEpoch, setPeEpoch] = useState(0);
   useEffect(() => setPeBrush(null), [activePeriod, ticker]);
+
+  const pePeriodStart = useMemo(() => {
+    const i = enriched.findIndex((p) => p.t >= periodCutoffMs);
+    return i < 0 ? 0 : i;
+  }, [enriched, periodCutoffMs]);
 
   const peWindow = useMemo(() => {
     const n = enriched.length;
@@ -418,10 +429,8 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       const e = Math.max(s, Math.min(peBrush.endIndex, n - 1));
       return { startIndex: s, endIndex: e };
     }
-    let s = enriched.findIndex((p) => p.t >= periodCutoffMs);
-    if (s < 0) s = 0;
-    return { startIndex: s, endIndex: n - 1 };
-  }, [enriched, peBrush, periodCutoffMs]);
+    return { startIndex: pePeriodStart, endIndex: n - 1 };
+  }, [enriched, peBrush, pePeriodStart]);
 
   const peVisible = useMemo(
     () => enriched.slice(peWindow.startIndex, peWindow.endIndex + 1),
@@ -677,7 +686,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               <button
                 key={p.label}
                 type="button"
-                onClick={() => { setPeriod(p.label); setPeBrush(null); }}
+                onClick={() => { setPeriod(p.label); setPeBrush(null); setPeEpoch((e) => e + 1); }}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
                   activePeriod === p.label
                     ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
@@ -694,7 +703,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       {mode === 'pe' && peStats ? (
         <>
         <ResponsiveContainer width="100%" height={narrow ? 400 : 470}>
-          <ComposedChart data={enriched} margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 4 }}>
+          <ComposedChart key={`pe-${ticker}-${peEpoch}`} data={enriched} margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 4 }}>
             <defs>
               <linearGradient id="peAreaGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={PE_LINE} stopOpacity={0.30} />
@@ -751,14 +760,15 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               label={{ value: `median ${peStats.median.toFixed(1)}×`, position: 'insideTopLeft', fontSize: 10, fill: PE_FAIR }}
             />
             {/* Navigator — mini full-history chart; drag handles or use the
-                period buttons above. It windows the same `enriched` series. */}
+                period buttons above. Brush dataKey = the X category (date),
+                and its child must be a nested chart element. */}
             <Brush
-              dataKey="pe"
+              dataKey="date"
               height={26}
               stroke={PE_LINE}
               travellerWidth={8}
-              startIndex={peWindow.startIndex}
-              endIndex={peWindow.endIndex}
+              startIndex={pePeriodStart}
+              endIndex={Math.max(0, enriched.length - 1)}
               onChange={(b: any) => {
                 if (b?.startIndex != null && b?.endIndex != null) {
                   setPeBrush({ startIndex: b.startIndex, endIndex: b.endIndex });
@@ -766,7 +776,9 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               }}
               tickFormatter={(v: any) => (typeof v === 'string' && v.includes('-') ? formatXTick(v) : '')}
             >
-              <Area type="monotone" dataKey="pe" stroke={PE_LINE} strokeWidth={1} fill={PE_LINE} fillOpacity={0.15} dot={false} isAnimationActive={false} />
+              <AreaChart>
+                <Area type="monotone" dataKey="pe" stroke={PE_LINE} strokeWidth={1} fill={PE_LINE} fillOpacity={0.15} isAnimationActive={false} />
+              </AreaChart>
             </Brush>
           </ComposedChart>
         </ResponsiveContainer>
