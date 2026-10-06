@@ -12,6 +12,7 @@ import {
   Line,
   Area,
   ReferenceLine,
+  Brush,
 } from 'recharts';
 import { CHART_FONT } from '@/components/charts/chartTheme';
 
@@ -50,13 +51,7 @@ interface PriceCandlestickChartProps {
   changeLabel?: string;
 }
 
-const FIXED_PERIODS = [
-  { label: '1Y', years: 1 },
-  { label: '3Y', years: 3 },
-  { label: '5Y', years: 5 },
-] as const;
-
-type PeriodLabel = '1Y' | '3Y' | '5Y' | 'All';
+type PeriodLabel = '3M' | '6M' | 'YTD' | '1Y' | '3Y' | '5Y' | 'All';
 
 const UP = '#16a34a'; // green
 const DOWN = '#dc2626'; // red
@@ -310,7 +305,26 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   }, [allCandles]);
 
   const periodChoices = useMemo((): { label: PeriodLabel; years: number }[] => {
-    const fixed = FIXED_PERIODS.filter((p) => p.years < spanYears - 0.1);
+    const now = Date.now();
+    const jan1 = new Date(new Date(now).getFullYear(), 0, 1).getTime();
+    const ytdYears = (now - jan1) / (365.25 * 24 * 60 * 60 * 1000);
+    const candidates: { label: PeriodLabel; years: number }[] = [
+      { label: '3M', years: 0.25 },
+      { label: '6M', years: 0.5 },
+      { label: 'YTD', years: ytdYears },
+      { label: '1Y', years: 1 },
+      { label: '3Y', years: 3 },
+      { label: '5Y', years: 5 },
+    ];
+    // Skip periods that don't trim the series (~5+ weeks) or are too short
+    // to draw (~4 weekly candles), plus dedupe YTD when it equals 1Y.
+    const fixed = candidates.filter(
+      (p, i, arr) =>
+        p.years < spanYears - 0.1 &&
+        p.years > 0.08 &&
+        (p.label !== 'YTD' || Math.abs(p.years - 1) > 0.12) &&
+        (i === 0 || p.years - arr[i - 1]!.years > 0.03),
+    );
     return [...fixed, { label: 'All' as const, years: 99 }];
   }, [spanYears]);
 
@@ -320,7 +334,10 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     ? period
     : 'All';
 
-  const data: ChartPoint[] = useMemo(() => {
+  // Enriched full series — sorting, SMAs, implied EPS and the valuation band
+  // are computed over ALL candles once; the price-mode `data` window and the
+  // P/E-mode brush window are slices of this.
+  const enriched: ChartPoint[] = useMemo(() => {
     if (!allCandles) return [];
     // Sort the full series first — SMA must see consecutive candles.
     const sorted = [...allCandles].sort((a, b) => a.t - b.t);
@@ -345,12 +362,9 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       }
       return false;
     });
-    const years = periodChoices.find((p) => p.label === activePeriod)?.years ?? 99;
-    const cutoff = Date.now() - years * 365.25 * 24 * 60 * 60 * 1000;
     const out: ChartPoint[] = [];
     for (let i = 0; i < sorted.length; i++) {
       const c = sorted[i]!;
-      if (c.t < cutoff) continue;
       const va = volSma[i];
       out.push({
         ...c,
@@ -377,7 +391,42 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       }
     }
     return out;
-  }, [allCandles, activePeriod, inds, peStats]);
+  }, [allCandles, inds, peStats]);
+
+  const periodCutoffMs = useMemo(() => {
+    const years = periodChoices.find((p) => p.label === activePeriod)?.years ?? 99;
+    return Date.now() - years * 365.25 * 24 * 60 * 60 * 1000;
+  }, [periodChoices, activePeriod]);
+
+  // Price-mode window — the P/E chart instead takes the full series and
+  // windows it through the Brush navigator below the chart.
+  const data: ChartPoint[] = useMemo(
+    () => enriched.filter((p) => p.t >= periodCutoffMs),
+    [enriched, periodCutoffMs],
+  );
+
+  // P/E-mode window: brush drag overrides; otherwise derived from the period
+  // buttons. Indices are into `enriched`.
+  const [peBrush, setPeBrush] = useState<{ startIndex: number; endIndex: number } | null>(null);
+  useEffect(() => setPeBrush(null), [activePeriod, ticker]);
+
+  const peWindow = useMemo(() => {
+    const n = enriched.length;
+    if (!n) return { startIndex: 0, endIndex: 0 };
+    if (peBrush) {
+      const s = Math.max(0, Math.min(peBrush.startIndex, n - 1));
+      const e = Math.max(s, Math.min(peBrush.endIndex, n - 1));
+      return { startIndex: s, endIndex: e };
+    }
+    let s = enriched.findIndex((p) => p.t >= periodCutoffMs);
+    if (s < 0) s = 0;
+    return { startIndex: s, endIndex: n - 1 };
+  }, [enriched, peBrush, periodCutoffMs]);
+
+  const peVisible = useMemo(
+    () => enriched.slice(peWindow.startIndex, peWindow.endIndex + 1),
+    [enriched, peWindow],
+  );
 
   // Trailing 52-week high/low over the FULL series (window-independent).
   const hiLo52 = useMemo(() => {
@@ -399,14 +448,40 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   // Cap at ~q95 of visible values × 1.08 (always ≥ p75×1.6) so single-name
   // P/E spikes can't flatten the median/band the user came to compare.
   const peDomain = useMemo((): [number, number] => {
-    if (!data.length || !peStats) return [0, 1];
-    const vals = data
+    if (!peVisible.length || !peStats) return [0, 1];
+    const vals = peVisible
       .map((d) => d.pe)
       .filter((v): v is number => v != null && v > 0 && Number.isFinite(v))
       .sort((a, b) => a - b);
     const q95 = vals.length ? vals[Math.min(vals.length - 1, Math.floor(vals.length * 0.95))]! : 0;
     return [0, Math.ceil(Math.max(q95 * 1.08, peStats.p75 * 1.6))];
-  }, [data, peStats]);
+  }, [peVisible, peStats]);
+
+  // P/E-mode headline — current multiple (live quote ÷ latest implied TTM EPS
+  // when a live price is available, else the last candle's stored P/E), the
+  // change over the visible window, and context stats for the caption line.
+  const peHeadline = useMemo(() => {
+    if (!enriched.length) return null;
+    const last = enriched[enriched.length - 1]!;
+    const eps = last.eps ?? null;
+    const peLive =
+      currentPrice != null && eps != null && eps > 0
+        ? currentPrice / eps
+        : last.pe != null && last.pe > 0
+          ? last.pe
+          : null;
+    const firstVis = peVisible.find((p) => p.pe != null && p.pe > 0);
+    const base = firstVis?.pe ?? null;
+    const chgPct = peLive != null && base != null && base > 0 ? (peLive / base - 1) * 100 : null;
+    // Trailing ~1Y mean of weekly P/E (52 weekly candles).
+    const last52 = enriched
+      .slice(-52)
+      .map((p) => p.pe)
+      .filter((v): v is number => v != null && v > 0);
+    const avg1y = last52.length ? last52.reduce((a, b) => a + b, 0) / last52.length : null;
+    const price = currentPrice ?? last.c;
+    return { peLive, chgPct, eps, avg1y, price, date: last.date };
+  }, [enriched, peVisible, currentPrice]);
 
   // "How far from fair" — premium/discount of current price vs the last
   // median-P/E fair value. Shown only while the overlay is on.
@@ -494,9 +569,26 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
 
   return (
     <div>
-      {/* Header: current price + period toggle */}
+      {/* Header: current price (price mode) or current P/E (P/E mode) + period toggle */}
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        {stats && (
+        {mode === 'pe' && peHeadline ? (
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+              {peHeadline.peLive != null ? `${peHeadline.peLive.toFixed(1)}×` : 'n/m'}
+            </span>
+            {peHeadline.chgPct != null && (
+              <span
+                className={`text-sm font-semibold ${peHeadline.chgPct <= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                title="P/E change across the visible range — falling multiple = cheaper"
+              >
+                {peHeadline.chgPct >= 0 ? '+' : ''}{peHeadline.chgPct.toFixed(1)}% ({peBrush ? 'range' : activePeriod})
+              </span>
+            )}
+            {peHeadline.peLive == null && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">negative TTM EPS</span>
+            )}
+          </div>
+        ) : stats && (
           <div className="flex items-baseline gap-2 flex-wrap">
             <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
               ${stats.headline.toFixed(2)}
@@ -585,7 +677,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               <button
                 key={p.label}
                 type="button"
-                onClick={() => setPeriod(p.label)}
+                onClick={() => { setPeriod(p.label); setPeBrush(null); }}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
                   activePeriod === p.label
                     ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
@@ -600,8 +692,15 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       </div>
 
       {mode === 'pe' && peStats ? (
-        <ResponsiveContainer width="100%" height={narrow ? 340 : 420}>
-          <ComposedChart data={data} margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 24 }}>
+        <>
+        <ResponsiveContainer width="100%" height={narrow ? 400 : 470}>
+          <ComposedChart data={enriched} margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 4 }}>
+            <defs>
+              <linearGradient id="peAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={PE_LINE} stopOpacity={0.30} />
+                <stop offset="100%" stopColor={PE_LINE} stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.18)" vertical={false} />
             <XAxis
               dataKey="date"
@@ -634,14 +733,16 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               isAnimationActive={false}
               connectNulls={false}
             />
-            <Line
+            {/* The multiple itself — gradient area, finance-charts style */}
+            <Area
               type="monotone"
               dataKey="pe"
               stroke={PE_LINE}
               strokeWidth={1.8}
-              dot={false}
+              fill="url(#peAreaGrad)"
               isAnimationActive={false}
               connectNulls={false}
+              dot={false}
             />
             <ReferenceLine
               y={peStats.median}
@@ -649,8 +750,35 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               strokeDasharray="6 4"
               label={{ value: `median ${peStats.median.toFixed(1)}×`, position: 'insideTopLeft', fontSize: 10, fill: PE_FAIR }}
             />
+            {/* Navigator — mini full-history chart; drag handles or use the
+                period buttons above. It windows the same `enriched` series. */}
+            <Brush
+              dataKey="pe"
+              height={26}
+              stroke={PE_LINE}
+              travellerWidth={8}
+              startIndex={peWindow.startIndex}
+              endIndex={peWindow.endIndex}
+              onChange={(b: any) => {
+                if (b?.startIndex != null && b?.endIndex != null) {
+                  setPeBrush({ startIndex: b.startIndex, endIndex: b.endIndex });
+                }
+              }}
+              tickFormatter={(v: any) => (typeof v === 'string' && v.includes('-') ? formatXTick(v) : '')}
+            >
+              <Area type="monotone" dataKey="pe" stroke={PE_LINE} strokeWidth={1} fill={PE_LINE} fillOpacity={0.15} dot={false} isAnimationActive={false} />
+            </Brush>
           </ComposedChart>
         </ResponsiveContainer>
+        {/* Formula caption — how the current multiple is composed */}
+        {peHeadline && peHeadline.peLive != null && (
+          <div className="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400 tabular-nums">
+            P/E {peHeadline.peLive.toFixed(1)}× = ${peHeadline.price.toFixed(2)} close ÷ ${peHeadline.eps != null ? peHeadline.eps.toFixed(2) : '—'} TTM EPS
+            {peHeadline.avg1y != null && <> · 1Y avg {peHeadline.avg1y.toFixed(1)}×</>}
+            {` · median ${peStats.median.toFixed(1)}×`}
+          </div>
+        )}
+        </>
       ) : (
       <ResponsiveContainer width="100%" height={narrow ? 340 : 420}>
         <ComposedChart data={data} margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 24 }}>
