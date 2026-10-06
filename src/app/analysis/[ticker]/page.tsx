@@ -323,12 +323,13 @@ export default async function AnalysisPage({ params }: PageProps) {
                   <PillarChips pillars={analysisData!.pillars!} />
                 </div>
               )}
-              {/* Top thesis row — the verdict card sits beside the live
-                  intraday chart so the chart fills the space the verdict
-                  header's right side leaves dead; strengths evidence pairs
-                  with the news/context card on the second row. */}
-              <div className="flex flex-col lg:flex-row gap-3">
-                <div className="flex-1 min-w-0">
+              {/* Top thesis block — two independent sub-columns that pack
+                  top-down instead of row-locked pairs, so a short card never
+                  leaves dead space under it: verdict+strengths in the left
+                  column, intraday+news in the right. DOM order is also the
+                  mobile stack (verdict → strengths → intraday → news). */}
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
+                <div className="flex min-w-0 flex-1 flex-col gap-3">
                   <PmpVerdict
                     pillars={analysisData?.pillars ?? null}
                     insufficientData={analysisData?.insufficientData ?? null}
@@ -346,13 +347,6 @@ export default async function AnalysisPage({ params }: PageProps) {
                     moversZScore={data?.latestMoversZScore ?? null}
                     moversRvol={data?.latestMoversRVOL ?? null}
                   />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <IntradayChart ticker={tickerUpper} />
-                </div>
-              </div>
-              <div className="flex flex-col lg:flex-row gap-3">
-                <div className="flex-1 min-w-0">
                   <ThesisCard
                     analysisData={analysisData}
                     cache={data?.analysisCache ?? null}
@@ -360,7 +354,8 @@ export default async function AnalysisPage({ params }: PageProps) {
                     only="strengths"
                   />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex min-w-0 flex-1 flex-col gap-3">
+                  <IntradayChart ticker={tickerUpper} />
                   <MoverInsightSection
                     ticker={tickerUpper}
                     moversReason={data?.moversReason ?? null}
