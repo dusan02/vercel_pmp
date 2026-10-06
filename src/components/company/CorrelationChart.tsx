@@ -37,7 +37,7 @@ function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   const raw = payload[0]?.payload;
   const price = raw?.price;
-  const implied = raw?.impliedPrice ?? raw?.forecastImplied;
+  const implied = raw?.impliedPrice;
   // Guard: implied must be a positive finite number for the over/under ratio
   const diff = (price != null && implied != null && implied > 0) ? ((price - implied) / implied) * 100 : null;
   return (
@@ -50,11 +50,16 @@ function CustomTooltip({ active, payload, label }: any) {
           <span className="font-mono">${Number(price).toFixed(2)}</span>
         </div>
       )}
-      {implied != null && (
+      {implied != null ? (
         <div className="flex items-center gap-2 mb-0.5">
-          <span className="w-2 h-2 rounded-full" style={{ background: raw?.isForecast ? '#fbbf24' : '#10b981' }} />
-          <span className="text-gray-800 dark:text-gray-100 font-semibold">Implied Price{raw?.isForecast ? ' (fcst)' : ''}:</span>
+          <span className="w-2 h-2 rounded-full" style={{ background: '#10b981' }} />
+          <span className="text-gray-800 dark:text-gray-100 font-semibold">Implied Price:</span>
           <span className="font-mono">${Number(implied).toFixed(2)}</span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="w-2 h-2 rounded-full" style={{ background: '#9ca3af' }} />
+          <span className="text-gray-500 dark:text-gray-400 italic">implied n/a — no meaningful positive TTM basis</span>
         </div>
       )}
       {diff !== null && (
@@ -70,23 +75,24 @@ function CustomTooltip({ active, payload, label }: any) {
 export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, corrPE }: CorrelationChartProps) {
   const [mode, setMode] = useState<Mode>('ps');
 
-  const { mergedData, correlation, label, hasForecast } = useMemo(() => {
+  const { mergedData, correlation, label } = useMemo(() => {
     const implied = mode === 'ps' ? impliedPS : impliedPE;
     const corr = mode === 'ps' ? corrPS : corrPE;
 
-    const priceMap = new Map(priceHistory.map(p => [p.date, p.price]));
-    const merged = implied
-      .map(pt => ({
-        date: pt.date,
-        // Historical implied line must STOP at the forecast boundary —
-        // otherwise the area draws straight through the forecast points.
-        impliedPrice: pt.isForecast ? null : pt.impliedPrice,
-        price: priceMap.get(pt.date),
-        isForecast: pt.isForecast,
-        // Pre-compute forecast value for reliable rendering (function dataKey is unreliable in Recharts)
-        forecastImplied: pt.isForecast ? pt.impliedPrice : null,
-      }))
-      .filter(d => typeof d.price === 'number' || d.isForecast);
+    // Merge keyed on the price timeline — every trading week stays a category
+    // on the x-axis, so a stretch with no valid implied (non-positive TTM
+    // EPS/revenue, or implied collapsed below 5% of price) shows as an honest
+    // gap instead of compressing time or carrying a stale value forward.
+    const impliedMap = new Map(implied.map(pt => [pt.date, pt.impliedPrice]));
+    const merged = priceHistory.map(p => {
+      const imp = impliedMap.get(p.date) ?? null;
+      const valid = imp != null && imp > 0 && imp >= p.price * 0.05;
+      return {
+        date: p.date,
+        price: p.price,
+        impliedPrice: valid ? imp : null,
+      };
+    });
 
     // Rebase both series to 100 at the first common point — raw $ scales differ
     // by orders of magnitude (implied ≈ rev/eps × median multiple vs market price),
@@ -98,16 +104,12 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
       ...d,
       priceIdx: typeof d.price === 'number' && basePrice ? (d.price / basePrice) * 100 : null,
       impliedIdx: d.impliedPrice != null && baseImplied ? (d.impliedPrice / baseImplied) * 100 : null,
-      forecastIdx: d.forecastImplied != null && baseImplied ? (d.forecastImplied / baseImplied) * 100 : null,
     }));
-
-    const hasForecastData = merged.some(d => d.isForecast);
 
     return {
       mergedData: indexed,
       correlation: corr,
       label: mode === 'ps' ? 'Implied Price (P/S)' : 'Implied Price (P/E)',
-      hasForecast: hasForecastData,
     };
   }, [mode, impliedPS, impliedPE, priceHistory, corrPS, corrPE]);
 
@@ -148,8 +150,8 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
             </button>
           ))}
         </div>
-        <span className={`ml-auto shrink-0 text-xs font-semibold ${corrColor}`}>
-          Correlation: {correlation !== null ? `${(correlation * 100).toFixed(0)}%` : 'n/a'} <span className="opacity-70">({corrLabel})</span>
+        <span className={`ml-auto shrink-0 text-xs font-semibold ${corrColor}`} title="Correlation of quarter-over-quarter % changes — whether price moves with the fundamentals updates">
+          Corr (QoQ Δ): {correlation !== null ? `${(correlation * 100).toFixed(0)}%` : 'n/a'} <span className="opacity-70">({corrLabel})</span>
         </span>
       </ChartControls>
 
@@ -162,6 +164,9 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={{ fontSize: CHART_FONT.annotation }} />
 
+            {/* No connectNulls on the implied line — gap weeks (no positive
+                TTM basis, or implied collapsed below 5% of price) must show
+                as real gaps, not a bridged straight segment. */}
             <Area
               type="monotone"
               dataKey="impliedIdx"
@@ -171,7 +176,6 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
               fillOpacity={0.12}
               strokeWidth={2}
               dot={false}
-              connectNulls
             />
             <Line
               type="monotone"
@@ -182,22 +186,6 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
               dot={false}
               connectNulls
             />
-
-            {/* Forecast shading — only render if forecast data exists */}
-            {hasForecast && (
-              <Area
-                type="monotone"
-                dataKey="forecastIdx"
-                name="Forecast (idx)"
-                stroke="#fbbf24"
-                fill="#fbbf24"
-                fillOpacity={0.18}
-                strokeWidth={1}
-                strokeDasharray="4 4"
-                connectNulls
-                isAnimationActive={false}
-              />
-            )}
           </ComposedChart>
         </ResponsiveContainer>
       </ChartPlot>
@@ -207,6 +195,8 @@ export function CorrelationChart({ priceHistory, impliedPS, impliedPE, corrPS, c
         <p className="text-[10px] text-gray-500 dark:text-gray-500 leading-relaxed">
           Compares actual price to an <strong>implied price</strong> — {mode === 'ps' ? 'revenue per share' : 'EPS'} × this stock's <strong>median {mode === 'ps' ? 'P/S' : 'P/E'} multiple</strong> over the period, both rebased to 100 at start.
           A widening gap is <span className="text-amber-600">multiple expansion</span> — the market paying more per ${mode === 'ps' ? 'of revenue' : 'of earnings'} than its own median; a narrowing gap is compression.
+          Gaps in the implied line mark periods with no positive TTM {mode === 'ps' ? 'revenue' : 'earnings'} basis — a multiple-implied value is not meaningful there.
+          Correlation is measured on quarter-over-quarter % changes, not price levels.
           Re-ratings often reflect genuine changes in business quality and margins, so this chart describes <em>co-movement</em>, not fair value — for price-vs-own-history context see the Valuation percentile tooltips and Scenario Lab.
         </p>
         {/* Negative correlation warning */}

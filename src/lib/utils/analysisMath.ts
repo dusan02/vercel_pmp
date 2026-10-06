@@ -113,6 +113,35 @@ export function pearson(xs: number[], ys: number[]): number | null {
   return parseFloat((num / den).toFixed(4));
 }
 
+/**
+ * Co-movement between price and an implied-value series measured on
+ * quarter-over-quarter % changes — NOT on levels. Pearson on two
+ * upward-trending level series is spuriously ~+0.9 for almost any growing
+ * stock (both simply go up). Quarterly diffs match the statement cadence of
+ * the implied line and measure whether price actually moves WITH
+ * fundamentals updates. Requires >= 4 usable quarter diffs.
+ */
+export function quarterlyDiffCorr(
+    aligned: { date: string; price: number; implied: number }[],
+): number | null {
+    const byQuarter = new Map<string, { price: number; implied: number }>();
+    for (const pt of aligned) {
+        const qKey = `${pt.date.slice(0, 4)}Q${Math.floor((+pt.date.slice(5, 7) - 1) / 3) + 1}`;
+        byQuarter.set(qKey, { price: pt.price, implied: pt.implied }); // last write = quarter end
+    }
+    const rows = [...byQuarter.values()];
+    const dPrice: number[] = [];
+    const dImplied: number[] = [];
+    for (let i = 1; i < rows.length; i++) {
+        const prev = rows[i - 1]!, curr = rows[i]!;
+        if (prev.price > 0 && prev.implied > 0) {
+            dPrice.push(curr.price / prev.price - 1);
+            dImplied.push(curr.implied / prev.implied - 1);
+        }
+    }
+    return dPrice.length >= 4 ? pearson(dPrice, dImplied) : null;
+}
+
 /** Linear interpolation percentile on a sorted array */
 export function pct(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;

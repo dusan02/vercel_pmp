@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
-import { projectForward, pearson, buildStats, type PerSharePoint } from '@/lib/utils/analysisMath';
+import { projectForward, buildStats, quarterlyDiffCorr, type PerSharePoint } from '@/lib/utils/analysisMath';
 import { computeTTMAtDate } from '@/lib/utils/ttm';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { applySplitAdjustments, applyPostSplitAdjustment, findNearestSplit, COMMON_SPLIT_RATIOS } from '@/lib/utils/splitAdjustment';
@@ -137,8 +137,15 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
             applyPostSplitAdjustment(statements, tickerInfo.sharesOutstanding);
         }
 
-        const revPerShareHistory: PerSharePoint[] = [];
-        const epsPerShareHistory: PerSharePoint[] = [];
+        // Per-share timelines record ANY sign of TTM — a non-positive quarter
+        // marks the start of a stretch where a multiple-implied value is not
+        // meaningful, and the forward-fill must gap instead of carrying a
+        // stale positive EPS across the loss window (DAL sat at a frozen
+        // $50.53 implied through COVID losses).
+        const revPerShareTimeline: PerSharePoint[] = [];
+        const epsPerShareTimeline: PerSharePoint[] = [];
+        let lastTtmNI: number | null = null;
+        let lastTtmRev: number | null = null;
 
         let prevShares: number | null = null;
         for (const s of statements) {
@@ -164,38 +171,85 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
                 // actually the end of the fiscal period in the company's local timezone).
                 const endDate = new Date(s.endDate.getTime() + 24 * 60 * 60 * 1000);
                 const dateStr = endDate.toISOString().split('T')[0] as string;
-                if (ttmRev != null && ttmRev > 0) {
-                    revPerShareHistory.push({ date: dateStr, value: parseFloat((ttmRev / shares).toFixed(4)) });
+                lastTtmNI = ttmNI;
+                lastTtmRev = ttmRev;
+                if (ttmRev != null) {
+                    revPerShareTimeline.push({ date: dateStr, value: parseFloat((ttmRev / shares).toFixed(4)) });
                 }
-                if (ttmNI != null && ttmNI > 0) {
-                    epsPerShareHistory.push({ date: dateStr, value: parseFloat((ttmNI / shares).toFixed(4)) });
+                if (ttmNI != null) {
+                    epsPerShareTimeline.push({ date: dateStr, value: parseFloat((ttmNI / shares).toFixed(4)) });
                 }
             }
         }
 
-        // Fallback to ratio-derived if statements missing
-        if (revPerShareHistory.length === 0) {
-            revPerShareHistory.push(...weekly
+        // Canonical current basis: the latest statement point uses the trusted
+        // ticker share count (same convention as the daily valuation row), so
+        // the implied endpoint matches the EPS/revenue-per-share basis the
+        // analysis page reports. Guarded — a >50% divergence means the ticker
+        // share count is likely stale (unsynced split), so keep the statement
+        // basis rather than corrupt the endpoint.
+        const trustedShares = tickerInfo?.sharesOutstanding ?? null;
+        if (trustedShares != null && trustedShares > 0) {
+            const lastEpsPt = epsPerShareTimeline[epsPerShareTimeline.length - 1];
+            if (lastEpsPt && lastTtmNI != null && lastTtmNI > 0 && lastEpsPt.value > 0) {
+                const v = lastTtmNI / trustedShares;
+                if (Math.abs(v / lastEpsPt.value - 1) < 0.5) {
+                    lastEpsPt.value = parseFloat(v.toFixed(4));
+                }
+            }
+            const lastRevPt = revPerShareTimeline[revPerShareTimeline.length - 1];
+            if (lastRevPt && lastTtmRev != null && lastTtmRev > 0 && lastRevPt.value > 0) {
+                const v = lastTtmRev / trustedShares;
+                if (Math.abs(v / lastRevPt.value - 1) < 0.5) {
+                    lastRevPt.value = parseFloat(v.toFixed(4));
+                }
+            }
+        }
+
+        // Positive-only views feed CAGR/forecast consumers and the emitted
+        // arrays — negative quarters are gap markers, not growth inputs.
+        const revPerShareHistory = revPerShareTimeline.filter(p => p.value > 0);
+        const epsPerShareHistory = epsPerShareTimeline.filter(p => p.value > 0);
+
+        // Ratio-derived fallback reconstructs the same TTM trail (DVH ratios
+        // are price/TTM by construction), but it is weekly-resolution — it
+        // must NOT feed quarterly forecast/CAGR inputs and must not bridge
+        // multi-week gaps (missing DVH weeks = invalid fundamentals, not
+        // quarters to fill). It populates only the implied-line timeline.
+        const revRatioDerived = revPerShareHistory.length === 0;
+        if (revRatioDerived) {
+            revPerShareTimeline.push(...weekly
                 .filter(r => VALID_PS(r.psRatio) && r.closePrice && r.closePrice > 0)
                 .map(r => ({ date: r.date.toISOString().split('T')[0] as string, value: parseFloat(((r.closePrice as number) / (r.psRatio as number)).toFixed(4)) })));
         }
-        if (epsPerShareHistory.length === 0) {
-            epsPerShareHistory.push(...weekly
+        const epsRatioDerived = epsPerShareHistory.length === 0;
+        if (epsRatioDerived) {
+            epsPerShareTimeline.push(...weekly
                 .filter(r => VALID_PE(r.peRatio) && r.closePrice && r.closePrice > 0)
                 .map(r => ({ date: r.date.toISOString().split('T')[0] as string, value: parseFloat(((r.closePrice as number) / (r.peRatio as number)).toFixed(4)) })));
         }
+        // Fallback points append after statement markers — restore date order
+        // before the single-pointer forward-fill walks the array.
+        if (revRatioDerived) revPerShareTimeline.sort((a, b) => a.date < b.date ? -1 : 1);
+        if (epsRatioDerived) epsPerShareTimeline.sort((a, b) => a.date < b.date ? -1 : 1);
 
-        // Forward-fill per-share data to align with weekly price dates
-        function forwardFillPerShare(perShare: PerSharePoint[], priceDates: string[]): { date: string; value: number }[] {
+        // Forward-fill per-share data to align with weekly price dates.
+        // Emits only when the latest point is positive and within maxFillDays
+        // — a non-positive statement quarter or a >maxFillDays-old ratio point
+        // produces an honest gap, not a stale carried value.
+        function forwardFillPerShare(perShare: PerSharePoint[], priceDates: string[], maxFillDays = Number.POSITIVE_INFINITY): { date: string; value: number }[] {
             const result: { date: string; value: number }[] = [];
             let lastValue: number | null = null;
+            let lastTime = 0;
             let pi = 0;
             for (const pd of priceDates) {
                 while (pi < perShare.length && perShare[pi]!.date <= pd) {
                     lastValue = perShare[pi]!.value;
+                    lastTime = new Date(perShare[pi]!.date).getTime();
                     pi++;
                 }
-                if (lastValue !== null) {
+                if (lastValue !== null && lastValue > 0 &&
+                    (new Date(pd).getTime() - lastTime) / 86400000 <= maxFillDays) {
                     result.push({ date: pd, value: lastValue });
                 }
             }
@@ -203,8 +257,8 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
         }
 
         const weeklyDates = weekly.map(r => r.date.toISOString().split('T')[0]!);
-        const revPerShareFilled = forwardFillPerShare(revPerShareHistory, weeklyDates);
-        const epsPerShareFilled = forwardFillPerShare(epsPerShareHistory, weeklyDates);
+        const revPerShareFilled = forwardFillPerShare(revPerShareTimeline, weeklyDates, revRatioDerived ? 10 : Number.POSITIVE_INFINITY);
+        const epsPerShareFilled = forwardFillPerShare(epsPerShareTimeline, weeklyDates, epsRatioDerived ? 10 : Number.POSITIVE_INFINITY);
 
         const medianPS = psStats?.median ?? latestPS ?? null;
         const medianPE = peStats?.median ?? latestPE ?? null;
@@ -239,7 +293,10 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
         // (e.g. INTC with intrinsic $0.42 vs price $103 → -24538% is meaningless).
         // Also marks intrinsic as unreliable (null) when it's < 5% of price —
         // this happens when EPS/revenue is near-zero, making median×per-share meaningless.
-        function buildValuationHistory(intrinsicSrc: { date: string; impliedPrice: number }[], unreliableDates?: Set<string>) {
+        // validDates = weeks where the implied series has a real observation;
+        // outside them lastIntrinsic is a stale carry and the % would read as
+        // a fake signal (price crashed vs frozen pre-loss intrinsic).
+        function buildValuationHistory(intrinsicSrc: { date: string; impliedPrice: number }[], validDates: Set<string>, unreliableDates?: Set<string>) {
             const result: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[] = [];
             let lastIntrinsic: { date: string; impliedPrice: number } | null = null;
             let pi = 0;
@@ -252,7 +309,7 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
                 const intrinsic = lastIntrinsic.impliedPrice;
                 if (intrinsic <= 0) {
                     result.push({ date: p.date, price: p.price, intrinsic: 0, undervaluationPct: null });
-                } else if (intrinsic < p.price * 0.05 || unreliableDates?.has(p.date)) {
+                } else if (intrinsic < p.price * 0.05 || !validDates.has(p.date) || unreliableDates?.has(p.date)) {
                     // Intrinsic is < 5% of price — near-zero EPS/revenue makes this meaningless
                     result.push({ date: p.date, price: p.price, intrinsic, undervaluationPct: null });
                 } else {
@@ -265,8 +322,10 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
             return result;
         }
 
-        const valuationHistoryPE = buildValuationHistory(impliedPricePE, distortedPeDates);
-        const valuationHistoryPS = buildValuationHistory(impliedPricePS);
+        const impliedPeDates = new Set(impliedPricePE.map(p => p.date));
+        const impliedPsDates = new Set(impliedPricePS.map(p => p.date));
+        const valuationHistoryPE = buildValuationHistory(impliedPricePE, impliedPeDates, distortedPeDates);
+        const valuationHistoryPS = buildValuationHistory(impliedPricePS, impliedPsDates);
 
         // Default: per-point PE/PS smart fallback — use PE when > 0 and not
         // depressed-EPS distorted, else PS
@@ -338,15 +397,19 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
         const intrinsicForecastPS = impliedPSForecast;
 
         const priceMap = new Map(priceHistory.map(p => [p.date, p.price]));
-        const psAligned = impliedPricePS.filter(pt => priceMap.has(pt.date));
-        const psPrices = psAligned.map(pt => priceMap.get(pt.date) as number);
-        const psImplied = psAligned.map(pt => pt.impliedPrice);
-        const corrPS = (psPrices.length > 2) ? pearson(psPrices, psImplied) : null;
 
-        const peAligned = impliedPricePE.filter(pt => priceMap.has(pt.date));
-        const pePrices = peAligned.map(pt => priceMap.get(pt.date) as number);
-        const peImplied = peAligned.map(pt => pt.impliedPrice);
-        const corrPE = (pePrices.length > 2) ? pearson(pePrices, peImplied) : null;
+        // Co-movement measured on quarter-over-quarter % changes, not levels —
+        // Pearson on two upward-trending level series is spuriously ~+0.9 for
+        // almost any growing stock (both simply go up). Quarterly diffs match
+        // the statement cadence of the implied line and measure whether price
+        // actually moves WITH the fundamentals updates.
+        const toPairs = (impliedSeries: { date: string; impliedPrice: number }[]) =>
+            impliedSeries
+                .map(pt => ({ date: pt.date, price: priceMap.get(pt.date) ?? null, implied: pt.impliedPrice }))
+                .filter((p): p is { date: string; price: number; implied: number } => p.price != null && p.price > 0);
+
+        const corrPS = quarterlyDiffCorr(toPairs(impliedPricePS));
+        const corrPE = quarterlyDiffCorr(toPairs(impliedPricePE));
 
         // --- EPS CAGR (3Y & 5Y) from historical per-share earnings ---
         // Used by Data-Driven Scenario Lab as default growth rate.
