@@ -41,6 +41,23 @@ const STORAGE_KEY = 'pmp-user-preferences';
 const FAVORITES_KEY = 'pmp-favorites';
 const CONSENT_KEY = 'pmp-cookie-consent';
 
+/**
+ * Merge a server favorites list into local state. The server response is a
+ * snapshot relative to `base` (the local list the sync started from); local
+ * star toggles that landed after the baseline must survive — otherwise a
+ * slow GET raced with a click visibly un-favorites the ticker (the classic
+ * "works only on second load" bug). Removals on other devices still
+ * propagate because the server list replaces the synced baseline.
+ */
+export function mergeServerFavorites(prev: string[], base: string[], server: string[]): string[] {
+    const pendingAdded = prev.filter(t => !base.includes(t));
+    const pendingRemoved = base.filter(t => !prev.includes(t));
+    return [
+        ...server.filter(t => !pendingRemoved.includes(t)),
+        ...pendingAdded.filter(t => !server.includes(t)),
+    ];
+}
+
 // Version management for preferences migration
 const PREFERENCES_VERSION = '2.0.0'; // Increment when preferences structure changes
 const LAYOUT_VERSION = '2.0.0'; // Increment when layout changes (e.g., sidebar position)
@@ -226,6 +243,23 @@ export function useUserPreferences() {
     });
   }, []);
 
+  /**
+   * Apply a server favorites snapshot without wiping local edits that
+   * landed after `baseList` was captured (see mergeServerFavorites).
+   */
+  const applyServerFavorites = useCallback((serverList: string[], baseList: string[]) => {
+    setPreferences(prev => {
+      const merged = mergeServerFavorites(prev.favorites, baseList, serverList);
+      if (merged.length === prev.favorites.length && merged.every((t, i) => t === prev.favorites[i])) {
+        return prev;
+      }
+      const updated = { ...prev, favorites: merged };
+      safeSetItem(STORAGE_KEY, JSON.stringify(updated));
+      safeSetItem(FAVORITES_KEY, JSON.stringify(merged));
+      return updated;
+    });
+  }, []);
+
   // Clear all preferences
   const clearPreferences = useCallback(() => {
     safeRemoveItem(STORAGE_KEY);
@@ -261,6 +295,7 @@ export function useUserPreferences() {
     addFavorite,
     removeFavorite,
     toggleFavorite,
+    applyServerFavorites,
     clearPreferences,
     setConsent,
     loadPreferences

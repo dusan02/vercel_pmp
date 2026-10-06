@@ -14,50 +14,36 @@ export function useFavorites() {
     addFavorite: addPrefFavorite,
     removeFavorite: removePrefFavorite,
     toggleFavorite: togglePrefFavorite,
-    savePreferences
+    applyServerFavorites
   } = useUserPreferences();
 
   // Sync with DB on login
   useEffect(() => {
     async function syncFavorites() {
-      if (session?.user?.id && preferences.favorites.length > 0) {
-        // Check if we need to sync local favorites to DB (first time login)
-        // We will do a 'sync' call which merges
-        try {
+      // Baseline = local list at sync start. The GET response reflects this
+      // baseline — star toggles landing during the fetch must not be wiped
+      // by applyServerFavorites' merge (previously savePreferences blindly
+      // overwrote state, un-favoriting a ticker the user just starred →
+      // "favorites only worked after a reload").
+      const base = preferences.favorites;
+      try {
+        if (base.length > 0) {
+          // Merge local favorites into DB (first-time login migration)
           await fetch('/api/user/favorites', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'sync',
-              favorites: preferences.favorites
-            })
+            body: JSON.stringify({ action: 'sync', favorites: base })
           });
-
-          // Then fetch the merged list
-          const res = await fetch('/api/user/favorites');
-          if (res.ok) {
-            const data = await res.json();
-            if (data.favorites && Array.isArray(data.favorites)) {
-              // Update local preferences to match DB
-              savePreferences({ favorites: data.favorites });
-            }
-          }
-        } catch (e) {
-          console.error('Error syncing favorites:', e);
         }
-      } else if (session?.user?.id && preferences.favorites.length === 0) {
-        // Just fetch from DB
-        try {
-          const res = await fetch('/api/user/favorites');
-          if (res.ok) {
-            const data = await res.json();
-            if (data.favorites && Array.isArray(data.favorites) && data.favorites.length > 0) {
-              savePreferences({ favorites: data.favorites });
-            }
+        const res = await fetch('/api/user/favorites');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.favorites && Array.isArray(data.favorites)) {
+            applyServerFavorites(data.favorites, base);
           }
-        } catch (e) {
-          console.error('Error fetching favorites:', e);
         }
+      } catch (e) {
+        console.error('Error syncing favorites:', e);
       }
     }
 
@@ -77,11 +63,12 @@ export function useFavorites() {
     // If logged in, update DB
     if (session?.user?.id) {
       try {
-        await fetch('/api/user/favorites', {
+        const res = await fetch('/api/user/favorites', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'add', ticker })
         });
+        if (!res.ok) console.warn(`⚠️ favorite add failed for ${ticker} (HTTP ${res.status}) — local only`);
       } catch (e) {
         console.error('Failed to add favorite to DB:', e);
         // Could revert local state here if strict consistency needed
@@ -98,11 +85,12 @@ export function useFavorites() {
     // If logged in, update DB
     if (session?.user?.id) {
       try {
-        await fetch('/api/user/favorites', {
+        const res = await fetch('/api/user/favorites', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'remove', ticker })
         });
+        if (!res.ok) console.warn(`⚠️ favorite remove failed for ${ticker} (HTTP ${res.status}) — local only`);
       } catch (e) {
         console.error('Failed to remove favorite from DB:', e);
       }
