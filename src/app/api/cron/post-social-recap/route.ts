@@ -7,9 +7,12 @@ import { updateCronStatus } from '@/lib/utils/cronStatus';
 /**
  * Post-close recap post ("Today's biggest movers") — once per weekday.
  */
-export const POST = withCronHandler('post-social-recap', async () => {
+export const POST = withCronHandler('post-social-recap', async (request) => {
     const startTime = Date.now();
-    const results = await socialDistributorService.postDailyRecap();
+    // ?force=1 bypasses the ET posting-window guard (manual retry only —
+    // the daily lock still prevents double-posts).
+    const force = request.nextUrl.searchParams.get('force') === '1';
+    const results = await socialDistributorService.postDailyRecap({ force });
     await updateCronStatus('social_recap');
     return createCronSuccessResponse({
         message: 'Social daily recap completed',

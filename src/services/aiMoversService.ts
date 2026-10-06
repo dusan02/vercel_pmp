@@ -256,11 +256,24 @@ Return strictly valid JSON:
             aiConfidence = 55;
         }
 
+        // Match the LLM template skeleton so fallback posts are visually
+        // indistinguishable: emoji $SYM % — catalyst / stats line / hashtags.
+        const statsLine = [
+            rvolStr !== 'N/A' ? `RVOL ${rvolStr}` : '',
+            zStr !== 'N/A' ? `Z-score ${zStr}σ` : '',
+        ].filter(Boolean).join(' | ');
+        const catalyst = absZ >= 4 ? 'extreme move, no clear catalyst' : 'elevated activity, no clear catalyst';
+        const sectorTag = (sector || 'Stocks').replace(/[^A-Za-z]/g, '');
+        const lines = [`${direction === 'up' ? '📈' : '📉'} $${symbol} ${changePctStr} — ${catalyst}`];
+        if (statsLine) lines.push(statsLine);
+        lines.push(`#${symbol} #${sectorTag}`);
+        const socialCopy = lines.join('\n');
+
         return {
             symbol,
             reason,
             category,
-            socialCopy: `👀 $${symbol} ${direction === 'up' ? '📈' : '📉'} ${changePctStr} on ${rvolStr} relative volume. Statistical outlier (Z: ${zStr}). Watch closely. #Stocks #${sector?.replace(/\s/g, '') || 'Market'}`,
+            socialCopy,
             isSbcAlert: false,
             aiConfidence,
         };

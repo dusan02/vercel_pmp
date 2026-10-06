@@ -7,9 +7,12 @@ import { updateCronStatus } from '@/lib/utils/cronStatus';
 /**
  * Pre-market movers summary post ("Before the open") — once per weekday.
  */
-export const POST = withCronHandler('post-social-premarket', async () => {
+export const POST = withCronHandler('post-social-premarket', async (request) => {
     const startTime = Date.now();
-    const results = await socialDistributorService.postPremarketSummary();
+    // ?force=1 bypasses the ET posting-window guard (manual retry only —
+    // the daily lock still prevents double-posts).
+    const force = request.nextUrl.searchParams.get('force') === '1';
+    const results = await socialDistributorService.postPremarketSummary({ force });
     await updateCronStatus('social_premarket');
     return createCronSuccessResponse({
         message: 'Social premarket digest completed',

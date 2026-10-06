@@ -1,16 +1,30 @@
 import { prisma } from '@/lib/db/prisma';
 import { redisClient } from '@/lib/redis';
 import { REDIS_KEYS } from '@/lib/redis/keys';
-import { getDateET } from '@/lib/utils/dateET';
+import { getDateET, toET } from '@/lib/utils/dateET';
 import { TwitterApi } from 'twitter-api-v2';
+
+/** Optional per-post card overrides (digest posts link to the movers board). */
+interface PostOpts {
+    cardUrl?: string;
+    cardTitle?: string;
+    cardDesc?: string;
+}
 
 export class SocialDistributorService {
     /**
      * Post top movers to X (Twitter)
      */
-    async distributeTopMovers(): Promise<{ posted: string[]; skipped: number; errors: number }> {
+    async distributeTopMovers(opts?: { force?: boolean }): Promise<{ posted: string[]; skipped: number; errors: number }> {
         const date = getDateET();
         const results = { posted: [] as string[], skipped: 0, errors: 0 };
+
+        // Window guard — see inPostingWindow. Singles may post 06:30–17:30 ET
+        // on weekdays; a PM2 bootstrap fire must not publish stale movers.
+        if (!opts?.force && !this.inPostingWindow('single')) {
+            console.log('ℹ️ SocialDistributorService: outside posting window, skipping singles distribution');
+            return results;
+        }
 
         // 0. Quota Management: quality over quantity — a few strong
         // signals per day, not a bot stream (also leaves headroom under
@@ -81,19 +95,7 @@ export class SocialDistributorService {
         for (const mover of toPost) {
             try {
                 console.log(`🐦 SocialDistributorService: Posting alpha signal for ${mover.symbol}...`);
-                // socialCopy was generated earlier — its embedded % can be
-                // stale vs the live lastChangePct shown on the OG card.
-                // Patch every % token to the live value so text and image match.
-                let copy = mover.socialCopy!;
-                const livePct = mover.lastChangePct;
-                if (livePct != null) {
-                    const liveStr = `${livePct >= 0 ? '+' : ''}${livePct.toFixed(2)}%`;
-                    copy = copy.replace(/[+-]?\d+(?:\.\d+)?\s*%/g, liveStr);
-                    // Older stored copy has no emoji — prepend a directional one
-                    if (!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(copy)) {
-                        copy = `${livePct >= 0 ? '📈' : '📉'} ${copy}`;
-                    }
-                }
+                const copy = this.patchSocialCopy(mover.socialCopy!, mover);
                 const tweetText = `${copy}\n\nFull breakdown: https://premarketprice.com/analysis/${mover.symbol}`;
                 await poster(mover, tweetText);
 
@@ -117,14 +119,62 @@ export class SocialDistributorService {
         return results;
     }
 
+    /**
+     * Reconcile stored socialCopy with live values at post time: the embedded
+     * %, direction emoji and RVOL/Z-score stats were frozen at generation time
+     * and can drift — or even flip sign — before the 30-min cron posts them.
+     * Also normalizes casing variants (Z-Score/Z-score:/Z Score → "Z-score").
+     */
+    private patchSocialCopy(
+        copy: string,
+        mover: { lastChangePct: number | null; latestMoversRVOL: number | null; latestMoversZScore: number | null }
+    ): string {
+        const livePct = mover.lastChangePct;
+        if (livePct != null) {
+            const liveStr = `${livePct >= 0 ? '+' : ''}${livePct.toFixed(2)}%`;
+            copy = copy.replace(/[+-]?\d+(?:\.\d+)?\s*%/g, liveStr);
+            // Direction emoji must match the LIVE sign — a move can flip
+            // between copy generation and posting (stored 📈, live −6%).
+            const dirEmoji = livePct >= 0 ? '📈' : '📉';
+            if (/[\u{1F4C8}\u{1F4C9}]/u.test(copy)) {
+                copy = copy.replace(/[\u{1F4C8}\u{1F4C9}]/u, dirEmoji);
+            } else if (!/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(copy)) {
+                copy = `${dirEmoji} ${copy}`;
+            }
+        }
+        if (mover.latestMoversRVOL != null) {
+            copy = copy.replace(/\bRVOL:?\s*(?:N\/A|[+-]?\d+(?:\.\d+)?)\s*x\b/gi, `RVOL ${mover.latestMoversRVOL.toFixed(1)}x`);
+        }
+        if (mover.latestMoversZScore != null) {
+            copy = copy.replace(/\bZ[-\s]?[Ss]core:?\s*[+-]?\d+(?:\.\d+)?\s*σ?/gi, `Z-score ${mover.latestMoversZScore.toFixed(2)}σ`);
+        }
+        return copy;
+    }
+
+    /**
+     * Posting-time window guard — `pm2 start --only` fires trigger scripts
+     * immediately at registration (not at cron time), so an off-schedule run
+     * must not publish a mislabeled digest mid-session and burn the daily
+     * lock. Weekday + ET window per post kind.
+     */
+    private inPostingWindow(kind: 'premarket' | 'recap' | 'single'): boolean {
+        const et = toET(new Date());
+        if (et.weekday === 0 || et.weekday === 6) return false;
+        const min = et.hour * 60 + et.minute;
+        const [start, end] = kind === 'premarket' ? [7 * 60, 9 * 60 + 45]
+            : kind === 'recap' ? [15 * 60 + 30, 17 * 60 + 30]
+            : [6 * 60 + 30, 17 * 60 + 30];
+        return min >= start && min <= end;
+    }
+
     /** Pre-market movers summary (~08:45 ET). One post per day. */
-    async postPremarketSummary(): Promise<{ posted: string[]; skipped: number; errors: number }> {
-        return this.postMoversDigest('premarket');
+    async postPremarketSummary(opts?: { force?: boolean }): Promise<{ posted: string[]; skipped: number; errors: number }> {
+        return this.postMoversDigest('premarket', opts);
     }
 
     /** Post-close recap (~16:05 ET). One post per day. */
-    async postDailyRecap(): Promise<{ posted: string[]; skipped: number; errors: number }> {
-        return this.postMoversDigest('recap');
+    async postDailyRecap(opts?: { force?: boolean }): Promise<{ posted: string[]; skipped: number; errors: number }> {
+        return this.postMoversDigest('recap', opts);
     }
 
     /**
@@ -132,9 +182,17 @@ export class SocialDistributorService {
      * per kind, independent of the 4/day single-mover quota — these are anchor
      * content, not part of the signal stream.
      */
-    private async postMoversDigest(kind: 'premarket' | 'recap'): Promise<{ posted: string[]; skipped: number; errors: number }> {
+    private async postMoversDigest(kind: 'premarket' | 'recap', opts?: { force?: boolean }): Promise<{ posted: string[]; skipped: number; errors: number }> {
         const date = getDateET();
         const results = { posted: [] as string[], skipped: 0, errors: 0 };
+
+        // Window guard — an off-schedule run (e.g. PM2 registration bootstrap)
+        // must not post "Before the open" mid-session and burn the daily lock.
+        // ?force=1 on the route bypasses for manual retries.
+        if (!opts?.force && !this.inPostingWindow(kind)) {
+            console.log(`ℹ️ SocialDistributorService: outside ${kind} window, skipping digest`);
+            return results;
+        }
 
         const lockKey = `social:${kind}:${date}`;
         if (await redisClient.get(lockKey)) {
@@ -193,8 +251,15 @@ export class SocialDistributorService {
         }
 
         try {
-            // OG card shows the top mover — the post's headline stock.
-            await poster(movers[0], text);
+            // OG card shows the top mover — the post's headline stock. On
+            // Bluesky the card IS the only link (URL lines get stripped to
+            // fit 300 graphemes), so point it at the movers board, not the
+            // top mover's analysis page.
+            await poster(movers[0], text, {
+                cardUrl: 'https://premarketprice.com/premarket-movers',
+                cardTitle: kind === 'premarket' ? 'Pre-market Movers | PreMarketPrice' : "Today's Biggest Movers | PreMarketPrice",
+                cardDesc: 'Live movers board — abnormal moves with catalysts and fundamental context.',
+            });
             await redisClient.set(lockKey, '1', { EX: 86400 });
             results.posted = movers.map(m => m.symbol);
             console.log(`✅ SocialDistributorService: ${kind} digest posted (${results.posted.join(', ')})`);
@@ -208,21 +273,51 @@ export class SocialDistributorService {
     /**
      * Short catalyst phrase for a digest line — prefer the LLM socialCopy
      * lead (already "% + short catalyst"), fall back to moversReason, then
-     * quantitative labels. ~40 chars max, word-boundary truncated.
+     * "unusual volume" only when RVOL actually confirms it. ~42 chars max.
      */
     private extractCatalyst(mover: any): string {
-        const line1 = (mover.socialCopy || '').split('\n')[0] || '';
-        let s = line1
+        const clean = (raw: string) => raw
             .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F]/gu, '')
             .replace(new RegExp(`\\$?${mover.symbol}\\b`, 'g'), '')
             .replace(/[+-]?\d+(?:\.\d+)?\s*%/g, '')
             .replace(/^\s*(?:on|with|amid)\s+/i, '')
             .trim();
-        if (!s && mover.moversReason) s = String(mover.moversReason).trim();
-        if (!s && (mover.latestMoversRVOL ?? 0) >= 4) s = 'unusual volume';
-        if (!s && Math.abs(mover.latestMoversZScore ?? 0) >= 4) s = 'statistical outlier';
+
+        let s = clean((mover.socialCopy || '').split('\n')[0] || '');
+        if (!this.hasCatalystSubstance(s)) s = clean(String(mover.moversReason || ''));
+        if (!this.hasCatalystSubstance(s)) s = (mover.latestMoversRVOL ?? 0) >= 2 ? 'unusual volume' : '';
         if (s.length > 42) s = s.slice(0, 42).replace(/\s+\S*$/, '').replace(/[.,;:\s]+$/, '') + '…';
         return s;
+    }
+
+    /**
+     * A digest "reason" must carry real information — quant fragments like
+     * "0.1x relative volume" or "statistical outlier" describe the
+     * measurement, not the cause, and read as broken copy. Test: after
+     * stripping numbers, jargon and filler verbs, at least one substantive
+     * word must remain ("acquisition", "election", "earnings"…).
+     */
+    private hasCatalystSubstance(s: string): boolean {
+        if (!s) return false;
+        const FILLER = new Set([
+            'on', 'the', 'a', 'an', 'of', 'with', 'and', 'in', 'to', 'at', 'as', 'by', 'for', 'no',
+            'is', 'it', 'its', 'x', 'up', 'down', 'high', 'higher', 'low', 'lower', 'today',
+            'surging', 'soaring', 'plunging', 'tanking', 'jumping', 'dumping', 'spiking', 'rallying',
+            'upward', 'downward',
+            'volatility', 'volume', 'relative', 'rvol', 'move', 'moves', 'moving', 'sharply',
+            'premarket', 'watch', 'closely', 'extreme', 'outlier', 'statistical', 'unusual',
+            'elevated', 'heavy', 'activity', 'interest', 'sentiment', 'driven', 'broader', 'market',
+            'sector', 'possible', 'immediate', 'public', 'news', 'catalyst', 'without', 'specific',
+            'clear', 'z', 'score', 'sigma', 'standard', 'deviation',
+        ]);
+        const core = s.toLowerCase()
+            .replace(/\b\d+(?:\.\d+)?\s*(?:x|%|σ|bps?|million|billion|m|b)\b/g, ' ')
+            .replace(/z[-\s]?score|σ/g, ' ')
+            .replace(/[^a-z\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        if (!core) return false;
+        return core.split(' ').some(w => w.length >= 3 && !FILLER.has(w));
     }
 
     private getTwitterClient() {
@@ -276,8 +371,8 @@ export class SocialDistributorService {
         return service; // threads, bluesky, …
     }
 
-    private async getPoster(): Promise<((mover: any, text: string) => Promise<void>) | null> {
-        const posters: ((mover: any, text: string) => Promise<void>)[] = [];
+    private async getPoster(): Promise<((mover: any, text: string, opts?: PostOpts) => Promise<void>) | null> {
+        const posters: ((mover: any, text: string, opts?: PostOpts) => Promise<void>)[] = [];
 
         // Buffer channels (X, Threads, Bluesky if connected there)
         let bufferCoversBluesky = false;
@@ -294,7 +389,7 @@ export class SocialDistributorService {
         // Direct Bluesky via AT Protocol — free, no Buffer needed. Skipped
         // when a bluesky Buffer channel already covers it (no double-posts).
         if (process.env.BLUESKY_HANDLE && process.env.BLUESKY_APP_PASSWORD && !bufferCoversBluesky) {
-            posters.push((mover, text) => this.postViaBluesky(text, mover));
+            posters.push((mover, text, opts) => this.postViaBluesky(text, mover, opts));
         }
 
         if (posters.length === 0) {
@@ -304,12 +399,12 @@ export class SocialDistributorService {
         }
 
         // Composite: run all channels, fail only if every one fails.
-        return async (mover, text) => {
+        return async (mover, text, opts) => {
             let ok = 0;
             let lastError: unknown;
             for (const post of posters) {
                 try {
-                    await post(mover, text);
+                    await post(mover, text, opts);
                     ok++;
                 } catch (e) {
                     console.warn('⚠️ SocialDistributorService: channel post failed', e);
@@ -466,9 +561,11 @@ export class SocialDistributorService {
      * Bluesky doesn't unfurl links — a link-preview card must be attached
      * explicitly as app.bsky.embed.external with the image uploaded as a blob.
      */
-    private async bskyBuildExternalEmbed(mover: any) {
+    private async bskyBuildExternalEmbed(mover: any, opts?: PostOpts) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        const publicUrl = `https://premarketprice.com/analysis/${mover.symbol}?utm_source=bluesky&utm_medium=social&utm_campaign=movers`;
+        const utm = 'utm_source=bluesky&utm_medium=social&utm_campaign=movers';
+        const baseUrl = opts?.cardUrl ?? `https://premarketprice.com/analysis/${mover.symbol}`;
+        const publicUrl = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}${utm}`;
         const ogImageUrl = `${appUrl}/analysis/${mover.symbol}/opengraph-image`;
 
         const imgRes = await fetch(ogImageUrl);
@@ -494,19 +591,56 @@ export class SocialDistributorService {
             $type: 'app.bsky.embed.external',
             external: {
                 uri: publicUrl,
-                title: `${mover.symbol} Stock Analysis | PreMarketPrice`,
-                description: `${mover.name || mover.symbol} · $${(mover.lastPrice || 0).toFixed(2)} ${pctStr} · ${mover.sector || 'Stock'}`.slice(0, 300),
+                title: opts?.cardTitle ?? `${mover.symbol} Stock Analysis | PreMarketPrice`,
+                description: (opts?.cardDesc ?? `${mover.name || mover.symbol} · $${(mover.lastPrice || 0).toFixed(2)} ${pctStr} · ${mover.sector || 'Stock'}`).slice(0, 300),
                 thumb: blob,
             },
         };
     }
 
-    private async postViaBluesky(text: string, mover: any): Promise<void> {
-        text = this.withChannelUtm(text, 'bluesky');
+    /**
+     * Bluesky counts full URL chars (no t.co-style shortening) and hard-caps
+     * posts at 300 graphemes — a ~340-char digest fails createRecord with
+     * 400. When over, drop URL lines first: the embed card already carries
+     * the click target, so inline links are redundant. Word-boundary
+     * truncate as last resort.
+     */
+    private bskyFitText(text: string): string {
+        const LIMIT = 300;
+        if (this.graphemeLength(text) <= LIMIT) return text;
+        let t = text
+            .split('\n')
+            .filter(l => !/https?:\/\//.test(l))
+            .join('\n')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+        if (this.graphemeLength(t) > LIMIT) {
+            t = this.truncateGraphemes(t, LIMIT - 1).replace(/\s+\S*$/, '').replace(/[.,;:\s—-]+$/, '') + '…';
+        }
+        return t;
+    }
+
+    private graphemeLength(text: string): number {
+        const Seg = (Intl as any).Segmenter;
+        if (!Seg) return [...text].length;
+        return [...new Seg('en', { granularity: 'grapheme' }).segment(text)].length;
+    }
+
+    private truncateGraphemes(text: string, max: number): string {
+        const Seg = (Intl as any).Segmenter;
+        if (!Seg) return [...text].slice(0, max).join('');
+        return [...new Seg('en', { granularity: 'grapheme' }).segment(text)]
+            .slice(0, max)
+            .map((s: any) => s.segment)
+            .join('');
+    }
+
+    private async postViaBluesky(text: string, mover: any, opts?: PostOpts): Promise<void> {
+        text = this.bskyFitText(this.withChannelUtm(text, 'bluesky'));
         // Best-effort OG card — if image fetch/upload fails, post text-only.
         let embed: any = null;
         try {
-            embed = await this.bskyBuildExternalEmbed(mover);
+            embed = await this.bskyBuildExternalEmbed(mover, opts);
         } catch (e) {
             console.warn(`⚠️ SocialDistributorService: Bluesky embed failed for ${mover.symbol}, posting text-only`, e);
         }

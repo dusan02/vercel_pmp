@@ -9,9 +9,11 @@ import { updateCronStatus } from '@/lib/utils/cronStatus';
  * 
  * Frequency: Every 30-60 minutes during market hours
  */
-export const POST = withCronHandler('post-social', async () => {
+export const POST = withCronHandler('post-social', async (request) => {
     const startTime = Date.now();
-    const results = await socialDistributorService.distributeTopMovers();
+    // ?force=1 bypasses the ET posting-window guard (manual retry only).
+    const force = request.nextUrl.searchParams.get('force') === '1';
+    const results = await socialDistributorService.distributeTopMovers({ force });
     await updateCronStatus('social_distribution');
     return createCronSuccessResponse({
         message: 'Social distribution completed',
