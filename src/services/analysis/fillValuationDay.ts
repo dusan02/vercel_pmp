@@ -26,6 +26,13 @@ interface ValuationRow {
     psRatio: number | null;
     evEbitda: number | null;
     fcfYield: number | null;
+    pbRatio: number | null;
+    evFcf: number | null;
+    evRevenue: number | null;
+    roe: number | null;
+    roic: number | null;
+    currentRatio: number | null;
+    debtToEquity: number | null;
 }
 
 export interface FillValuationDayResult {
@@ -44,6 +51,18 @@ export interface DayRatios {
     psRatio: number | null;
     evEbitda: number | null;
     fcfYield: number | null;
+    /** price ÷ book value per share — null when equity ≤ 0 */
+    pbRatio: number | null;
+    /** EV ÷ TTM FCF — null when FCF ≤ 0 */
+    evFcf: number | null;
+    /** EV ÷ TTM revenue */
+    evRevenue: number | null;
+    /** TTM net income ÷ equity — may be negative (real signal) */
+    roe: number | null;
+    /** TTM EBIT ÷ invested capital (debt + equity − cash) */
+    roic: number | null;
+    currentRatio: number | null;
+    debtToEquity: number | null;
 }
 
 /**
@@ -65,7 +84,11 @@ export interface DayRatios {
  * period shares are the correct historical basis.
  */
 export function computeDayRatios(statements: FinancialStatement[], closePrice: number, asOf: Date, trustedShares: number | null = null): DayRatios {
-    const out: DayRatios = { marketCap: null, peRatio: null, psRatio: null, evEbitda: null, fcfYield: null };
+    const out: DayRatios = {
+        marketCap: null, peRatio: null, psRatio: null, evEbitda: null, fcfYield: null,
+        pbRatio: null, evFcf: null, evRevenue: null, roe: null, roic: null,
+        currentRatio: null, debtToEquity: null,
+    };
     const ttm = computeTTMAtDate(statements, asOf);
     const stmtsBeforeDate = statements.filter(s => s.endDate.getTime() <= asOf.getTime());
     // Latest filings don't always report every field (e.g. CMCSA Q1-2026:
@@ -80,27 +103,57 @@ export function computeDayRatios(statements: FinancialStatement[], closePrice: n
         ? trustedShares
         : stmtShares;
 
+    // Balance-sheet ratios don't need shares — compute them outside the
+    // market-cap gate so debt/equity/current metrics exist even when the
+    // share count is missing.
+    const eqStmt = latestWith((s) => s.totalEquity != null);
+    const equity = eqStmt?.totalEquity ?? null;
+    const bs = latestWith((s) => s.totalDebt != null && s.cashAndEquivalents != null);
+    const effectiveNI = ttm.netIncome ?? latestWith((s) => s.netIncome != null)?.netIncome;
+    const effectiveRev = ttm.revenue ?? latestWith((s) => s.revenue != null)?.revenue;
+    const effectiveEbit = ttm.ebit ?? latestWith((s) => s.ebit != null)?.ebit;
+    const cf = latestWith((s) => s.operatingCashFlow != null && s.capex != null);
+    const effOcf = ttm.operatingCashFlow ?? cf?.operatingCashFlow ?? null;
+    const effCapex = ttm.capex ?? cf?.capex ?? null;
+    const fcf = effOcf !== null && effCapex !== null ? effOcf - Math.abs(effCapex) : null;
+
+    if (equity != null) {
+        if (equity > 0) {
+            if (effectiveNI != null) out.roe = effectiveNI / equity;
+            if (bs != null) {
+                const investedCapital = bs.totalDebt! + equity - bs.cashAndEquivalents!;
+                if (investedCapital > 0 && effectiveEbit != null) out.roic = effectiveEbit / investedCapital;
+            }
+            if (bs != null) out.debtToEquity = bs.totalDebt! / equity;
+        }
+    }
+    const liq = latestWith((s) => s.currentAssets != null && s.currentLiabilities != null);
+    if (liq != null && liq.currentLiabilities! > 0) {
+        out.currentRatio = liq.currentAssets! / liq.currentLiabilities!;
+    }
+
     if (shares) {
         out.marketCap = closePrice * shares;
 
-        const effectiveNI = ttm.netIncome ?? latestWith((s) => s.netIncome != null)?.netIncome;
         if (effectiveNI && effectiveNI > 0) {
             out.peRatio = closePrice / (effectiveNI / shares);
         }
-        const effectiveRev = ttm.revenue ?? latestWith((s) => s.revenue != null)?.revenue;
         if (effectiveRev && effectiveRev > 0) {
             out.psRatio = closePrice / (effectiveRev / shares);
         }
-        const bs = latestWith((s) => s.totalDebt != null && s.cashAndEquivalents != null);
-        const effectiveEbit = ttm.ebit ?? latestWith((s) => s.ebit != null)?.ebit;
-        if (effectiveEbit && effectiveEbit > 0 && bs) {
-            out.evEbitda = (out.marketCap + bs.totalDebt! - bs.cashAndEquivalents!) / effectiveEbit;
+        if (equity != null && equity > 0) {
+            out.pbRatio = out.marketCap / equity;
         }
-        const cf = latestWith((s) => s.operatingCashFlow != null && s.capex != null);
-        const effOcf = ttm.operatingCashFlow ?? cf?.operatingCashFlow ?? null;
-        const effCapex = ttm.capex ?? cf?.capex ?? null;
-        if (effOcf !== null && effCapex !== null && out.marketCap > 0) {
-            out.fcfYield = (effOcf - Math.abs(effCapex)) / out.marketCap;
+        const ev = bs ? out.marketCap + bs.totalDebt! - bs.cashAndEquivalents! : null;
+        if (effectiveEbit && effectiveEbit > 0 && ev != null) {
+            out.evEbitda = ev / effectiveEbit;
+        }
+        if (ev != null) {
+            if (effectiveRev != null && effectiveRev > 0) out.evRevenue = ev / effectiveRev;
+            if (fcf != null && fcf > 0) out.evFcf = ev / fcf;
+        }
+        if (fcf !== null && out.marketCap > 0) {
+            out.fcfYield = fcf / out.marketCap;
         }
     }
     return out;
@@ -136,6 +189,8 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
         select: {
             symbol: true, closePrice: true, marketCap: true,
             peRatio: true, psRatio: true, evEbitda: true, fcfYield: true,
+            pbRatio: true, evFcf: true, evRevenue: true,
+            roe: true, roic: true, currentRatio: true, debtToEquity: true,
         },
     });
     const have = new Map(existing.map(r => [r.symbol, r]));
@@ -173,12 +228,12 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
         const closePrice = ref.regularClose!;
         try {
             const statements = stmtsBySymbol.get(ref.symbol) ?? [];
-            const { marketCap, peRatio, psRatio, evEbitda, fcfYield } =
+            const ratios =
                 computeDayRatios(statements, closePrice, ref.date, trustedSharesBySymbol.get(ref.symbol) ?? null);
 
-            if (peRatio === null && psRatio === null) result.priceOnly++;
+            if (ratios.peRatio === null && ratios.psRatio === null) result.priceOnly++;
 
-            const row = { symbol: ref.symbol, date: ref.date, closePrice, marketCap, peRatio, psRatio, evEbitda, fcfYield };
+            const row = { symbol: ref.symbol, date: ref.date, closePrice, ...ratios };
             const prev = have.get(ref.symbol);
 
             if (!prev) {
@@ -187,9 +242,9 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
             } else {
                 // Existing row may hold a mid-session partial close (lazy syncs
                 // run before 16:00 ET) — overwrite with the official close.
+                const RATIO_KEYS = ['peRatio', 'psRatio', 'evEbitda', 'fcfYield', 'pbRatio', 'evFcf', 'evRevenue', 'roe', 'roic', 'currentRatio', 'debtToEquity'] as const;
                 const same = prev.closePrice === row.closePrice && prev.marketCap === row.marketCap
-                    && prev.peRatio === row.peRatio && prev.psRatio === row.psRatio
-                    && prev.evEbitda === row.evEbitda && prev.fcfYield === row.fcfYield;
+                    && RATIO_KEYS.every(k => prev[k] === row[k]);
                 if (same) { result.unchanged++; continue; }
                 updates.push(row);
                 result.updated++;
@@ -213,6 +268,8 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
                 data: {
                     closePrice: u.closePrice, marketCap: u.marketCap, peRatio: u.peRatio,
                     psRatio: u.psRatio, evEbitda: u.evEbitda, fcfYield: u.fcfYield,
+                    pbRatio: u.pbRatio, evFcf: u.evFcf, evRevenue: u.evRevenue,
+                    roe: u.roe, roic: u.roic, currentRatio: u.currentRatio, debtToEquity: u.debtToEquity,
                 },
             }))
         ), 'fillValuationDay.update');

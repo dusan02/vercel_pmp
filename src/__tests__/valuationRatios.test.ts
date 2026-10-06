@@ -47,7 +47,11 @@ describe('computeDayRatios — share-count fallback', () => {
     it('produces all-null ratios when no statement reports shares', () => {
         const noShares = cmcsaStatements.map((s) => ({ ...s, sharesOutstanding: null }));
         const r = computeDayRatios(noShares, 21.57, asOf);
-        expect(r).toEqual({ marketCap: null, peRatio: null, psRatio: null, evEbitda: null, fcfYield: null });
+        expect(r).toEqual({
+            marketCap: null, peRatio: null, psRatio: null, evEbitda: null, fcfYield: null,
+            pbRatio: null, evFcf: null, evRevenue: null, roe: null, roic: null,
+            currentRatio: null, debtToEquity: null,
+        });
     });
 
     it('prefers latest-statement shares when present (no fallback used)', () => {

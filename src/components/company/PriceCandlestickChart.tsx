@@ -25,6 +25,11 @@ interface Candle {
   c: number;
   v: number;
   pe?: number | null; // TTM P/E on the candle's close day
+  ps?: number | null; // TTM P/S
+  pb?: number | null; // price ÷ book value/share
+  evEbit?: number | null; // EV ÷ TTM EBIT
+  fcfYield?: number | null; // TTM FCF ÷ market cap — decimal, may be negative
+  mcap?: number | null; // market cap at this close (USD)
 }
 
 interface ChartPoint extends Candle {
@@ -37,9 +42,56 @@ interface ChartPoint extends Candle {
   eps?: number | null;
   /** this week carries a new TTM EPS (fresh financial statements) */
   epsChanged?: boolean;
-  /** [p25, p75] band for the P/E-multiple view */
-  peBand?: [number, number];
+  /** [p25, p75] band for the active valuation-metric view */
+  band?: [number, number];
   volSpike?: boolean;
+}
+
+// ── Valuation metrics ───────────────────────────────────────────────────────
+type MetricKey = 'pe' | 'ps' | 'pb' | 'evEbit' | 'fcfYield';
+type MetricField = 'pe' | 'ps' | 'pb' | 'evEbit' | 'fcfYield';
+
+interface MetricDef {
+  label: string;
+  /** unit suffix — '×' multiples, '%' yields (stored as decimal, ×100 shown) */
+  unit: '×' | '%';
+  field: MetricField;
+  /** lower multiple = cheaper → falling change badge is green. FCF yield
+      inverts this (higher yield = cheaper). */
+  lowerIsBetter: boolean;
+  /** negative values are real signal (negative FCF) — others are null-stored */
+  allowNegative: boolean;
+  formula: string;
+  gapNote: string;
+}
+
+const METRICS: MetricDef[] = [
+  { label: 'P/E', unit: '×', field: 'pe', lowerIsBetter: true, allowNegative: false,
+    formula: 'close ÷ TTM EPS', gapNote: 'Gaps mark periods with negative or unavailable earnings.' },
+  { label: 'P/S', unit: '×', field: 'ps', lowerIsBetter: true, allowNegative: false,
+    formula: 'close ÷ TTM revenue/share', gapNote: 'Gaps mark periods with missing revenue data.' },
+  { label: 'P/B', unit: '×', field: 'pb', lowerIsBetter: true, allowNegative: false,
+    formula: 'close ÷ book value/share', gapNote: 'Gaps mark periods with missing or negative equity.' },
+  { label: 'EV/EBIT', unit: '×', field: 'evEbit', lowerIsBetter: true, allowNegative: false,
+    formula: 'enterprise value ÷ TTM EBIT', gapNote: 'Gaps mark periods with negative or unavailable EBIT.' },
+  { label: 'FCF yield', unit: '%', field: 'fcfYield', lowerIsBetter: false, allowNegative: true,
+    formula: 'TTM FCF ÷ market cap', gapNote: 'Dips below zero mark negative-FCF periods.' },
+];
+
+const METRIC_BY_KEY = Object.fromEntries(METRICS.map(m => [m.field, m])) as Record<MetricField, MetricDef>;
+
+interface MetricStats { median: number; p25: number; p75: number; n: number }
+
+/** Format a metric value in display units (× multiple or % yield). */
+function fmtMetric(v: number, unit: '×' | '%', digits = 1): string {
+  return unit === '%' ? `${(v * 100).toFixed(digits)}%` : `${v.toFixed(digits)}×`;
+}
+
+/** Implied per-share denominator for price-linear multiples (EPS, rev/share,
+    book/share): close ÷ multiple. */
+function impliedPerShare(p: ChartPoint, field: MetricField): number | null {
+  const v = p[field];
+  return v != null && v > 0 && p.c > 0 ? p.c / v : null;
 }
 
 interface PriceCandlestickChartProps {
@@ -181,51 +233,72 @@ function CandleTooltip({ active, payload }: any) {
   );
 }
 
-// P/E-multiple view tooltip — the multiple itself vs its own distribution.
-function PeTooltip({ active, payload, peStats }: any) {
+// Valuation-metric view tooltip — the multiple itself vs its own
+// distribution. Denominator row shows what the multiple is composed of
+// (implied per-share value for price ratios, totals for EV/FCF metrics).
+function MetricTooltip({ active, payload, metric, stats }: any) {
   if (!active || !payload?.length) return null;
   const p: ChartPoint = payload[0].payload;
   if (!p) return null;
-  const pe = p.pe != null && p.pe > 0 ? p.pe : null;
+  const m: MetricDef = METRIC_BY_KEY[metric as MetricField];
+  const raw = p[m.field];
+  const val = raw != null && (m.allowNegative || raw > 0) ? raw : null;
+  const ps = val != null ? impliedPerShare(p, m.field) : null;
+
+  // What's in the denominator of each metric — price-per-share multiples
+  // show the implied per-share figure; EV/FCF metrics show the dollar base.
+  const denomRows: { label: string; text: string }[] = [];
+  if (val != null) {
+    if (metric === 'pe' && ps != null) denomRows.push({ label: 'TTM EPS', text: `$${ps.toFixed(2)}` });
+    if (metric === 'ps' && ps != null) denomRows.push({ label: 'TTM rev/sh', text: `$${ps.toFixed(2)}` });
+    if (metric === 'pb' && ps != null) denomRows.push({ label: 'Book/sh', text: `$${ps.toFixed(2)}` });
+    if (metric === 'evEbit' && p.mcap != null) denomRows.push({ label: 'Mkt cap', text: `$${fmtVol(p.mcap)}` });
+    if (metric === 'fcfYield' && p.mcap != null) denomRows.push({ label: 'TTM FCF', text: `$${fmtVol(val * p.mcap)}` });
+  }
+
+  const betterVsMedian = val != null && stats
+    ? (m.lowerIsBetter ? val <= stats.median : val >= stats.median)
+    : null;
+
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 shadow-lg text-xs min-w-[170px]">
       <div className="text-gray-500 dark:text-gray-400 mb-2 font-medium">
         {new Date(p.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono">
-        {pe != null ? (
+        {val != null ? (
           <>
-            <span style={{ color: PE_LINE }}>P/E (TTM)</span>
-            <span className="text-right font-semibold text-gray-900 dark:text-white">{pe.toFixed(1)}×</span>
+            <span style={{ color: PE_LINE }}>{m.label}</span>
+            <span className="text-right font-semibold text-gray-900 dark:text-white">{fmtMetric(val, m.unit)}</span>
           </>
         ) : (
           <>
-            <span className="text-gray-500 dark:text-gray-400">P/E (TTM)</span>
+            <span className="text-gray-500 dark:text-gray-400">{m.label}</span>
             <span className="text-right text-gray-400 dark:text-gray-500">n/m</span>
           </>
         )}
-        {p.eps != null && (
-          <>
-            <span className="text-gray-500 dark:text-gray-400">TTM EPS</span>
-            <span className="text-right text-gray-700 dark:text-gray-300">${p.eps.toFixed(2)}</span>
-          </>
-        )}
-        {peStats && (
+        {denomRows.map(r => (
+          <React.Fragment key={r.label}>
+            <span className="text-gray-500 dark:text-gray-400">{r.label}</span>
+            <span className="text-right text-gray-700 dark:text-gray-300">{r.text}</span>
+          </React.Fragment>
+        ))}
+        {stats && (
           <>
             <span style={{ color: PE_FAIR }}>Median</span>
-            <span className="text-right text-gray-700 dark:text-gray-300">{peStats.median.toFixed(1)}×</span>
+            <span className="text-right text-gray-700 dark:text-gray-300">{fmtMetric(stats.median, m.unit)}</span>
             <span className="text-gray-500 dark:text-gray-400">25–75th</span>
             <span className="text-right text-gray-700 dark:text-gray-300">
-              {peStats.p25.toFixed(0)}–{peStats.p75.toFixed(0)}×
+              {fmtMetric(stats.p25, m.unit, 0)}–{fmtMetric(stats.p75, m.unit, 0)}
             </span>
           </>
         )}
-        {pe != null && peStats && (
+        {val != null && stats && (
           <>
             <span className="text-gray-500 dark:text-gray-400">vs median</span>
-            <span className="text-right" style={{ color: pe <= peStats.median ? UP : DOWN }}>
-              {((pe - peStats.median) / peStats.median) * 100 >= 0 ? '+' : ''}
-              {(((pe - peStats.median) / peStats.median) * 100).toFixed(0)}%
+            <span className="text-right" style={{ color: betterVsMedian ? UP : DOWN }}>
+              {((val - stats.median) / Math.abs(stats.median)) * 100 >= 0 ? '+' : ''}
+              {(((val - stats.median) / Math.abs(stats.median)) * 100).toFixed(0)}%
             </span>
           </>
         )}
@@ -237,7 +310,9 @@ function PeTooltip({ active, payload, peStats }: any) {
 
 export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, changeLabel = 'day' }: PriceCandlestickChartProps) {
   const [allCandles, setAllCandles] = useState<Candle[] | null>(null);
-  const [peStats, setPeStats] = useState<{ median: number; p25: number; p75: number; n: number } | null>(null);
+  const [valStats, setValStats] = useState<Partial<Record<MetricField, MetricStats>>>({});
+  const [evNetDebt, setEvNetDebt] = useState<number | null>(null);
+  const [metric, setMetric] = useState<MetricField>('pe');
   const [mode, setMode] = useState<ModeKey>('price');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -280,7 +355,12 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       .then((json) => {
         if (!mounted) return;
         setAllCandles(Array.isArray(json.candles) ? json.candles : []);
-        setPeStats(json.peStats ?? null);
+        // New payloads carry valuationStats; cached/old responses only have
+        // peStats — degrade to just the P/E metric rather than nothing.
+        setValStats(
+          json.valuationStats ?? (json.peStats ? { pe: json.peStats } : {}),
+        );
+        setEvNetDebt(json.evNetDebt ?? null);
       })
       .catch((err) => {
         if (!mounted) return;
@@ -335,6 +415,16 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     ? period
     : 'All';
 
+  // Price-mode "median P/E fair value" overlay still needs the P/E stats.
+  const peStats = valStats.pe ?? null;
+  const activeMetric: MetricDef = METRIC_BY_KEY[metric];
+  const metricStats = valStats[metric] ?? null;
+  // A ticker may lack a metric's history (e.g. no balance sheet → no P/B) —
+  // fall back to P/E so the Valuation tab never opens on a dead chart.
+  useEffect(() => {
+    if (mode === 'pe' && !valStats[metric]) setMetric('pe');
+  }, [mode, metric, valStats]);
+
   // Enriched full series — sorting, SMAs, implied EPS and the valuation band
   // are computed over ALL candles once; the price-mode `data` window and the
   // P/E-mode brush window are slices of this.
@@ -379,12 +469,11 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         volSpike: va != null && va > 0 && (c.v || 0) > 2 * va,
       });
     }
-    // Valuation layer — p25–p75 band + median-P/E fair value. Stats come from
-    // the API computed over the FULL valuation series: the timeframe switch
-    // changes only what is displayed, never the valuation methodology.
+    // Valuation layer — median-P/E fair value. Stats come from the API
+    // computed over the FULL valuation series: the timeframe switch changes
+    // only what is displayed, never the valuation methodology.
     const medPe = peStats?.median ?? null;
     for (const p of out) {
-      if (peStats && p.pe != null) p.peBand = [peStats.p25, peStats.p75];
       if (inds.has('pefair') && medPe != null) {
         // Fair value = TTM EPS × median P/E — independent of market price;
         // it legitimately steps only when new financial statements land.
@@ -393,6 +482,19 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     }
     return out;
   }, [allCandles, inds, peStats]);
+
+  // Per-active-metric series — the p25–p75 band field is stamped only where
+  // the metric has a value so the band breaks cleanly over coverage gaps.
+  const metricSeries: ChartPoint[] = useMemo(() => {
+    if (!metricStats) return enriched;
+    const f = activeMetric.field;
+    const band: [number, number] = [metricStats.p25, metricStats.p75];
+    return enriched.map((p) =>
+      p[f] != null && (activeMetric.allowNegative || (p[f] as number) > 0)
+        ? { ...p, band }
+        : p,
+    );
+  }, [enriched, metricStats, activeMetric]);
 
   const periodCutoffMs = useMemo(() => {
     const years = periodChoices.find((p) => p.label === activePeriod)?.years ?? 99;
@@ -433,8 +535,8 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   }, [enriched, peBrush, pePeriodStart]);
 
   const peVisible = useMemo(
-    () => enriched.slice(peWindow.startIndex, peWindow.endIndex + 1),
-    [enriched, peWindow],
+    () => metricSeries.slice(peWindow.startIndex, peWindow.endIndex + 1),
+    [metricSeries, peWindow],
   );
 
   // Trailing 52-week high/low over the FULL series (window-independent).
@@ -453,44 +555,74 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     [data]
   );
 
-  // P/E-multiple view: y-domain hugs the distribution, not extreme outliers.
+  // Valuation view: y-domain hugs the distribution, not extreme outliers.
   // Cap at ~q95 of visible values × 1.08 (always ≥ p75×1.6) so single-name
-  // P/E spikes can't flatten the median/band the user came to compare.
+  // spikes can't flatten the median/band the user came to compare. FCF yield
+  // may dip below zero (cash burn) — the floor follows the data, not zero.
   const peDomain = useMemo((): [number, number] => {
-    if (!peVisible.length || !peStats) return [0, 1];
+    if (!peVisible.length || !metricStats) return [0, 1];
+    const f = activeMetric.field;
     const vals = peVisible
-      .map((d) => d.pe)
-      .filter((v): v is number => v != null && v > 0 && Number.isFinite(v))
+      .map((d) => d[f])
+      .filter((v): v is number => v != null && Number.isFinite(v) && (activeMetric.allowNegative || v > 0))
       .sort((a, b) => a - b);
-    const q95 = vals.length ? vals[Math.min(vals.length - 1, Math.floor(vals.length * 0.95))]! : 0;
-    return [0, Math.ceil(Math.max(q95 * 1.08, peStats.p75 * 1.6))];
-  }, [peVisible, peStats]);
+    if (!vals.length) return [0, 1];
+    const q95 = vals[Math.min(vals.length - 1, Math.floor(vals.length * 0.95))]!;
+    const q05 = vals[Math.min(vals.length - 1, Math.floor(vals.length * 0.05))]!;
+    const lo = Math.min(0, q05 * 1.15);
+    const hi = Math.max(q95 * 1.08, metricStats.p75 * 1.6);
+    // Yields are decimals (0.012) — round the domain to % fractions so
+    // axis ticks land on whole percent-ish values.
+    const round = activeMetric.unit === '%'
+      ? (v: number) => Math.ceil(v * 200) / 200
+      : Math.ceil;
+    return [round(lo), Math.max(round(hi), lo + 0.001)];
+  }, [peVisible, metricStats, activeMetric]);
 
-  // P/E-mode headline — current multiple (live quote ÷ latest implied TTM EPS
-  // when a live price is available, else the last candle's stored P/E), the
-  // change over the visible window, and context stats for the caption line.
+  // Valuation headline — current multiple scaled to the live quote when
+  // available (exact for price-linear metrics and FCF yield; EV/EBIT uses
+  // the stored net-debt leg), else the last stored value. Plus the change
+  // over the visible window and context stats for the caption line.
   const peHeadline = useMemo(() => {
     if (!enriched.length) return null;
+    const f = activeMetric.field;
     const last = enriched[enriched.length - 1]!;
-    const eps = last.eps ?? null;
-    const peLive =
-      currentPrice != null && eps != null && eps > 0
-        ? currentPrice / eps
-        : last.pe != null && last.pe > 0
-          ? last.pe
-          : null;
-    const firstVis = peVisible.find((p) => p.pe != null && p.pe > 0);
-    const base = firstVis?.pe ?? null;
-    const chgPct = peLive != null && base != null && base > 0 ? (peLive / base - 1) * 100 : null;
-    // Trailing ~1Y mean of weekly P/E (52 weekly candles).
+    const lastVal = [...enriched].reverse().find(
+      (p) => p[f] != null && (activeMetric.allowNegative || (p[f] as number) > 0),
+    );
+    const lastV = lastVal?.[f] ?? null;
+    let live = lastV != null && lastV > 0 ? lastV : (activeMetric.allowNegative ? lastV : null);
+    if (currentPrice != null && lastVal && lastV != null && lastVal.c > 0) {
+      if (metric === 'fcfYield') {
+        // yield = FCF ÷ mcap → scales inversely with price
+        live = lastV * (lastVal.c / currentPrice);
+      } else if (metric === 'evEbit' && lastVal.mcap != null && evNetDebt != null) {
+        // EV = mcap + netDebt — only the mcap leg scales with price
+        const ebitTTM = (lastVal.mcap + evNetDebt) / lastV;
+        const shares = lastVal.mcap / lastVal.c;
+        live = ebitTTM > 0 ? (currentPrice * shares + evNetDebt) / ebitTTM : null;
+      } else if (metric !== 'evEbit') {
+        // P/E, P/S, P/B — price-linear: multiple scales with the quote
+        live = lastV * (currentPrice / lastVal.c);
+      }
+    }
+    const firstVis = peVisible.find(
+      (p) => p[f] != null && (activeMetric.allowNegative || (p[f] as number) > 0),
+    );
+    const base = firstVis?.[f] ?? null;
+    const chgPct =
+      live != null && base != null && base !== 0 ? (live / base - 1) * 100 : null;
+    // Trailing ~1Y mean of the weekly metric (52 weekly candles).
     const last52 = enriched
       .slice(-52)
-      .map((p) => p.pe)
-      .filter((v): v is number => v != null && v > 0);
+      .map((p) => p[f])
+      .filter((v): v is number => v != null && Number.isFinite(v) && (activeMetric.allowNegative || v > 0));
     const avg1y = last52.length ? last52.reduce((a, b) => a + b, 0) / last52.length : null;
     const price = currentPrice ?? last.c;
-    return { peLive, chgPct, eps, avg1y, price, date: last.date };
-  }, [enriched, peVisible, currentPrice]);
+    // Implied per-share denominator for the formula caption (EPS, rev/sh, bv/sh)
+    const perShare = lastVal ? impliedPerShare(lastVal, f) : null;
+    return { peLive: live, chgPct, eps: last.eps ?? null, avg1y, price, date: last.date, perShare };
+  }, [enriched, peVisible, currentPrice, metric, activeMetric, evNetDebt]);
 
   // "How far from fair" — premium/discount of current price vs the last
   // median-P/E fair value. Shown only while the overlay is on.
@@ -583,18 +715,18 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         {mode === 'pe' && peHeadline ? (
           <div className="flex items-baseline gap-2 flex-wrap">
             <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-              {peHeadline.peLive != null ? `${peHeadline.peLive.toFixed(1)}×` : 'n/m'}
+              {peHeadline.peLive != null ? fmtMetric(peHeadline.peLive, activeMetric.unit) : 'n/m'}
             </span>
             {peHeadline.chgPct != null && (
               <span
-                className={`text-sm font-semibold ${peHeadline.chgPct <= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-                title="P/E change across the visible range — falling multiple = cheaper"
+                className={`text-sm font-semibold ${(activeMetric.lowerIsBetter ? peHeadline.chgPct <= 0 : peHeadline.chgPct >= 0) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                title={`${activeMetric.label} change across the visible range — ${activeMetric.lowerIsBetter ? 'falling multiple' : 'rising yield'} = cheaper`}
               >
                 {peHeadline.chgPct >= 0 ? '+' : ''}{peHeadline.chgPct.toFixed(1)}% ({peBrush ? 'range' : activePeriod})
               </span>
             )}
             {peHeadline.peLive == null && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">negative TTM EPS</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">not meaningful</span>
             )}
           </div>
         ) : stats && (
@@ -631,8 +763,8 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             <button
               type="button"
               onClick={() => setMode('pe')}
-              disabled={!peStats}
-              title={peStats ? 'TTM P/E vs its own historical median and quartile band' : 'P/E history not available'}
+              disabled={!Object.keys(valStats).length}
+              title={Object.keys(valStats).length ? 'Valuation multiples vs their own historical median and quartile band' : 'Valuation history not available'}
               className={`px-2.5 py-1 text-xs font-bold rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                 mode === 'pe'
                   ? 'bg-white dark:bg-gray-900 shadow-sm'
@@ -640,16 +772,41 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               }`}
               style={mode === 'pe' ? { color: PE_LINE } : undefined}
             >
-              P/E
+              Valuation
             </button>
           </div>
+          {/* Metric selector — only in Valuation mode; swaps in place of the
+              (disabled) price indicator toggles so the toolbar stays put. */}
+          {mode === 'pe' && (
+            <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
+              {METRICS.map((m) => {
+                const has = !!valStats[m.field];
+                return (
+                  <button
+                    key={m.field}
+                    type="button"
+                    disabled={!has}
+                    onClick={() => setMetric(m.field)}
+                    title={has ? `${m.label} = ${m.formula}` : `${m.label} history not available`}
+                    className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                      metric === m.field
+                        ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {/* Indicator toggles — colored dot doubles as the line legend.
-              Stay mounted (disabled) in P/E mode so the toolbar never
-              reflows on mode switch; toggled state persists for the
-              return to Price. */}
+              Price-mode only; in Valuation mode the metric chips take this
+              slot (indicators are meaningless on a multiple). Toggled state
+              persists for the return to Price. */}
           <div
-            className={`flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5 transition-opacity ${
-              mode === 'pe' ? 'opacity-40' : ''
+            className={`items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5 transition-opacity ${
+              mode === 'pe' ? 'hidden' : 'flex'
             }`}
           >
             {INDICATORS.map((ind) => (
@@ -700,10 +857,10 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         </div>
       </div>
 
-      {mode === 'pe' && peStats ? (
+      {mode === 'pe' && metricStats ? (
         <>
         <ResponsiveContainer width="100%" height={narrow ? 400 : 470}>
-          <ComposedChart key={`pe-${ticker}-${peEpoch}`} data={enriched} margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 4 }}>
+          <ComposedChart key={`pe-${ticker}-${metric}-${peEpoch}`} data={metricSeries} margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 4 }}>
             <defs>
               <linearGradient id="peAreaGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={PE_LINE} stopOpacity={0.30} />
@@ -724,18 +881,18 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             <YAxis
               domain={peDomain}
               orientation="right"
-              tickFormatter={(v: number) => `${v.toFixed(0)}×`}
+              tickFormatter={(v: number) => fmtMetric(v, activeMetric.unit, 0)}
               tick={{ fontSize: CHART_FONT.axis, fill: 'currentColor' }}
               className="text-gray-500 dark:text-gray-500"
               tickLine={false}
               axisLine={false}
               width={narrow ? 36 : 48}
             />
-            <Tooltip content={<PeTooltip peStats={peStats} />} isAnimationActive={false} />
+            <Tooltip content={<MetricTooltip metric={metric} stats={metricStats} />} isAnimationActive={false} />
             {/* 25th–75th percentile band — the stock's own normal range */}
             <Area
               type="monotone"
-              dataKey="peBand"
+              dataKey="band"
               stroke="none"
               fill={PE_LINE}
               fillOpacity={0.08}
@@ -745,7 +902,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             {/* The multiple itself — gradient area, finance-charts style */}
             <Area
               type="monotone"
-              dataKey="pe"
+              dataKey={activeMetric.field}
               stroke={PE_LINE}
               strokeWidth={1.8}
               fill="url(#peAreaGrad)"
@@ -754,10 +911,10 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               dot={false}
             />
             <ReferenceLine
-              y={peStats.median}
+              y={metricStats.median}
               stroke={PE_FAIR}
               strokeDasharray="6 4"
-              label={{ value: `median ${peStats.median.toFixed(1)}×`, position: 'insideTopLeft', fontSize: 10, fill: PE_FAIR }}
+              label={{ value: `median ${fmtMetric(metricStats.median, activeMetric.unit)}`, position: 'insideTopLeft', fontSize: 10, fill: PE_FAIR }}
             />
             {/* Navigator — mini full-history chart; drag handles or use the
                 period buttons above. Brush dataKey = the X category (date),
@@ -768,7 +925,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               stroke={PE_LINE}
               travellerWidth={8}
               startIndex={pePeriodStart}
-              endIndex={Math.max(0, enriched.length - 1)}
+              endIndex={Math.max(0, metricSeries.length - 1)}
               onChange={(b: any) => {
                 if (b?.startIndex != null && b?.endIndex != null) {
                   setPeBrush({ startIndex: b.startIndex, endIndex: b.endIndex });
@@ -777,7 +934,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               tickFormatter={(v: any) => (typeof v === 'string' && v.includes('-') ? formatXTick(v) : '')}
             >
               <AreaChart>
-                <Area type="monotone" dataKey="pe" stroke={PE_LINE} strokeWidth={1} fill={PE_LINE} fillOpacity={0.15} isAnimationActive={false} />
+                <Area type="monotone" dataKey={activeMetric.field} stroke={PE_LINE} strokeWidth={1} fill={PE_LINE} fillOpacity={0.15} isAnimationActive={false} />
               </AreaChart>
             </Brush>
           </ComposedChart>
@@ -785,9 +942,11 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         {/* Formula caption — how the current multiple is composed */}
         {peHeadline && peHeadline.peLive != null && (
           <div className="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400 tabular-nums">
-            P/E {peHeadline.peLive.toFixed(1)}× = ${peHeadline.price.toFixed(2)} close ÷ ${peHeadline.eps != null ? peHeadline.eps.toFixed(2) : '—'} TTM EPS
-            {peHeadline.avg1y != null && <> · 1Y avg {peHeadline.avg1y.toFixed(1)}×</>}
-            {` · median ${peStats.median.toFixed(1)}×`}
+            {activeMetric.label} {fmtMetric(peHeadline.peLive, activeMetric.unit)} = {(metric === 'pe' || metric === 'ps' || metric === 'pb') && peHeadline.perShare != null
+              ? `$${peHeadline.price.toFixed(2)} close ÷ $${peHeadline.perShare.toFixed(2)} ${metric === 'pe' ? 'TTM EPS' : metric === 'ps' ? 'TTM rev/sh' : 'book/sh'}`
+              : activeMetric.formula}
+            {peHeadline.avg1y != null && <> · 1Y avg {fmtMetric(peHeadline.avg1y, activeMetric.unit)}</>}
+            {` · median ${fmtMetric(metricStats.median, activeMetric.unit)}`}
           </div>
         )}
         </>
@@ -979,11 +1138,11 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             Illustrative valuation, not a price target.
           </>
         )}
-        {mode === 'pe' && peStats && (
+        {mode === 'pe' && metricStats && (
           <>
-            {' '}Actual TTM P/E vs its own {Math.max(1, Math.round(peStats.n / 252))}Y median
-            ({peStats.median.toFixed(1)}×); shaded band = 25th–75th percentile. Gaps mark periods
-            with negative or unavailable earnings.
+            {' '}Actual {activeMetric.label} vs its own {Math.max(1, Math.round(metricStats.n / 252))}Y median
+            ({fmtMetric(metricStats.median, activeMetric.unit)}); shaded band = 25th–75th percentile.{' '}
+            {activeMetric.gapNote}
           </>
         )}
       </p>

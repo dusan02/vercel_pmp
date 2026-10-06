@@ -24,7 +24,26 @@ export interface Candle {
   v: number;
   /** TTM P/E on the candle's close day (DailyValuationHistory) — null outside coverage */
   pe?: number | null;
+  /** TTM P/S */
+  ps?: number | null;
+  /** price ÷ book value per share */
+  pb?: number | null;
+  /** EV ÷ TTM EBIT (D&A unavailable → EBIT basis, not EBITDA) */
+  evEbit?: number | null;
+  /** TTM FCF ÷ market cap — decimal, may be negative (cash burn) */
+  fcfYield?: number | null;
+  /** market cap at this close (USD) */
+  mcap?: number | null;
 }
+
+export interface MetricStats {
+  median: number;
+  p25: number;
+  p75: number;
+  n: number;
+}
+
+export type ValuationMetricKey = 'pe' | 'ps' | 'pb' | 'evEbit' | 'fcfYield';
 
 /**
  * Returns ~10 years of weekly OHLC candles for the given ticker.
@@ -121,40 +140,83 @@ export async function GET(
         v: Math.round(a.v),
       }));
 
-    // Attach TTM P/E per candle — the client draws a "price at historical
-    // median P/E" line from this without a second request. peRatio rows are
-    // daily; each candle takes the value of its close day (last row ≤ t).
-    let peStats: { median: number; p25: number; p75: number; n: number } | null = null;
+    // Attach per-candle valuation multiples — the client draws the metric
+    // chart (P/E · P/S · P/B · EV/EBIT · FCF yield) plus median/quartile band
+    // from this without a second request. Rows are daily; each candle takes
+    // the values of its close day (last row ≤ t).
+    let valuationStats: Partial<Record<ValuationMetricKey, MetricStats>> | null = null;
+    // Latest-statement net debt — lets the client scale today's EV/EBIT from
+    // the live quote (EV = mcap + netDebt) without another request.
+    let evNetDebt: number | null = null;
     try {
       const valRows = await prisma.dailyValuationHistory.findMany({
-        where: { symbol, date: { gte: fromDate }, peRatio: { not: null } },
+        where: { symbol, date: { gte: fromDate } },
         orderBy: { date: 'asc' },
-        select: { date: true, peRatio: true },
+        select: {
+          date: true, peRatio: true, psRatio: true, pbRatio: true,
+          evEbitda: true, fcfYield: true, marketCap: true,
+        },
       });
       if (valRows.length) {
         const times = valRows.map(r => r.date.getTime());
-        const pes = valRows.map(r => r.peRatio!);
         let vi = 0;
         for (const c of candles) {
           // candle t = first trading day; close happens at end of week —
-          // a P/E row up to 4 days after t still belongs to this week.
+          // a valuation row up to 4 days after t still belongs to this week.
           const end = c.t + 4 * 24 * 60 * 60 * 1000;
           while (vi < times.length - 1 && times[vi + 1]! <= end) vi++;
-          c.pe = times[vi]! <= end ? pes[vi]! : c.pe ?? null;
+          if (times[vi]! <= end) {
+            const r = valRows[vi]!;
+            c.pe = r.peRatio; c.ps = r.psRatio; c.pb = r.pbRatio;
+            c.evEbit = r.evEbitda; c.fcfYield = r.fcfYield; c.mcap = r.marketCap;
+          }
         }
 
-        // Distribution stats over the FULL available series — the timeframe
-        // toggle changes what is displayed, never the valuation methodology
-        // (a 1Y view must not quietly recompute the median from 1Y data).
-        const sorted = [...pes].filter(v => v > 0 && Number.isFinite(v)).sort((a, b) => a - b);
-        if (sorted.length >= 10) {
-          const q = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))]!;
-          peStats = { median: q(0.5), p25: q(0.25), p75: q(0.75), n: sorted.length };
-        }
+        // Distribution stats over the FULL available series per metric — the
+        // timeframe toggle changes what is displayed, never the valuation
+        // methodology (a 1Y view must not quietly recompute the median from
+        // 1Y data). Ratios are stored null when the denominator ≤ 0, so only
+        // fcfYield legitimately carries negative values (cash burn).
+        const statsOf = (
+          pick: (r: (typeof valRows)[number]) => number | null,
+          allowNegative = false,
+        ): MetricStats | null => {
+          const vals = valRows
+            .map(pick)
+            .filter((v): v is number => v != null && Number.isFinite(v) && (allowNegative || v > 0))
+            .sort((a, b) => a - b);
+          if (vals.length < 10) return null;
+          const q = (p: number) => vals[Math.min(vals.length - 1, Math.floor(vals.length * p))]!;
+          return { median: q(0.5), p25: q(0.25), p75: q(0.75), n: vals.length };
+        };
+        valuationStats = {};
+        const entries: [ValuationMetricKey, MetricStats | null][] = [
+          ['pe', statsOf(r => r.peRatio)],
+          ['ps', statsOf(r => r.psRatio)],
+          ['pb', statsOf(r => r.pbRatio)],
+          ['evEbit', statsOf(r => r.evEbitda)],
+          ['fcfYield', statsOf(r => r.fcfYield, true)],
+        ];
+        for (const [k, s] of entries) if (s) valuationStats[k] = s;
+
+        const bs = await prisma.financialStatement.findFirst({
+          where: { symbol, totalDebt: { not: null }, cashAndEquivalents: { not: null } },
+          orderBy: { endDate: 'desc' },
+          select: { totalDebt: true, cashAndEquivalents: true },
+        });
+        if (bs) evNetDebt = bs.totalDebt! - bs.cashAndEquivalents!;
       }
     } catch { /* valuation overlay is optional — candles still render */ }
 
-    const responseBody = { symbol, candles, peStats };
+    const responseBody = {
+      symbol,
+      candles,
+      // Back-compat alias — the deployed P/E view reads peStats; the new
+      // multi-metric view reads valuationStats.
+      peStats: valuationStats?.pe ?? null,
+      valuationStats,
+      evNetDebt,
+    };
 
     // Cache in Redis (1 hour TTL)
     try { await setCachedData(cacheKey, responseBody, CANDLES_CACHE_TTL); } catch {}

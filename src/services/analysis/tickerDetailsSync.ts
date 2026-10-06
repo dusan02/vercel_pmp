@@ -187,14 +187,14 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
             // current values shown in Key Metrics. computeDayRatios is the
             // single implementation shared with fillValuationDay (EV leg is
             // EV/EBIT — D&A not available from Finnhub).
-            const { marketCap, peRatio, psRatio, evEbitda, fcfYield } =
+            const ratios =
                 computeDayRatios(statements, closePrice, date, ticker?.sharesOutstanding ?? null);
 
             transactions.push(
                 prisma.dailyValuationHistory.upsert({
                     where: { symbol_date: { symbol, date } },
-                    update: { closePrice, marketCap, peRatio, psRatio, evEbitda, fcfYield },
-                    create: { symbol, date, closePrice, marketCap, peRatio, psRatio, evEbitda, fcfYield }
+                    update: { closePrice, ...ratios },
+                    create: { symbol, date, closePrice, ...ratios }
                 })
             );
         }
