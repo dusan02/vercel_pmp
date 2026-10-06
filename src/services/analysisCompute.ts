@@ -203,12 +203,16 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         ?? (fcfYieldSource === 'finnhub' ? 1 / finnhubMetrics!.priceFreeCashFlow! : null);
 
     // Historical percentile stats vs own 10Y daily history (our TTM basis).
+    // Rank the last stored DVH snapshot (close basis) — the same "current"
+    // the /valuation page derives from its last row — so both pages print
+    // one percentile for the same ticker+date+series (contract: a 2-cent
+    // live/close price drift must not move the percentile between pages).
     const valuationHistoryStats = valuationRows.length > 0
         ? buildValuationHistory(valuationRows, {
-            pe: currentPe,
-            ps: currentPs ?? latestValuation?.psRatio ?? null,
-            evEbit: currentEvEbit ?? latestValuation?.evEbitda ?? null,
-            fcfYield: currentFcfYield ?? latestValuation?.fcfYield ?? null,
+            pe: latestValuation?.peRatio ?? currentPe,
+            ps: latestValuation?.psRatio ?? currentPs ?? null,
+            evEbit: latestValuation?.evEbitda ?? currentEvEbit ?? null,
+            fcfYield: latestValuation?.fcfYield ?? currentFcfYield ?? null,
         })
         : null;
 

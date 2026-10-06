@@ -64,6 +64,18 @@ export interface DailyIntegritySummary {
     uniqueSymbolsWithIssues: number;
   };
   byCode: Record<IntegrityIssueCode, { count: number; samples: string[] }>;
+  fundamentals: {
+    tickersWithStatements: number;
+    checked: number;
+    fresh: number;
+    /** providerPeriodEnd > our latest stored period — a REAL gap to fix. */
+    staleProvider: number;
+    /** Nothing newer offered anywhere, but our data is old (no-filing). */
+    staleAge: number;
+    neverChecked: number;
+    staleProviderSamples: string[];
+    staleAgeSamples: string[];
+  };
   fixes?: {
     prevCloseFixed: number;
     sharesFixed: number;
@@ -476,6 +488,51 @@ export async function runDailyIntegrityCheck(
     }
   }
 
+  // --- Fundamentals freshness ---
+  // Per ticker: latest stored quarterly endDate vs the newest period the
+  // providers offered at last sync (Ticker.providerPeriodEnd, written by
+  // syncFinancials). Three buckets mirror the roadmap language:
+  //   fresh          — we hold the newest period providers offer
+  //   staleProvider  — provider offered newer than we store (real gap)
+  //   staleAge       — no newer filing exists anywhere; data just old
+  const stmtMax = await prisma.financialStatement.groupBy({
+    by: ['symbol'],
+    where: { fiscalPeriod: { not: 'FY' } },
+    _max: { endDate: true }
+  });
+  const freshnessTickerRows = await prisma.ticker.findMany({
+    where: { symbol: { in: stmtMax.map(s => s.symbol) } },
+    select: { symbol: true, providerPeriodEnd: true, fundamentalsCheckedAt: true }
+  });
+  const freshnessTicker = new Map(freshnessTickerRows.map(t => [t.symbol, t]));
+  const STALE_AGE_MS = 110 * 24 * 60 * 60 * 1000; // ~1 quarter + filing lag
+  const PROVIDER_TOLERANCE_MS = 7 * 24 * 60 * 60 * 1000;
+  const fundamentals = {
+    tickersWithStatements: stmtMax.length,
+    checked: 0,
+    fresh: 0,
+    staleProvider: 0,
+    staleAge: 0,
+    neverChecked: 0,
+    staleProviderSamples: [] as string[],
+    staleAgeSamples: [] as string[],
+  };
+  for (const s of stmtMax) {
+    const dbMax = s._max.endDate;
+    const tk = freshnessTicker.get(s.symbol);
+    if (!tk?.fundamentalsCheckedAt) { fundamentals.neverChecked++; continue; }
+    fundamentals.checked++;
+    if (tk.providerPeriodEnd && dbMax && tk.providerPeriodEnd.getTime() > dbMax.getTime() + PROVIDER_TOLERANCE_MS) {
+      fundamentals.staleProvider++;
+      if (fundamentals.staleProviderSamples.length < 20) fundamentals.staleProviderSamples.push(s.symbol);
+    } else if (dbMax && Date.now() - dbMax.getTime() > STALE_AGE_MS) {
+      fundamentals.staleAge++;
+      if (fundamentals.staleAgeSamples.length < 20) fundamentals.staleAgeSamples.push(s.symbol);
+    } else {
+      fundamentals.fresh++;
+    }
+  }
+
   const totalIssues = (Object.values(byCode) as Array<{ count: number }>).reduce((sum, v) => sum + v.count, 0);
 
   const summary: DailyIntegritySummary = {
@@ -491,7 +548,8 @@ export async function runDailyIntegrityCheck(
       issues: totalIssues,
       uniqueSymbolsWithIssues: symbolsWithIssues.size
     },
-    byCode
+    byCode,
+    fundamentals
   };
 
   // exactOptionalPropertyTypes: only include when defined

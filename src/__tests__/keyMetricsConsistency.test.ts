@@ -282,12 +282,15 @@ describe('valuation history stats — percentile vs own history', () => {
         });
     });
 
-    it('ranks our TTM P/E against the stored series — not Finnhub\'s', async () => {
+    it('ranks the latest stored snapshot against the series — same "current" as /valuation', async () => {
         const result = await computeMetrics('MU', { lastPrice: 1016.51 });
         const pe = result!.valuationHistoryStats!.pe;
-        expect(pe.current).toBeCloseTo(23.0, 0);
-        // history [10,15,20,25,30] → 3 of 5 below 23 → 60th percentile
-        expect(pe.percentile).toBeCloseTo(60, 0);
+        // Cross-page contract: analysis and /valuation must print ONE
+        // percentile for the same ticker+date+series, so analysis ranks the
+        // last DVH row (close-basis 30) — not the live-price 23 nor
+        // Finnhub's 129.3. history [10,15,20,25,30] → 4 of 5 below → 80th.
+        expect(pe.current).toBe(30);
+        expect(pe.percentile).toBe(80);
         expect(pe.min).toBe(10);
         expect(pe.max).toBe(30);
         expect(pe.sampleSize).toBe(5);

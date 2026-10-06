@@ -386,6 +386,9 @@ export async function syncFinancials(symbol: string): Promise<void> {
     // their stored ebit is fabricated (GP−SGA etc.) and needs periodic
     // SA verification even after the quarterly gap closes.
     let ebitNeedsSaVerify = false;
+    // Newest quarterly endDate Finnhub offered this run — persisted on
+    // Ticker so the integrity check can flag "provider has newer than DB".
+    let providerPeriodEnd: Date | null = null;
 
     try {
         // Ensure Ticker row exists (FK requirement for FinancialStatement)
@@ -427,6 +430,10 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 const { year, quarter, endDate, report } = item;
                 if (!year || !endDate || !report) continue;
                 if (year < 2016) continue; // Only keep 2016+ data (10 year window)
+                if (timeframe === 'quarterly') {
+                    const d = new Date(endDate);
+                    if (!providerPeriodEnd || d > providerPeriodEnd) providerPeriodEnd = d;
+                }
 
                 // Určenie obdobia
                 const fiscalYear = year;
@@ -702,6 +709,7 @@ export async function syncFinancials(symbol: string): Promise<void> {
         if (saCount > 0) {
             console.log(`[syncFinancials] ${symbol}: Finnhub had 0 statements, scraped ${saCount} from stockanalysis.com`);
         }
+        await recordFundamentalsFreshness(symbol, providerPeriodEnd);
         return;
     }
 
@@ -717,5 +725,32 @@ export async function syncFinancials(symbol: string): Promise<void> {
         if (saCount > 0) {
             console.log(`[syncFinancials] ${symbol}: SA gapfill touched ${saCount} rows (staleQ=${staleQuarterly}, ebitVerify=${ebitNeedsSaVerify})`);
         }
+    }
+    await recordFundamentalsFreshness(symbol, providerPeriodEnd);
+}
+
+/** Persist the freshness bookkeeping columns — runs on every syncFinancials
+ *  exit path. providerPeriodEnd = newest quarterly period known to be
+ *  available to us (Finnhub offer ∪ post-sync DB latest, which reflects the
+ *  SA scrape when gapfill/full ran). The daily integrity check derives
+ *  fresh/stale/no-newer-filing from it. */
+async function recordFundamentalsFreshness(symbol: string, providerEnd: Date | null): Promise<void> {
+    try {
+        const latestQ = await prisma.financialStatement.findFirst({
+            where: { symbol, fiscalPeriod: { not: 'FY' } },
+            orderBy: { endDate: 'desc' },
+            select: { endDate: true },
+        });
+        const candidates = [providerEnd, latestQ?.endDate ?? null].filter((d): d is Date => d instanceof Date);
+        const best = candidates.length ? new Date(Math.max(...candidates.map(d => d.getTime()))) : null;
+        await prisma.ticker.update({
+            where: { symbol },
+            data: {
+                providerPeriodEnd: best,
+                fundamentalsCheckedAt: new Date(),
+            },
+        });
+    } catch (e) {
+        console.warn(`[syncFinancials] ${symbol}: freshness bookkeeping failed:`, e instanceof Error ? e.message : e);
     }
 }

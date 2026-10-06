@@ -56,6 +56,15 @@ async function main() {
       console.log(`- ${code}: ${v.count} (samples: ${v.samples.join(', ')})`);
     }
   }
+
+  const f = summary.fundamentals;
+  console.log('-'.repeat(70));
+  console.log('FUNDAMENTALS FRESHNESS (latest quarterly statement vs provider offer):');
+  console.log(`  tickers with statements: ${f.tickersWithStatements}`);
+  console.log(`  fresh:                   ${f.fresh}`);
+  console.log(`  stale (provider newer):  ${f.staleProvider}${f.staleProvider ? `  samples: ${f.staleProviderSamples.join(', ')}` : ''}`);
+  console.log(`  stale (no newer filing): ${f.staleAge}${f.staleAge ? `  samples: ${f.staleAgeSamples.join(', ')}` : ''}`);
+  console.log(`  never checked:           ${f.neverChecked}`);
   console.log('='.repeat(70) + '\n');
 
   // Exit non-zero if critical invariants are violated.

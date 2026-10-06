@@ -135,6 +135,13 @@ model Ticker {
   latestMoversRVOL     Float?
   moversReason         String?
   moversCategory       String?
+  // Fundamentals freshness bookkeeping — written at the end of every
+  // syncFinancials run. providerPeriodEnd = newest quarterly period the
+  // providers offered (Finnhub XBRL, or post-gapfill DB latest when SA was
+  // scraped). daily-integrity-check compares it to our latest stored
+  // statement → "provider has newer" vs "genuinely nothing newer to file".
+  providerPeriodEnd        DateTime?
+  fundamentalsCheckedAt    DateTime?
   socialCopy           String?
   isSbcAlert           Boolean                 @default(false)
   aiConfidence         Int?

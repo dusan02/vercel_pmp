@@ -134,6 +134,8 @@ model Ticker {
   latestMoversRVOL     Float?
   moversReason         String?
   moversCategory       String?
+  providerPeriodEnd        DateTime?
+  fundamentalsCheckedAt    DateTime?
   socialCopy           String?
   isSbcAlert           Boolean                 @default(false)
   aiConfidence         Int?
