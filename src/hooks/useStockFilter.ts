@@ -35,6 +35,7 @@ export function useStockFilter({ stockData, favorites, isFavorite }: UseStockFil
     return stockData.filter(stock => {
       // Search filter - use debounced term
       const matchesSearch = stock.ticker.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        (stock.companyName || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         getCompanyName(stock.ticker).toLowerCase().includes(debouncedSearchTerm.toLowerCase());
       
       if (!matchesSearch) return false;

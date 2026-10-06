@@ -37,6 +37,13 @@ export async function getStocksList(options: {
   tickers?: string[];
 }): Promise<StockServiceResult> {
   const { limit = 50, offset = 0, sort = 'marketCapDiff', order = 'desc', tickers } = options;
+  const isGlobalQuery = !(tickers && tickers.length > 0);
+
+  // Session-fresh values from Redis to overlay onto the complete DB universe
+  // for global queries (the ranked zset only holds session-active symbols —
+  // returning it alone silently drops the rest of the universe).
+  let redisOverlayData: Map<string, any> | null = null;
+  let redisOverlayPrev: Map<string, number> | null = null;
 
   try {
     // === FAST PATH: REDIS ===
@@ -51,12 +58,10 @@ export async function getStocksList(options: {
       const dateET = getSessionDateStr(etNow);
 
       let symbolsToFetch: string[] = [];
-      let isGlobalQuery = false;
 
-      if (tickers && tickers.length > 0) {
+      if (!isGlobalQuery) {
         symbolsToFetch = tickers;
       } else {
-        isGlobalQuery = true;
         const { getRankedSymbols } = await import('@/lib/redis/ranking');
         const sortMapping: Record<string, string> = {
           marketCap: 'cap',
@@ -65,8 +70,10 @@ export async function getStocksList(options: {
           currentPrice: 'price',
         };
         const field = sortMapping[sort] || 'capdiff';
-        
-        symbolsToFetch = await getRankedSymbols(dateET, redisSession, field as any, order, offset, limit);
+
+        // Fetch the whole ranked set (unpaginated) — it is used as an overlay
+        // on the DB universe below, not as the result itself.
+        symbolsToFetch = await getRankedSymbols(dateET, redisSession, field as any, order, 0, 5000);
       }
 
       if (symbolsToFetch.length > 0) {
@@ -78,6 +85,12 @@ export async function getStocksList(options: {
         ]);
 
         if (dataMap.size > 0) {
+          if (isGlobalQuery) {
+            // Fall through to the DB path for the complete priced universe;
+            // these session-fresh values get overlaid on top of it below.
+            redisOverlayData = dataMap;
+            redisOverlayPrev = prevCloseMap;
+          } else {
           const results: StockData[] = [];
           for (const sym of symbolsToFetch) {
             const data = dataMap.get(sym);
@@ -104,10 +117,6 @@ export async function getStocksList(options: {
             }
           }
 
-          // If tickers were requested, we need to manually sort the results in memory
-          // since getManyLastWithDate doesn't guarantee the exact requested order
-          // and we didn't use ZSET for explicit ticker arrays.
-          if (!isGlobalQuery) {
             // API sort names → StockData fields (changePct → percentChange,
             // name → companyName, symbol → ticker; strings need localeCompare)
             const sortKeyMap: Record<string, keyof StockData> = {
@@ -132,14 +141,13 @@ export async function getStocksList(options: {
               const nb = typeof vb === 'number' && isFinite(vb) ? vb : 0;
               return order === 'asc' ? na - nb : nb - na;
             });
-          }
 
           console.log(`🚀 [stockService] Fast path: Served ${results.length} stocks from Redis!`);
 
           // If specific tickers were requested but some are missing from Redis
           // (e.g. ETFs like QQQ/DIA not in universe), fall through to DB/Polygon
           // fallback for the missing ones instead of returning incomplete data.
-          if (!isGlobalQuery && tickers && results.length < tickers.length) {
+          if (tickers && results.length < tickers.length) {
             const found = new Set(results.map(r => r.ticker));
             const missing = tickers.filter(t => !found.has(t));
             console.log(`🔄 [stockService] ${missing.length} tickers missing from Redis, falling through to DB/Polygon: ${missing.join(',')}`);
@@ -151,6 +159,7 @@ export async function getStocksList(options: {
             // and the Polygon fallback at the end handles any still-missing ones.
           } else {
             return { data: results, errors: [] };
+          }
           }
         }
       }
@@ -188,13 +197,10 @@ export async function getStocksList(options: {
           lastPriceUpdated: { gte: TWENTY_FOUR_HOURS_AGO }
         };
 
-    const effectiveLimit = (tickers && tickers.length > 0) ? undefined : (limit && limit > 0 ? limit : undefined);
-    const effectiveOffset = (tickers && tickers.length > 0) ? undefined : offset;
-
+    // Global queries fetch the complete filtered universe — the Redis overlay
+    // can change ordering, so offset/limit are applied in memory at the end.
     const stocks = await prisma.ticker.findMany({
       where,
-      ...(effectiveLimit ? { take: effectiveLimit } : {}),
-      ...(effectiveOffset !== undefined ? { skip: effectiveOffset } : {}),
       orderBy: { [dbSortColumn]: order },
       select: {
         symbol: true, name: true, sector: true, industry: true, logoUrl: true,
@@ -392,6 +398,54 @@ export async function getStocksList(options: {
       };
     });
 
+    // Overlay session-fresh Redis values onto the DB universe (global queries):
+    // the ranked zset only contains session-active symbols, so it cannot be
+    // the result itself — but where present its prices are fresher than
+    // Ticker.lastPrice.
+    if (isGlobalQuery && redisOverlayData) {
+      for (const r of results) {
+        const d = redisOverlayData.get(r.ticker);
+        if (!d) continue;
+        const p = Number(d.p);
+        const chg = Number(d.change_pct);
+        const cap = Number(d.cap);
+        const capDiff = Number(d.cap_diff);
+        const vol = Number(d.v);
+        if (p > 0) r.currentPrice = p;
+        if (Number.isFinite(chg)) r.percentChange = chg;
+        if (cap > 0) r.marketCap = cap;
+        if (Number.isFinite(capDiff)) r.marketCapDiff = capDiff;
+        if (vol > 0) r.volume = vol;
+        const pc = redisOverlayPrev?.get(r.ticker);
+        if (pc && pc > 0) r.closePrice = pc;
+        r.isStale = false;
+        r.lastUpdated = new Date().toISOString();
+      }
+
+      const sortKeyMap: Record<string, keyof StockData> = {
+        marketCapDiff: 'marketCapDiff',
+        marketCap: 'marketCap',
+        changePct: 'percentChange',
+        percentChange: 'percentChange',
+        currentPrice: 'currentPrice',
+        name: 'companyName',
+        symbol: 'ticker',
+      };
+      const k = sortKeyMap[sort] ?? 'marketCapDiff';
+      results.sort((a, b) => {
+        const va = a[k];
+        const vb = b[k];
+        if (typeof va === 'string' || typeof vb === 'string') {
+          const sa = String(va ?? '');
+          const sb = String(vb ?? '');
+          return order === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
+        }
+        const na = typeof va === 'number' && isFinite(va) ? va : 0;
+        const nb = typeof vb === 'number' && isFinite(vb) ? vb : 0;
+        return order === 'asc' ? na - nb : nb - na;
+      });
+    }
+
     if (tickers && tickers.length > 0) {
       const foundTickers = new Set(results.map(r => r.ticker));
       const missingTickers = tickers.filter(t => !foundTickers.has(t));
@@ -452,7 +506,13 @@ export async function getStocksList(options: {
       }
     }
 
-    return { data: results, errors: [] };
+    // Global queries fetched the full universe — paginate in memory after the
+    // overlay sort.
+    const paged = isGlobalQuery
+      ? results.slice(offset, (limit && limit > 0) ? offset + limit : undefined)
+      : results;
+
+    return { data: paged, errors: [] };
   } catch (error) {
     console.error('Error fetching stock list:', error);
     return { data: [], errors: [String(error)] };

@@ -9,6 +9,7 @@ import { StockData } from '@/lib/types';
 
 interface MinimalRow {
     t: string;  // ticker
+    n: string;  // company name
     p: number;  // price
     c: number;  // changePct
     m: number;  // marketCap
@@ -49,11 +50,13 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite, allStocks }: A
 
         const filtered = allStocks.filter(stock =>
             stock.ticker.toLowerCase().includes(q) ||
+            (stock.companyName || '').toLowerCase().includes(q) ||
             getCompanyName(stock.ticker).toLowerCase().includes(q)
         ).slice(0, 6);
 
         const mappedResults: MinimalRow[] = filtered.map(stock => ({
             t: stock.ticker,
+            n: stock.companyName || getCompanyName(stock.ticker),
             p: stock.currentPrice || 0,
             c: stock.percentChange || 0,
             m: stock.marketCap || 0,
@@ -115,7 +118,7 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite, allStocks }: A
                     {results.length > 0 ? (
                         results.map((r, i) => {
                             const favorited = isFavorite(r.t);
-                            const name = getCompanyName(r.t);
+                            const name = r.n;
                             const isSelected = selectedIndex === i;
 
                             return (

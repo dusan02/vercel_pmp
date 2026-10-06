@@ -110,6 +110,7 @@ export function PortfolioSection({
     const results = allStocks.filter(
       (stock) =>
         stock.ticker.toLowerCase().includes(term) ||
+        (stock.companyName || '').toLowerCase().includes(term) ||
         getCompanyName(stock.ticker).toLowerCase().includes(term)
     ).slice(0, 10); // Increased from 5 to 10 for better user experience
     setPortfolioSearchResults(results);
@@ -373,7 +374,7 @@ export function PortfolioSection({
                 >
                   <span className="font-bold text-blue-600 dark:text-blue-400 w-16">{stock.ticker}</span>
                   <span className="text-gray-300 mx-2">|</span>
-                  <span className="text-sm font-medium truncate flex-1">{getCompanyName(stock.ticker)}</span>
+                  <span className="text-sm font-medium truncate flex-1">{stock.companyName || getCompanyName(stock.ticker)}</span>
                   <Plus size={18} className="text-gray-400 ml-2" />
                 </button>
               ))}
