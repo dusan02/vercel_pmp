@@ -143,7 +143,7 @@ export default async function SectorPage({ params }: PageProps) {
                                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">
                                         Industry
                                     </th>
-                                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         Links
                                     </th>
                                 </tr>
@@ -185,10 +185,17 @@ export default async function SectorPage({ params }: PageProps) {
                                                     ? `$${formatMarketCap(ticker.lastMarketCap)}`
                                                     : '—'}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
-                                                {ticker.industry}
+                                            <td className="px-6 py-4 whitespace-nowrap text-left text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
+                                                {ticker.industry ? (
+                                                    <Link
+                                                        href={`/screener?industry=${encodeURIComponent(ticker.industry)}`}
+                                                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                                                    >
+                                                        {ticker.industry}
+                                                    </Link>
+                                                ) : '—'}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-center text-xs">
+                                            <td className="px-6 py-4 whitespace-nowrap text-left text-xs">
                                                 {eligibleAnalysis.has(ticker.symbol) && (
                                                     <Link href={`/analysis/${ticker.symbol}`} className="text-blue-600 dark:text-blue-400 hover:underline">
                                                         Analysis

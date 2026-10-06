@@ -21,6 +21,8 @@ import {
 import { buildStockSchema } from '@/lib/seo/analysisSchemas';
 import { buildFlowPeriods } from '@/components/company/analysis/sections/FinancialFlowsSection';
 import { AnalysisHero } from '@/components/company/analysis/sections/AnalysisHero';
+import { TickerNavigator } from '@/components/company/analysis/TickerNavigator';
+import { getTickerNav } from '@/lib/analysis/tickerNav';
 import { TrackPageEvent } from '@/components/analytics/TrackPageEvent';
 import { CompanyOverviewSection } from '@/components/company/analysis/sections/CompanyOverviewSection';
 import { KeyInsightsSection } from '@/components/company/analysis/sections/KeyInsightsSection';
@@ -117,7 +119,7 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   // Fetch everything in parallel (independent queries).
   // Includes SSR pre-fetch of analysis API + history for instant client hydration.
-  const [earningsData, recentMoves, sectorPeers, relatedOpps, analysisData, historyData, flowStatements, week52, topNews, matchedScreens] = await Promise.all([
+  const [earningsData, recentMoves, sectorPeers, relatedOpps, analysisData, historyData, flowStatements, week52, topNews, matchedScreens, tickerNav] = await Promise.all([
     getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
     getSectorPeers(data?.sector, tickerUpper),
@@ -128,6 +130,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     get52WeekRange(tickerUpper),
     prefetchTopNews(tickerUpper, companyName),
     getMatchedScreens(tickerUpper),
+    getTickerNav(tickerUpper),
   ]);
 
   const { price: displayPrice, changePct: displayChangePct, marketSession } = getAnalysisQuote(data);
@@ -247,6 +250,12 @@ export default async function AnalysisPage({ params }: PageProps) {
         </nav>
 
         <main className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {tickerNav && (
+            <div className="mb-4">
+              <TickerNavigator symbol={tickerUpper} nav={tickerNav} />
+            </div>
+          )}
+
           {nextEarnings && earningsDays != null && earningsDays <= 14 && (
             <EarningsBanner
               companyName={companyName}

@@ -213,7 +213,18 @@ export function AnalysisHero({
               </Link>
             </>
           )}
-          {industry && <> · Industry: {industry}</>}
+          {industry && (
+            <>
+              {' '}· Industry:{' '}
+              <Link
+                href={`/screener?industry=${encodeURIComponent(industry)}`}
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+                title={`All ${industry} stocks in the screener`}
+              >
+                {industry}
+              </Link>
+            </>
+          )}
         </p>
         <AnalystConsensusStrip
           priceTarget={priceTarget ?? null}
