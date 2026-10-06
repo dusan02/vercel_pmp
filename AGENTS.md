@@ -119,6 +119,15 @@ curl -s https://premarketprice.com/analysis/AAPL | grep -c FinancialProduct  # �
 - Mŕtve tickery vyčistené 2026-09-29: zmazané FI (dead dup — live je FISV), BK (rename → BNY už existoval; jeho 38 statements zmigrované SQL UPDATE na BNY), QUALCOMM/MESSO/CELLDEX (zombie bez Polygon dát). Rename: `scripts/rename-ticker.ts` (FK `on_update: CASCADE` migruje children automaticky), delete: `scripts/delete-dead-tickers.ts` (`on_delete: CASCADE`). DOMO zostáva — reálny low-volume ticker
 - **BNY ticker-collision pozor**: Polygon vracia pod `BNY` za obdobie do ~2026-05 cudzí ~$10 fond — BNY valuation riadky 2021→2026-05 sú už opravené z BK histórie; pri `syncValuationHistory('BNY')` full refetche sa kolízia vráti (incremental OK — lastRecord je aktuálny)
 
+**Statement freshness + mass repair (2026-10-06)**:
+
+- **Prod DB nemá `_prisma_migrations`** — schéma sa historicky aplikovala cez `db push`/priame ALTER, migration súbory sú len dokumentácia. Additívne stĺpce na prode: `ALTER TABLE` priamo (better-sqlite3 `busy_timeout` zvládne WAL lock) + migration súbor do repa
+- `Ticker.providerPeriodEnd` + `fundamentalsCheckedAt` píše `syncFinancials` pri každom syncu (najnovšia ponúknutá perióda providerov ∪ post-sync DB max). `daily-integrity-check` reportuje `fresh / staleProvider / staleAge / neverChecked` — staleProvider = provider ponúka novšie než máme (reálna chyba), staleAge = nikde nič novšie (fiskálne kalendáre — MSFT/ADP/INTU končia FY v júni, ich "staleness" je legit)
+- **Finnhub XBRL laguje ~1 kvartál** za SEC — `syncFinancials` ma `gapfill` vetvu cez stockanalysis.com (diskrétne kvartály → YTD konverzia, `abs()` normalizácia capex/sbc vs SA negatívna konvencia) + `ebitNeedsSaVerify` (fabrikovaný EBIT nikdy neprepíše SA-overený). Masívny backfill: `scripts/backfill-statement-gaps.ts` (nastaví POST /api/analysis cez plný pipeline vrátane ISR invalidate; 2026-10-06: 856 stale → 794 improved, 62 legit no-newer-filing)
+- Po hromadnej statement oprave zbehnúť `repair-valuation-history-ttm.ts --after=<dátum>` — DVH riadky zo stale okna držia zlé násobky (2026-10-06: --after=2026-06-01, 81K riadkov scan / 79K updated), potom flush `redis-cli -p 6380 --scan --pattern "analysis:*" | xargs DEL` + `rm -rf .next/server/app/{analysis,valuation}` (ISR artefakty sú per-visited-path)
+- **Percentile kontrakt**: `/analysis` aj `/valuation` rankujú POSLEDNÝ DVH snapshot (close basis) — rovnaký ticker+dátum+séria = rovnaký percentile; live-price basis na analysis stránke sa používa len pre headline P/E
+- `scripts/qa-ticker-sample.ts` — 24-ticker cross-section probe (latestQ age, TTM, násobky, FCF source, pillars, verdict)
+
 ## Pillar skóre (radar, 2026-09)
 
 - **`src/services/analysis/pillars.ts` = jediná definícia** všetkých 5 osí (4 legs × 25): Valuation, Growth, Profitability, Health, Quality. Zdieľajú ju `scoreCalculator` (zapisuje stored `healthScore`/`profitabilityScore`/`valuationScore` do `AnalysisCache`) aj `computeMetrics` (read-time `pillars` v `/api/analysis` response — radar vždy na jednom as-of snapshotte)
