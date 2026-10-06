@@ -323,39 +323,44 @@ export default async function AnalysisPage({ params }: PageProps) {
                   <PillarChips pillars={analysisData!.pillars!} />
                 </div>
               )}
-              {/* PMP Verdict — deterministic one-glance summary above the
-                  fold; compresses pillars + valuation percentile + mover
-                  context already rendered deeper down the page. */}
-              <PmpVerdict
-                pillars={analysisData?.pillars ?? null}
-                insufficientData={analysisData?.insufficientData ?? null}
-                pePercentile={analysisData?.valuationHistoryStats?.pe?.percentile ?? null}
-                peCurrent={displayPeRatio}
-                peMedian={analysisData?.valuationHistoryStats?.pe?.median ?? null}
-                peYears={analysisData?.valuationHistoryStats?.pe?.years ?? null}
-                psPercentile={analysisData?.valuationHistoryStats?.ps?.percentile ?? null}
-                forwardPe={analysisData?.finnhubMetrics?.forwardPe ?? null}
-                revenueGrowthYoY={analysisData?.finnhubMetrics?.revenueGrowth ?? null}
-                revenueCagr={analysisData?.revenueCagr ?? null}
-                changePct={displayChangePct}
-                moversReason={data?.moversReason ?? null}
-                moversCategory={data?.moversCategory ?? null}
-                moversZScore={data?.latestMoversZScore ?? null}
-                moversRvol={data?.latestMoversRVOL ?? null}
-              />
-              {/* Thesis on one screen — strengths evidence beside the live
-                  intraday chart; risks list moved into the right rail so the
-                  rail stays a compact scannable column. The market-context
-                  strip stacks under Strengths — the chart is taller than the
-                  list, so the strip fills what would be dead space. */}
+              {/* Top thesis row — the verdict card sits beside the live
+                  intraday chart so the chart fills the space the verdict
+                  header's right side leaves dead; strengths evidence pairs
+                  with the news/context card on the second row. */}
               <div className="flex flex-col lg:flex-row gap-3">
-                <div className="flex-1 min-w-0 flex flex-col gap-3">
+                <div className="flex-1 min-w-0">
+                  <PmpVerdict
+                    pillars={analysisData?.pillars ?? null}
+                    insufficientData={analysisData?.insufficientData ?? null}
+                    pePercentile={analysisData?.valuationHistoryStats?.pe?.percentile ?? null}
+                    peCurrent={displayPeRatio}
+                    peMedian={analysisData?.valuationHistoryStats?.pe?.median ?? null}
+                    peYears={analysisData?.valuationHistoryStats?.pe?.years ?? null}
+                    psPercentile={analysisData?.valuationHistoryStats?.ps?.percentile ?? null}
+                    forwardPe={analysisData?.finnhubMetrics?.forwardPe ?? null}
+                    revenueGrowthYoY={analysisData?.finnhubMetrics?.revenueGrowth ?? null}
+                    revenueCagr={analysisData?.revenueCagr ?? null}
+                    changePct={displayChangePct}
+                    moversReason={data?.moversReason ?? null}
+                    moversCategory={data?.moversCategory ?? null}
+                    moversZScore={data?.latestMoversZScore ?? null}
+                    moversRvol={data?.latestMoversRVOL ?? null}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <IntradayChart ticker={tickerUpper} />
+                </div>
+              </div>
+              <div className="flex flex-col lg:flex-row gap-3">
+                <div className="flex-1 min-w-0">
                   <ThesisCard
                     analysisData={analysisData}
                     cache={data?.analysisCache ?? null}
                     roe={roeStat}
                     only="strengths"
                   />
+                </div>
+                <div className="flex-1 min-w-0">
                   <MoverInsightSection
                     ticker={tickerUpper}
                     moversReason={data?.moversReason ?? null}
@@ -368,9 +373,6 @@ export default async function AnalysisPage({ params }: PageProps) {
                     earningsDays={earningsDays}
                     lastMove={recentMoves[0] ?? null}
                   />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <IntradayChart ticker={tickerUpper} />
                 </div>
               </div>
             </div>
