@@ -542,36 +542,44 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               P/E
             </button>
           </div>
-          {/* Indicator toggles — colored dot doubles as the line legend */}
-          {mode === 'price' && (
-            <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
-              {INDICATORS.map((ind) => (
-                <button
-                  key={ind.key}
-                  type="button"
-                  onClick={() => toggleInd(ind.key)}
-                  title={
-                    ind.key === 'volspike'
+          {/* Indicator toggles — colored dot doubles as the line legend.
+              Stay mounted (disabled) in P/E mode so the toolbar never
+              reflows on mode switch; toggled state persists for the
+              return to Price. */}
+          <div
+            className={`flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5 transition-opacity ${
+              mode === 'pe' ? 'opacity-40' : ''
+            }`}
+          >
+            {INDICATORS.map((ind) => (
+              <button
+                key={ind.key}
+                type="button"
+                disabled={mode === 'pe'}
+                onClick={() => toggleInd(ind.key)}
+                title={
+                  mode === 'pe'
+                    ? 'Price-chart indicators — switch back to Price view'
+                    : ind.key === 'volspike'
                       ? 'Highlight weeks with volume > 2× the 20-week average'
                       : ind.key === 'pefair'
                         ? 'TTM EPS × historical median P/E — steps mark earnings updates, not market moves'
                         : undefined
-                  }
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
-                    inds.has(ind.key)
-                      ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
-                      : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
-                  }`}
-                >
-                  <span
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: inds.has(ind.key) ? ind.color : 'rgba(148,163,184,0.4)' }}
-                  />
-                  {ind.label}
-                </button>
-              ))}
-            </div>
-          )}
+                }
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 disabled:cursor-not-allowed ${
+                  inds.has(ind.key)
+                    ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
+                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+                }`}
+              >
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: inds.has(ind.key) ? ind.color : 'rgba(148,163,184,0.4)' }}
+                />
+                {ind.label}
+              </button>
+            ))}
+          </div>
           <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
             {periodChoices.map((p) => (
               <button
