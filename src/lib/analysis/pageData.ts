@@ -171,6 +171,24 @@ export async function getRecentSignificantMoves(symbol: string) {
 }
 
 /**
+ * Raw 90-day insider filings for the activity summary — one source splits
+ * open-market (P/S) signal trades from compensation-mechanical filings
+ * (A/M/F/G/D). Independent of the cron-fresh InsiderAggregate so the page
+ * never shows a summary inconsistent with the filing table below it.
+ */
+export async function getInsiderActivity90d(symbol: string) {
+  try {
+    const since = new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10);
+    return await prisma.finnhubInsiderTransaction.findMany({
+      where: { symbol, transactionDate: { gte: since } },
+      select: { transactionCode: true, change: true, transactionPrice: true },
+    });
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Latest financial statements for the Financial Flows sankey section.
  * Section-level data — degrades gracefully (section hidden) on error.
  */

@@ -3,10 +3,11 @@
 import React, { useMemo } from 'react';
 import { AnalysisData, ValuationHistoryStat } from './types';
 import { MetricCardDef, StatusType, StatusBadge, VALUE_COLORS } from '../shared/MetricCard';
-import { summarizeLossYears } from '@/lib/utils/analysisMath';
+import { summarizeLossYears, capexCycleContext } from '@/lib/utils/analysisMath';
 import { isPeDistorted } from '@/lib/analysis/peDistortion';
 import { buildSnapshotCells } from './sections/FinancialSnapshot';
-import { InsiderTransactionsBody, type InsiderTransactionData } from './sections/InsiderTransactionsSection';
+import { InsiderTransactionsBody, InsiderActivitySummary, type InsiderTransactionData } from './sections/InsiderTransactionsSection';
+import type { InsiderTxLike } from '@/lib/utils/analysisMath';
 
 function ordinalSuffix(n: number): string {
     const s = ['th', 'st', 'nd', 'rd'];
@@ -29,6 +30,7 @@ function histTip(stat: ValuationHistoryStat | undefined, unit: 'x' | '%'): strin
 interface Props {
     data: AnalysisData;
     insiderTransactions?: InsiderTransactionData[];
+    insiderActivity?: InsiderTxLike[];
 }
 
 // ── Build all metrics — every flow metric shares the same TTM as-of period ───
@@ -137,6 +139,10 @@ export function buildMetrics(data: AnalysisData) {
         ? safeDiv(ttmOcf - Math.abs(ttmCapex) - (ttmSbc ?? 0), ttmRev) : null;
     const capexRev = ttmCapex != null ? safeDiv(Math.abs(ttmCapex), ttmRev) : null;
     const sbcRev = safeDiv(ttmSbc, ttmRev);
+    // Heavy-investment-cycle caveat for FCF-based rows — high CapEx/OCF means
+    // reported FCF understates normalized earning power (AMZN/META AI buildout).
+    const capexCtx = capexCycleContext(ttmOcf, ttmCapex);
+    const capexTip = capexCtx != null ? ` · ${capexCtx.text}` : '';
 
     const pfcf = fh?.priceFreeCashFlow ?? null;
     // Finnhub-only fields — no own-statement source, shown as fetched
@@ -171,8 +177,8 @@ export function buildMetrics(data: AnalysisData) {
         peDistorted
             ? def('P/E (TTM)', `${pe!.toFixed(0)}x`, 'warn', 'Distorted', `TTM earnings are temporarily depressed — this multiple overstates expensiveness. Forward P/E is a better guide${histTip(vh?.pe, 'x')}`, true)
             : def('P/E (TTM)', pe != null ? `${pe.toFixed(1)}x` : 'N/A', pe == null ? 'neutral' : pe < 15 ? 'good' : pe <= 25 ? 'neutral' : pe <= 35 ? 'warn' : 'bad', pe == null ? '-' : pe < 15 ? 'Cheap' : pe <= 25 ? 'Fair' : 'Expensive', `Price / TTM EPS (own statements)${histTip(vh?.pe, 'x')}`, true),
-        def('P/FCF', pfcf != null ? `${pfcf.toFixed(1)}x` : 'N/A', pfcf == null ? 'neutral' : pfcf < 0 ? 'bad' : pfcf < 15 ? 'good' : pfcf <= 30 ? 'neutral' : pfcf <= 45 ? 'warn' : 'bad', pfcf == null ? '-' : pfcf < 0 ? 'Negative FCF' : pfcf < 15 ? 'Cheap' : pfcf <= 30 ? 'Fair' : 'Expensive', 'Price / Free Cash Flow per share (Finnhub). Inverse of FCF yield — negative when FCF is negative'),
-        def('FCF Yield', pct(fcfY), fcfY == null ? 'neutral' : fcfY > 0.05 ? 'good' : fcfY < 0 ? 'bad' : 'warn', fcfY == null ? '-' : fcfY > 0.05 ? 'Value' : fcfY < 0 ? 'Negative' : 'Low', `${m?.fcfYieldSource === 'finnhub' ? 'Inverse of Finnhub P/FCF (own TTM FCF unavailable)' : m?.fcfYieldSource === 'history' ? 'Latest stored TTM FCF / Market Cap' : 'TTM (OCF − CapEx) / Market Cap'}${histTip(vh?.fcfYield, '%')}`),
+        def('P/FCF', pfcf != null ? `${pfcf.toFixed(1)}x` : 'N/A', pfcf == null ? 'neutral' : pfcf < 0 ? 'bad' : pfcf < 15 ? 'good' : pfcf <= 30 ? 'neutral' : pfcf <= 45 ? 'warn' : 'bad', pfcf == null ? '-' : pfcf < 0 ? 'Negative FCF' : pfcf < 15 ? 'Cheap' : pfcf <= 30 ? 'Fair' : 'Expensive', `Price / Free Cash Flow per share (Finnhub). Inverse of FCF yield — negative when FCF is negative${capexTip}`),
+        def('FCF Yield', pct(fcfY), fcfY == null ? 'neutral' : fcfY > 0.05 ? 'good' : fcfY < 0 ? 'bad' : 'warn', fcfY == null ? '-' : fcfY > 0.05 ? 'Value' : fcfY < 0 ? 'Negative' : 'Low', `${m?.fcfYieldSource === 'finnhub' ? 'Inverse of Finnhub P/FCF (own TTM FCF unavailable)' : m?.fcfYieldSource === 'history' ? 'Latest stored TTM FCF / Market Cap' : 'TTM (OCF − CapEx) / Market Cap'}${histTip(vh?.fcfYield, '%')}${capexTip}`),
         def('P/S (TTM)', psRatio != null ? `${psRatio.toFixed(2)}x` : 'N/A', psRatio == null ? 'neutral' : psRatio < 2 ? 'good' : psRatio <= 5 ? 'neutral' : psRatio <= 10 ? 'warn' : 'bad', psRatio == null ? '-' : psRatio < 2 ? 'Cheap' : psRatio <= 5 ? 'Fair' : 'Expensive', `Price / TTM Revenue (own statements)${histTip(vh?.ps, 'x')}`),
         def(evLabel, evEbitda != null ? `${evEbitda.toFixed(1)}x` : 'N/A', evEbitda == null ? 'neutral' : evEbitda < 12 ? 'good' : evEbitda <= 18 ? 'neutral' : evEbitda <= 25 ? 'warn' : 'bad', evEbitda == null ? '-' : evEbitda < 12 ? 'Cheap' : evEbitda <= 18 ? 'Fair' : 'Expensive', `Enterprise value / ${evEbit != null ? 'TTM EBIT (D&A not in our data)' : 'EBITDA (Finnhub)'} — capital-structure neutral${histTip(vh?.evEbit, 'x')}`),
         def('EV/Sales', evSales != null ? `${evSales.toFixed(1)}x` : 'N/A', evSales == null ? 'neutral' : evSales < 2 ? 'good' : evSales <= 5 ? 'neutral' : evSales <= 10 ? 'warn' : 'bad', evSales == null ? '-' : evSales < 2 ? 'Cheap' : evSales <= 5 ? 'Fair' : evSales <= 10 ? 'Expensive' : 'Very expensive', 'Enterprise Value / TTM Revenue (Finnhub) — capital-structure neutral sales multiple'),
@@ -215,8 +221,8 @@ export function buildMetrics(data: AnalysisData) {
         def('Net Margin', pct(netMar), netMar == null ? 'neutral' : netMar > 0.10 ? 'good' : netMar > 0.05 ? 'warn' : 'bad', netMar == null ? '-' : netMar > 0.1 ? 'High' : netMar > 0.05 ? 'Average' : 'Low', 'Net Income / Revenue'),
         def('Operating Margin', pct(opMargin), opMargin == null ? 'neutral' : opMargin > 0.25 ? 'good' : opMargin > 0.10 ? 'warn' : 'bad', opMargin == null ? '-' : opMargin > 0.25 ? 'High' : opMargin > 0.10 ? 'Average' : 'Low', 'TTM EBIT / TTM Revenue'),
         def('Gross Margin', pct(grossMar), grossMar == null ? 'neutral' : grossMar > 0.50 ? 'good' : grossMar > 0.30 ? 'warn' : 'bad', grossMar == null ? '-' : grossMar > 0.5 ? 'Premium' : grossMar > 0.3 ? 'Average' : 'Low', 'Gross Profit / Revenue'),
-        def('FCF Margin', pct(fcfMar), fcfMar == null ? 'neutral' : fcfMar > 0.15 ? 'good' : fcfMar > 0.08 ? 'warn' : 'bad', fcfMar == null ? '-' : fcfMar > 0.15 ? 'High' : fcfMar > 0.08 ? 'Average' : 'Low', 'FCF / Revenue'),
-        def('True FCF Margin', pct(trueFcfM), trueFcfM == null ? 'neutral' : trueFcfM > 0.12 ? 'good' : trueFcfM > 0.05 ? 'warn' : 'bad', trueFcfM == null ? '-' : trueFcfM > 0.12 ? 'High' : trueFcfM > 0.05 ? 'Average' : 'Low', 'TTM (OCF − CapEx − SBC) / TTM Revenue — SBC treated as a real cost'),
+        def('FCF Margin', pct(fcfMar), fcfMar == null ? 'neutral' : fcfMar > 0.15 ? 'good' : fcfMar > 0.08 ? 'warn' : 'bad', fcfMar == null ? '-' : fcfMar > 0.15 ? 'High' : fcfMar > 0.08 ? 'Average' : 'Low', `FCF / Revenue${capexTip}`),
+        def('True FCF Margin', pct(trueFcfM), trueFcfM == null ? 'neutral' : trueFcfM > 0.12 ? 'good' : trueFcfM > 0.05 ? 'warn' : 'bad', trueFcfM == null ? '-' : trueFcfM > 0.12 ? 'High' : trueFcfM > 0.05 ? 'Average' : 'Low', `TTM (OCF − CapEx − SBC) / TTM Revenue — SBC treated as a real cost${capexTip}`),
     ];
 
     const solvency: MetricCardDef[] = [
@@ -224,7 +230,7 @@ export function buildMetrics(data: AnalysisData) {
         def('Current Ratio', mul(cr), cr == null ? 'neutral' : cr > 2 ? 'good' : cr > 1 ? 'warn' : 'bad', cr == null ? '-' : cr > 2 ? 'High' : cr > 1 ? 'Ok' : 'Low', 'Current Assets/Liabilities'),
         def('Quick Ratio', quick != null ? mul(quick) : 'N/A', quick == null ? 'neutral' : quick > 1 ? 'good' : quick > 0.5 ? 'warn' : 'bad', quick == null ? '-' : quick > 1 ? 'High' : quick > 0.5 ? 'Ok' : 'Low', '(Current Assets − Inventory) / Current Liabilities (Finnhub) — stricter liquidity test, excludes inventory'),
         def('Interest Coverage', intCov != null ? `${intCov.toFixed(1)}x` : 'N/A', intCov == null ? 'neutral' : intCov > 10 ? 'good' : intCov > 3 ? 'warn' : 'bad', intCov == null ? '-' : intCov > 10 ? 'Strong' : intCov > 3 ? 'Ok' : 'Risky', 'EBIT/Interest. >10 Strong'),
-        def('Debt Repayment', yr(debtRp), debtRp == null ? 'neutral' : debtRp <= 3 ? 'good' : debtRp > 10 ? 'bad' : 'warn', debtRp == null ? '-' : debtRp <= 3 ? 'Fast' : debtRp > 10 ? 'Slow' : 'Average', 'Years to repay net debt via FCF'),
+        def('Debt Repayment', yr(debtRp), debtRp == null ? 'neutral' : debtRp <= 3 ? 'good' : debtRp > 10 ? 'bad' : 'warn', debtRp == null ? '-' : debtRp <= 3 ? 'Fast' : debtRp > 10 ? 'Slow' : 'Average', `Years to repay net debt via FCF${capexTip}`),
         def('Net Debt/EBIT', nde != null ? (nde < 0 ? 'Net Cash' : `${nde.toFixed(1)}x`) : 'N/A', nde == null ? 'neutral' : nde < 4 ? (nde < 2 ? 'good' : 'warn') : 'bad', nde == null ? '-' : nde < 2 ? 'Low' : nde < 4 ? 'Med' : 'High', 'Leverage. <2x Low, >4x High'),
         def('Debt/Equity', dte != null ? `${dte.toFixed(2)}x` : 'N/A', dte == null ? 'neutral' : dte < 1 ? 'good' : dte < 2 ? 'warn' : 'bad', dte == null ? '-' : dte < 1 ? 'Low' : dte < 2 ? 'Med' : 'High', 'Debt / Equity: <1 Conservative, >2 Risky. Not meaningful with non-positive equity; shown as unavailable rather than low debt.'),
         def('Cash / Debt', cashDebt === Infinity ? 'No Debt' : cashDebt != null ? `${cashDebt.toFixed(2)}x` : 'N/A', cashDebt == null ? 'neutral' : cashDebt === Infinity || cashDebt >= 1 ? 'good' : cashDebt >= 0.3 ? 'warn' : 'bad', cashDebt == null ? '-' : cashDebt === Infinity ? 'Clean' : cashDebt >= 1 ? 'Covered' : cashDebt >= 0.3 ? 'Partial' : 'Thin', 'Cash covers how much of total debt. >1 = could repay all debt from cash'),
@@ -233,7 +239,7 @@ export function buildMetrics(data: AnalysisData) {
     const quality: MetricCardDef[] = [
         def('Piotroski F-Score', pio != null ? `${pio}/9` : 'N/A', pio == null ? 'neutral' : pio >= 7 ? 'good' : pio >= 4 ? 'warn' : 'bad', pio == null ? '-' : pio >= 7 ? 'Strong' : pio >= 4 ? 'Average' : 'Weak', 'Financial strength 0–9. >7 Strong', true),
         def('Beneish M-Score', ben != null ? ben.toFixed(2) : 'N/A', ben == null ? 'neutral' : ben < -2.22 ? 'good' : ben < -1.78 ? 'warn' : 'bad', ben == null ? '-' : ben < -2.22 ? 'Safe' : ben < -1.78 ? 'Gray zone' : 'Risky', 'Earnings manipulation risk. < -2.22 Safe'),
-        def('FCF Conversion', pct(fcfCon), fcfCon == null ? 'neutral' : fcfCon > 0.80 ? 'good' : fcfCon > 0.50 ? 'warn' : 'bad', fcfCon == null ? '-' : fcfCon > 0.8 ? 'Strong' : fcfCon > 0.5 ? 'Average' : 'Poor', 'FCF / Net Income'),
+        def('FCF Conversion', pct(fcfCon), fcfCon == null ? 'neutral' : fcfCon > 0.80 ? 'good' : fcfCon > 0.50 ? 'warn' : 'bad', fcfCon == null ? '-' : fcfCon > 0.8 ? 'Strong' : fcfCon > 0.5 ? 'Average' : 'Poor', `FCF / Net Income${capexTip}`),
         def('Margin Stability', mv != null ? `${(mv * 100).toFixed(1)}%` : 'N/A', mv == null ? 'neutral' : mv < 0.08 ? 'good' : mv < 0.15 ? 'warn' : 'bad', mv == null ? '-' : mv < 0.08 ? 'Stable' : mv < 0.15 ? 'Average' : 'Volatile', 'EBIT margin std deviation. Lower = stable'),
         def('Capex / Revenue', pct(capexRev), capexRev == null ? 'neutral' : capexRev < 0.05 ? 'good' : capexRev < 0.15 ? 'warn' : 'bad', capexRev == null ? '-' : capexRev < 0.05 ? 'Asset-light' : capexRev < 0.15 ? 'Average' : 'Heavy', 'TTM CapEx / TTM Revenue — high % = capital-hungry business'),
         def('Asset Turnover', aturn != null ? `${aturn.toFixed(2)}x` : 'N/A', aturn == null ? 'neutral' : aturn > 1 ? 'good' : aturn > 0.5 ? 'warn' : 'bad', aturn == null ? '-' : aturn > 1 ? 'High' : aturn > 0.5 ? 'Average' : 'Low', 'Revenue / Total Assets (Finnhub) — how efficiently the asset base generates sales'),
@@ -247,7 +253,7 @@ export function buildMetrics(data: AnalysisData) {
         def('Asset / Liability', bs?.assetToLiability != null ? `${bs.assetToLiability.toFixed(2)}x` : 'N/A', bs?.assetToLiability == null ? 'neutral' : bs.assetToLiability >= 2 ? 'good' : bs.assetToLiability >= 1 ? 'warn' : 'bad', bs?.assetToLiability == null ? '-' : bs.assetToLiability >= 2 ? 'Solid' : bs.assetToLiability >= 1 ? 'Adequate' : 'Risky', 'Total Assets / Total Liabilities'),
     ];
 
-    return { valuation, profitability, growth, solvency, quality, balanceSheet, market, perShare, lossYears: lossHistory.lossYears, lossHistory };
+    return { valuation, profitability, growth, solvency, quality, balanceSheet, market, perShare, capexCtx, lossYears: lossHistory.lossYears, lossHistory };
 }
 
 // ── Letter grades — report-card style. Per-metric grade derives from the
@@ -451,8 +457,8 @@ function PillarCard({ title, score, metrics, children }: { title: string; score?
 }
 
 // ── Main export ──────────────────────────────────────────────────────────────
-export function KeyMetricsTable({ data, insiderTransactions }: Props) {
-    const { valuation, profitability, growth, solvency, quality, balanceSheet, market, perShare, lossYears, lossHistory } = useMemo(
+export function KeyMetricsTable({ data, insiderTransactions, insiderActivity }: Props) {
+    const { valuation, profitability, growth, solvency, quality, balanceSheet, market, perShare, capexCtx, lossYears, lossHistory } = useMemo(
         () => buildMetrics(data),
         [data]
     );
@@ -534,6 +540,11 @@ export function KeyMetricsTable({ data, insiderTransactions }: Props) {
                         {valuation.map((m) => <Tile key={m.label} m={m} />)}
                     </div>
                     <HistBar stat={peStat} />
+                    {capexCtx && (
+                        <p className="px-3 py-1.5 border-t border-gray-100 dark:border-gray-800/60 text-[11px] leading-snug text-amber-700 dark:text-amber-400">
+                            <span className="font-semibold">{capexCtx.label}:</span> {capexCtx.text}
+                        </p>
+                    )}
                 </div>
 
                 {/* ── Medium: remaining pillar cards ───────────────────── */}
@@ -560,6 +571,7 @@ export function KeyMetricsTable({ data, insiderTransactions }: Props) {
                             </h3>
                             <span className="text-[10px] text-gray-400 dark:text-gray-500">SEC Form 4 · {insiderTxs.length} records</span>
                         </div>
+                        {insiderActivity != null && <InsiderActivitySummary rows={insiderActivity} />}
                         <InsiderTransactionsBody transactions={insiderTxs} />
                     </div>
                 )}

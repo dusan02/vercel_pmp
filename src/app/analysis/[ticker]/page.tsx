@@ -14,6 +14,7 @@ import {
   getFinancialFlowsData,
   getSectorPeers,
   get52WeekRange,
+  getInsiderActivity90d,
   prefetchAnalysisData,
   prefetchHistoryData,
   prefetchTopNews,
@@ -119,7 +120,7 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   // Fetch everything in parallel (independent queries).
   // Includes SSR pre-fetch of analysis API + history for instant client hydration.
-  const [earningsData, recentMoves, sectorPeers, relatedOpps, analysisData, historyData, flowStatements, week52, topNews, matchedScreens, tickerNav] = await Promise.all([
+  const [earningsData, recentMoves, sectorPeers, relatedOpps, analysisData, historyData, flowStatements, week52, topNews, matchedScreens, tickerNav, insiderActivity] = await Promise.all([
     getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
     getSectorPeers(data?.sector, tickerUpper),
@@ -131,6 +132,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     prefetchTopNews(tickerUpper, companyName),
     getMatchedScreens(tickerUpper),
     getTickerNav(tickerUpper),
+    getInsiderActivity90d(tickerUpper),
   ]);
 
   const { price: displayPrice, changePct: displayChangePct, marketSession } = getAnalysisQuote(data);
@@ -408,7 +410,7 @@ export default async function AnalysisPage({ params }: PageProps) {
               failed, the client tab renders its own copy after fetching. */}
           {analysisData && (
             <div className="mb-6">
-              <KeyMetricsTable data={analysisData} insiderTransactions={data.finnhubInsiderTransactions} />
+              <KeyMetricsTable data={analysisData} insiderTransactions={data.finnhubInsiderTransactions} insiderActivity={insiderActivity} />
             </div>
           )}
 

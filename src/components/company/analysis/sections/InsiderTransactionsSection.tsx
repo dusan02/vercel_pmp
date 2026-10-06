@@ -1,4 +1,5 @@
 import { formatCompactNumber } from '@/lib/utils/heatmapFormat';
+import { summarizeInsiderActivity, type InsiderTxLike } from '@/lib/utils/analysisMath';
 
 export interface InsiderTransactionData {
   change: number;
@@ -95,6 +96,59 @@ function TransactionsTable({ transactions, label }: InsiderTransactionsSectionPr
         })}
       </tbody>
     </table>
+  );
+}
+
+const fmtUsd = (v: number): string =>
+  v >= 1e9 ? `$${(v / 1e9).toFixed(2)}B`
+  : v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M`
+  : v >= 1e3 ? `$${(v / 1e3).toFixed(0)}K`
+  : `$${v.toFixed(0)}`;
+
+/**
+ * 90-day activity summary — separates discretionary open-market trades
+ * (P buys / S sells, the directional signal) from compensation-mechanical
+ * filings (grants, option exercises, tax withholding, gifts). Honest about
+ * the data limit: Form 4 doesn't flag 10b5-1 plans, so scheduled sales
+ * appear inside "open-market sells".
+ */
+export function InsiderActivitySummary({ rows }: { rows: InsiderTxLike[] }) {
+  const s = summarizeInsiderActivity(rows);
+
+  const signal = s.signal === 'buy'
+    ? { label: 'Net open-market buying', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' }
+    : s.signal === 'sell'
+      ? { label: 'Net open-market selling', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' }
+      : s.signal === 'mixed'
+        ? { label: 'Mixed open-market activity', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300' }
+        : { label: 'No open-market trades', cls: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' };
+
+  const tradeText = (value: number, shares: number, count: number) => {
+    if (count === 0) return '—';
+    const amount = value > 0 ? fmtUsd(value) : `${formatCompactNumber(shares)} sh`;
+    return `${amount} (${count})`;
+  };
+
+  return (
+    <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700 text-[11px]">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-gray-600 dark:text-gray-300">
+        <span className="font-semibold text-gray-800 dark:text-gray-200">Open-market · 90d</span>
+        <span className="text-emerald-600 dark:text-emerald-400">Buy {tradeText(s.buyValue, s.buyShares, s.buyCount)}</span>
+        <span className="text-rose-600 dark:text-rose-400">Sell {tradeText(s.sellValue, s.sellShares, s.sellCount)}</span>
+        {s.otherCount > 0 && (
+          <span className="text-gray-500 dark:text-gray-400">Other filings {s.otherCount}</span>
+        )}
+        <span className={`ml-auto inline-flex px-1.5 py-0.5 rounded text-[10px] leading-4 font-semibold ${signal.cls}`}>
+          {signal.label}
+        </span>
+      </div>
+      {(s.buyCount > 0 || s.sellCount > 0 || s.otherCount > 0) && (
+        <p className="mt-1 leading-snug text-gray-400 dark:text-gray-500">
+          P/S codes are the directional signal; grants, option exercises and tax withholding carry none.
+          Form 4 doesn&apos;t flag 10b5-1 plans — scheduled sales may appear within open-market sells.
+        </p>
+      )}
+    </div>
   );
 }
 

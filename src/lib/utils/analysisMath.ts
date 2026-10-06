@@ -169,3 +169,81 @@ export function buildStats(values: number[]) {
     count: sorted.length,
   };
 }
+
+/**
+ * CapEx intensity vs operating cash flow — contextualizes FCF-based metrics
+ * for companies in heavy investment cycles (AMZN/META AI buildout, utilities).
+ * A high CapEx/OCF ratio means reported FCF understates normalized earning
+ * power, so P/FCF/FCF yield read worse than the underlying business.
+ * Tiers: <50% none, 50–75% elevated, 75–100% heavy, ≥100% capex exceeds OCF.
+ * OCF ≤ 0 → null (FCF is already negative; the "negative FCF" label says it).
+ */
+export type CapexCycleTier = 'elevated' | 'heavy' | 'exceeds';
+
+export function capexCycleContext(
+  ttmOcf: number | null | undefined,
+  ttmCapex: number | null | undefined,
+): { ratio: number; tier: CapexCycleTier; label: string; text: string } | null {
+  if (ttmOcf == null || ttmCapex == null || !(ttmOcf > 0)) return null;
+  const ratio = Math.abs(ttmCapex) / ttmOcf;
+  if (ratio < 0.5) return null;
+  const pctShare = `${Math.round(ratio * 100)}%`;
+  if (ratio >= 1) {
+    return {
+      ratio, tier: 'exceeds', label: 'CapEx exceeds OCF',
+      text: `CapEx exceeds operating cash flow (${pctShare} of OCF) — reported FCF understates normalized earning power in this investment phase`,
+    };
+  }
+  if (ratio >= 0.75) {
+    return {
+      ratio, tier: 'heavy', label: 'Heavy investment',
+      text: `Heavy investment cycle — CapEx = ${pctShare} of operating cash flow, significantly depressing reported FCF`,
+    };
+  }
+  return {
+    ratio, tier: 'elevated', label: 'Elevated investment',
+    text: `Elevated investment — CapEx = ${pctShare} of operating cash flow, weighing on reported FCF`,
+  };
+}
+
+/**
+ * 90-day insider activity split — separates discretionary open-market trades
+ * (P buys / S sells, the directional signal) from compensation-mechanical
+ * filings (A grants, M option exercises, F tax withholding, G gifts, D
+ * dispositions). Form 4 doesn't flag 10b5-1 plans, so scheduled plan sales
+ * land inside S — the footnote must say so rather than claim detection.
+ */
+export interface InsiderTxLike {
+  transactionCode: string;
+  change: number;
+  transactionPrice?: number | null;
+}
+
+export type InsiderSignal = 'buy' | 'sell' | 'mixed' | 'none';
+
+export function summarizeInsiderActivity(rows: InsiderTxLike[]): {
+  buyCount: number; sellCount: number;
+  buyValue: number; sellValue: number;
+  buyShares: number; sellShares: number;
+  otherCount: number; otherShares: number;
+  signal: InsiderSignal;
+} {
+  let buyCount = 0, sellCount = 0, otherCount = 0;
+  let buyValue = 0, sellValue = 0, buyShares = 0, sellShares = 0, otherShares = 0;
+  for (const r of rows) {
+    const shares = Math.abs(r.change);
+    const value = r.transactionPrice != null ? shares * r.transactionPrice : 0;
+    if (r.transactionCode === 'P') { buyCount++; buyShares += shares; buyValue += value; }
+    else if (r.transactionCode === 'S') { sellCount++; sellShares += shares; sellValue += value; }
+    else { otherCount++; otherShares += shares; }
+  }
+  let signal: InsiderSignal = 'none';
+  if (buyCount > 0 || sellCount > 0) {
+    // Prefer $ values; fall back to shares when execution prices are missing.
+    const netValue = buyValue - sellValue;
+    const netShares = buyShares - sellShares;
+    const net = netValue !== 0 ? netValue : netShares;
+    signal = net > 0 ? 'buy' : net < 0 ? 'sell' : 'mixed';
+  }
+  return { buyCount, sellCount, buyValue, sellValue, buyShares, sellShares, otherCount, otherShares, signal };
+}
