@@ -124,6 +124,7 @@ export async function GET(
     // Attach TTM P/E per candle — the client draws a "price at historical
     // median P/E" line from this without a second request. peRatio rows are
     // daily; each candle takes the value of its close day (last row ≤ t).
+    let peStats: { median: number; p25: number; p75: number; n: number } | null = null;
     try {
       const valRows = await prisma.dailyValuationHistory.findMany({
         where: { symbol, date: { gte: fromDate }, peRatio: { not: null } },
@@ -141,10 +142,19 @@ export async function GET(
           while (vi < times.length - 1 && times[vi + 1]! <= end) vi++;
           c.pe = times[vi]! <= end ? pes[vi]! : c.pe ?? null;
         }
+
+        // Distribution stats over the FULL available series — the timeframe
+        // toggle changes what is displayed, never the valuation methodology
+        // (a 1Y view must not quietly recompute the median from 1Y data).
+        const sorted = [...pes].filter(v => v > 0 && Number.isFinite(v)).sort((a, b) => a - b);
+        if (sorted.length >= 10) {
+          const q = (p: number) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))]!;
+          peStats = { median: q(0.5), p25: q(0.25), p75: q(0.75), n: sorted.length };
+        }
       }
     } catch { /* valuation overlay is optional — candles still render */ }
 
-    const responseBody = { symbol, candles };
+    const responseBody = { symbol, candles, peStats };
 
     // Cache in Redis (1 hour TTL)
     try { await setCachedData(cacheKey, responseBody, CANDLES_CACHE_TTL); } catch {}

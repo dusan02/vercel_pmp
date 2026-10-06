@@ -10,6 +10,7 @@ import {
   Tooltip,
   Bar,
   Line,
+  Area,
   ReferenceLine,
 } from 'recharts';
 import { CHART_FONT } from '@/components/charts/chartTheme';
@@ -30,6 +31,12 @@ interface ChartPoint extends Candle {
   sma50?: number | null;
   sma200?: number | null;
   peFair?: number | null;
+  /** implied TTM EPS for this week (close / pe) — used by tooltip + markers */
+  eps?: number | null;
+  /** this week carries a new TTM EPS (fresh financial statements) */
+  epsChanged?: boolean;
+  /** [p25, p75] band for the P/E-multiple view */
+  peBand?: [number, number];
   volSpike?: boolean;
 }
 
@@ -60,12 +67,14 @@ const MA20 = '#2563eb'; // blue
 const MA50 = '#7c3aed'; // violet
 const MA200 = '#0891b2'; // teal — 200-day ≈ 40 weekly bars
 const PE_FAIR = '#db2777'; // pink — price-at-median-P/E overlay
+const PE_LINE = '#4f46e5'; // indigo — P/E-multiple view
 const VOL_SPIKE = '#d97706'; // amber — volume ≫ its own norm
 const REF52 = '#64748b'; // slate-500 — 52W hi/lo lines (400 was too light on white)
 
 // User-togglable indicator set; persisted per-browser, default off.
 const IND_KEY = 'pmp:pricechart:indicators';
 type IndKey = 'ma20' | 'ma50' | 'ma200' | 'pefair' | 'w52' | 'volspike';
+type ModeKey = 'price' | 'pe';
 const INDICATORS: { key: IndKey; label: string; color: string }[] = [
   { key: 'ma20', label: 'MA 20w', color: MA20 },
   { key: 'ma50', label: 'MA 50w', color: MA50 },
@@ -145,10 +154,86 @@ function CandleTooltip({ active, payload }: any) {
             <span className="text-right text-gray-700 dark:text-gray-300">${p.sma200.toFixed(2)}</span>
           </>
         )}
+        {p.pe != null && p.pe > 0 && (
+          <>
+            <span className="text-gray-500 dark:text-gray-400">P/E (TTM)</span>
+            <span className="text-right text-gray-700 dark:text-gray-300">{p.pe.toFixed(1)}×</span>
+            {p.eps != null && (
+              <>
+                <span className="text-gray-500 dark:text-gray-400">TTM EPS</span>
+                <span className="text-right text-gray-700 dark:text-gray-300">${p.eps.toFixed(2)}</span>
+              </>
+            )}
+          </>
+        )}
         {p.peFair != null && (
           <>
-            <span style={{ color: PE_FAIR }}>@med P/E</span>
-            <span className="text-right text-gray-700 dark:text-gray-300">${p.peFair.toFixed(2)}</span>
+            <span style={{ color: PE_FAIR }}>Med P/E fair</span>
+            <span className="text-right text-gray-700 dark:text-gray-300">
+              ${p.peFair.toFixed(2)}
+              {' '}
+              <span className="text-[10px]" style={{ color: p.c <= p.peFair ? UP : DOWN }}>
+                ({((p.c - p.peFair) / p.peFair) * 100 >= 0 ? '+' : ''}{(((p.c - p.peFair) / p.peFair) * 100).toFixed(0)}%)
+              </span>
+            </span>
+          </>
+        )}
+        {p.epsChanged && (
+          <div className="col-span-2 mt-1 pt-1 border-t border-gray-200 dark:border-gray-700 text-[10px]" style={{ color: PE_FAIR }}>
+            ↑ earnings update — new TTM EPS
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// P/E-multiple view tooltip — the multiple itself vs its own distribution.
+function PeTooltip({ active, payload, peStats }: any) {
+  if (!active || !payload?.length) return null;
+  const p: ChartPoint = payload[0].payload;
+  if (!p) return null;
+  const pe = p.pe != null && p.pe > 0 ? p.pe : null;
+  return (
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 shadow-lg text-xs min-w-[170px]">
+      <div className="text-gray-500 dark:text-gray-400 mb-2 font-medium">
+        {new Date(p.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono">
+        {pe != null ? (
+          <>
+            <span style={{ color: PE_LINE }}>P/E (TTM)</span>
+            <span className="text-right font-semibold text-gray-900 dark:text-white">{pe.toFixed(1)}×</span>
+          </>
+        ) : (
+          <>
+            <span className="text-gray-500 dark:text-gray-400">P/E (TTM)</span>
+            <span className="text-right text-gray-400 dark:text-gray-500">n/m</span>
+          </>
+        )}
+        {p.eps != null && (
+          <>
+            <span className="text-gray-500 dark:text-gray-400">TTM EPS</span>
+            <span className="text-right text-gray-700 dark:text-gray-300">${p.eps.toFixed(2)}</span>
+          </>
+        )}
+        {peStats && (
+          <>
+            <span style={{ color: PE_FAIR }}>Median</span>
+            <span className="text-right text-gray-700 dark:text-gray-300">{peStats.median.toFixed(1)}×</span>
+            <span className="text-gray-500 dark:text-gray-400">25–75th</span>
+            <span className="text-right text-gray-700 dark:text-gray-300">
+              {peStats.p25.toFixed(0)}–{peStats.p75.toFixed(0)}×
+            </span>
+          </>
+        )}
+        {pe != null && peStats && (
+          <>
+            <span className="text-gray-500 dark:text-gray-400">vs median</span>
+            <span className="text-right" style={{ color: pe <= peStats.median ? UP : DOWN }}>
+              {((pe - peStats.median) / peStats.median) * 100 >= 0 ? '+' : ''}
+              {(((pe - peStats.median) / peStats.median) * 100).toFixed(0)}%
+            </span>
           </>
         )}
       </div>
@@ -159,6 +244,8 @@ function CandleTooltip({ active, payload }: any) {
 
 export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, changeLabel = 'day' }: PriceCandlestickChartProps) {
   const [allCandles, setAllCandles] = useState<Candle[] | null>(null);
+  const [peStats, setPeStats] = useState<{ median: number; p25: number; p75: number; n: number } | null>(null);
+  const [mode, setMode] = useState<ModeKey>('price');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<PeriodLabel>('5Y');
@@ -200,6 +287,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       .then((json) => {
         if (!mounted) return;
         setAllCandles(Array.isArray(json.candles) ? json.candles : []);
+        setPeStats(json.peStats ?? null);
       })
       .catch((err) => {
         if (!mounted) return;
@@ -223,6 +311,22 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     // 40 weekly bars ≈ the 200-day average investors actually mean by SMA200
     const sma200 = rollingMean(sorted.map((c) => c.c), 40);
     const volSma = rollingMean(sorted.map((c) => c.v || 0), 20);
+    // Implied TTM EPS on the full series — close ÷ P/E cancels the price out,
+    // so week-over-week changes flag a fresh financial statement (earnings
+    // marker), not market movement. Computed pre-window so a filing just
+    // before the displayed range isn't missed.
+    const epsArr: (number | null)[] = sorted.map((c) =>
+      c.pe != null && c.pe > 0 && Number.isFinite(c.pe) ? c.c / c.pe : null,
+    );
+    const epsChanged: boolean[] = epsArr.map((e, i) => {
+      if (e == null) return false;
+      // find previous non-null eps (skips valuation-coverage gaps)
+      for (let j = i - 1; j >= 0; j--) {
+        const prev = epsArr[j];
+        if (prev != null) return Math.abs(e - prev) > Math.abs(prev) * 0.005;
+      }
+      return false;
+    });
     const years = PERIODS.find((p) => p.label === period)?.years ?? 5;
     const cutoff = Date.now() - years * 365.25 * 24 * 60 * 60 * 1000;
     const out: ChartPoint[] = [];
@@ -236,25 +340,26 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         sma20: sma20[i] ?? null,
         sma50: sma50[i] ?? null,
         sma200: sma200[i] ?? null,
+        eps: epsArr[i] ?? null,
+        epsChanged: epsChanged[i] ?? false,
         // Spike = this week's volume > 2× its own trailing 20w mean (≈ RVOL 2)
         volSpike: va != null && va > 0 && (c.v || 0) > 2 * va,
       });
     }
-    // "Price at median P/E" — rescales each weekly close by medianPE/pe(t);
-    // the line is where the stock would trade on unchanged earnings at its
-    // own median multiple. Median is taken over the *displayed* range so the
-    // reference follows the selected period, not a fixed all-time figure.
-    if (inds.has('pefair')) {
-      const pes = out.map((p) => p.pe).filter((v): v is number => v != null && v > 0).sort((a, b) => a - b);
-      const medPe = pes.length ? pes[Math.floor(pes.length / 2)]! : null;
-      if (medPe != null) {
-        for (const p of out) {
-          p.peFair = p.pe != null && p.pe > 0 ? (p.c / p.pe) * medPe : null;
-        }
+    // Valuation layer — p25–p75 band + median-P/E fair value. Stats come from
+    // the API computed over the FULL valuation series: the timeframe switch
+    // changes only what is displayed, never the valuation methodology.
+    const medPe = peStats?.median ?? null;
+    for (const p of out) {
+      if (peStats && p.pe != null) p.peBand = [peStats.p25, peStats.p75];
+      if (inds.has('pefair') && medPe != null) {
+        // Fair value = TTM EPS × median P/E — independent of market price;
+        // it legitimately steps only when new financial statements land.
+        p.peFair = p.eps != null ? p.eps * medPe : null;
       }
     }
     return out;
-  }, [allCandles, period, inds]);
+  }, [allCandles, period, inds, peStats]);
 
   // Trailing 52-week high/low over the FULL series (window-independent).
   const hiLo52 = useMemo(() => {
@@ -271,6 +376,29 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     () => Math.max(...data.map(pt => pt.v || 0), 1),
     [data]
   );
+
+  // P/E-multiple view: y-domain hugs the distribution, not extreme outliers.
+  // Cap at ~q95 of visible values × 1.08 (always ≥ p75×1.6) so single-name
+  // P/E spikes can't flatten the median/band the user came to compare.
+  const peDomain = useMemo((): [number, number] => {
+    if (!data.length || !peStats) return [0, 1];
+    const vals = data
+      .map((d) => d.pe)
+      .filter((v): v is number => v != null && v > 0 && Number.isFinite(v))
+      .sort((a, b) => a - b);
+    const q95 = vals.length ? vals[Math.min(vals.length - 1, Math.floor(vals.length * 0.95))]! : 0;
+    return [0, Math.ceil(Math.max(q95 * 1.08, peStats.p75 * 1.6))];
+  }, [data, peStats]);
+
+  // "How far from fair" — premium/discount of current price vs the last
+  // median-P/E fair value. Shown only while the overlay is on.
+  const fairPremium = useMemo(() => {
+    if (!inds.has('pefair') || !peStats) return null;
+    const last = [...data].reverse().find((d) => d.peFair != null);
+    if (!last?.peFair) return null;
+    const px = currentPrice ?? last.c;
+    return { fair: last.peFair, pct: ((px - last.peFair) / last.peFair) * 100 };
+  }, [data, inds, peStats, currentPrice]);
 
   // Domain is extended below the lowest price so the bottom of the plot is a
   // dedicated volume strip — the lowest candle wick then never renders inside
@@ -368,28 +496,64 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
           </div>
         )}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Indicator toggles — colored dot doubles as the line legend */}
+          {/* View mode — Price chart vs P/E-multiple chart */}
           <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
-            {INDICATORS.map((ind) => (
-              <button
-                key={ind.key}
-                type="button"
-                onClick={() => toggleInd(ind.key)}
-                title={ind.key === 'volspike' ? 'Highlight weeks with volume > 2× the 20-week average' : undefined}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
-                  inds.has(ind.key)
-                    ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
-                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
-                }`}
-              >
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: inds.has(ind.key) ? ind.color : 'rgba(148,163,184,0.4)' }}
-                />
-                {ind.label}
-              </button>
-            ))}
+            <button
+              type="button"
+              onClick={() => setMode('price')}
+              className={`px-2.5 py-1 text-xs font-bold rounded-md transition-colors ${
+                mode === 'price'
+                  ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+            >
+              Price
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('pe')}
+              disabled={!peStats}
+              title={peStats ? 'TTM P/E vs its own historical median and quartile band' : 'P/E history not available'}
+              className={`px-2.5 py-1 text-xs font-bold rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                mode === 'pe'
+                  ? 'bg-white dark:bg-gray-900 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+              style={mode === 'pe' ? { color: PE_LINE } : undefined}
+            >
+              P/E
+            </button>
           </div>
+          {/* Indicator toggles — colored dot doubles as the line legend */}
+          {mode === 'price' && (
+            <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
+              {INDICATORS.map((ind) => (
+                <button
+                  key={ind.key}
+                  type="button"
+                  onClick={() => toggleInd(ind.key)}
+                  title={
+                    ind.key === 'volspike'
+                      ? 'Highlight weeks with volume > 2× the 20-week average'
+                      : ind.key === 'pefair'
+                        ? 'TTM EPS × historical median P/E — steps mark earnings updates, not market moves'
+                        : undefined
+                  }
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
+                    inds.has(ind.key)
+                      ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
+                      : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+                  }`}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: inds.has(ind.key) ? ind.color : 'rgba(148,163,184,0.4)' }}
+                  />
+                  {ind.label}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
             {PERIODS.map((p) => (
               <button
@@ -409,6 +573,59 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         </div>
       </div>
 
+      {mode === 'pe' && peStats ? (
+        <ResponsiveContainer width="100%" height={narrow ? 340 : 420}>
+          <ComposedChart data={data} margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 24 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.18)" vertical={false} />
+            <XAxis
+              dataKey="date"
+              scale="band"
+              tickFormatter={formatXTick}
+              minTickGap={40}
+              tick={{ fontSize: CHART_FONT.axis, fill: 'currentColor' }}
+              className="text-gray-500 dark:text-gray-500"
+              tickLine={false}
+              axisLine={{ stroke: 'rgba(148,163,184,0.25)' }}
+            />
+            <YAxis
+              domain={peDomain}
+              orientation="right"
+              tickFormatter={(v: number) => `${v.toFixed(0)}×`}
+              tick={{ fontSize: CHART_FONT.axis, fill: 'currentColor' }}
+              className="text-gray-500 dark:text-gray-500"
+              tickLine={false}
+              axisLine={false}
+              width={narrow ? 36 : 48}
+            />
+            <Tooltip content={<PeTooltip peStats={peStats} />} isAnimationActive={false} />
+            {/* 25th–75th percentile band — the stock's own normal range */}
+            <Area
+              type="monotone"
+              dataKey="peBand"
+              stroke="none"
+              fill={PE_LINE}
+              fillOpacity={0.08}
+              isAnimationActive={false}
+              connectNulls={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="pe"
+              stroke={PE_LINE}
+              strokeWidth={1.8}
+              dot={false}
+              isAnimationActive={false}
+              connectNulls={false}
+            />
+            <ReferenceLine
+              y={peStats.median}
+              stroke={PE_FAIR}
+              strokeDasharray="6 4"
+              label={{ value: `median ${peStats.median.toFixed(1)}×`, position: 'insideTopLeft', fontSize: 10, fill: PE_FAIR }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      ) : (
       <ResponsiveContainer width="100%" height={narrow ? 340 : 420}>
         <ComposedChart data={data} margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 24 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.18)" vertical={false} />
@@ -508,8 +725,34 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
           {inds.has('ma200') && (
             <Line type="monotone" dataKey="sma200" stroke={MA200} strokeWidth={1.5} dot={false} isAnimationActive={false} />
           )}
+          {/* Median-P/E fair value: stepAfter renders earnings updates as
+              honest steps; dots mark the week a new TTM EPS arrived */}
           {inds.has('pefair') && (
-            <Line type="monotone" dataKey="peFair" stroke={PE_FAIR} strokeWidth={1.5} strokeDasharray="5 3" dot={false} isAnimationActive={false} connectNulls={false} />
+            <Line
+              type="stepAfter"
+              dataKey="peFair"
+              stroke={PE_FAIR}
+              strokeWidth={1.5}
+              isAnimationActive={false}
+              connectNulls={false}
+              dot={(props: any) => {
+                const { cx, cy, payload } = props;
+                if (cx == null || cy == null || !payload?.epsChanged || payload?.peFair == null) {
+                  return <g key={payload?.t ?? cx ?? 0} />;
+                }
+                return (
+                  <circle
+                    key={payload.t}
+                    cx={cx}
+                    cy={cy}
+                    r={3.5}
+                    fill={PE_FAIR}
+                    stroke="#fff"
+                    strokeWidth={1.2}
+                  />
+                );
+              }}
+            />
           )}
           {/* Trailing 52-week high/low reference levels */}
           {inds.has('w52') && hiLo52 && (
@@ -530,9 +773,23 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
           )}
         </ComposedChart>
       </ResponsiveContainer>
+      )}
+
+      {/* "How far from fair" — premium/discount vs median-P/E fair value */}
+      {mode === 'price' && fairPremium && (
+        <div className="mt-2 text-xs flex items-center gap-1.5 flex-wrap">
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: PE_FAIR }} />
+          <span className="tabular-nums font-medium" style={{ color: fairPremium.pct <= 0 ? UP : DOWN }}>
+            {fairPremium.pct >= 0 ? '+' : ''}{fairPremium.pct.toFixed(0)}%
+          </span>
+          <span className="text-gray-500 dark:text-gray-400">
+            vs median P/E fair value ${fairPremium.fair.toFixed(0)}
+          </span>
+        </div>
+      )}
 
       {/* "How stretched vs trend" — one line, only for enabled MAs */}
-      {maDistances && (
+      {mode === 'price' && maDistances && (
         <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-3 flex-wrap">
           {maDistances.map((d) => (
             <span key={d.label} className="flex items-center gap-1.5">
@@ -548,6 +805,21 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
 
       <p className="mt-2 text-[11px] leading-snug text-gray-400 dark:text-gray-500">
         Historical prices are adjusted for splits and dividends.
+        {mode === 'price' && inds.has('pefair') && peStats && (
+          <>
+            {' '}Fair value = TTM EPS × {peStats.median.toFixed(1)}× median P/E
+            ({Math.max(1, Math.round(peStats.n / 252))}Y history). Steps and dots mark earnings
+            updates — fair value changes with reported earnings, not with the market price.
+            Illustrative valuation, not a price target.
+          </>
+        )}
+        {mode === 'pe' && peStats && (
+          <>
+            {' '}Actual TTM P/E vs its own {Math.max(1, Math.round(peStats.n / 252))}Y median
+            ({peStats.median.toFixed(1)}×); shaded band = 25th–75th percentile. Gaps mark periods
+            with negative or unavailable earnings.
+          </>
+        )}
       </p>
     </div>
   );
