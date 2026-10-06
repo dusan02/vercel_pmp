@@ -341,28 +341,57 @@ export class LogoFetcher {
             'SNPS': 'synopsys.com'
         };
 
-        // Naive domain guess
-        const domain = TICKER_DOMAIN_OVERRIDES[ticker.toUpperCase()] || `${ticker.toLowerCase()}.com`;
-        const sources = [
-            `https://logo.clearbit.com/${domain}?size=128`,
-            `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
-        ];
+        // Candidate domains, best-first. The ticker's own websiteUrl is the
+        // authoritative source — a naive `${ticker}.com` guess lands on OTHER
+        // companies when the domain is parked/sold or belongs to a different
+        // firm (NU → nu.com = Eversource Energy, formerly Northeast Utilities
+        // whose old NYSE ticker was NU; Nu Holdings lives at nubank.com.br).
+        const dbDomain = await this.getDbDomain(ticker);
+        const naive = `${ticker.toLowerCase()}.com`;
+        const candidates: string[] = [];
+        const override = TICKER_DOMAIN_OVERRIDES[ticker.toUpperCase()];
+        if (dbDomain) candidates.push(dbDomain);
+        if (override && override !== dbDomain) candidates.push(override);
+        // Naive guess only when we have no verified domain — a wrong-company
+        // logo is worse than no logo.
+        if (!dbDomain) candidates.push(naive);
 
-        for (const url of sources) {
-            try {
-                const res = await this.fetchWithTimeout(url);
-                if (res.ok && res.headers.get('content-type')?.startsWith('image/')) {
-                    const buffer = Buffer.from(await res.arrayBuffer());
-                    if (buffer.length > 500) {
-                        return {
-                            buffer,
-                            contentType: res.headers.get('content-type') || 'image/png'
-                        };
+        for (const domain of candidates) {
+            const sources = [
+                `https://logo.clearbit.com/${domain}?size=128`,
+                `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
+            ];
+            for (const url of sources) {
+                try {
+                    const res = await this.fetchWithTimeout(url);
+                    if (res.ok && res.headers.get('content-type')?.startsWith('image/')) {
+                        const buffer = Buffer.from(await res.arrayBuffer());
+                        if (buffer.length > 500) {
+                            return {
+                                buffer,
+                                contentType: res.headers.get('content-type') || 'image/png'
+                            };
+                        }
                     }
-                }
-            } catch { }
+                } catch { }
+            }
         }
         return null;
+    }
+
+    /** Ticker's own website domain — authoritative logo source. */
+    private async getDbDomain(ticker: string): Promise<string | null> {
+        try {
+            const row = await this.prisma.ticker.findUnique({
+                where: { symbol: ticker.toUpperCase() },
+                select: { websiteUrl: true },
+            });
+            if (!row?.websiteUrl) return null;
+            const host = new URL(row.websiteUrl).hostname.replace(/^www\./, '');
+            return host || null;
+        } catch {
+            return null;
+        }
     }
 
     private async saveBufferToWebP(buffer: Buffer, ticker: string): Promise<string> {
