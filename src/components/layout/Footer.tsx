@@ -101,6 +101,11 @@ function FooterContent() {
                   All Stocks
                 </Link>
               </li>
+              <li>
+                <Link href="/biggest-movers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Biggest Daily Moves
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -134,6 +139,11 @@ function FooterContent() {
                 <a href="/api/rss" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   RSS Feed
                 </a>
+              </li>
+              <li>
+                <Link href="/embed" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Widgets for your site
+                </Link>
               </li>
             </ul>
           </div>

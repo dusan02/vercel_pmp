@@ -67,6 +67,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       },
     },
     {
+      url: `${baseUrl}/biggest-movers`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.7,
+    },
+    {
       url: `${baseUrl}/premarket-movers/weekly`,
       lastModified: currentDate,
       changeFrequency: 'daily',
@@ -133,6 +139,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily' as const,
       priority: 0.7,
     })),
+    {
+      url: `${baseUrl}/embed`,
+      lastModified: currentDate,
+      changeFrequency: 'monthly',
+      priority: 0.4,
+    },
     {
       url: `${baseUrl}/about`,
       lastModified: currentDate,
