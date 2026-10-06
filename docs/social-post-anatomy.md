@@ -16,15 +16,19 @@
 - Plus: AI-generated `moversReason` + `socialCopy` must exist
 - Ordering: highest z-score first; quantitative fallback copy if LLM unavailable
 
-**Digest posts** (separate daily locks, outside the 4/day quota):
-- `post-social-premarket` → "🔔 Before the open:" top movers preview, ~08:45 ET
+**Digest post** (separate daily lock, outside the 4/day quota):
 - `post-social-recap` → "📊 Today's biggest movers:" close recap, ~16:05 ET
 - 4 biggest movers by |day change| (3 gainers + 2 losers pool, $1+ price)
-- **Posting-window guard** (`inPostingWindow`): posts only fire inside their
-  ET window (premarket 07:00–09:45, recap 15:30–17:30, singles 06:30–17:30,
-  weekdays) — `pm2 start --only` fires trigger scripts at registration, and
-  an off-schedule run must not post a mislabeled digest mid-session and burn
-  the daily lock. `?force=1` on the route bypasses for manual retries.
+- **One digest per day.** A "Before the open" morning digest was removed:
+  at 08:45 ET `lastChangePct` still holds yesterday's close, so it
+  republished the previous evening's recap verbatim — structurally
+  duplicate content every day (observed 2026-10-05 when a PM2 bootstrap
+  fire posted both headers same-second with identical lists).
+- **Posting-window guard** (`inPostingWindow`): posts only fire inside
+  their ET window (recap 15:30–17:30, singles 06:30–17:30, weekdays) —
+  `pm2 start --only` fires trigger scripts at registration, and an
+  off-schedule run must not post a mislabeled digest and burn the daily
+  lock. `?force=1` on the route bypasses for manual retries.
 
 ## 2. Post text (same template on X / Bluesky / Threads)
 

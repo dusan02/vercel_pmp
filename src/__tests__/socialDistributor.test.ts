@@ -150,10 +150,16 @@ describe('bskyFitText', () => {
 });
 
 describe('posting window guard', () => {
-    it('skips premarket digest fired mid-session (PM2 bootstrap)', async () => {
+    it('skips recap digest fired mid-session (PM2 bootstrap)', async () => {
         etNow = { ...etNow, hour: 13, minute: 30 };
-        const res = await service.postPremarketSummary();
+        const res = await service.postDailyRecap();
         expect(res.posted).toEqual([]);
+        expect(ticker.findMany).not.toHaveBeenCalled();
+    });
+
+    it('skips recap digest fired pre-open', async () => {
+        etNow = { ...etNow, hour: 8, minute: 45 };
+        await service.postDailyRecap();
         expect(ticker.findMany).not.toHaveBeenCalled();
     });
 
@@ -205,14 +211,14 @@ describe('digest end-to-end (Bluesky only)', () => {
             .mockResolvedValueOnce([
                 { symbol: 'CHRW', name: 'CH Robinson', lastPrice: 100, lastChangePct: -12.6, socialCopy: '📉 $CHRW -12.6% on 0.1x relative volume. Statistical…', moversReason: null, latestMoversRVOL: 0.1, latestMoversZScore: -5 },
             ]);
-        etNow = { ...etNow, hour: 8, minute: 45 };
-        const res = await service.postPremarketSummary();
+        etNow = { ...etNow, hour: 16, minute: 5 };
+        const res = await service.postDailyRecap();
         expect(res.posted).toEqual(['PTC', 'XP', 'ITUB', 'CHRW']);
 
         const text: string = captured.record.text;
         expect(svc.graphemeLength(text)).toBeLessThanOrEqual(300);
         expect(text).not.toContain('http');
-        expect(text).toContain('Before the open');
+        expect(text).toContain("Today's biggest movers");
         expect(text).not.toContain('0.1x relative volume'); // quant catalyst filtered
         expect(captured.record.embed.external.uri).toContain('premarket-movers');
         expect(captured.record.embed.external.uri).toContain('utm_source=bluesky');

@@ -157,46 +157,39 @@ export class SocialDistributorService {
      * must not publish a mislabeled digest mid-session and burn the daily
      * lock. Weekday + ET window per post kind.
      */
-    private inPostingWindow(kind: 'premarket' | 'recap' | 'single'): boolean {
+    private inPostingWindow(kind: 'recap' | 'single'): boolean {
         const et = toET(new Date());
         if (et.weekday === 0 || et.weekday === 6) return false;
         const min = et.hour * 60 + et.minute;
-        const [start, end] = kind === 'premarket' ? [7 * 60, 9 * 60 + 45]
-            : kind === 'recap' ? [15 * 60 + 30, 17 * 60 + 30]
+        const [start, end] = kind === 'recap' ? [15 * 60 + 30, 17 * 60 + 30]
             : [6 * 60 + 30, 17 * 60 + 30];
         return min >= start && min <= end;
     }
 
-    /** Pre-market movers summary (~08:45 ET). One post per day. */
-    async postPremarketSummary(opts?: { force?: boolean }): Promise<{ posted: string[]; skipped: number; errors: number }> {
-        return this.postMoversDigest('premarket', opts);
-    }
-
-    /** Post-close recap (~16:05 ET). One post per day. */
-    async postDailyRecap(opts?: { force?: boolean }): Promise<{ posted: string[]; skipped: number; errors: number }> {
-        return this.postMoversDigest('recap', opts);
-    }
-
     /**
-     * Daily list post (premarket preview / close recap). Separate daily lock
-     * per kind, independent of the 4/day single-mover quota — these are anchor
-     * content, not part of the signal stream.
+     * Daily recap post ("Today's biggest movers", ~16:05 ET) — the single
+     * daily list post. A morning "Before the open" digest was removed: at
+     * 08:45 ET `lastChangePct` still holds yesterday's regular-session
+     * change, so it republished the previous evening's recap verbatim —
+     * structurally duplicate content every day.
+     * Separate daily lock, independent of the 4/day single-mover quota —
+     * this is anchor content, not part of the signal stream.
      */
-    private async postMoversDigest(kind: 'premarket' | 'recap', opts?: { force?: boolean }): Promise<{ posted: string[]; skipped: number; errors: number }> {
+    async postDailyRecap(opts?: { force?: boolean }): Promise<{ posted: string[]; skipped: number; errors: number }> {
         const date = getDateET();
         const results = { posted: [] as string[], skipped: 0, errors: 0 };
 
         // Window guard — an off-schedule run (e.g. PM2 registration bootstrap)
-        // must not post "Before the open" mid-session and burn the daily lock.
+        // must not post the recap mid-session and burn the daily lock.
         // ?force=1 on the route bypasses for manual retries.
-        if (!opts?.force && !this.inPostingWindow(kind)) {
-            console.log(`ℹ️ SocialDistributorService: outside ${kind} window, skipping digest`);
+        if (!opts?.force && !this.inPostingWindow('recap')) {
+            console.log('ℹ️ SocialDistributorService: outside recap window, skipping digest');
             return results;
         }
 
-        const lockKey = `social:${kind}:${date}`;
+        const lockKey = `social:recap:${date}`;
         if (await redisClient.get(lockKey)) {
-            console.log(`ℹ️ SocialDistributorService: ${kind} digest already posted today`);
+            console.log('ℹ️ SocialDistributorService: recap digest already posted today');
             return results;
         }
 
@@ -223,7 +216,7 @@ export class SocialDistributorService {
             .slice(0, 4);
 
         if (movers.length === 0) {
-            console.log(`ℹ️ SocialDistributorService: no movers for ${kind} digest`);
+            console.log('ℹ️ SocialDistributorService: no movers for recap digest');
             return results;
         }
 
@@ -233,8 +226,8 @@ export class SocialDistributorService {
             const reason = this.extractCatalyst(m);
             return `${emoji} $${m.symbol} ${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%${reason ? ` — ${reason}` : ''}`;
         });
-        const header = kind === 'premarket' ? '🔔 Before the open:' : "📊 Today's biggest movers:";
-        const cta = kind === 'premarket' ? 'Watch the open' : 'Full movers board';
+        const header = "📊 Today's biggest movers:";
+        const cta = 'Full movers board';
         // When today's daily recap exists, route part of the click traffic to
         // /blog/[date] — it fans out into analysis/premarket pages from there.
         let recapLine = '';
@@ -257,14 +250,14 @@ export class SocialDistributorService {
             // top mover's analysis page.
             await poster(movers[0], text, {
                 cardUrl: 'https://premarketprice.com/premarket-movers',
-                cardTitle: kind === 'premarket' ? 'Pre-market Movers | PreMarketPrice' : "Today's Biggest Movers | PreMarketPrice",
+                cardTitle: "Today's Biggest Movers | PreMarketPrice",
                 cardDesc: 'Live movers board — abnormal moves with catalysts and fundamental context.',
             });
             await redisClient.set(lockKey, '1', { EX: 86400 });
             results.posted = movers.map(m => m.symbol);
-            console.log(`✅ SocialDistributorService: ${kind} digest posted (${results.posted.join(', ')})`);
+            console.log(`✅ SocialDistributorService: recap digest posted (${results.posted.join(', ')})`);
         } catch (error) {
-            console.error(`❌ SocialDistributorService: ${kind} digest failed:`, error);
+            console.error('❌ SocialDistributorService: recap digest failed:', error);
             results.errors++;
         }
         return results;
