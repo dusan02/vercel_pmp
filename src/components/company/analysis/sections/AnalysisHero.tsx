@@ -206,8 +206,9 @@ export function AnalysisHero({
             <>
               Sector:{' '}
               <Link
-                href={`/sectors/${encodeURIComponent(sector)}`}
+                href={`/screener?sector=${encodeURIComponent(sector)}`}
                 className="text-blue-600 dark:text-blue-400 hover:underline"
+                title={`All ${sector} stocks in the screener`}
               >
                 {sector}
               </Link>
