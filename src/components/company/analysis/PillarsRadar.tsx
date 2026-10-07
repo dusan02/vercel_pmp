@@ -10,7 +10,9 @@ import { pillarSummary } from '@/services/analysis/pillars';
  * block below (a11y + transparency).
  */
 
-const CX = 120;
+// ViewBox 260 wide: the 30° Profitability label ("start"-anchored) needs the
+// extra ~10px on the right that the six-axis hexagon geometry requires.
+const CX = 130;
 const CY = 110;
 const R = 58;
 const LABEL_R = 84;
@@ -102,7 +104,7 @@ export default function PillarsRadar({ pillars }: { pillars: PillarScores }) {
                 Profile
             </h2>
             <svg
-                viewBox="0 0 240 200"
+                viewBox="0 0 260 200"
                 className="mt-1 w-full"
                 role="img"
                 aria-label={`Radar profile: ${axes.map((p, i) => `${p?.label ?? SHORT_LABEL[AXIS_ORDER[i]!]} ${p?.score ?? 0}`).join(', ')}`}
