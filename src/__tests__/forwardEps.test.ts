@@ -50,6 +50,37 @@ describe('quarterlyEpsSeries — YTD diffs to per-quarter EPS', () => {
         expect(s[4]!.eps).toBeCloseTo(120 / 1000, 5);
     });
 
+    it('ignores a one-quarter share-count spike (post-split units reported early)', () => {
+        // NVDA-shaped glitch: Q1'24 filed with 24.73B (the future 10:1 count)
+        // between 2.51B and 2.49B — then the real 10:1 split lands a year
+        // later. Without the persistence guard, boundaries stack ×100.
+        const nvda = [
+            q(2024, 'Q1', '2024-03-31', 100, 2517),   // NI in $M-equivalents
+            q(2024, 'Q2', '2024-06-30', 200, 2495),
+            q(2024, 'Q3', '2024-09-30', 300, 2490),
+            q(2024, 'FY', '2024-12-31', 400, 2473),
+            q(2025, 'Q1', '2025-03-31', 110, 24730),  // ← spike: post-split units early
+            q(2025, 'Q2', '2025-06-30', 230, 2495),
+            q(2025, 'Q3', '2025-09-30', 360, 2490),
+            q(2025, 'FY', '2025-12-31', 480, 2470),
+            q(2026, 'Q1', '2026-03-31', 120, 24870),  // real 10:1 split
+            q(2026, 'Q2', '2026-06-30', 250, 24840),
+            q(2026, 'Q3', '2026-09-30', 390, 24810),
+            q(2026, 'FY', '2026-12-31', 520, 24800),
+        ];
+        const s = quarterlyEpsSeries(nvda);
+        // 2024 quarters: shares 2.5B ×10 → eps = NI/25B (today units)
+        expect(s[0]!.eps).toBeCloseTo(100 / 25170, 6);
+        // The spike row: raw 24.73B already equals the normalized level →
+        // kept as-is, eps correct instead of ×10 too small.
+        expect(s[4]!.eps).toBeCloseTo(110 / 24730, 6);
+        // NTM window after Q3'25: Q4'25(120) + Q1'26 + Q2'26 + Q3'26 =
+        // 120/24.7k + 120/24.87k + 130/24.84k + 120/24.81k ≈ 0.0204
+        const ntm = ntmEpsAt(s, D('2025-09-30'));
+        expect(ntm).toBeGreaterThan(0.018);
+        expect(ntm).toBeLessThan(0.023);
+    });
+
     it('keeps uncomputable quarters in the grid as eps=null', () => {
         const gap = stmts.map((s) =>
             s.fiscalYear === 2025 && s.fiscalPeriod === 'Q2' ? { ...s, netIncome: null } : s);

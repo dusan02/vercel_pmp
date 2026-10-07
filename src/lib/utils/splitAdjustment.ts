@@ -90,6 +90,12 @@ export function buildShareBoundaries(
         if (prev != null && prev > 0 && curr != null && curr > 0) {
             const jump = curr / prev;
             if (jump > 1.5) {
+                // Persistence guard — a one-period spike that reverts next
+                // quarter is a data glitch, not a split (Finnhub posts a
+                // split-adjusted count a year early: NVDA Q1'24 showed 24.7B
+                // between 2.51B and 2.49B). Real splits hold their level.
+                const next = quarterlyAsc[i + 1]?.sharesOutstanding;
+                if (next != null && next > 0 && next / prev < 1.5) continue;
                 const nearest = findNearestSplit(jump);
                 if (Math.abs(jump - nearest) / nearest <= 0.15) {
                     boundaries.push({ after: quarterlyAsc[i - 1]!.endDate.getTime(), ratio: nearest });
@@ -118,6 +124,32 @@ export function shareFactorAt(boundaries: ShareBoundary[], endMs: number): numbe
         if (endMs <= b.after) f *= b.ratio;
     }
     return f;
+}
+
+/**
+ * Rows whose share count sits in different units than both neighbours
+ * (V-dips/spikes >1.5× up then <0.67× back, or the inverse). Finnhub
+ * occasionally reports a split-adjusted count before the split lands or
+ * regresses to a pre-split count for one filing. Such a row's shares must
+ * not be multiplied by split boundaries — and when its raw value happens to
+ * already equal the expected post-split level it is usable as-is.
+ */
+export function findCorruptShareRows(
+    quarterlyAsc: { endDate: Date; sharesOutstanding: number | null }[],
+): Set<number> {
+    const bad = new Set<number>();
+    for (let i = 1; i < quarterlyAsc.length - 1; i++) {
+        const a = quarterlyAsc[i - 1]!.sharesOutstanding;
+        const b = quarterlyAsc[i]!.sharesOutstanding;
+        const c = quarterlyAsc[i + 1]!.sharesOutstanding;
+        if (a != null && a > 0 && b != null && b > 0 && c != null && c > 0) {
+            const up = b / a, down = c / b;
+            if ((up > 1.5 && down < 0.67) || (up < 0.67 && down > 1.5)) {
+                bad.add(quarterlyAsc[i]!.endDate.getTime());
+            }
+        }
+    }
+    return bad;
 }
 
 /**
