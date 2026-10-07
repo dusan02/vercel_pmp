@@ -339,6 +339,10 @@ model DailyValuationHistory {
   quickRatio        Float?
   roe               Float?
   roic              Float?
+  // Finnhub consensus forward P/E snapshot — written daily going forward
+  // (2026-10+). Historical rows stay null: pre-snapshot history cannot be
+  // backfilled (Finnhub has no point-in-time estimates on our plan).
+  peForward         Float?
   ticker            Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@unique([symbol, date])

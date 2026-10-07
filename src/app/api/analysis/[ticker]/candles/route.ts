@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { prisma } from '@/lib/db/prisma';
 import { TICKER_RENAMES, foreignCutoffMs, spliceContinuous } from '@/lib/tickerRenames';
+import { quarterlyEpsSeries, ntmEpsAt } from '@/lib/utils/forwardEps';
 
 export const revalidate = 3600;
 
@@ -73,6 +74,14 @@ export interface Candle {
   fcfYield?: number | null;
   /** market cap at this close (USD) */
   mcap?: number | null;
+  /** Realized NTM P/E — close ÷ EPS of the four quarters REPORTED AFTER this
+   *  week (uses future-known earnings; not a historical consensus estimate).
+   *  Ends ~3–4 quarters before today. Null when NTM EPS ≤ 0 or unreported. */
+  peFwd?: number | null;
+  /** Finnhub consensus forward P/E snapshot stored on this day
+   *  (DailyValuationHistory.peForward) — only exists from collection start,
+   *  never fabricated backward. */
+  peCons?: number | null;
 }
 
 export interface MetricStats {
@@ -82,7 +91,7 @@ export interface MetricStats {
   n: number;
 }
 
-export type ValuationMetricKey = 'pe' | 'ps' | 'pb' | 'evEbit' | 'fcfYield';
+export type ValuationMetricKey = 'pe' | 'peFwd' | 'ps' | 'pb' | 'evEbit' | 'fcfYield';
 
 /**
  * Returns ~10 years of weekly OHLC candles for the given ticker.
@@ -182,7 +191,7 @@ export async function GET(
         orderBy: { date: 'asc' },
         select: {
           date: true, peRatio: true, psRatio: true, pbRatio: true,
-          evEbitda: true, fcfYield: true, marketCap: true,
+          evEbitda: true, fcfYield: true, marketCap: true, peForward: true,
         },
       });
       if (valRows.length) {
@@ -197,6 +206,7 @@ export async function GET(
             const r = valRows[vi]!;
             c.pe = r.peRatio; c.ps = r.psRatio; c.pb = r.pbRatio;
             c.evEbit = r.evEbitda; c.fcfYield = r.fcfYield; c.mcap = r.marketCap;
+            c.peCons = r.peForward;
           }
         }
 
@@ -236,6 +246,54 @@ export async function GET(
       }
     } catch { /* valuation overlay is optional — candles still render */ }
 
+    // Realized NTM P/E — candle close ÷ the EPS of the four quarters reported
+    // after its close day. Uses future-known earnings by design (the series
+    // is labelled "realized" in the UI) and honestly ends ~3–4 quarters
+    // before today, where the current Finnhub consensus snapshot — exposed
+    // as fwdPeNow — takes over. Consensus history is never fabricated: it
+    // only exists on candles whose day we stored a real snapshot (peCons).
+    let fwdPeNow: number | null = null;
+    let fwdPeAsOf: string | null = null;
+    try {
+      const [stmts, fm] = await Promise.all([
+        prisma.financialStatement.findMany({
+          where: { symbol },
+          select: {
+            endDate: true, fiscalPeriod: true, fiscalYear: true,
+            netIncome: true, sharesOutstanding: true,
+          },
+        }),
+        prisma.finnhubMetrics.findUnique({
+          where: { symbol },
+          select: { forwardPe: true, fetchedAt: true },
+        }),
+      ]);
+      if (fm?.forwardPe != null && fm.forwardPe > 0) {
+        fwdPeNow = fm.forwardPe;
+        fwdPeAsOf = fm.fetchedAt.toISOString().slice(0, 10);
+      }
+      if (stmts.length) {
+        const quarters = quarterlyEpsSeries(stmts);
+        for (const c of candles) {
+          // t + 4d lands on the week's close day for Mon-start buckets
+          const ntm = ntmEpsAt(quarters, c.t + 4 * MS_DAY);
+          if (ntm != null && ntm > 0) c.peFwd = parseFloat((c.c / ntm).toFixed(2));
+        }
+        // Distribution stats over the realized series itself (weekly points
+        // match what the chart draws). peCons coverage is too sparse early
+        // on for meaningful stats — it joins the band once collected.
+        const fwdVals = candles
+          .map(c => c.peFwd)
+          .filter((v): v is number => v != null && Number.isFinite(v) && v > 0)
+          .sort((a, b) => a - b);
+        if (fwdVals.length >= 10) {
+          const q = (p: number) => fwdVals[Math.min(fwdVals.length - 1, Math.floor(fwdVals.length * p))]!;
+          valuationStats ??= {};
+          valuationStats.peFwd = { median: q(0.5), p25: q(0.25), p75: q(0.75), n: fwdVals.length };
+        }
+      }
+    } catch { /* NTM overlay is optional */ }
+
     // Benchmark overlay metadata — the chart offers a "vs sector" chip whose
     // ETF proxy is resolved here from the ticker's stored sector (Finviz
     // naming). The series itself is fetched lazily from /api/indices/weekly.
@@ -271,6 +329,8 @@ export async function GET(
       peStats: valuationStats?.pe ?? null,
       valuationStats,
       evNetDebt,
+      fwdPeNow,
+      fwdPeAsOf,
       sector,
       sectorEtf,
     };

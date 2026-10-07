@@ -1,0 +1,127 @@
+/**
+ * Realized next-twelve-months (NTM) EPS — the forward-looking leg behind
+ * the chart's "P/E NTM" metric.
+ *
+ * Finnhub financials arrive cumulative-YTD (Q1=3M, Q2=6M, Q3=9M, FY=12M),
+ * so per-quarter net income is the YTD difference within a fiscal year and
+ * Q4 = FY − Q3. Share counts are split-normalized via the same boundary
+ * heuristic computeDayRatios uses, so EPS is expressed in today's units.
+ *
+ * NTM EPS at date t = sum of the first 4 quarter-ends strictly after t.
+ * All four must be reported — a partial window would silently understate,
+ * so the series honestly ends ~3–4 quarters before the present.
+ */
+import { buildShareBoundaries, shareFactorAt } from './splitAdjustment';
+
+/** Minimal statement shape the NTM math needs — a Prisma `select` subset
+ *  satisfies it without a cast. */
+export interface StmtSlice {
+    endDate: Date;
+    fiscalPeriod: string;
+    fiscalYear: number;
+    netIncome: number | null;
+    sharesOutstanding: number | null;
+}
+
+export interface QuarterEps {
+    /** fiscal period end (ms epoch) */
+    endMs: number;
+    /** per-quarter EPS in split-adjusted units — null when uncomputable */
+    eps: number | null;
+}
+
+const Q_ORDER: Record<string, number> = { Q1: 1, Q2: 2, Q3: 3, FY: 4 };
+
+/**
+ * Build the per-quarter EPS series, ascending by period end.
+ * Entries with missing net income or shares stay in the grid with eps=null
+ * so a gap inside a 4-quarter window correctly yields NTM=null rather than
+ * summing a stretched window.
+ */
+export function quarterlyEpsSeries(statements: StmtSlice[]): QuarterEps[] {
+    const asc = [...statements].sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
+    const quarterlyAsc = asc.filter((s) => s.fiscalPeriod !== 'FY');
+    const boundaries = buildShareBoundaries(quarterlyAsc);
+
+    // Per-quarter net income via YTD diffs inside each fiscal year.
+    const byYear = new Map<number, StmtSlice[]>();
+    for (const s of asc) {
+        const list = byYear.get(s.fiscalYear);
+        if (list) list.push(s); else byYear.set(s.fiscalYear, [s]);
+    }
+    const niByEnd = new Map<number, number | null>();
+    for (const rows of byYear.values()) {
+        rows.sort((a, b) => (Q_ORDER[a.fiscalPeriod] ?? 9) - (Q_ORDER[b.fiscalPeriod] ?? 9));
+        let prevYtd = 0;
+        let gap = false;
+        for (const r of rows) {
+            if (r.netIncome == null) {
+                niByEnd.set(r.endDate.getTime(), null);
+                if (r.fiscalPeriod !== 'FY') gap = true; // a hole poisons later YTD diffs (they'd span 2 quarters); the FY level itself stays usable for Q4
+                continue;
+            }
+            if (gap && r.fiscalPeriod !== 'FY') {
+                niByEnd.set(r.endDate.getTime(), null);
+                continue;
+            }
+            niByEnd.set(r.endDate.getTime(), r.netIncome - prevYtd);
+            prevYtd = r.netIncome;
+        }
+    }
+
+    // Quarter grid: quarterly rows plus implied Q4 (FY − last YTD). A Q4
+    // end-date that also has an explicit row is de-duped by endMs.
+    const out: QuarterEps[] = [];
+    const seen = new Set<number>();
+    const pushQ = (s: StmtSlice, ni: number | null) => {
+        const endMs = s.endDate.getTime();
+        if (seen.has(endMs)) return;
+        seen.add(endMs);
+        const shares = s.sharesOutstanding != null && s.sharesOutstanding > 0
+            ? s.sharesOutstanding * shareFactorAt(boundaries, endMs)
+            : null;
+        out.push({
+            endMs,
+            eps: ni != null && shares ? ni / shares : null,
+        });
+    };
+
+    for (const rows of byYear.values()) {
+        const quarters = rows.filter((r) => r.fiscalPeriod !== 'FY');
+        const fy = rows.find((r) => r.fiscalPeriod === 'FY');
+        for (const q of quarters) {
+            pushQ(q, niByEnd.get(q.endDate.getTime()) ?? null);
+        }
+        if (fy) {
+            const lastQ = quarters[quarters.length - 1];
+            // Q4 = FY − Q3YTD — requires the Q3 row specifically: subtracting
+            // an earlier quarter's YTD would emit a 6M/9M chunk as one quarter.
+            const q4Ni = fy.netIncome != null
+                && lastQ?.fiscalPeriod === 'Q3' && lastQ.netIncome != null
+                ? fy.netIncome - lastQ.netIncome
+                : null;
+            // A Q4 row (some feeds store one) takes precedence — same endMs
+            // would already be in `seen`.
+            pushQ(fy, q4Ni);
+        }
+    }
+
+    return out.sort((a, b) => a.endMs - b.endMs);
+}
+
+/**
+ * NTM EPS at `asOfMs`: sum of the first 4 quarter EPS strictly after it.
+ * Null when the next 4 grid cells aren't fully reported — never a partial
+ * (seasonality-skewed) window.
+ */
+export function ntmEpsAt(quarters: QuarterEps[], asOfMs: number): number | null {
+    const idx = quarters.findIndex((q) => q.endMs > asOfMs);
+    if (idx < 0 || idx + 4 > quarters.length) return null;
+    let sum = 0;
+    for (let i = idx; i < idx + 4; i++) {
+        const eps = quarters[i]!.eps;
+        if (eps == null) return null;
+        sum += eps;
+    }
+    return sum;
+}

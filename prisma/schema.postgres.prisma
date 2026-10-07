@@ -318,6 +318,7 @@ model DailyValuationHistory {
   quickRatio        Float?
   roe               Float?
   roic              Float?
+  peForward         Float?
   ticker            Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@unique([symbol, date])

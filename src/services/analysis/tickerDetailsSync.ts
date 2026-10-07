@@ -176,11 +176,25 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
             select: { sharesOutstanding: true },
         });
 
+        // Finnhub consensus forward P/E snapshot — a metrics row only describes
+        // its fetch day, so stamp it solely onto DVH rows near fetchedAt
+        // (incremental syncs: today's row; full backfills: the latest day only,
+        // history never gets fabricated forward estimates).
+        const fm = await prisma.finnhubMetrics.findUnique({
+            where: { symbol },
+            select: { forwardPe: true, fetchedAt: true },
+        });
+        const fwdPe = fm?.forwardPe != null && fm.forwardPe > 0 ? fm.forwardPe : null;
+        const fwdAsOf = fm?.fetchedAt?.getTime() ?? 0;
+
         const transactions = [];
 
         for (const agg of aggs) {
             const date = new Date(agg.t);
             const closePrice = agg.c;
+            const fwdSnap = fwdPe != null && Math.abs(agg.t - fwdAsOf) < 36 * 3600_000
+                ? { peForward: fwdPe }
+                : {};
 
             // TTM fundamentals at this date — all four multiples share the same
             // TTM basis so historical percentiles compare like-for-like with the
@@ -193,8 +207,8 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
             transactions.push(
                 prisma.dailyValuationHistory.upsert({
                     where: { symbol_date: { symbol, date } },
-                    update: { closePrice, ...ratios },
-                    create: { symbol, date, closePrice, ...ratios }
+                    update: { closePrice, ...ratios, ...fwdSnap },
+                    create: { symbol, date, closePrice, ...ratios, ...fwdSnap }
                 })
             );
         }

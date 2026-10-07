@@ -15,7 +15,7 @@
 import type { FinancialStatement } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { computeTTMAtDate } from '@/lib/utils/ttm';
-import { findNearestSplit } from '@/lib/utils/splitAdjustment';
+import { buildShareBoundaries, shareFactorAt } from '@/lib/utils/splitAdjustment';
 import { dbWriteRetry as dbWrite } from '@/lib/db/writeRetry';
 
 interface ValuationRow {
@@ -34,6 +34,9 @@ interface ValuationRow {
     roic: number | null;
     currentRatio: number | null;
     debtToEquity: number | null;
+    /** Finnhub consensus forward P/E — snapshot as-of fetch day, attached
+        only to the newest-day fill (never backdated). */
+    peForward: number | null;
 }
 
 export interface FillValuationDayResult {
@@ -44,6 +47,22 @@ export interface FillValuationDayResult {
     unchanged: number;
     failed: number;
     priceOnly: number;
+}
+
+/**
+ * Decide a row's `peForward`: stamp the Finnhub snapshot only on the DVH day
+ * it was fetched (±36h — row dates are ET-midnight instants while fetches
+ * land mid-session); every other day keeps whatever the row already holds.
+ * A missing snapshot therefore never erases a stored one, and a historical
+ * repair fill never backdates today's estimate.
+ */
+export function resolvePeForward(
+    fm: { pe: number; fetchedMs: number } | undefined,
+    dayMs: number,
+    existing: number | null,
+): number | null {
+    if (fm && Math.abs(dayMs - fm.fetchedMs) < 36 * 3600_000) return fm.pe;
+    return existing;
 }
 
 export interface DayRatios {
@@ -103,45 +122,13 @@ export function computeDayRatios(statements: FinancialStatement[], closePrice: n
     // statement sharesOutstanding are as-reported — for pre-split dates the
     // raw pair understates every per-share ratio by the cumulative split
     // factor (NFLX 2021: mcap $27B instead of ~$265B, P/B ~2 instead of ~17).
-    // Detect split boundaries from consecutive quarterly share-count jumps
-    // (>1.5×, snapped to common ratios) — the same fallback heuristic the TTM
-    // repair script uses when Polygon splits are unavailable. A split newer
-    // than the latest statement is anchored on trustedShares (equivalent of
-    // applyPostSplitAdjustment). No mutation of `statements`.
+    // Detection (quarterly share jumps snapped to common ratios, trustedShares
+    // tail anchor) lives in splitAdjustment.ts — shared with forwardEps.
     const quarterlyAsc = statements
         .filter((s) => s.fiscalPeriod && s.fiscalPeriod !== 'FY')
         .sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
-    const boundaries: { after: number; ratio: number }[] = [];
-    for (let i = 1; i < quarterlyAsc.length; i++) {
-        const prev = quarterlyAsc[i - 1]!.sharesOutstanding;
-        const curr = quarterlyAsc[i]!.sharesOutstanding;
-        if (prev != null && prev > 0 && curr != null && curr > 0) {
-            const jump = curr / prev;
-            if (jump > 1.5) {
-                const nearest = findNearestSplit(jump);
-                if (Math.abs(jump - nearest) / nearest <= 0.15) {
-                    boundaries.push({ after: quarterlyAsc[i - 1]!.endDate.getTime(), ratio: nearest });
-                }
-            }
-        }
-    }
-    const latestQ = quarterlyAsc[quarterlyAsc.length - 1];
-    if (trustedShares != null && trustedShares > 0 && latestQ?.sharesOutstanding != null && latestQ.sharesOutstanding > 0) {
-        const jump = trustedShares / latestQ.sharesOutstanding;
-        if (jump > 1.5) {
-            const nearest = findNearestSplit(jump);
-            if (Math.abs(jump - nearest) / nearest <= 0.15) {
-                boundaries.push({ after: latestQ.endDate.getTime(), ratio: nearest });
-            }
-        }
-    }
-    const shareFactor = (s: FinancialStatement) => {
-        let f = 1;
-        for (const b of boundaries) {
-            if (s.endDate.getTime() <= b.after) f *= b.ratio;
-        }
-        return f;
-    };
+    const boundaries = buildShareBoundaries(quarterlyAsc, trustedShares);
+    const shareFactor = (s: FinancialStatement) => shareFactorAt(boundaries, s.endDate.getTime());
 
     const sharesStmt = latestWith((s) => s.sharesOutstanding != null && s.sharesOutstanding > 0);
     const stmtShares = sharesStmt?.sharesOutstanding != null
@@ -240,6 +227,7 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
             peRatio: true, psRatio: true, evEbitda: true, fcfYield: true,
             pbRatio: true, evFcf: true, evRevenue: true,
             roe: true, roic: true, currentRatio: true, debtToEquity: true,
+            peForward: true,
         },
     });
     const have = new Map(existing.map(r => [r.symbol, r]));
@@ -251,6 +239,9 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
     // explicit and memory modest.
     const stmtsBySymbol = new Map<string, FinancialStatement[]>();
     const trustedSharesBySymbol = new Map<string, number | null>();
+    // Consensus forward P/E with its fetch time — the snapshot is stamped on
+    // the DVH day it was taken, never backdated over a historical repair.
+    const fwdPeBySymbol = new Map<string, { pe: number; fetchedMs: number }>();
     const chunkSize = 400;
     for (let i = 0; i < targets.length; i += chunkSize) {
         const chunk = targets.slice(i, i + chunkSize).map(r => r.symbol);
@@ -268,6 +259,16 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
             select: { symbol: true, sharesOutstanding: true },
         });
         for (const t of tickers) trustedSharesBySymbol.set(t.symbol, t.sharesOutstanding);
+        // Finnhub consensus forward P/E snapshot — same table chunking.
+        const fmRows = await prisma.finnhubMetrics.findMany({
+            where: { symbol: { in: chunk }, forwardPe: { not: null } },
+            select: { symbol: true, forwardPe: true, fetchedAt: true },
+        });
+        for (const f of fmRows) {
+            if (f.forwardPe != null && f.forwardPe > 0) {
+                fwdPeBySymbol.set(f.symbol, { pe: f.forwardPe, fetchedMs: f.fetchedAt.getTime() });
+            }
+        }
     }
 
     const inserts: ValuationRow[] = [];
@@ -282,7 +283,14 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
 
             if (ratios.peRatio === null && ratios.psRatio === null) result.priceOnly++;
 
-            const row = { symbol: ref.symbol, date: ref.date, closePrice, ...ratios };
+            const row: ValuationRow = {
+                symbol: ref.symbol, date: ref.date, closePrice, ...ratios,
+                peForward: resolvePeForward(
+                    fwdPeBySymbol.get(ref.symbol),
+                    dayInstant.getTime(),
+                    have.get(ref.symbol)?.peForward ?? null,
+                ),
+            };
             const prev = have.get(ref.symbol);
 
             if (!prev) {
@@ -291,7 +299,7 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
             } else {
                 // Existing row may hold a mid-session partial close (lazy syncs
                 // run before 16:00 ET) — overwrite with the official close.
-                const RATIO_KEYS = ['peRatio', 'psRatio', 'evEbitda', 'fcfYield', 'pbRatio', 'evFcf', 'evRevenue', 'roe', 'roic', 'currentRatio', 'debtToEquity'] as const;
+                const RATIO_KEYS = ['peRatio', 'psRatio', 'evEbitda', 'fcfYield', 'pbRatio', 'evFcf', 'evRevenue', 'roe', 'roic', 'currentRatio', 'debtToEquity', 'peForward'] as const;
                 const same = prev.closePrice === row.closePrice && prev.marketCap === row.marketCap
                     && RATIO_KEYS.every(k => prev[k] === row[k]);
                 if (same) { result.unchanged++; continue; }
@@ -319,6 +327,7 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
                     psRatio: u.psRatio, evEbitda: u.evEbitda, fcfYield: u.fcfYield,
                     pbRatio: u.pbRatio, evFcf: u.evFcf, evRevenue: u.evRevenue,
                     roe: u.roe, roic: u.roic, currentRatio: u.currentRatio, debtToEquity: u.debtToEquity,
+                    peForward: u.peForward,
                 },
             }))
         ), 'fillValuationDay.update');

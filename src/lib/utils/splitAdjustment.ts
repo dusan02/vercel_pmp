@@ -63,6 +63,63 @@ export function findNearestSplit(ratio: number): number {
     );
 }
 
+export interface ShareBoundary {
+    /** period-end instant at/earlier than which the factor applies */
+    after: number;
+    /** cumulative multiplier for shares reported before the split */
+    ratio: number;
+}
+
+/**
+ * Split boundaries detected from consecutive quarterly share-count jumps
+ * (>1.5×, snapped to common ratios). `trustedShares` anchors a split newer
+ * than the latest statement (Ticker.sharesOutstanding vs latest quarter).
+ * The single shared implementation — computeDayRatios (DVH multiples) and
+ * the forward-EPS series (NTM P/E) must normalize shares identically.
+ *
+ * @param quarterlyAsc quarterly statements sorted endDate ASCENDING
+ */
+export function buildShareBoundaries(
+    quarterlyAsc: { endDate: Date; sharesOutstanding: number | null }[],
+    trustedShares: number | null = null,
+): ShareBoundary[] {
+    const boundaries: ShareBoundary[] = [];
+    for (let i = 1; i < quarterlyAsc.length; i++) {
+        const prev = quarterlyAsc[i - 1]!.sharesOutstanding;
+        const curr = quarterlyAsc[i]!.sharesOutstanding;
+        if (prev != null && prev > 0 && curr != null && curr > 0) {
+            const jump = curr / prev;
+            if (jump > 1.5) {
+                const nearest = findNearestSplit(jump);
+                if (Math.abs(jump - nearest) / nearest <= 0.15) {
+                    boundaries.push({ after: quarterlyAsc[i - 1]!.endDate.getTime(), ratio: nearest });
+                }
+            }
+        }
+    }
+    const latestQ = quarterlyAsc[quarterlyAsc.length - 1];
+    if (trustedShares != null && trustedShares > 0 && latestQ?.sharesOutstanding != null && latestQ.sharesOutstanding > 0) {
+        const jump = trustedShares / latestQ.sharesOutstanding;
+        if (jump > 1.5) {
+            const nearest = findNearestSplit(jump);
+            if (Math.abs(jump - nearest) / nearest <= 0.15) {
+                boundaries.push({ after: latestQ.endDate.getTime(), ratio: nearest });
+            }
+        }
+    }
+    return boundaries;
+}
+
+/** Factor converting a share count as-reported at `endMs` into post-split
+ *  (today's) units — product of every split that happened after it. */
+export function shareFactorAt(boundaries: ShareBoundary[], endMs: number): number {
+    let f = 1;
+    for (const b of boundaries) {
+        if (endMs <= b.after) f *= b.ratio;
+    }
+    return f;
+}
+
 /**
  * Adjust sharesOutstanding in financial statements for stock splits.
  * Multiplies shares for statements before each split date by the split ratio.

@@ -12,6 +12,7 @@ import {
   Line,
   Area,
   ReferenceLine,
+  ReferenceDot,
   Brush,
   AreaChart,
 } from 'recharts';
@@ -31,6 +32,13 @@ interface Candle {
   evEbit?: number | null; // EV ÷ TTM EBIT
   fcfYield?: number | null; // TTM FCF ÷ market cap — decimal, may be negative
   mcap?: number | null; // market cap at this close (USD)
+  /** Realized NTM P/E — close ÷ EPS of the four quarters reported after this
+   *  week. Not a historical consensus: uses earnings unknowable at the time.
+   *  Ends ~3–4 quarters before today. */
+  peFwd?: number | null;
+  /** Finnhub consensus forward P/E snapshot stored that day — exists only
+   *  since collection started, never fabricated backward. */
+  peCons?: number | null;
 }
 
 interface ChartPoint extends Candle {
@@ -61,11 +69,15 @@ interface ChartPoint extends Candle {
 }
 
 // ── Valuation metrics ───────────────────────────────────────────────────────
-type MetricKey = 'pe' | 'ps' | 'pb' | 'evEbit' | 'fcfYield';
-type MetricField = 'pe' | 'ps' | 'pb' | 'evEbit' | 'fcfYield';
+type MetricKey = 'pe' | 'peFwd' | 'ps' | 'pb' | 'evEbit' | 'fcfYield';
+type MetricField = 'pe' | 'peFwd' | 'ps' | 'pb' | 'evEbit' | 'fcfYield';
 
 interface MetricDef {
   label: string;
+  /** Tooltip/caption name for the drawn series — P/E NTM's line is realized
+      history ("what the market paid for the next four quarters"), not the
+      consensus estimate, and must never be labelled plain "Fwd P/E". */
+  seriesLabel?: string;
   /** unit suffix — '×' multiples, '%' yields (stored as decimal, ×100 shown) */
   unit: '×' | '%';
   field: MetricField;
@@ -81,6 +93,10 @@ interface MetricDef {
 const METRICS: MetricDef[] = [
   { label: 'P/E', unit: '×', field: 'pe', lowerIsBetter: true, allowNegative: false,
     formula: 'close ÷ TTM EPS', gapNote: 'Gaps mark periods with negative or unavailable earnings.' },
+  { label: 'P/E NTM', unit: '×', field: 'peFwd', lowerIsBetter: true, allowNegative: false,
+    seriesLabel: 'NTM P/E (realized)',
+    formula: 'close ÷ EPS of the next 4 reported quarters (realized — not a historical estimate)',
+    gapNote: 'The realized series ends ~3–4 quarters before today — later earnings are not reported yet; the amber dot is today\'s Finnhub consensus.' },
   { label: 'P/S', unit: '×', field: 'ps', lowerIsBetter: true, allowNegative: false,
     formula: 'close ÷ TTM revenue/share', gapNote: 'Gaps mark periods with missing revenue data.' },
   { label: 'P/B', unit: '×', field: 'pb', lowerIsBetter: true, allowNegative: false,
@@ -124,6 +140,7 @@ type PeriodLabel = '3M' | '6M' | 'YTD' | '1Y' | '3Y' | '5Y' | 'All';
 
 const UP = '#16a34a'; // green
 const DOWN = '#dc2626'; // red
+const FWD_CONS = '#d97706'; // amber — consensus forward P/E marker
 const MA20 = '#2563eb'; // blue
 const MA50 = '#7c3aed'; // violet
 const MA200 = '#0891b2'; // teal — 200-day ≈ 40 weekly bars
@@ -335,11 +352,16 @@ function MetricTooltip({ active, payload, metric, stats }: any) {
   const denomRows: { label: string; text: string }[] = [];
   if (val != null) {
     if (metric === 'pe' && ps != null) denomRows.push({ label: 'TTM EPS', text: `$${ps.toFixed(2)}` });
+    if (metric === 'peFwd' && ps != null) denomRows.push({ label: 'NTM EPS', text: `$${ps.toFixed(2)} (realized)` });
     if (metric === 'ps' && ps != null) denomRows.push({ label: 'TTM rev/sh', text: `$${ps.toFixed(2)}` });
     if (metric === 'pb' && ps != null) denomRows.push({ label: 'Book/sh', text: `$${ps.toFixed(2)}` });
     if (metric === 'evEbit' && p.mcap != null) denomRows.push({ label: 'Mkt cap', text: `$${fmtVol(p.mcap)}` });
     if (metric === 'fcfYield' && p.mcap != null) denomRows.push({ label: 'TTM FCF', text: `$${fmtVol(val * p.mcap)}` });
   }
+  // Stored consensus snapshot on this day (only exists since collection
+  // started) — shown alongside, never as, the realized value.
+  const cons = metric === 'peFwd' && p.peCons != null && p.peCons > 0 ? p.peCons : null;
+  const seriesLabel = m.seriesLabel ?? m.label;
 
   const betterVsMedian = val != null && stats
     ? (m.lowerIsBetter ? val <= stats.median : val >= stats.median)
@@ -353,13 +375,19 @@ function MetricTooltip({ active, payload, metric, stats }: any) {
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono">
         {val != null ? (
           <>
-            <span style={{ color: PE_LINE }}>{m.label}</span>
+            <span style={{ color: PE_LINE }}>{seriesLabel}</span>
             <span className="text-right font-semibold text-gray-900 dark:text-white">{fmtMetric(val, m.unit)}</span>
           </>
         ) : (
           <>
-            <span className="text-gray-500 dark:text-gray-400">{m.label}</span>
+            <span className="text-gray-500 dark:text-gray-400">{seriesLabel}</span>
             <span className="text-right text-gray-400 dark:text-gray-500">n/m</span>
+          </>
+        )}
+        {cons != null && (
+          <>
+            <span style={{ color: FWD_CONS }}>Consensus fwd P/E</span>
+            <span className="text-right font-medium" style={{ color: FWD_CONS }}>{fmtMetric(cons, '×')}</span>
           </>
         )}
         {denomRows.map(r => (
@@ -387,6 +415,10 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   const [allCandles, setAllCandles] = useState<Candle[] | null>(null);
   const [valStats, setValStats] = useState<Partial<Record<MetricField, MetricStats>>>({});
   const [evNetDebt, setEvNetDebt] = useState<number | null>(null);
+  // Today's Finnhub consensus forward P/E — rendered as a labelled dot at the
+  // right edge of the P/E-NTM view (realized history can't reach "now").
+  const [fwdPeNow, setFwdPeNow] = useState<number | null>(null);
+  const [fwdPeAsOf, setFwdPeAsOf] = useState<string | null>(null);
   const [metric, setMetric] = useState<MetricField>('pe');
   const [mode, setMode] = useState<ModeKey>('price');
   const [loading, setLoading] = useState(true);
@@ -440,6 +472,8 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         setEvNetDebt(json.evNetDebt ?? null);
         setSectorEtf(json.sectorEtf ?? null);
         setSectorName(json.sector ?? null);
+        setFwdPeNow(typeof json.fwdPeNow === 'number' && json.fwdPeNow > 0 ? json.fwdPeNow : null);
+        setFwdPeAsOf(typeof json.fwdPeAsOf === 'string' ? json.fwdPeAsOf : null);
       })
       .catch((err) => {
         if (!mounted) return;
@@ -754,14 +788,17 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     const q95 = vals[Math.min(vals.length - 1, Math.floor(vals.length * 0.95))]!;
     const q05 = vals[Math.min(vals.length - 1, Math.floor(vals.length * 0.05))]!;
     const lo = Math.min(0, q05 * 1.15);
-    const hi = Math.max(q95 * 1.08, metricStats.p75 * 1.6);
+    let hi = Math.max(q95 * 1.08, metricStats.p75 * 1.6);
+    // The consensus dot must fit the P/E-NTM domain even when it lies beyond
+    // the realized distribution.
+    if (metric === 'peFwd' && fwdPeNow != null) hi = Math.max(hi, fwdPeNow * 1.06);
     // Yields are decimals (0.012) — round the domain to % fractions so
     // axis ticks land on whole percent-ish values.
     const round = activeMetric.unit === '%'
       ? (v: number) => Math.ceil(v * 200) / 200
       : Math.ceil;
     return [round(lo), Math.max(round(hi), lo + 0.001)];
-  }, [peVisible, metricStats, activeMetric]);
+  }, [peVisible, metricStats, activeMetric, metric, fwdPeNow]);
 
   // Valuation headline — current multiple scaled to the live quote when
   // available (exact for price-linear metrics and FCF yield; EV/EBIT uses
@@ -790,6 +827,11 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         live = lastV * (currentPrice / lastVal.c);
       }
     }
+    // P/E NTM: the headline is today's Finnhub CONSENSUS (the realized
+    // series can't reach "now" — the last ~3–4 quarters aren't reported).
+    // Falls back to the latest realized point when no snapshot exists.
+    const headlineIsConsensus = metric === 'peFwd' && fwdPeNow != null;
+    if (headlineIsConsensus) live = fwdPeNow;
     const firstVis = peVisible.find(
       (p) => p[f] != null && (activeMetric.allowNegative || (p[f] as number) > 0),
     );
@@ -811,8 +853,8 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     const price = currentPrice ?? last.c;
     // Implied per-share denominator for the formula caption (EPS, rev/sh, bv/sh)
     const perShare = lastVal ? impliedPerShare(lastVal, f) : null;
-    return { peLive: live, chgPct, premVsMedian, eps: last.eps ?? null, avg1y, price, date: last.date, perShare };
-  }, [enriched, peVisible, currentPrice, metric, activeMetric, evNetDebt, metricStats]);
+    return { peLive: live, chgPct, premVsMedian, eps: last.eps ?? null, avg1y, price, date: last.date, perShare, isConsensus: headlineIsConsensus, lastRealized: lastV };
+  }, [enriched, peVisible, currentPrice, metric, activeMetric, evNetDebt, metricStats, fwdPeNow]);
 
   // "How far from fair" — premium/discount of current price vs the last
   // median-P/E fair value. Shown only while the overlay is on.
@@ -951,6 +993,15 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
               {peHeadline.peLive != null ? fmtMetric(peHeadline.peLive, activeMetric.unit) : 'n/m'}
             </span>
+            {peHeadline.isConsensus && (
+              <span
+                className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                style={{ color: FWD_CONS, backgroundColor: 'rgba(217,119,6,0.12)' }}
+                title={`Finnhub consensus forward P/E${fwdPeAsOf ? `, snapshot ${fwdPeAsOf}` : ''} — the realized series below uses earnings reported after each date`}
+              >
+                consensus
+              </span>
+            )}
             {peHeadline.premVsMedian != null && (
               <span
                 className={`text-sm font-semibold ${(activeMetric.lowerIsBetter ? peHeadline.premVsMedian <= 0 : peHeadline.premVsMedian >= 0) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
@@ -1204,6 +1255,22 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               strokeDasharray="6 4"
               label={{ value: `median ${fmtMetric(metricStats.median, activeMetric.unit)}`, position: 'insideTopLeft', fontSize: 10, fill: PE_FAIR }}
             />
+            {/* Consensus forward P/E — today's Finnhub estimate pinned to the
+                right edge. Deliberately a labelled DOT, not part of the line:
+                it is a different quantity (analyst estimate, not realized
+                NTM) and must read as such. */}
+            {metric === 'peFwd' && fwdPeNow != null && metricSeries.length > 0 && (
+              <ReferenceDot
+                x={metricSeries[metricSeries.length - 1]!.date}
+                y={fwdPeNow}
+                r={4}
+                fill={FWD_CONS}
+                stroke="#fff"
+                strokeWidth={1.5}
+                label={{ value: `${fmtMetric(fwdPeNow, '×')} cons.`, position: 'top', fontSize: 10, fill: FWD_CONS, fontWeight: 600 }}
+                ifOverflow="extendDomain"
+              />
+            )}
             {/* Navigator — mini full-history chart; drag handles or use the
                 period buttons above. Brush dataKey = the X category (date),
                 and its child must be a nested chart element. */}
@@ -1230,11 +1297,29 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         {/* Formula caption — how the current multiple is composed */}
         {peHeadline && peHeadline.peLive != null && (
           <div className="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400 tabular-nums">
-            {activeMetric.label} {fmtMetric(peHeadline.peLive, activeMetric.unit)} = {(metric === 'pe' || metric === 'ps' || metric === 'pb') && peHeadline.perShare != null
-              ? `$${peHeadline.price.toFixed(2)} close ÷ $${peHeadline.perShare.toFixed(2)} ${metric === 'pe' ? 'TTM EPS' : metric === 'ps' ? 'TTM rev/sh' : 'book/sh'}`
-              : activeMetric.formula}
-            {peHeadline.avg1y != null && <> · 1Y avg {fmtMetric(peHeadline.avg1y, activeMetric.unit)}</>}
-            {` · median ${fmtMetric(metricStats.median, activeMetric.unit)}`}
+            {metric === 'peFwd' ? (
+              <>
+                NTM P/E (realized) = close ÷ next 4 quarters' reported EPS
+                {peHeadline.isConsensus && (
+                  <>
+                    {' · now '}
+                    <span className="font-semibold" style={{ color: FWD_CONS }}>
+                      {fmtMetric(fwdPeNow!, '×')} consensus
+                    </span>
+                    {fwdPeAsOf && <> (Finnhub, {fwdPeAsOf})</>}
+                  </>
+                )}
+                {` · median ${fmtMetric(metricStats.median, activeMetric.unit)}`}
+              </>
+            ) : (
+              <>
+                {activeMetric.label} {fmtMetric(peHeadline.peLive, activeMetric.unit)} = {(metric === 'pe' || metric === 'ps' || metric === 'pb') && peHeadline.perShare != null
+                  ? `$${peHeadline.price.toFixed(2)} close ÷ $${peHeadline.perShare.toFixed(2)} ${metric === 'pe' ? 'TTM EPS' : metric === 'ps' ? 'TTM rev/sh' : 'book/sh'}`
+                  : activeMetric.formula}
+                {peHeadline.avg1y != null && <> · 1Y avg {fmtMetric(peHeadline.avg1y, activeMetric.unit)}</>}
+                {` · median ${fmtMetric(metricStats.median, activeMetric.unit)}`}
+              </>
+            )}
           </div>
         )}
         </>

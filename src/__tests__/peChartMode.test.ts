@@ -38,6 +38,10 @@ function fixtureCandles() {
       c,
       v: 1_000_000 + (i % 7) * 100_000,
       pe: 30 - i * 0.06 + Math.sin(i / 9) * 4,
+      // Realized NTM P/E — ends ~40 candles early (unreported quarters) so
+      // the consensus dot has room at the right edge.
+      peFwd: i < 260 ? 27 - i * 0.05 + Math.sin(i / 8) * 3 : null,
+      peCons: i === 299 ? 24.2 : null,
       ps: 5 - i * 0.004 + Math.sin(i / 11) * 0.6,
       pb: 8 - i * 0.006,
       evEbit: 20 - i * 0.03,
@@ -51,6 +55,7 @@ function fixtureCandles() {
 const peStats = { median: 26.4, p25: 21, p75: 33, n: 300 };
 const valuationStats = {
   pe: peStats,
+  peFwd: { median: 24.0, p25: 19.5, p75: 29.5, n: 260 },
   ps: { median: 5.2, p25: 4.4, p75: 6.1, n: 300 },
   pb: { median: 7.9, p25: 6.8, p75: 9.2, n: 300 },
   evEbit: { median: 18.5, p25: 15, p75: 22, n: 300 },
@@ -104,6 +109,7 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
         json: async () => ({
           candles: fixtureCandles(), peStats, valuationStats, evNetDebt: 5e9,
           sector: 'Financial Services', sectorEtf: 'XLF',
+          fwdPeNow: 24.2, fwdPeAsOf: '2026-10-07',
         }),
       });
     }) as any;
@@ -153,7 +159,7 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     const { container } = await renderChart();
     await clickButton(container, 'Valuation');
     const labels = [...container.querySelectorAll('button')].map((b) => b.textContent?.trim());
-    expect(labels).toEqual(expect.arrayContaining(['P/E', 'P/S', 'P/B', 'EV/EBIT', 'FCF yield']));
+    expect(labels).toEqual(expect.arrayContaining(['P/E', 'P/E NTM', 'P/S', 'P/B', 'EV/EBIT', 'FCF yield']));
     // price-only indicators are hidden in valuation mode — their container
     // carries `invisible` so toggled state survives the mode round-trip and
     // the slot keeps its width (period buttons don't shift).
@@ -169,6 +175,45 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     await clickButton(container, 'P/S');
     expect(container.textContent).toContain('median 5.2');
     expect(container.innerHTML).toMatch(/P\/S [\d.]+× = \$[\d.]+ close ÷ \$[\d.]+ TTM rev\/sh/);
+  });
+
+  it('P/E NTM: realized series label + consensus headline, never "Fwd P/E"', async () => {
+    const { container } = await renderChart();
+    await clickButton(container, 'Valuation');
+    await clickButton(container, 'P/E NTM');
+    // Headline = today's consensus (24.2×) flagged as such.
+    expect(container.textContent).toContain('24.2×');
+    const tag = [...container.querySelectorAll('span')].find(
+      (s) => s.textContent?.trim().toLowerCase() === 'consensus',
+    );
+    expect(tag).toBeTruthy();
+    // Caption names the realized method and the consensus source/date.
+    expect(container.textContent).toContain("NTM P/E (realized) = close ÷ next 4 quarters' reported EPS");
+    expect(container.textContent).toContain('(Finnhub, 2026-10-07)');
+    // vs-median badge compares consensus to the realized median.
+    expect(container.textContent).toMatch(/vs median/);
+    expect(container.textContent).toContain('median 24.0');
+  });
+
+  it('P/E NTM still renders headline without a consensus snapshot', async () => {
+    (global.fetch as jest.Mock).mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({
+          candles: fixtureCandles(), peStats, valuationStats, evNetDebt: 5e9,
+          fwdPeNow: null, fwdPeAsOf: null,
+        }),
+      }),
+    );
+    const { container } = await renderChart();
+    await clickButton(container, 'Valuation');
+    await clickButton(container, 'P/E NTM');
+    // Falls back to the last realized point — no consensus tag.
+    const tag = [...container.querySelectorAll('span')].find(
+      (s) => s.textContent?.trim().toLowerCase() === 'consensus',
+    );
+    expect(tag).toBeFalsy();
+    expect(container.textContent).toContain('NTM P/E (realized)');
   });
 
   it('FCF yield renders in % units and inverts the cheaper direction', async () => {
