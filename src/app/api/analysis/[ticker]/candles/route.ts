@@ -208,6 +208,33 @@ export async function GET(
       }
     } catch { /* valuation overlay is optional — candles still render */ }
 
+    // Benchmark overlay metadata — the chart offers a "vs sector" chip whose
+    // ETF proxy is resolved here from the ticker's stored sector (Finviz
+    // naming). The series itself is fetched lazily from /api/indices/weekly.
+    const SECTOR_ETF: Record<string, string> = {
+      'Financial Services': 'XLF',
+      'Technology': 'XLK',
+      'Healthcare': 'XLV',
+      'Industrials': 'XLI',
+      'Consumer Cyclical': 'XLY',
+      'Consumer Defensive': 'XLP',
+      'Energy': 'XLE',
+      'Basic Materials': 'XLB',
+      'Real Estate': 'XLRE',
+      'Utilities': 'XLU',
+      'Communication Services': 'XLC',
+    };
+    let sector: string | null = null;
+    let sectorEtf: string | null = null;
+    try {
+      const t = await prisma.ticker.findUnique({
+        where: { symbol },
+        select: { sector: true },
+      });
+      sector = t?.sector ?? null;
+      sectorEtf = (sector && SECTOR_ETF[sector]) || null;
+    } catch { /* sector chip is optional */ }
+
     const responseBody = {
       symbol,
       candles,
@@ -216,6 +243,8 @@ export async function GET(
       peStats: valuationStats?.pe ?? null,
       valuationStats,
       evNetDebt,
+      sector,
+      sectorEtf,
     };
 
     // Cache in Redis (1 hour TTL)

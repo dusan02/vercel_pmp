@@ -45,6 +45,14 @@ interface ChartPoint extends Candle {
   /** [p25, p75] band for the active valuation-metric view */
   band?: [number, number];
   volSpike?: boolean;
+  /** Benchmark overlay — raw weekly close of the benchmark (SPY/QQQ/XLF) */
+  bm?: number | null;
+  /** Benchmark rebased to this point's own price axis: bmS = firstVisibleClose × bm/bmFirst */
+  bmS?: number | null;
+  /** % change of the ticker's close since the visible window's first close */
+  chgPct?: number | null;
+  /** % change of the benchmark since the window's first benchmark value */
+  bmPct?: number | null;
 }
 
 // ── Valuation metrics ───────────────────────────────────────────────────────
@@ -115,6 +123,13 @@ const PE_FAIR = '#db2777'; // pink — price-at-median-P/E overlay
 const PE_LINE = '#4f46e5'; // indigo — P/E-multiple view
 const VOL_SPIKE = '#d97706'; // amber — volume ≫ its own norm
 const REF52 = '#64748b'; // slate-500 — 52W hi/lo lines (400 was too light on white)
+const BM_LINE = '#78716c'; // stone-500 — benchmark compare line (dashed, neutral)
+
+// Monday-anchored week keys — must match the bucketing in the candles route
+// and /api/indices/weekly so benchmark closes join to the right candle.
+const MS_WEEK = 7 * 24 * 60 * 60 * 1000;
+const MS_MONDAY_OFFSET = 4 * 24 * 60 * 60 * 1000;
+const weekKeyOf = (t: number) => Math.floor((t - MS_MONDAY_OFFSET) / MS_WEEK);
 
 // User-togglable indicator set; persisted per-browser, default off.
 const IND_KEY = 'pmp:pricechart:indicators';
@@ -154,7 +169,7 @@ function fmtVol(v: number) {
 }
 
 // ── Custom Tooltip ──────────────────────────────────────────────────────────
-function CandleTooltip({ active, payload }: any) {
+function CandleTooltip({ active, payload, ticker, bmLabel }: any) {
   if (!active || !payload?.length) return null;
   const p: ChartPoint = payload[0].payload;
   if (!p) return null;
@@ -209,6 +224,18 @@ function CandleTooltip({ active, payload }: any) {
                 <span className="text-right text-gray-700 dark:text-gray-300">${p.eps.toFixed(2)}</span>
               </>
             )}
+          </>
+        )}
+        {p.bmPct != null && p.chgPct != null && (
+          <>
+            <span className="text-gray-500 dark:text-gray-400">{ticker} (range)</span>
+            <span className="text-right text-gray-700 dark:text-gray-300">
+              {p.chgPct >= 0 ? '+' : ''}{p.chgPct.toFixed(1)}%
+            </span>
+            <span style={{ color: BM_LINE }}>vs {bmLabel}</span>
+            <span className="text-right font-medium" style={{ color: BM_LINE }}>
+              {p.bmPct >= 0 ? '+' : ''}{p.bmPct.toFixed(1)}%
+            </span>
           </>
         )}
         {p.peFair != null && (
@@ -351,6 +378,8 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
           json.valuationStats ?? (json.peStats ? { pe: json.peStats } : {}),
         );
         setEvNetDebt(json.evNetDebt ?? null);
+        setSectorEtf(json.sectorEtf ?? null);
+        setSectorName(json.sector ?? null);
       })
       .catch((err) => {
         if (!mounted) return;
@@ -491,12 +520,80 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     return Date.now() - years * 365.25 * 24 * 60 * 60 * 1000;
   }, [periodChoices, activePeriod]);
 
+  // Benchmark compare (price mode): sector ETF comes from the candles
+  // payload; SPY/QQQ are always offered. The weekly series is fetched lazily
+  // from /api/indices/weekly on first toggle and cached per-symbol so a
+  // re-toggle (or another ticker page) costs nothing.
+  const [sectorEtf, setSectorEtf] = useState<string | null>(null);
+  const [sectorName, setSectorName] = useState<string | null>(null);
+  const [bmSym, setBmSym] = useState<string | null>(null);
+  const [bmSeries, setBmSeries] = useState<{ t: number; c: number }[] | null>(null);
+  const bmCache = useRef(new Map<string, { t: number; c: number }[]>());
+  useEffect(() => setBmSym(null), [ticker]);
+  useEffect(() => {
+    if (!bmSym) { setBmSeries(null); return; }
+    const hit = bmCache.current.get(bmSym);
+    if (hit) { setBmSeries(hit); return; }
+    let live = true;
+    fetch(`/api/indices/weekly?symbol=${bmSym}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((j) => {
+        const pts: { t: number; c: number }[] = Array.isArray(j?.points) ? j.points : [];
+        bmCache.current.set(bmSym, pts);
+        if (live) setBmSeries(pts);
+      })
+      .catch(() => { if (live) setBmSeries([]); });
+    return () => { live = false; };
+  }, [bmSym]);
+
+  const benchmarkChoices = useMemo(() => {
+    const out = [
+      { sym: 'SPY', label: 'SPY', title: 'S&P 500 (ETF proxy)' },
+      { sym: 'QQQ', label: 'QQQ', title: 'Nasdaq 100 (ETF proxy)' },
+    ];
+    if (sectorEtf && !out.some((o) => o.sym === sectorEtf)) {
+      out.push({ sym: sectorEtf, label: sectorEtf, title: `${sectorName ?? 'Sector'} sector (ETF proxy)` });
+    }
+    return out;
+  }, [sectorEtf, sectorName]);
+
+  const bmLabel = benchmarkChoices.find((b) => b.sym === bmSym)?.label ?? bmSym ?? '';
+  const bmActive = bmSym != null && !!bmSeries?.length;
+
+  // benchmark weekly close keyed by week — joins candles by weekKeyOf(t)
+  const bmByWeek = useMemo(() => {
+    const m = new Map<number, number>();
+    if (bmSeries) for (const p of bmSeries) m.set(weekKeyOf(p.t), p.c);
+    return m;
+  }, [bmSeries]);
+
   // Price-mode window — the P/E chart instead takes the full series and
-  // windows it through the Brush navigator below the chart.
-  const data: ChartPoint[] = useMemo(
-    () => enriched.filter((p) => p.t >= periodCutoffMs),
-    [enriched, periodCutoffMs],
-  );
+  // windows it through the Brush navigator below the chart. When a benchmark
+  // is active each candle also carries the benchmark's rebased value (bmS):
+  // bmS_t = firstVisibleClose × bm_t/bm_first, so the overlay shares the
+  // price axis and the two lines start at the same point — a relative-
+  // performance comparison over exactly the displayed range.
+  const data: ChartPoint[] = useMemo(() => {
+    const w = enriched.filter((p) => p.t >= periodCutoffMs);
+    if (!bmByWeek.size || !w.length) return w;
+    const firstC = w[0]!.c;
+    let bmFirst: number | null = null;
+    for (const p of w) {
+      const b = bmByWeek.get(weekKeyOf(p.t));
+      if (b != null && b > 0) { bmFirst = b; break; }
+    }
+    if (bmFirst == null || bmFirst <= 0 || firstC <= 0) return w;
+    return w.map((p) => {
+      const b = bmByWeek.get(weekKeyOf(p.t));
+      return {
+        ...p,
+        bm: b ?? null,
+        bmS: b != null && b > 0 ? firstC * (b / bmFirst) : null,
+        chgPct: (p.c / firstC - 1) * 100,
+        bmPct: b != null ? (b / bmFirst - 1) * 100 : null,
+      };
+    });
+  }, [enriched, periodCutoffMs, bmByWeek]);
 
   // P/E-mode window. The Brush is UNCONTROLLED: its startIndex/endIndex props
   // are only initial values — the chart remounts via `key` on every period
@@ -658,6 +755,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       if (inds.has('ma50') && d.sma50 != null) { if (d.sma50 < min) min = d.sma50; if (d.sma50 > max) max = d.sma50; }
       if (inds.has('ma200') && d.sma200 != null) { if (d.sma200 < min) min = d.sma200; if (d.sma200 > max) max = d.sma200; }
       if (inds.has('pefair') && d.peFair != null) { if (d.peFair < min) min = d.peFair; if (d.peFair > max) max = d.peFair; }
+      if (d.bmS != null) { if (d.bmS < min) min = d.bmS; if (d.bmS > max) max = d.bmS; }
     }
     if (inds.has('w52') && hiLo52) {
       if (hiLo52.lo < min) min = hiLo52.lo;
@@ -674,7 +772,16 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     const domMin = Math.max(0, (lo - 0.16 * hi) / 0.84);
     const volFrac = Math.max(0, Math.min(0.4, (lo - domMin) / (hi - domMin)));
     return { yDomain: [domMin, hi] as [number, number], volFrac };
-  }, [data, inds, hiLo52]);
+  }, [data, inds, hiLo52, bmActive]);
+
+  // Window-end delta for the compare legend under the chart:
+  // "JPM +8.1% vs SPY +12.3% (−4.2pp)".
+  const bmDelta = useMemo(() => {
+    if (!bmActive || !data.length) return null;
+    const last = [...data].reverse().find((d) => d.bmPct != null && d.chgPct != null);
+    if (!last) return null;
+    return { ticker: last.chgPct!, bm: last.bmPct!, label: bmLabel };
+  }, [data, bmActive, bmLabel]);
 
   // Distance of latest close from enabled MAs — the "how stretched" sentence.
   const maDistances = useMemo(() => {
@@ -1002,7 +1109,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             width={narrow ? 40 : 52}
           />
           <Tooltip
-            content={<CandleTooltip />}
+            content={<CandleTooltip ticker={ticker} bmLabel={bmLabel} />}
             cursor={{ fill: 'rgba(148,163,184,0.12)' }}
             isAnimationActive={false}
           />
@@ -1077,6 +1184,22 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
           {inds.has('ma200') && (
             <Line type="monotone" dataKey="sma200" stroke={MA200} strokeWidth={1.5} dot={false} isAnimationActive={false} />
           )}
+          {/* Benchmark overlay — rebased to the window's first close so the
+              dashed line reads as relative performance on the price axis */}
+          {bmActive && (
+            <Line
+              type="monotone"
+              dataKey="bmS"
+              stroke={BM_LINE}
+              strokeWidth={1.5}
+              strokeDasharray="5 3"
+              dot={false}
+              activeDot={{ r: 3, fill: BM_LINE, stroke: 'none' }}
+              isAnimationActive={false}
+              connectNulls={false}
+              name={bmLabel}
+            />
+          )}
           {/* Median-P/E fair value: stepAfter renders earnings updates as
               honest steps; dots mark the week a new TTM EPS arrived */}
           {inds.has('pefair') && (
@@ -1127,6 +1250,41 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       </ResponsiveContainer>
       )}
       </div>
+
+      {/* Compare row — benchmark overlay chips (price mode only). The line
+          is rebased to the window's first close; the legend shows the
+          window-end delta so relative performance is readable at a glance. */}
+      {mode === 'price' && benchmarkChoices.length > 0 && (
+        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+          <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">vs</span>
+          {benchmarkChoices.map((b) => (
+            <button
+              key={b.sym}
+              type="button"
+              onClick={() => setBmSym(bmSym === b.sym ? null : b.sym)}
+              title={`${b.title} — overlay rebased to the range start`}
+              className={`px-2 py-0.5 text-[11px] font-semibold rounded-md transition-colors ${
+                bmSym === b.sym
+                  ? 'bg-stone-600 text-white dark:bg-stone-500 shadow-sm'
+                  : 'bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+            >
+              {b.label}
+            </button>
+          ))}
+          {bmDelta && (
+            <span className="ml-auto text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+              <span className="font-semibold text-gray-700 dark:text-gray-200">{ticker}</span>{' '}
+              {bmDelta.ticker >= 0 ? '+' : ''}{bmDelta.ticker.toFixed(1)}% vs{' '}
+              <span className="font-semibold" style={{ color: BM_LINE }}>{bmDelta.label}</span>{' '}
+              {bmDelta.bm >= 0 ? '+' : ''}{bmDelta.bm.toFixed(1)}%
+              <span style={{ color: bmDelta.ticker - bmDelta.bm >= 0 ? UP : DOWN }}>
+                {' '}({bmDelta.ticker - bmDelta.bm >= 0 ? '+' : ''}{(bmDelta.ticker - bmDelta.bm).toFixed(1)}pp)
+              </span>
+            </span>
+          )}
+        </div>
+      )}
 
       {/* "How far from fair" — premium/discount vs median-P/E fair value */}
       {mode === 'price' && fairPremium && (

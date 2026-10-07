@@ -91,9 +91,20 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
     });
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ candles: fixtureCandles(), peStats, valuationStats, evNetDebt: 5e9 }),
+    global.fetch = jest.fn().mockImplementation((url: string) => {
+      if (String(url).includes('/api/indices/weekly')) {
+        // Benchmark weekly closes aligned to the fixture's weekly buckets —
+        // steady +0.2%/week growth (≈ +82% over the ~5.7Y fixture span).
+        const points = fixtureCandles().map((c, i) => ({ t: c.t, c: 100 * (1 + i * 0.002) }));
+        return Promise.resolve({ ok: true, json: async () => ({ symbol: 'SPY', points }) });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          candles: fixtureCandles(), peStats, valuationStats, evNetDebt: 5e9,
+          sector: 'Financial Services', sectorEtf: 'XLF',
+        }),
+      });
     }) as any;
   });
 
@@ -164,5 +175,28 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     // headline in % — fixture ~2%
     expect(container.innerHTML).toMatch(/\d+\.\d%/);
     expect(container.innerHTML).toMatch(/FCF yield [\d.]+% = TTM FCF ÷ market cap/);
+  });
+
+  it('offers SPY/QQQ/sector-ETF compare chips; toggle fetches benchmark weekly series', async () => {
+    const { container } = await renderChart();
+    const labels = [...container.querySelectorAll('button')].map((b) => b.textContent?.trim());
+    expect(labels).toEqual(expect.arrayContaining(['SPY', 'QQQ', 'XLF']));
+
+    await clickButton(container, 'SPY');
+    // benchmark fetch went out to the shared weekly endpoint
+    const calls = (global.fetch as jest.Mock).mock.calls.map((c) => String(c[0]));
+    expect(calls.some((u) => u.includes('/api/indices/weekly?symbol=SPY'))).toBe(true);
+    // legend shows the window-end delta: TEST +x% vs SPY +y% (pp)
+    await act(async () => { await Promise.resolve(); });
+    expect(container.textContent).toMatch(/TEST [+-]?[\d.]+% vs SPY [+-]?[\d.]+%/);
+    expect(container.textContent).toMatch(/[+-][\d.]+pp/);
+  });
+
+  it('compare chips are hidden in valuation mode', async () => {
+    const { container } = await renderChart();
+    await clickButton(container, 'Valuation');
+    const labels = [...container.querySelectorAll('button')].map((b) => b.textContent?.trim());
+    expect(labels).not.toContain('SPY');
+    expect(labels).not.toContain('QQQ');
   });
 });
