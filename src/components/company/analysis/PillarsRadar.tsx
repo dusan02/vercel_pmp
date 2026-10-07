@@ -90,8 +90,11 @@ function legBreakdown(p: { label: string; score: number; legs: { label: string; 
 }
 
 export default function PillarsRadar({ pillars }: { pillars: PillarScores }) {
-    const axes = AXIS_ORDER.map(k => pillars[k]);
-    const values = axes.map(p => p.score);
+    // Tolerate a pillar missing from a stale serialized payload (e.g. a
+    // pre-deploy Redis analysis:cache row) — render the axis at 0 instead
+    // of crashing the whole page.
+    const axes = AXIS_ORDER.map(k => pillars[k] ?? null);
+    const values = axes.map(p => p?.score ?? 0);
 
     return (
         <section className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900" aria-label="Company profile scores">
@@ -102,7 +105,7 @@ export default function PillarsRadar({ pillars }: { pillars: PillarScores }) {
                 viewBox="0 0 240 200"
                 className="mt-1 w-full"
                 role="img"
-                aria-label={`Radar profile: ${axes.map(p => `${p.label} ${p.score}`).join(', ')}`}
+                aria-label={`Radar profile: ${axes.map((p, i) => `${p?.label ?? SHORT_LABEL[AXIS_ORDER[i]!]} ${p?.score ?? 0}`).join(', ')}`}
             >
                 {/* grid rings */}
                 {[0.25, 0.5, 0.75, 1].map(f => (
@@ -128,7 +131,9 @@ export default function PillarsRadar({ pillars }: { pillars: PillarScores }) {
                 />
                 {/* vertex dots + axis labels */}
                 {axes.map((p, i) => {
-                    const [vx, vy] = point(i, (p.score / 100) * R);
+                    const key = AXIS_ORDER[i]!;
+                    const score = p?.score ?? 0;
+                    const [vx, vy] = point(i, (score / 100) * R);
                     const [lx, ly] = point(i, LABEL_R);
                     const a = axisAngle(i);
                     const sin = Math.sin(a);
@@ -138,14 +143,14 @@ export default function PillarsRadar({ pillars }: { pillars: PillarScores }) {
                     const nameY = sin < -0.3 ? ly - 8 : sin > 0.3 ? ly + 4 : ly - 4;
                     const scoreY = nameY + 12;
                     return (
-                        <g key={p.key}>
-                            <title>{legBreakdown(p)}</title>
-                            <circle cx={vx} cy={vy} r="3" className={scoreDotClass(p.score)} />
+                        <g key={key}>
+                            {p && <title>{legBreakdown(p)}</title>}
+                            <circle cx={vx} cy={vy} r="3" className={scoreDotClass(score)} />
                             <text x={lx} y={nameY} textAnchor={anchor} className="fill-gray-500 dark:fill-gray-400" fontSize="8" fontWeight="600" style={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                {SHORT_LABEL[p.key]}
+                                {SHORT_LABEL[key]}
                             </text>
-                            <text x={lx} y={scoreY} textAnchor={anchor} className={scoreTextClass(p.score)} fontSize="10" fontWeight="700">
-                                {p.score}
+                            <text x={lx} y={scoreY} textAnchor={anchor} className={scoreTextClass(score)} fontSize="10" fontWeight="700">
+                                {score}
                             </text>
                         </g>
                     );
@@ -161,7 +166,7 @@ export default function PillarsRadar({ pillars }: { pillars: PillarScores }) {
                     How is each axis scored?
                 </summary>
                 <ul className="mt-2 space-y-2">
-                    {axes.map(p => (
+                    {axes.filter((p): p is NonNullable<typeof p> => p != null).map(p => (
                         <li key={p.key}>
                             <div className="flex items-baseline justify-between">
                                 <span className="font-semibold text-gray-700 dark:text-gray-200">{p.label}</span>
@@ -194,15 +199,15 @@ export function PillarChips({ pillars }: { pillars: PillarScores }) {
                 Profile
             </span>
             {AXIS_ORDER.map(k => {
-                const p = pillars[k];
+                const p = pillars[k] ?? null;
                 return (
                     <span
                         key={k}
-                        title={`${p.label}: ${p.score}/100`}
+                        title={`${p?.label ?? SHORT_LABEL[k]}: ${p?.score ?? 0}/100`}
                         className="inline-flex items-baseline gap-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 px-1.5 py-0.5"
                     >
                         <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">{k[0]}</span>
-                        <span className={`text-[11px] font-bold tabular-nums ${chipScoreClass(p.score)}`}>{p.score}</span>
+                        <span className={`text-[11px] font-bold tabular-nums ${chipScoreClass(p?.score ?? 0)}`}>{p?.score ?? '–'}</span>
                     </span>
                 );
             })}

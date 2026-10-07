@@ -324,4 +324,12 @@ describe('PillarsRadar — six axes', () => {
         expect(chips).toContain('>m<');
         expect(chips).toContain('Moat: 100/100');
     });
+
+    it('stale 5-axis payload (Redis analysis:cache) renders axis at 0 — no crash', () => {
+        const { moat: _dropped, ...fiveKey } = pillars;
+        const stale = renderToStaticMarkup(React.createElement(PillarsRadar, { pillars: fiveKey as never }));
+        expect(stale).toContain('>Moat<');
+        const chips = renderToStaticMarkup(React.createElement(PillarChips, { pillars: fiveKey as never }));
+        expect(chips).toContain('>m<');
+    });
 });
