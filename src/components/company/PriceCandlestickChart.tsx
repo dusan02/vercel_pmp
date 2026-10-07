@@ -425,6 +425,27 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<PeriodLabel>('5Y');
   const [inds, setInds] = useState<Set<IndKey>>(new Set());
+  // Compact toolbar menus — the secondary controls (metric select, overlay
+  // toggles, benchmark compare) collapsed into dropdowns; exactly one open.
+  const [openMenu, setOpenMenu] = useState<'metric' | 'overlays' | 'compare' | null>(null);
+  const menuWrapRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!openMenu) return;
+    const onDown = (e: MouseEvent | TouchEvent) => {
+      if (!menuWrapRef.current?.contains(e.target as Node)) setOpenMenu(null);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenMenu(null); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('touchstart', onDown, { passive: true });
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('touchstart', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [openMenu]);
+  // Mode flip collapses any open menu — an invisible menu would still hover.
+  useEffect(() => { setOpenMenu(null); }, [mode]);
   // Narrow viewport → tighter chart margins / axis so the plot claims more
   // of the mobile screen (390px phone otherwise plots in ~64% of width).
   const [narrow, setNarrow] = useState(false);
@@ -1060,114 +1081,197 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               Valuation
             </button>
           </div>
-          {/* Metric chips (valuation) and indicator toggles (price) share one
-              grid cell — the slot always keeps the wider group's width, so the
-              period buttons and everything right of it never shift when the
-              view mode flips. The inactive group is invisible, not unmounted
-              or display:none, precisely so it still holds its width. */}
-          <div className="grid">
+          {/* Secondary controls live in compact dropdown menus — one grid cell
+              shared by the two modes keeps the slot at the wider variant's
+              width, so the period buttons never shift when the view flips.
+              The inactive side is invisible (still measured), not unmounted. */}
+          <div className="grid" ref={menuWrapRef}>
+            {/* Valuation mode: metric dropdown */}
             <div
-              className={`col-start-1 row-start-1 flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5 ${
+              className={`col-start-1 row-start-1 relative flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 ${
                 mode === 'pe' ? '' : 'invisible'
               }`}
             >
-              {METRICS.map((m) => {
-                const has = !!valStats[m.field];
-                return (
-                  <button
-                    key={m.field}
-                    type="button"
-                    disabled={!has}
-                    onClick={() => animatedSet(() => { setMetric(m.field); gaEvent('chart_metric', { metric: m.field, ticker }); })}
-                    title={has ? `${m.label} = ${m.formula}` : `${m.label} history not available`}
-                    className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                      metric === m.field
-                        ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                );
-              })}
+              <button
+                type="button"
+                onClick={() => setOpenMenu((m) => (m === 'metric' ? null : 'metric'))}
+                aria-haspopup="listbox"
+                aria-expanded={openMenu === 'metric'}
+                title="Valuation multiple to chart"
+                className={`min-w-[96px] justify-between px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
+                  openMenu === 'metric'
+                    ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                }`}
+              >
+                <span>{activeMetric.label}</span>
+                <span className="text-[9px] opacity-60">{openMenu === 'metric' ? '▴' : '▾'}</span>
+              </button>
+              {openMenu === 'metric' && mode === 'pe' && (
+                <div
+                  role="listbox"
+                  className="absolute left-0 top-full mt-1 z-50 min-w-[150px] rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl py-1"
+                >
+                  {METRICS.map((m) => {
+                    const has = !!valStats[m.field];
+                    const active = metric === m.field;
+                    return (
+                      <button
+                        key={m.field}
+                        type="button"
+                        role="option"
+                        aria-selected={active}
+                        disabled={!has}
+                        onClick={() => { setOpenMenu(null); animatedSet(() => { setMetric(m.field); gaEvent('chart_metric', { metric: m.field, ticker }); }); }}
+                        title={has ? `${m.label} = ${m.formula}` : `${m.label} history not available`}
+                        className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                          active
+                            ? 'text-gray-900 dark:text-white font-semibold'
+                            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                        }`}
+                      >
+                        <span className="w-3 text-center">{active ? '✓' : ''}</span>
+                        {m.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-            {/* Indicator toggles — colored dot doubles as the line legend.
-                Price-mode only; in Valuation mode the metric chips take this
-                slot (indicators are meaningless on a multiple). Toggled state
-                persists for the return to Price. */}
+            {/* Price mode: overlay + compare dropdowns in one pill */}
             <div
-              className={`col-start-1 row-start-1 items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5 transition-opacity ${
+              className={`col-start-1 row-start-1 items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 transition-opacity ${
                 mode === 'pe' ? 'invisible flex' : 'flex'
               }`}
             >
-            {INDICATORS.map((ind) => (
-              <button
-                key={ind.key}
-                type="button"
-                disabled={mode === 'pe'}
-                onClick={() => toggleInd(ind.key)}
-                title={
-                  mode === 'pe'
-                    ? 'Price-chart indicators — switch back to Price view'
-                    : ind.key === 'volspike'
-                      ? 'Highlight weeks with volume > 2× the 20-week average'
-                      : ind.key === 'pefair'
-                        ? 'TTM EPS × historical median P/E — steps mark earnings updates, not market moves'
-                        : undefined
-                }
-                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 disabled:cursor-not-allowed ${
-                  inds.has(ind.key)
-                    ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
-                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
-                }`}
-              >
-                <span
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: inds.has(ind.key) ? ind.color : 'rgba(148,163,184,0.4)' }}
-                />
-                {ind.label}
-              </button>
-            ))}
-            {/* Benchmark compare — same pill, separated by a stronger divider
-                + ⇄ glyph. Radio-style toggle: the active chip carries a × to
-                signal "click again to exit compare and return to candles". */}
-            {benchmarkChoices.length > 0 && (
-              <>
-                <span className="w-px h-5 bg-gray-300 dark:bg-gray-500 mx-1.5" />
-                <span
-                  className="text-[11px] text-gray-400 dark:text-gray-500 select-none ml-0.5"
-                  title="Compare vs a benchmark index/ETF"
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setOpenMenu((m) => (m === 'overlays' ? null : 'overlays'))}
+                  aria-haspopup="true"
+                  aria-expanded={openMenu === 'overlays'}
+                  title="Chart overlays — moving averages, fair-value band, 52-week range"
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
+                    openMenu === 'overlays' || inds.size > 0
+                      ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
+                      : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+                  }`}
                 >
-                  ⇄
-                </span>
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 select-none">vs</span>
-                {benchmarkChoices.map((b) => (
-                  <button
-                    key={b.sym}
-                    type="button"
-                    disabled={mode === 'pe'}
-                    onClick={() => animatedSet(() => {
-                      const on = bmSym !== b.sym;
-                      setBmSym(on ? b.sym : null);
-                      gaEvent('chart_compare', { symbol: b.sym, state: on ? 'on' : 'off', ticker });
-                    })}
-                    title={
-                      bmSym === b.sym
-                        ? `${b.label} comparison active — click again to return to price candles`
-                        : `${b.title} — relative performance chart, rebased to the range start`
-                    }
-                    className={`px-2 py-1 text-xs font-semibold rounded-md transition-colors disabled:cursor-not-allowed ${
-                      bmSym === b.sym
-                        ? 'bg-white dark:bg-gray-900 shadow-sm'
-                        : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
-                    }`}
-                    style={bmSym === b.sym ? { color: BM_LINE } : undefined}
+                  {/* Mini legend — colored dots of the active overlays */}
+                  {inds.size > 0 && (
+                    <span className="flex items-center -space-x-0.5">
+                      {INDICATORS.filter((i) => inds.has(i.key)).map((i) => (
+                        <span key={i.key} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: i.color }} />
+                      ))}
+                    </span>
+                  )}
+                  Overlays
+                  <span className="text-[9px] opacity-60">{openMenu === 'overlays' ? '▴' : '▾'}</span>
+                </button>
+                {openMenu === 'overlays' && (
+                  <div
+                    role="menu"
+                    className="absolute left-0 top-full mt-1 z-50 min-w-[170px] rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl py-1"
                   >
-                    {b.label}{bmSym === b.sym ? ' ×' : ''}
-                  </button>
-                ))}
-              </>
-            )}
+                    {INDICATORS.map((ind) => (
+                      <button
+                        key={ind.key}
+                        type="button"
+                        onClick={() => toggleInd(ind.key)}
+                        title={
+                          ind.key === 'volspike'
+                            ? 'Highlight weeks with volume > 2× the 20-week average'
+                            : ind.key === 'pefair'
+                              ? 'TTM EPS × historical median P/E — steps mark earnings updates, not market moves'
+                              : undefined
+                        }
+                        className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                          inds.has(ind.key)
+                            ? 'text-gray-900 dark:text-white font-semibold'
+                            : 'text-gray-500 dark:text-gray-400'
+                        }`}
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: inds.has(ind.key) ? ind.color : 'rgba(148,163,184,0.4)' }}
+                        />
+                        {ind.label}
+                        {inds.has(ind.key) && <span className="ml-auto text-[10px]">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {benchmarkChoices.length > 0 && (
+                <>
+                  <span className="w-px h-5 bg-gray-300 dark:bg-gray-500 mx-1.5" />
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setOpenMenu((m) => (m === 'compare' ? null : 'compare'))}
+                      aria-haspopup="listbox"
+                      aria-expanded={openMenu === 'compare'}
+                      title={
+                        bmSym
+                          ? `Comparing vs ${bmLabel} — open to change or exit`
+                          : 'Compare vs a benchmark index/ETF'
+                      }
+                      className={`min-w-[84px] px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 justify-between ${
+                        openMenu === 'compare' || bmSym
+                          ? 'bg-white dark:bg-gray-900 shadow-sm'
+                          : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+                      }`}
+                      style={bmSym ? { color: BM_LINE } : undefined}
+                    >
+                      <span>⇄ {bmSym ? bmLabel : 'Compare'}</span>
+                      <span className="text-[9px] opacity-60">{openMenu === 'compare' ? '▴' : '▾'}</span>
+                    </button>
+                    {openMenu === 'compare' && (
+                      <div
+                        role="listbox"
+                        className="absolute right-0 top-full mt-1 z-50 min-w-[150px] rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl py-1"
+                      >
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={bmSym == null}
+                          onClick={() => {
+                            setOpenMenu(null);
+                            if (bmSym) animatedSet(() => { setBmSym(null); gaEvent('chart_compare', { symbol: bmSym, state: 'off', ticker }); });
+                          }}
+                          className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                            bmSym == null ? 'text-gray-900 dark:text-white font-semibold' : 'text-gray-500 dark:text-gray-400'
+                          }`}
+                        >
+                          <span className="w-3 text-center">{bmSym == null ? '✓' : ''}</span>
+                          Candles only
+                        </button>
+                        {benchmarkChoices.map((b) => (
+                          <button
+                            key={b.sym}
+                            type="button"
+                            role="option"
+                            aria-selected={bmSym === b.sym}
+                            onClick={() => {
+                              setOpenMenu(null);
+                              if (bmSym !== b.sym) {
+                                animatedSet(() => { setBmSym(b.sym); gaEvent('chart_compare', { symbol: b.sym, state: 'on', ticker }); });
+                              }
+                            }}
+                            title={`${b.title} — relative performance chart, rebased to the range start`}
+                            className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                              bmSym === b.sym ? 'text-gray-900 dark:text-white font-semibold' : 'text-gray-500 dark:text-gray-400'
+                            }`}
+                          >
+                            <span className="w-3 text-center">{bmSym === b.sym ? '✓' : ''}</span>
+                            {b.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
           <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
