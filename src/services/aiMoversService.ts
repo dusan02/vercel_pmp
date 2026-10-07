@@ -207,7 +207,7 @@ Return strictly valid JSON:
 {
   "reason": "1-sentence specific analytical reason",
   "category": "Earnings|Guidance|M&A|Macro|Legal|Product|Technical|Sector",
-  "socialCopy": "Max 200-char post on 2-3 short lines separated by \\n. Line 1: 📈 (up) or 📉 (down) + $${symbol} cashtag + % move + short catalyst phrase. Line 2: key stat like 'RVOL 4.2x' or 'Z-score 3.1σ'. Add 🚨 only for |Z|>=4 or RVOL>=5. End with #${symbol} plus 1 relevant hashtag like #Stocks. No URLs, no price targets, no advice.",
+  "socialCopy": "Max 200-char post on 2-3 short lines separated by \\n. Line 1: 📈 (up) or 📉 (down) + $${symbol} cashtag + % move + short catalyst phrase. Line 2: ONE plain-language stat — 'Volume 4.2× normal' (from RVOL) or '~3.1× its typical daily move' (from |Z-score|). NEVER write 'RVOL', 'Z-score' or 'σ' — most readers don't know them. Add 🚨 only for |Z|>=4 or RVOL>=5. End with #${symbol} plus 1 relevant hashtag like #Stocks. No URLs, no price targets, no advice.",
   "isSbcAlert": false,
   "aiConfidence": 85
 }`.trim();
@@ -258,10 +258,13 @@ Return strictly valid JSON:
 
         // Match the LLM template skeleton so fallback posts are visually
         // indistinguishable: emoji $SYM % — catalyst / stats line / hashtags.
+        // Stats are phrased in plain language — "RVOL 2.8x" and "Z -5.00σ"
+        // mean nothing to most readers; "5× its typical daily move" does
+        // (Z-score literally IS today's move measured in typical-move units).
         const statsLine = [
-            rvolStr !== 'N/A' ? `RVOL ${rvolStr}` : '',
-            zStr !== 'N/A' ? `Z-score ${zStr}σ` : '',
-        ].filter(Boolean).join(' | ');
+            !isNaN(rvolNum) && rvolNum > 0 ? `Volume ${rvolNum.toFixed(1)}× normal` : '',
+            absZ > 0 ? `~${absZ.toFixed(1)}× its typical daily move` : '',
+        ].filter(Boolean).join(' · ');
         const catalyst = absZ >= 4 ? 'extreme move, no clear catalyst' : 'elevated activity, no clear catalyst';
         const sectorTag = (sector || 'Stocks').replace(/[^A-Za-z]/g, '');
         const lines = [`${direction === 'up' ? '📈' : '📉'} $${symbol} ${changePctStr} — ${catalyst}`];

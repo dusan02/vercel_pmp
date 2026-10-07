@@ -121,9 +121,13 @@ export class SocialDistributorService {
 
     /**
      * Reconcile stored socialCopy with live values at post time: the embedded
-     * %, direction emoji and RVOL/Z-score stats were frozen at generation time
-     * and can drift — or even flip sign — before the 30-min cron posts them.
-     * Also normalizes casing variants (Z-Score/Z-score:/Z Score → "Z-score").
+     * %, direction emoji and volume/extremity stats were frozen at generation
+     * time and can drift — or even flip sign — before the 30-min cron posts
+     * them. Quant jargon is rewritten to plain language at the same time:
+     * "RVOL 2.8x" → "Volume 2.8× normal" and "Z-score -5.00σ" → "~5.0× its
+     * typical daily move" — the Z-score literally IS the move measured in
+     * typical-move units. Already-plain copies still get refreshed to live
+     * numbers.
      */
     private patchSocialCopy(
         copy: string,
@@ -143,10 +147,17 @@ export class SocialDistributorService {
             }
         }
         if (mover.latestMoversRVOL != null) {
-            copy = copy.replace(/\bRVOL:?\s*(?:N\/A|[+-]?\d+(?:\.\d+)?)\s*x\b/gi, `RVOL ${mover.latestMoversRVOL.toFixed(1)}x`);
+            copy = copy.replace(
+                /\b(?:RVOL|Volume|relative\s+volume)[:\s]*(?:N\/A|[+-]?\d+(?:\.\d+)?)\s*[x×]\s*(?:of\s+)?(?:normal)?|\b\d+(?:\.\d+)?\s*[x×]\s+relative\s+volume\b/gi,
+                `Volume ${mover.latestMoversRVOL.toFixed(1)}× normal`
+            );
         }
         if (mover.latestMoversZScore != null) {
-            copy = copy.replace(/\bZ[-\s]?[Ss]core:?\s*[+-]?\d+(?:\.\d+)?\s*σ?/gi, `Z-score ${mover.latestMoversZScore.toFixed(2)}σ`);
+            const zAbs = Math.abs(mover.latestMoversZScore);
+            copy = copy.replace(
+                /\bZ[-\s]?[Ss]core:?\s*[+-]?\d+(?:\.\d+)?\s*σ?|\bZ[:=]\s*[+-]?\d+(?:\.\d+)?\s*σ|~?\d+(?:\.\d+)?\s*[x×]\s+(?:its\s+)?typical\s+daily\s+move\b/gi,
+                `~${zAbs.toFixed(1)}× its typical daily move`
+            );
         }
         return copy;
     }

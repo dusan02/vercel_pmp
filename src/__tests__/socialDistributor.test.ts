@@ -77,15 +77,43 @@ describe('patchSocialCopy', () => {
         expect(out).toMatch(/^📉 /);
     });
 
-    it('patches RVOL/Z-score tokens to live values and normalizes casing', () => {
+    it('rewrites RVOL/Z-score jargon to plain language with live values', () => {
         const out = svc.patchSocialCopy(
             '📈 $CEG +6.60% on deal talks | RVOL: 9x | Z-Score 0.44σ | #CEG',
             mv({ latestMoversRVOL: 2.14, latestMoversZScore: 2.636 })
         );
-        expect(out).toContain('RVOL 2.1x');
-        expect(out).toContain('Z-score 2.64σ');
-        expect(out).not.toContain('Z-Score');
+        expect(out).toContain('Volume 2.1× normal');
+        expect(out).toContain('~2.6× its typical daily move');
+        expect(out).not.toMatch(/RVOL|Z-?Score|σ/);
         expect(out).not.toContain('9x');
+    });
+
+    it('converts "-5.00σ" style to magnitude (sign lives in the % move)', () => {
+        const out = svc.patchSocialCopy(
+            '📉 $CHRW -12.60% sells off | RVOL 2.8x | Z-score -5.00σ | #CHRW',
+            mv({ latestMoversRVOL: 2.8, latestMoversZScore: -5.0 })
+        );
+        expect(out).toContain('Volume 2.8× normal');
+        expect(out).toContain('~5.0× its typical daily move');
+        expect(out).not.toMatch(/RVOL|Z-?score|σ/);
+    });
+
+    it('still refreshes already-plain copy to live values', () => {
+        const out = svc.patchSocialCopy(
+            '📈 $X +6.60% | Volume 9× normal · ~4.0× its typical daily move | #X',
+            mv({ latestMoversRVOL: 2.14, latestMoversZScore: 2.636 })
+        );
+        expect(out).toContain('Volume 2.1× normal');
+        expect(out).toContain('~2.6× its typical daily move');
+        expect(out).not.toContain('9×');
+    });
+
+    it('patches legacy "Nx relative volume" phrasing', () => {
+        const out = svc.patchSocialCopy(
+            '📉 $MOD -11.53% on 4x relative volume.',
+            mv({ latestMoversRVOL: 0.1, lastChangePct: -11.53 })
+        );
+        expect(out).toContain('Volume 0.1× normal');
     });
 });
 
