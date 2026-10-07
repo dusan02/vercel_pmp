@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { NotificationService } from '../notificationService';
 import { computeTTM } from '@/lib/utils/ttm';
 import { summarizeLossYears } from '@/lib/utils/analysisMath';
-import { computePillars } from './pillars';
+import { computePillars, deriveMoatInputs } from './pillars';
 import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
 import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
 
@@ -65,6 +65,7 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         return;
     }
     const annualStmts = stmts.filter(s => s.fiscalPeriod === 'FY');
+    const moatDerived = deriveMoatInputs(annualStmts);
     
     // TTM via shared utility
     const ttm = computeTTM(stmts);
@@ -438,6 +439,13 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         beneish: beneishScore,
         fcfConversion,
         marginStability,
+        // Moat: durability stats over the FY series — read-path parity with
+        // computeMetrics (deriveMoatInputs is shared; persisted AnalysisCache
+        // has no moat column, so only the five scores below are written).
+        moatRoicDurability: moatDerived.roicDurability,
+        moatGmMedian: moatDerived.gmMedian,
+        moatFcfDurability: moatDerived.fcfDurability,
+        moatMarginFloor: moatDerived.marginFloor,
     };
     if (process.env.DEBUG_PILLARS) console.log(`[pillars-input:${symbol}]`, JSON.stringify(pillarsInput));
     const pillars = computePillars(pillarsInput);

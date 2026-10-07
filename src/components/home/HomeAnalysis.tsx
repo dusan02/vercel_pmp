@@ -202,7 +202,7 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                             Search for a stock to analyze
                         </h3>
                         <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md">
-                            Every stock gets a five-dimensional fundamental profile — pick one below or search above.
+                            Every stock gets a six-dimensional fundamental profile — pick one below or search above.
                         </p>
                     </div>
 
@@ -245,17 +245,18 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                         </div>
                     )}
 
-                    {/* How we analyze — five-pillar explainer */}
+                    {/* How we analyze — six-pillar explainer */}
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
                         <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">How we analyze stocks</h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Every stock gets a 0–100 profile across five equally-weighted pillars.</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Every stock gets a 0–100 profile across six equally-weighted pillars.</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {[
                                 ['Valuation', 'Is the stock cheap vs its own 5-year history?'],
                                 ['Growth', 'How fast are revenue, earnings and EPS expanding?'],
                                 ['Profitability', 'How efficiently does it turn revenue into profit?'],
                                 ['Financial Health', 'Can the balance sheet withstand stress?'],
                                 ['Quality', 'Are reported earnings reliable and cash-backed?'],
+                                ['Moat', 'Does it sustain high returns and margins year after year?'],
                             ].map(([name, desc]) => (
                                 <div key={name} className="rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-700 p-3">
                                     <div className="text-xs font-bold text-gray-900 dark:text-white mb-1">{name}</div>

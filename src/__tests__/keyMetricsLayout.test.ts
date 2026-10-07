@@ -62,6 +62,7 @@ function fixture(overrides: Partial<AnalysisData> = {}): AnalysisData {
             roic: 0.27, roe: 0.31, netMargin: 0.29, operatingMargin: 0.32,
             altmanZ: 6.45, currentRatio: 1.5, interestCoverage: 25, netCash: true, debtRatio: null,
             piotroski: 7, beneish: -3.02, fcfConversion: 0.95, marginStability: 0.04,
+            moatRoicDurability: null, moatGmMedian: null, moatFcfDurability: null, moatMarginFloor: null,
         }),
         ...overrides,
     } as unknown as AnalysisData;

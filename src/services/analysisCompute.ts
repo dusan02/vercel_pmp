@@ -5,7 +5,7 @@ import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/spl
 import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
 import { dedupeShareClasses } from '@/lib/companyNames';
 import { buildValuationHistory } from '@/services/analysis/valuationHistory';
-import { computePillars } from '@/services/analysis/pillars';
+import { computePillars, deriveMoatInputs } from '@/services/analysis/pillars';
 
 /**
  * Shared analysis computation used by both:
@@ -277,6 +277,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     // read-time so all five axes sit on one as-of snapshot, independent of
     // how stale the stored AnalysisCache health/profitability/valuation are.
     const annualStmts = stmts.filter(s => s.fiscalPeriod === 'FY');
+    const moatDerived = deriveMoatInputs(annualStmts);
     const latestAnnual = annualStmts[0] ?? null;
     const stmt5yAgoAnnual = annualStmts[4] ?? annualStmts[annualStmts.length - 1] ?? null;
     const yearsBack = annualStmts.length >= 5 ? 4 : (annualStmts.length - 1);
@@ -342,6 +343,11 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         beneish: cached.beneishScore ?? null,
         fcfConversion: cached.fcfConversion ?? null,
         marginStability: cached.marginStability ?? null,
+        // Moat: durability stats over the FY series (not TTM/current values).
+        moatRoicDurability: moatDerived.roicDurability,
+        moatGmMedian: moatDerived.gmMedian,
+        moatFcfDurability: moatDerived.fcfDurability,
+        moatMarginFloor: moatDerived.marginFloor,
     };
     if (process.env.DEBUG_PILLARS) console.log(`[pillars-input:${symbol}]`, JSON.stringify(pillarsInput));
     const pillars = computePillars(pillarsInput);

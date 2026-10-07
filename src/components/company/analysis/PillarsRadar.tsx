@@ -2,7 +2,8 @@ import type { PillarScores } from './types';
 import { pillarSummary } from '@/services/analysis/pillars';
 
 /**
- * Five-axis profile radar: Valuation · Growth · Profitability · Health · Quality.
+ * Six-axis profile radar: Valuation · Growth · Profitability · Health ·
+ * Quality · Moat.
  *
  * A profile, not a verdict — the chart deliberately shows shape only; per-axis
  * leg contributions are exposed via native <title> tooltips and the details
@@ -14,8 +15,8 @@ const CY = 110;
 const R = 58;
 const LABEL_R = 84;
 
-/** Axis order — clockwise from top. */
-const AXIS_ORDER = ['valuation', 'growth', 'profitability', 'health', 'quality'] as const;
+/** Axis order — clockwise from top; Moat closes the hexagon at upper-left. */
+const AXIS_ORDER = ['valuation', 'growth', 'profitability', 'health', 'quality', 'moat'] as const;
 
 /** Short labels for the SVG — "Financial Health" would clip the viewBox. */
 const SHORT_LABEL: Record<(typeof AXIS_ORDER)[number], string> = {
@@ -24,10 +25,11 @@ const SHORT_LABEL: Record<(typeof AXIS_ORDER)[number], string> = {
     profitability: 'Profitability',
     health: 'Health',
     quality: 'Quality',
+    moat: 'Moat',
 };
 
 function axisAngle(i: number): number {
-    return (-90 + i * 72) * (Math.PI / 180);
+    return (-90 + i * (360 / AXIS_ORDER.length)) * (Math.PI / 180);
 }
 
 function point(i: number, radius: number): [number, number] {
@@ -181,10 +183,10 @@ export default function PillarsRadar({ pillars }: { pillars: PillarScores }) {
     );
 }
 
-/** One-line chip strip — "V 40 · G 87 · P 100 · H 67 · Q 54". Rendered only
-    below `lg` (call site uses lg:hidden): on desktop the radar card carries
-    the profile, on mobile it sits ~1100px deep behind the price chart, so
-    the chips keep the five-axis profile in the first viewport. */
+/** One-line chip strip — "V 40 · G 87 · P 100 · H 67 · Q 54 · M 81". Rendered
+    only below `lg` (call site uses lg:hidden): on desktop the radar card
+    carries the profile, on mobile it sits ~1100px deep behind the price
+    chart, so the chips keep the six-axis profile in the first viewport. */
 export function PillarChips({ pillars }: { pillars: PillarScores }) {
     return (
         <div className="flex flex-wrap items-center gap-1.5" aria-label="Profile scores">
