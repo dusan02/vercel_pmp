@@ -1,4 +1,7 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useRef } from 'react';
+import { event as gaEvent } from '@/lib/ga';
 
 interface ChartSectionProps {
     iconBgClass: string;
@@ -26,8 +29,34 @@ export function ChartSection({
     as: H = 'h3',
     bleed = false,
 }: ChartSectionProps) {
+    const rootRef = useRef<HTMLDivElement>(null);
+
+    // "Was this section actually seen" — fires once per mount when ≥40% of the
+    // card stays in view for 700ms (a quick scroll-past doesn't count).
+    useEffect(() => {
+        const el = rootRef.current;
+        if (!el || typeof IntersectionObserver === 'undefined') return;
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        let fired = false;
+        const io = new IntersectionObserver(([e]) => {
+            if (fired || !e) return;
+            if (e.isIntersecting && e.intersectionRatio >= 0.4) {
+                timer = setTimeout(() => {
+                    fired = true;
+                    gaEvent('section_view', { section: title });
+                    io.disconnect();
+                }, 700);
+            } else if (timer) {
+                clearTimeout(timer);
+                timer = null;
+            }
+        }, { threshold: [0.4] });
+        io.observe(el);
+        return () => { io.disconnect(); if (timer) clearTimeout(timer); };
+    }, [title]);
+
     return (
-        <div className={`bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 overflow-visible h-full flex flex-col ${
+        <div ref={rootRef} className={`bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 overflow-visible h-full flex flex-col ${
             bleed
                 ? '-mx-4 rounded-none border-x-0 p-3 sm:mx-0 sm:rounded-xl sm:border-x sm:p-6'
                 : 'rounded-xl p-3 sm:p-6'

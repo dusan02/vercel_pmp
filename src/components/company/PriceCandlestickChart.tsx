@@ -16,6 +16,7 @@ import {
   AreaChart,
 } from 'recharts';
 import { CHART_FONT } from '@/components/charts/chartTheme';
+import { event as gaEvent } from '@/lib/ga';
 
 interface Candle {
   t: number; // timestamp (ms)
@@ -418,6 +419,8 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       try { localStorage.setItem(IND_KEY, JSON.stringify([...next])); } catch { /* private mode */ }
       return next;
     });
+    // `inds` from closure is pre-toggle — the new state is its negation.
+    gaEvent('chart_indicator', { ind: k, state: inds.has(k) ? 'off' : 'on', ticker });
   };
 
   useEffect(() => {
@@ -982,7 +985,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
           <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
             <button
               type="button"
-              onClick={() => animatedSet(() => setMode('price'))}
+              onClick={() => animatedSet(() => { setMode('price'); gaEvent('chart_mode', { mode: 'price', ticker }); })}
               className={`px-2.5 py-1 text-xs font-bold rounded-md transition-colors ${
                 mode === 'price'
                   ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
@@ -993,7 +996,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             </button>
             <button
               type="button"
-              onClick={() => animatedSet(() => setMode('pe'))}
+              onClick={() => animatedSet(() => { setMode('pe'); gaEvent('chart_mode', { mode: 'valuation', ticker }); })}
               disabled={!Object.keys(valStats).length}
               title={Object.keys(valStats).length ? 'Valuation multiples vs their own historical median and quartile band' : 'Valuation history not available'}
               className={`px-2.5 py-1 text-xs font-bold rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
@@ -1024,7 +1027,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                     key={m.field}
                     type="button"
                     disabled={!has}
-                    onClick={() => animatedSet(() => setMetric(m.field))}
+                    onClick={() => animatedSet(() => { setMetric(m.field); gaEvent('chart_metric', { metric: m.field, ticker }); })}
                     title={has ? `${m.label} = ${m.formula}` : `${m.label} history not available`}
                     className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                       metric === m.field
@@ -1092,7 +1095,11 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                     key={b.sym}
                     type="button"
                     disabled={mode === 'pe'}
-                    onClick={() => animatedSet(() => setBmSym(bmSym === b.sym ? null : b.sym))}
+                    onClick={() => animatedSet(() => {
+                      const on = bmSym !== b.sym;
+                      setBmSym(on ? b.sym : null);
+                      gaEvent('chart_compare', { symbol: b.sym, state: on ? 'on' : 'off', ticker });
+                    })}
                     title={
                       bmSym === b.sym
                         ? `${b.label} comparison active — click again to return to price candles`
@@ -1117,7 +1124,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               <button
                 key={p.label}
                 type="button"
-                onClick={() => animatedSet(() => { setPeriod(p.label); setPeBrush(null); setPeEpoch((e) => e + 1); })}
+                onClick={() => animatedSet(() => { setPeriod(p.label); setPeBrush(null); setPeEpoch((e) => e + 1); gaEvent('chart_period', { period: p.label, ticker }); })}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
                   activePeriod === p.label
                     ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
