@@ -192,11 +192,13 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     expect(container.textContent).toMatch(/[+-][\d.]+pp/);
   });
 
-  it('compare chips are hidden in valuation mode', async () => {
+  it('compare chips hide with the price-mode indicator group in valuation mode', async () => {
     const { container } = await renderChart();
     await clickButton(container, 'Valuation');
-    const labels = [...container.querySelectorAll('button')].map((b) => b.textContent?.trim());
-    expect(labels).not.toContain('SPY');
-    expect(labels).not.toContain('QQQ');
+    // Chips stay mounted inside the shared slot (it keeps its width) — the
+    // whole indicator pill just turns invisible in valuation mode.
+    const spy = [...container.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'SPY');
+    expect(spy).toBeTruthy();
+    expect(spy?.parentElement?.className).toContain('invisible');
   });
 });

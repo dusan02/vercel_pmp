@@ -963,6 +963,32 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                 {ind.label}
               </button>
             ))}
+            {/* Benchmark compare — same pill, separated by a divider. Radio-
+                style toggle (click the active chip again to switch off);
+                the legend/delta stays in the row under the chart. */}
+            {benchmarkChoices.length > 0 && (
+              <>
+                <span className="w-px h-4 bg-gray-300/70 dark:bg-gray-500/50 mx-1" />
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 select-none">vs</span>
+                {benchmarkChoices.map((b) => (
+                  <button
+                    key={b.sym}
+                    type="button"
+                    disabled={mode === 'pe'}
+                    onClick={() => setBmSym(bmSym === b.sym ? null : b.sym)}
+                    title={`${b.title} — overlay rebased to the range start`}
+                    className={`px-2 py-1 text-xs font-semibold rounded-md transition-colors disabled:cursor-not-allowed ${
+                      bmSym === b.sym
+                        ? 'bg-white dark:bg-gray-900 shadow-sm'
+                        : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+                    }`}
+                    style={bmSym === b.sym ? { color: BM_LINE } : undefined}
+                  >
+                    {b.label}
+                  </button>
+                ))}
+              </>
+            )}
             </div>
           </div>
           <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
@@ -1251,38 +1277,18 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       )}
       </div>
 
-      {/* Compare row — benchmark overlay chips (price mode only). The line
-          is rebased to the window's first close; the legend shows the
-          window-end delta so relative performance is readable at a glance. */}
-      {mode === 'price' && benchmarkChoices.length > 0 && (
-        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium">vs</span>
-          {benchmarkChoices.map((b) => (
-            <button
-              key={b.sym}
-              type="button"
-              onClick={() => setBmSym(bmSym === b.sym ? null : b.sym)}
-              title={`${b.title} — overlay rebased to the range start`}
-              className={`px-2 py-0.5 text-[11px] font-semibold rounded-md transition-colors ${
-                bmSym === b.sym
-                  ? 'bg-stone-600 text-white dark:bg-stone-500 shadow-sm'
-                  : 'bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-              }`}
-            >
-              {b.label}
-            </button>
-          ))}
-          {bmDelta && (
-            <span className="ml-auto text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
-              <span className="font-semibold text-gray-700 dark:text-gray-200">{ticker}</span>{' '}
-              {bmDelta.ticker >= 0 ? '+' : ''}{bmDelta.ticker.toFixed(1)}% vs{' '}
-              <span className="font-semibold" style={{ color: BM_LINE }}>{bmDelta.label}</span>{' '}
-              {bmDelta.bm >= 0 ? '+' : ''}{bmDelta.bm.toFixed(1)}%
-              <span style={{ color: bmDelta.ticker - bmDelta.bm >= 0 ? UP : DOWN }}>
-                {' '}({bmDelta.ticker - bmDelta.bm >= 0 ? '+' : ''}{(bmDelta.ticker - bmDelta.bm).toFixed(1)}pp)
-              </span>
-            </span>
-          )}
+      {/* Benchmark legend — only while a compare overlay is active; the
+          dashed swatch matches the line, delta text shows the window-end gap */}
+      {mode === 'price' && bmDelta && (
+        <div className="mt-1.5 flex items-center gap-1.5 text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+          <span className="w-4 border-t-2 border-dashed" style={{ borderColor: BM_LINE }} />
+          <span className="font-semibold text-gray-700 dark:text-gray-200">{ticker}</span>{' '}
+          {bmDelta.ticker >= 0 ? '+' : ''}{bmDelta.ticker.toFixed(1)}% vs{' '}
+          <span className="font-semibold" style={{ color: BM_LINE }}>{bmDelta.label}</span>{' '}
+          {bmDelta.bm >= 0 ? '+' : ''}{bmDelta.bm.toFixed(1)}%
+          <span style={{ color: bmDelta.ticker - bmDelta.bm >= 0 ? UP : DOWN }}>
+            {' '}({bmDelta.ticker - bmDelta.bm >= 0 ? '+' : ''}{(bmDelta.ticker - bmDelta.bm).toFixed(1)}pp)
+          </span>
         </div>
       )}
 
