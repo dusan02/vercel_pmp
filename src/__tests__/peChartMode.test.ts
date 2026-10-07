@@ -73,7 +73,8 @@ async function renderChart() {
 
 async function clickButton(container: HTMLElement, label: string) {
   const btn = [...container.querySelectorAll('button')].find(
-    (b) => b.textContent?.trim() === label,
+    // The active compare chip carries a " ×" dismiss mark — strip it.
+    (b) => b.textContent?.trim().replace(/ ×$/, '') === label,
   ) as HTMLButtonElement | undefined;
   if (!btn) throw new Error(`button "${label}" not found`);
   await act(async () => {
@@ -114,15 +115,17 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     expect(labels).toEqual(expect.arrayContaining(['3M', '6M', 'YTD', '1Y', '3Y', '5Y', 'All']));
   });
 
-  it('P/E mode shows × headline with range change %', async () => {
+  it('P/E mode shows × headline with premium vs median', async () => {
     const { container } = await renderChart();
     await clickButton(container, 'Valuation');
-    // headline: current multiple
+    // headline: current multiple + premium/discount vs its own median
     expect(container.innerHTML).toMatch(/\d+\.\d×/);
-    // change badge colored for "cheaper" (fixture P/E declines → green)
     const badge = [...container.querySelectorAll('span')].find(
-      (s) => /%/.test(s.textContent ?? '') && s.className.includes('font-semibold'),
+      (s) => /vs median/.test(s.textContent ?? ''),
     );
+    expect(badge).toBeTruthy();
+    // fixture P/E declines below its median → "cheaper" reads green
+    expect(badge?.textContent).toMatch(/^[+-][\d.]+%/);
     expect(badge?.className).toContain('green');
   });
 
@@ -200,5 +203,32 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     const spy = [...container.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'SPY');
     expect(spy).toBeTruthy();
     expect(spy?.parentElement?.className).toContain('invisible');
+  });
+
+  it('clicking the active benchmark chip again exits compare and reports it', async () => {
+    const onCompareChange = jest.fn();
+    document.body.innerHTML = '';
+    (global as any).IS_REACT_ACT_ENVIRONMENT = true;
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(React.createElement(PriceCandlestickChart, { ticker: 'TEST', onCompareChange }));
+      await Promise.resolve();
+    });
+    onCompareChange.mockClear();
+
+    await clickButton(container, 'SPY');
+    await act(async () => { await Promise.resolve(); });
+    expect(onCompareChange).toHaveBeenLastCalledWith('SPY');
+    // active chip advertises its dismiss affordance
+    const spy = [...container.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'SPY ×');
+    expect(spy).toBeTruthy();
+
+    await clickButton(container, 'SPY');
+    await act(async () => { await Promise.resolve(); });
+    expect(onCompareChange).toHaveBeenLastCalledWith(null);
+    // back in price mode — the compare legend is gone
+    expect(container.textContent).not.toMatch(/vs SPY [+-]?[\d.]+%/);
   });
 });
