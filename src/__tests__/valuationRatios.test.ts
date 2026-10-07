@@ -155,4 +155,24 @@ describe('computeDayRatios — split-normalized shares', () => {
         // latest stmt ≤ asOf is Q1'26 (1.10e9) — unnormalized, factor 1
         expect(r.marketCap).toBeCloseTo(50 * 1.10e9, -9);
     });
+
+    it('does not multiply a transient post-split count by the real split (NVDA Q1-24 glitch)', () => {
+        // Finnhub filed NVDA's 10:1-adjusted count a year early (Apr'23:
+        // 24.7B between 2.51B and 2.49B) — real split lands Jul'24.
+        const nvda = [
+            stmt({ fiscalPeriod: 'Q3', fiscalYear: 2025, endDate: new Date('2024-10-26T00:00:00Z'), sharesOutstanding: 24.84e9 }),
+            stmt({ fiscalPeriod: 'Q2', fiscalYear: 2025, endDate: new Date('2024-07-27T00:00:00Z'), sharesOutstanding: 24.87e9 }),
+            stmt({ fiscalPeriod: 'Q1', fiscalYear: 2025, endDate: new Date('2024-04-27T00:00:00Z'), sharesOutstanding: 2.489e9 }),
+            stmt({ fiscalPeriod: 'Q3', fiscalYear: 2024, endDate: new Date('2023-10-28T00:00:00Z'), sharesOutstanding: 2.494e9 }),
+            stmt({ fiscalPeriod: 'Q2', fiscalYear: 2024, endDate: new Date('2023-07-29T00:00:00Z'), sharesOutstanding: 2.495e9 }),
+            stmt({ fiscalPeriod: 'Q1', fiscalYear: 2024, endDate: new Date('2023-04-30T00:00:00Z'), sharesOutstanding: 24.73e9, netIncome: 1.49e9, revenue: 7.2e9 }),
+            stmt({ fiscalPeriod: 'Q4', fiscalYear: 2023, endDate: new Date('2023-01-28T00:00:00Z'), sharesOutstanding: 2.517e9 }),
+            stmt({ fiscalPeriod: 'Q3', fiscalYear: 2023, endDate: new Date('2022-10-29T00:00:00Z'), sharesOutstanding: 2.517e9 }),
+        ];
+        // asOf lands while the corrupt Apr'23 row is still the latest
+        // statement carrying shares — its raw count is already post-split
+        // units, so the dated ×10 boundary must NOT double-apply.
+        const r = computeDayRatios(nvda, 29, new Date('2023-05-15T04:00:00Z'));
+        expect(r.marketCap).toBeCloseTo(29 * 24.73e9, -9); // ~$717B, not $7.2T
+    });
 });

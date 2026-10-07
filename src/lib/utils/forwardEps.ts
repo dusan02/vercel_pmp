@@ -11,7 +11,7 @@
  * All four must be reported — a partial window would silently understate,
  * so the series honestly ends ~3–4 quarters before the present.
  */
-import { buildShareBoundaries, shareFactorAt, findCorruptShareRows } from './splitAdjustment';
+import { buildShareBoundaries, makeShareNormalizer } from './splitAdjustment';
 
 /** Minimal statement shape the NTM math needs — a Prisma `select` subset
  *  satisfies it without a cast. */
@@ -42,13 +42,7 @@ export function quarterlyEpsSeries(statements: StmtSlice[]): QuarterEps[] {
     const asc = [...statements].sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
     const quarterlyAsc = asc.filter((s) => s.fiscalPeriod !== 'FY');
     const boundaries = buildShareBoundaries(quarterlyAsc);
-    const corrupt = findCorruptShareRows(quarterlyAsc);
-    // Normalized share level of every clean quarter — reference for deciding
-    // whether a corrupt row's raw count is already in today's units.
-    const cleanNormShares = quarterlyAsc
-        .filter((q) => !corrupt.has(q.endDate.getTime())
-            && q.sharesOutstanding != null && q.sharesOutstanding > 0)
-        .map((q) => q.sharesOutstanding! * shareFactorAt(boundaries, q.endDate.getTime()));
+    const normalize = makeShareNormalizer(quarterlyAsc, boundaries);
 
     // Per-quarter net income via YTD diffs inside each fiscal year.
     const byYear = new Map<number, StmtSlice[]>();
@@ -76,37 +70,14 @@ export function quarterlyEpsSeries(statements: StmtSlice[]): QuarterEps[] {
         }
     }
 
-    const totalFactor = boundaries.reduce((a, b) => a * b.ratio, 1);
-    const nearestLevel = (v: number): number | null => {
-        let best: number | null = null;
-        for (const c of cleanNormShares) {
-            if (best == null || Math.abs(c - v) < Math.abs(best - v)) best = c;
-        }
-        return best;
-    };
-    // A row's as-reported shares convert to today's units via the date-driven
-    // boundary factor — UNLESS its units disagree with its own endDate:
-    // a post-split count filed before the split (factor double-applies), a
-    // pre-split count on a statement ending in the last-pre/first-post gap,
-    // or a one-period V-glitch. Then pick whichever basis (dated factor,
-    // as-reported, fully normalized) lands within ~35% of the clean level;
-    // off-level rows with no plausible basis → eps null, never a wrong one.
-    const normShares = (s: StmtSlice): number | null => {
-        const raw = s.sharesOutstanding;
-        if (raw == null || raw <= 0 || !cleanNormShares.length) return null;
-        const dated = raw * shareFactorAt(boundaries, s.endDate.getTime());
-        const nearD = nearestLevel(dated);
-        if (nearD != null && Math.abs(dated - nearD) / nearD <= 0.35) return dated;
-        let best: number | null = null;
-        for (const cand of [raw, raw * totalFactor]) {
-            const n = nearestLevel(cand);
-            if (n != null && Math.abs(cand - n) / n <= 0.35
-                && (best == null || Math.abs(cand - n) < Math.abs(best - n))) {
-                best = cand;
-            }
-        }
-        return best;
-    };
+    // A row's as-reported shares convert to today's units via the shared
+    // normalizer — clean rows take the date-driven boundary factor, corrupt
+    // or gap-straddling rows fall back to whichever basis lands on the clean
+    // level; off-level rows with no plausible basis → eps null, never wrong.
+    const normShares = (s: StmtSlice): number | null =>
+        s.sharesOutstanding != null && s.sharesOutstanding > 0
+            ? normalize(s.endDate.getTime(), s.sharesOutstanding)
+            : null;
 
     // Quarter grid: quarterly rows plus implied Q4 (FY − last YTD). A Q4
     // end-date that also has an explicit row is de-duped by endMs.

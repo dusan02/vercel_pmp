@@ -153,6 +153,50 @@ export function findCorruptShareRows(
 }
 
 /**
+ * Build a per-row share-count normalizer: converts an as-reported count at a
+ * period end into today's (post-split) units. Clean rows take the date-driven
+ * boundary factor; corrupt/ambiguous rows pick whichever basis (dated factor,
+ * as-reported, fully normalized) lands within ~35% of the clean normalized
+ * share level — a post-split count filed early already matches it raw, a
+ * pre-split count filed late matches fully normalized. Returns null when no
+ * basis is plausible — callers must emit null, never a wrong share count.
+ */
+export function makeShareNormalizer(
+    quarterlyAsc: { endDate: Date; sharesOutstanding: number | null }[],
+    boundaries: ShareBoundary[],
+): (endMs: number, rawShares: number) => number | null {
+    const corrupt = findCorruptShareRows(quarterlyAsc);
+    const cleanLevels = quarterlyAsc
+        .filter((q) => !corrupt.has(q.endDate.getTime())
+            && q.sharesOutstanding != null && q.sharesOutstanding > 0)
+        .map((q) => q.sharesOutstanding! * shareFactorAt(boundaries, q.endDate.getTime()));
+    const totalFactor = boundaries.reduce((a, b) => a * b.ratio, 1);
+    const nearest = (v: number): number | null => {
+        let best: number | null = null;
+        for (const c of cleanLevels) {
+            if (best == null || Math.abs(c - v) < Math.abs(best - v)) best = c;
+        }
+        return best;
+    };
+    return (endMs, raw) => {
+        if (raw <= 0) return null;
+        const dated = raw * shareFactorAt(boundaries, endMs);
+        if (!cleanLevels.length) return dated;
+        const nd = nearest(dated);
+        if (nd != null && Math.abs(dated - nd) / nd <= 0.35) return dated;
+        let best: number | null = null;
+        for (const cand of [raw, raw * totalFactor]) {
+            const n = nearest(cand);
+            if (n != null && Math.abs(cand - n) / n <= 0.35
+                && (best == null || Math.abs(cand - n) < Math.abs(best - n))) {
+                best = cand;
+            }
+        }
+        return best;
+    };
+}
+
+/**
  * Adjust sharesOutstanding in financial statements for stock splits.
  * Multiplies shares for statements before each split date by the split ratio.
  *

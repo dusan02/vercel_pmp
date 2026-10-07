@@ -15,7 +15,7 @@
 import type { FinancialStatement } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { computeTTMAtDate } from '@/lib/utils/ttm';
-import { buildShareBoundaries, shareFactorAt } from '@/lib/utils/splitAdjustment';
+import { buildShareBoundaries, makeShareNormalizer } from '@/lib/utils/splitAdjustment';
 import { dbWriteRetry as dbWrite } from '@/lib/db/writeRetry';
 
 interface ValuationRow {
@@ -128,11 +128,11 @@ export function computeDayRatios(statements: FinancialStatement[], closePrice: n
         .filter((s) => s.fiscalPeriod && s.fiscalPeriod !== 'FY')
         .sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
     const boundaries = buildShareBoundaries(quarterlyAsc, trustedShares);
-    const shareFactor = (s: FinancialStatement) => shareFactorAt(boundaries, s.endDate.getTime());
+    const normalizeShares = makeShareNormalizer(quarterlyAsc, boundaries);
 
     const sharesStmt = latestWith((s) => s.sharesOutstanding != null && s.sharesOutstanding > 0);
     const stmtShares = sharesStmt?.sharesOutstanding != null
-        ? sharesStmt.sharesOutstanding * shareFactor(sharesStmt)
+        ? normalizeShares(sharesStmt.endDate.getTime(), sharesStmt.sharesOutstanding)
         : null;
     const shares = trustedShares != null && trustedShares > 0
         && statements.length > 0 && asOf.getTime() >= statements[0]!.endDate.getTime()
