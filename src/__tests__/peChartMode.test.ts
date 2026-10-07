@@ -71,13 +71,15 @@ async function renderChart() {
   return { container, root };
 }
 
-function clickButton(container: HTMLElement, label: string) {
+async function clickButton(container: HTMLElement, label: string) {
   const btn = [...container.querySelectorAll('button')].find(
     (b) => b.textContent?.trim() === label,
   ) as HTMLButtonElement | undefined;
   if (!btn) throw new Error(`button "${label}" not found`);
-  act(() => {
+  await act(async () => {
     btn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    // View swaps are two-phase (fade-out → commit after ~120ms) — flush it.
+    await new Promise((r) => setTimeout(r, 150));
   });
 }
 
@@ -103,7 +105,7 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
 
   it('P/E mode shows × headline with range change %', async () => {
     const { container } = await renderChart();
-    clickButton(container, 'Valuation');
+    await clickButton(container, 'Valuation');
     // headline: current multiple
     expect(container.innerHTML).toMatch(/\d+\.\d×/);
     // change badge colored for "cheaper" (fixture P/E declines → green)
@@ -115,7 +117,7 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
 
   it('keeps median line + band, adds gradient def and Brush navigator', async () => {
     const { container } = await renderChart();
-    clickButton(container, 'Valuation');
+    await clickButton(container, 'Valuation');
     // median reference label kept (user requirement)
     expect(container.textContent).toContain('median 26.4');
     // gradient fill definition exists for the P/E area
@@ -127,7 +129,7 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
 
   it('formula caption: P/E = close ÷ TTM EPS with 1Y avg + median context', async () => {
     const { container } = await renderChart();
-    clickButton(container, 'Valuation');
+    await clickButton(container, 'Valuation');
     expect(container.innerHTML).toMatch(/P\/E [\d.]+× = \$[\d.]+ close ÷ \$[\d.]+ TTM EPS/);
     expect(container.textContent).toContain('1Y avg');
     expect(container.textContent).toContain('median 26.4');
@@ -135,7 +137,7 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
 
   it('Valuation mode offers metric chips and hides price indicators', async () => {
     const { container } = await renderChart();
-    clickButton(container, 'Valuation');
+    await clickButton(container, 'Valuation');
     const labels = [...container.querySelectorAll('button')].map((b) => b.textContent?.trim());
     expect(labels).toEqual(expect.arrayContaining(['P/E', 'P/S', 'P/B', 'EV/EBIT', 'FCF yield']));
     // price-only indicators are hidden in valuation mode — their container
@@ -149,16 +151,16 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
 
   it('switching metric to P/S changes headline and formula caption', async () => {
     const { container } = await renderChart();
-    clickButton(container, 'Valuation');
-    clickButton(container, 'P/S');
+    await clickButton(container, 'Valuation');
+    await clickButton(container, 'P/S');
     expect(container.textContent).toContain('median 5.2');
     expect(container.innerHTML).toMatch(/P\/S [\d.]+× = \$[\d.]+ close ÷ \$[\d.]+ TTM rev\/sh/);
   });
 
   it('FCF yield renders in % units and inverts the cheaper direction', async () => {
     const { container } = await renderChart();
-    clickButton(container, 'Valuation');
-    clickButton(container, 'FCF yield');
+    await clickButton(container, 'Valuation');
+    await clickButton(container, 'FCF yield');
     // headline in % — fixture ~2%
     expect(container.innerHTML).toMatch(/\d+\.\d%/);
     expect(container.innerHTML).toMatch(/FCF yield [\d.]+% = TTM FCF ÷ market cap/);

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -508,6 +508,25 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   const [peEpoch, setPeEpoch] = useState(0);
   useEffect(() => setPeBrush(null), [activePeriod, ticker]);
 
+  // Two-phase view swap (mode / metric / period): the chart wrapper fades
+  // out for ~120ms, the change commits while invisible, then it fades back
+  // in with a slight rise (.pmp-chart-swap / .pmp-fading in globals.css).
+  // Brush drags bypass this — they write peBrush directly. Honored
+  // prefers-reduced-motion: commits happen instantly with no fading at all.
+  const [fading, setFading] = useState(false);
+  const fadeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const reduceMotion = useMemo(
+    () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
+    []
+  );
+  const animatedSet = (fn: () => void) => {
+    if (reduceMotion) { fn(); return; }
+    setFading(true);
+    if (fadeTimer.current) clearTimeout(fadeTimer.current);
+    fadeTimer.current = setTimeout(() => { fn(); setFading(false); }, 120);
+  };
+  useEffect(() => () => { if (fadeTimer.current) clearTimeout(fadeTimer.current); }, []);
+
   const pePeriodStart = useMemo(() => {
     const i = enriched.findIndex((p) => p.t >= periodCutoffMs);
     return i < 0 ? 0 : i;
@@ -707,7 +726,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
           never moves the toolbar between lines. */}
       <div className="flex items-start justify-between mb-3 gap-2">
         {mode === 'pe' && peHeadline ? (
-          <div className="flex items-baseline gap-2 flex-wrap flex-1 min-w-0">
+          <div key={metric} className="flex items-baseline gap-2 flex-wrap flex-1 min-w-0 pmp-fade-up">
             <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
               {peHeadline.peLive != null ? fmtMetric(peHeadline.peLive, activeMetric.unit) : 'n/m'}
             </span>
@@ -724,7 +743,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             )}
           </div>
         ) : stats && (
-          <div className="flex items-baseline gap-2 flex-wrap flex-1 min-w-0">
+          <div key="price" className="flex items-baseline gap-2 flex-wrap flex-1 min-w-0 pmp-fade-up">
             <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
               ${stats.headline.toFixed(2)}
             </span>
@@ -745,7 +764,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
           <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
             <button
               type="button"
-              onClick={() => setMode('price')}
+              onClick={() => animatedSet(() => setMode('price'))}
               className={`px-2.5 py-1 text-xs font-bold rounded-md transition-colors ${
                 mode === 'price'
                   ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
@@ -756,7 +775,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             </button>
             <button
               type="button"
-              onClick={() => setMode('pe')}
+              onClick={() => animatedSet(() => setMode('pe'))}
               disabled={!Object.keys(valStats).length}
               title={Object.keys(valStats).length ? 'Valuation multiples vs their own historical median and quartile band' : 'Valuation history not available'}
               className={`px-2.5 py-1 text-xs font-bold rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
@@ -787,7 +806,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                     key={m.field}
                     type="button"
                     disabled={!has}
-                    onClick={() => setMetric(m.field)}
+                    onClick={() => animatedSet(() => setMetric(m.field))}
                     title={has ? `${m.label} = ${m.formula}` : `${m.label} history not available`}
                     className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                       metric === m.field
@@ -844,7 +863,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               <button
                 key={p.label}
                 type="button"
-                onClick={() => { setPeriod(p.label); setPeBrush(null); setPeEpoch((e) => e + 1); }}
+                onClick={() => animatedSet(() => { setPeriod(p.label); setPeBrush(null); setPeEpoch((e) => e + 1); })}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
                   activePeriod === p.label
                     ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
@@ -858,6 +877,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         </div>
       </div>
 
+      <div className={`pmp-chart-swap${fading ? ' pmp-fading' : ''}`}>
       {mode === 'pe' && metricStats ? (
         <>
         <ResponsiveContainer width="100%" height={narrow ? 400 : 470}>
@@ -911,7 +931,9 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               stroke={PE_LINE}
               strokeWidth={1.8}
               fill="url(#peAreaGrad)"
-              isAnimationActive={false}
+              isAnimationActive={!reduceMotion}
+              animationDuration={420}
+              animationEasing="ease-out"
               connectNulls={false}
               dot={false}
             />
@@ -1104,6 +1126,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         </ComposedChart>
       </ResponsiveContainer>
       )}
+      </div>
 
       {/* "How far from fair" — premium/discount vs median-P/E fair value */}
       {mode === 'price' && fairPremium && (
