@@ -47,12 +47,16 @@ interface ChartPoint extends Candle {
   volSpike?: boolean;
   /** Benchmark overlay — raw weekly close of the benchmark (SPY/QQQ/XLF) */
   bm?: number | null;
-  /** Benchmark rebased to this point's own price axis: bmS = firstVisibleClose × bm/bmFirst */
-  bmS?: number | null;
   /** % change of the ticker's close since the visible window's first close */
   chgPct?: number | null;
   /** % change of the benchmark since the window's first benchmark value */
   bmPct?: number | null;
+  /** Compare mode: ticker % split by position vs benchmark (green/red line) */
+  chgUp?: number | null;
+  chgDn?: number | null;
+  /** Divergence bands — [lo, hi] range-area tuples; green ahead, red behind */
+  bandG?: [number, number] | null;
+  bandR?: [number, number] | null;
 }
 
 // ── Valuation metrics ───────────────────────────────────────────────────────
@@ -169,7 +173,7 @@ function fmtVol(v: number) {
 }
 
 // ── Custom Tooltip ──────────────────────────────────────────────────────────
-function CandleTooltip({ active, payload, ticker, bmLabel }: any) {
+function CandleTooltip({ active, payload, ticker, bmLabel, compare }: any) {
   if (!active || !payload?.length) return null;
   const p: ChartPoint = payload[0].payload;
   if (!p) return null;
@@ -182,6 +186,8 @@ function CandleTooltip({ active, payload, ticker, bmLabel }: any) {
         {new Date(p.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono">
+        {!compare && (
+        <>
         <span className="text-gray-500 dark:text-gray-400">Open</span>
         <span className="text-right text-gray-900 dark:text-white">${p.o.toFixed(2)}</span>
         <span className="text-gray-500 dark:text-gray-400">High</span>
@@ -226,6 +232,8 @@ function CandleTooltip({ active, payload, ticker, bmLabel }: any) {
             )}
           </>
         )}
+        </>
+        )}
         {p.bmPct != null && p.chgPct != null && (
           <>
             <span className="text-gray-500 dark:text-gray-400">{ticker} (range)</span>
@@ -238,7 +246,7 @@ function CandleTooltip({ active, payload, ticker, bmLabel }: any) {
             </span>
           </>
         )}
-        {p.peFair != null && (
+        {!compare && p.peFair != null && (
           <>
             <span style={{ color: PE_FAIR }}>Med P/E fair</span>
             <span className="text-right text-gray-700 dark:text-gray-300">
@@ -250,7 +258,7 @@ function CandleTooltip({ active, payload, ticker, bmLabel }: any) {
             </span>
           </>
         )}
-        {p.epsChanged && (
+        {!compare && p.epsChanged && (
           <div className="col-span-2 mt-1 pt-1 border-t border-gray-200 dark:border-gray-700 text-[10px]" style={{ color: PE_FAIR }}>
             ↑ earnings update — new TTM EPS
           </div>
@@ -527,22 +535,24 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   const [sectorEtf, setSectorEtf] = useState<string | null>(null);
   const [sectorName, setSectorName] = useState<string | null>(null);
   const [bmSym, setBmSym] = useState<string | null>(null);
-  const [bmSeries, setBmSeries] = useState<{ t: number; c: number }[] | null>(null);
+  // Series carries its symbol — on a fast SPY→XLF switch the stale series
+  // is ignored instead of briefly rendering under the wrong label.
+  const [bmSeries, setBmSeries] = useState<{ sym: string; pts: { t: number; c: number }[] } | null>(null);
   const bmCache = useRef(new Map<string, { t: number; c: number }[]>());
   useEffect(() => setBmSym(null), [ticker]);
   useEffect(() => {
     if (!bmSym) { setBmSeries(null); return; }
     const hit = bmCache.current.get(bmSym);
-    if (hit) { setBmSeries(hit); return; }
+    if (hit) { setBmSeries({ sym: bmSym, pts: hit }); return; }
     let live = true;
     fetch(`/api/indices/weekly?symbol=${bmSym}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((j) => {
         const pts: { t: number; c: number }[] = Array.isArray(j?.points) ? j.points : [];
         bmCache.current.set(bmSym, pts);
-        if (live) setBmSeries(pts);
+        if (live) setBmSeries({ sym: bmSym, pts });
       })
-      .catch(() => { if (live) setBmSeries([]); });
+      .catch(() => { if (live) setBmSeries({ sym: bmSym, pts: [] }); });
     return () => { live = false; };
   }, [bmSym]);
 
@@ -558,21 +568,21 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   }, [sectorEtf, sectorName]);
 
   const bmLabel = benchmarkChoices.find((b) => b.sym === bmSym)?.label ?? bmSym ?? '';
-  const bmActive = bmSym != null && !!bmSeries?.length;
+  const bmActive = bmSym != null && bmSeries?.sym === bmSym && bmSeries.pts.length > 0;
 
   // benchmark weekly close keyed by week — joins candles by weekKeyOf(t)
   const bmByWeek = useMemo(() => {
     const m = new Map<number, number>();
-    if (bmSeries) for (const p of bmSeries) m.set(weekKeyOf(p.t), p.c);
+    if (bmActive && bmSeries) for (const p of bmSeries.pts) m.set(weekKeyOf(p.t), p.c);
     return m;
-  }, [bmSeries]);
+  }, [bmSeries, bmActive]);
 
   // Price-mode window — the P/E chart instead takes the full series and
   // windows it through the Brush navigator below the chart. When a benchmark
-  // is active each candle also carries the benchmark's rebased value (bmS):
-  // bmS_t = firstVisibleClose × bm_t/bm_first, so the overlay shares the
-  // price axis and the two lines start at the same point — a relative-
-  // performance comparison over exactly the displayed range.
+  // is active each candle carries % change from the window's first value for
+  // both series (chgPct / bmPct) plus the split-line and band fields the
+  // compare view draws on a shared % axis — a relative-performance
+  // comparison over exactly the displayed range.
   const data: ChartPoint[] = useMemo(() => {
     const w = enriched.filter((p) => p.t >= periodCutoffMs);
     if (!bmByWeek.size || !w.length) return w;
@@ -585,12 +595,22 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     if (bmFirst == null || bmFirst <= 0 || firstC <= 0) return w;
     return w.map((p) => {
       const b = bmByWeek.get(weekKeyOf(p.t));
+      const chg = (p.c / firstC - 1) * 100;
+      const bmp = b != null ? (b / bmFirst - 1) * 100 : null;
+      const above = bmp != null ? chg >= bmp : null;
       return {
         ...p,
         bm: b ?? null,
-        bmS: b != null && b > 0 ? firstC * (b / bmFirst) : null,
-        chgPct: (p.c / firstC - 1) * 100,
-        bmPct: b != null ? (b / bmFirst - 1) * 100 : null,
+        chgPct: chg,
+        bmPct: bmp,
+        // Compare-mode split: the ticker line is drawn green where it leads
+        // the benchmark and red where it lags; the bands fill the gap
+        // between the two % series (null at crossings leaves a hairline
+        // notch — honest, interpolation would invent data).
+        chgUp: above === true ? chg : null,
+        chgDn: above === false ? chg : null,
+        bandG: above === true ? [bmp!, chg] : null,
+        bandR: above === false ? [bmp!, chg] : null,
       };
     });
   }, [enriched, periodCutoffMs, bmByWeek]);
@@ -746,6 +766,23 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   // volFrac = the fraction of the plot (from the bottom) reserved for volume.
   const { yDomain, volFrac } = useMemo(() => {
     if (!data.length) return { yDomain: [0, 1] as [number, number], volFrac: 0.16 };
+    // Compare mode: the axis is % change, not price — candles/volume/MAs are
+    // hidden, so only the two % series size the domain. Ticks round to 5pp
+    // and no volume strip is reserved.
+    if (bmActive) {
+      let mn = Infinity, mx = -Infinity;
+      for (const d of data) {
+        for (const v of [d.chgPct, d.bmPct]) {
+          if (v != null && Number.isFinite(v)) { if (v < mn) mn = v; if (v > mx) mx = v; }
+        }
+      }
+      if (!Number.isFinite(mn)) return { yDomain: [0, 1] as [number, number], volFrac: 0 };
+      const pad = (mx - mn) * 0.08 || 2;
+      return {
+        yDomain: [Math.floor((mn - pad) / 5) * 5, Math.ceil((mx + pad) / 5) * 5] as [number, number],
+        volFrac: 0,
+      };
+    }
     let min = Infinity;
     let max = -Infinity;
     for (const d of data) {
@@ -755,7 +792,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       if (inds.has('ma50') && d.sma50 != null) { if (d.sma50 < min) min = d.sma50; if (d.sma50 > max) max = d.sma50; }
       if (inds.has('ma200') && d.sma200 != null) { if (d.sma200 < min) min = d.sma200; if (d.sma200 > max) max = d.sma200; }
       if (inds.has('pefair') && d.peFair != null) { if (d.peFair < min) min = d.peFair; if (d.peFair > max) max = d.peFair; }
-      if (d.bmS != null) { if (d.bmS < min) min = d.bmS; if (d.bmS > max) max = d.bmS; }
+
     }
     if (inds.has('w52') && hiLo52) {
       if (hiLo52.lo < min) min = hiLo52.lo;
@@ -975,7 +1012,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                     key={b.sym}
                     type="button"
                     disabled={mode === 'pe'}
-                    onClick={() => setBmSym(bmSym === b.sym ? null : b.sym)}
+                    onClick={() => animatedSet(() => setBmSym(bmSym === b.sym ? null : b.sym))}
                     title={`${b.title} — overlay rebased to the range start`}
                     className={`px-2 py-1 text-xs font-semibold rounded-md transition-colors disabled:cursor-not-allowed ${
                       bmSym === b.sym
@@ -1127,22 +1164,26 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
           <YAxis
             domain={yDomain}
             orientation="right"
-            tickFormatter={(v: number) => `$${v.toFixed(0)}`}
+            tickFormatter={bmActive
+              ? (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(0)}%`
+              : (v: number) => `$${v.toFixed(0)}`}
             tick={{ fontSize: CHART_FONT.axis, fill: 'currentColor' }}
             className="text-gray-500 dark:text-gray-500"
             tickLine={false}
             axisLine={false}
-            width={narrow ? 40 : 52}
+            width={narrow ? 44 : 56}
           />
           <Tooltip
-            content={<CandleTooltip ticker={ticker} bmLabel={bmLabel} />}
+            content={<CandleTooltip ticker={ticker} bmLabel={bmLabel} compare={bmActive} />}
             cursor={{ fill: 'rgba(148,163,184,0.12)' }}
             isAnimationActive={false}
           />
-          {/* Visible candles + volume drawn as a custom shape inside Bar */}
-          <Bar 
-            dataKey="c" 
-            isAnimationActive={false} 
+          {/* Visible candles + volume drawn as a custom shape inside Bar.
+              Hidden in compare mode — the % axis makes $ candles meaningless. */}
+          {!bmActive && (
+          <Bar
+            dataKey="c"
+            isAnimationActive={false}
             shape={(props: any) => {
               const { x, width, payload } = props;
               const d = payload as ChartPoint;
@@ -1200,35 +1241,91 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               );
             }}
           />
+          )}
           {/* Moving averages — values precomputed on the full candle series */}
-          {inds.has('ma20') && (
+          {!bmActive && inds.has('ma20') && (
             <Line type="monotone" dataKey="sma20" stroke={MA20} strokeWidth={1.5} dot={false} isAnimationActive={false} />
           )}
-          {inds.has('ma50') && (
+          {!bmActive && inds.has('ma50') && (
             <Line type="monotone" dataKey="sma50" stroke={MA50} strokeWidth={2} dot={false} isAnimationActive={false} />
           )}
-          {inds.has('ma200') && (
+          {!bmActive && inds.has('ma200') && (
             <Line type="monotone" dataKey="sma200" stroke={MA200} strokeWidth={1.5} dot={false} isAnimationActive={false} />
           )}
-          {/* Benchmark overlay — rebased to the window's first close so the
-              dashed line reads as relative performance on the price axis */}
+          {/* Compare mode — both series indexed to the window start on a %
+              axis. Solid benchmark line; the ticker's line is split green/
+              red by whether it leads or lags, and range-areas fill the gap
+              between the two (financecharts-style divergence shading). */}
           {bmActive && (
-            <Line
-              type="monotone"
-              dataKey="bmS"
-              stroke={BM_LINE}
-              strokeWidth={1.5}
-              strokeDasharray="5 3"
-              dot={false}
-              activeDot={{ r: 3, fill: BM_LINE, stroke: 'none' }}
-              isAnimationActive={false}
-              connectNulls={false}
-              name={bmLabel}
-            />
+            <>
+              <Area
+                type="monotone"
+                dataKey="bandG"
+                stroke="none"
+                fill={UP}
+                fillOpacity={0.14}
+                isAnimationActive={false}
+                connectNulls={false}
+                dot={false}
+                activeDot={false}
+                legendType="none"
+              />
+              <Area
+                type="monotone"
+                dataKey="bandR"
+                stroke="none"
+                fill={DOWN}
+                fillOpacity={0.12}
+                isAnimationActive={false}
+                connectNulls={false}
+                dot={false}
+                activeDot={false}
+                legendType="none"
+              />
+              <Line
+                type="monotone"
+                dataKey="bmPct"
+                stroke={BM_LINE}
+                strokeWidth={1.8}
+                dot={false}
+                activeDot={{ r: 3, fill: BM_LINE, stroke: 'none' }}
+                isAnimationActive={!reduceMotion}
+                animationDuration={420}
+                animationEasing="ease-out"
+                connectNulls={false}
+                name={bmLabel}
+              />
+              <Line
+                type="monotone"
+                dataKey="chgUp"
+                stroke={UP}
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 3, fill: UP, stroke: 'none' }}
+                isAnimationActive={!reduceMotion}
+                animationDuration={420}
+                animationEasing="ease-out"
+                connectNulls={false}
+                name={ticker}
+              />
+              <Line
+                type="monotone"
+                dataKey="chgDn"
+                stroke={DOWN}
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 3, fill: DOWN, stroke: 'none' }}
+                isAnimationActive={!reduceMotion}
+                animationDuration={420}
+                animationEasing="ease-out"
+                connectNulls={false}
+                name={ticker}
+              />
+            </>
           )}
           {/* Median-P/E fair value: stepAfter renders earnings updates as
               honest steps; dots mark the week a new TTM EPS arrived */}
-          {inds.has('pefair') && (
+          {!bmActive && inds.has('pefair') && (
             <Line
               type="stepAfter"
               dataKey="peFair"
@@ -1256,7 +1353,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             />
           )}
           {/* Trailing 52-week high/low reference levels */}
-          {inds.has('w52') && hiLo52 && (
+          {!bmActive && inds.has('w52') && hiLo52 && (
             <>
               <ReferenceLine
                 y={hiLo52.hi}
@@ -1278,10 +1375,10 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       </div>
 
       {/* Benchmark legend — only while a compare overlay is active; the
-          dashed swatch matches the line, delta text shows the window-end gap */}
+          solid swatch matches the line, delta text shows the window-end gap */}
       {mode === 'price' && bmDelta && (
         <div className="mt-1.5 flex items-center gap-1.5 text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
-          <span className="w-4 border-t-2 border-dashed" style={{ borderColor: BM_LINE }} />
+          <span className="w-4 border-t-2" style={{ borderColor: BM_LINE }} />
           <span className="font-semibold text-gray-700 dark:text-gray-200">{ticker}</span>{' '}
           {bmDelta.ticker >= 0 ? '+' : ''}{bmDelta.ticker.toFixed(1)}% vs{' '}
           <span className="font-semibold" style={{ color: BM_LINE }}>{bmDelta.label}</span>{' '}
