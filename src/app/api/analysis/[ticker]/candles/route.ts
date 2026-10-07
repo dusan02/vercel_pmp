@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { prisma } from '@/lib/db/prisma';
+import { TICKER_RENAMES, foreignCutoffMs, spliceContinuous } from '@/lib/tickerRenames';
 
 export const revalidate = 3600;
 
 const CANDLES_CACHE_TTL = 3600; // 1 hour
+const MS_DAY = 24 * 60 * 60 * 1000;
 
 interface PolygonAgg {
   t: number; // timestamp (ms)
@@ -13,6 +15,43 @@ interface PolygonAgg {
   l: number; // low
   c: number; // close
   v: number; // volume
+}
+
+async function fetchDailyAggs(symbol: string, fromStr: string, toStr: string, apiKey: string): Promise<PolygonAgg[]> {
+  const url =
+    `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${fromStr}/${toStr}` +
+    `?adjusted=true&sort=asc&limit=5000&apiKey=${apiKey}`;
+  const res = await fetch(url, { next: { revalidate: 3600 } });
+  if (!res.ok) throw new Error(`Polygon ${symbol} ${res.status}: ${res.statusText}`);
+  return (await res.json()).results ?? [];
+}
+
+/**
+ * Daily aggs with ticker-reuse contamination removed: bars that belong to a
+ * different instrument (the symbol's previous holder) are dropped, and for
+ * renamed companies the old ticker's real history is spliced back in so the
+ * chart keeps its full depth (META = FB pre-2022-06-09 + META after).
+ */
+async function fetchSanitizedDailyAggs(symbol: string, fromStr: string, toStr: string, apiKey: string): Promise<PolygonAgg[]> {
+  const aggs = await fetchDailyAggs(symbol, fromStr, toStr, apiKey);
+  const cutoffMs = foreignCutoffMs(symbol, aggs);
+  if (cutoffMs == null) return aggs;
+
+  const kept = aggs.filter((a) => a.t >= cutoffMs && a.c > 0);
+  const rename = TICKER_RENAMES[symbol];
+  if (!rename?.source || !kept.length) return kept;
+
+  try {
+    const toBefore = new Date(kept[0]!.t - MS_DAY).toISOString().slice(0, 10);
+    if (toBefore < fromStr) return kept;
+    const src = await fetchDailyAggs(rename.source, fromStr, toBefore, apiKey);
+    const usable = src.filter((a) => a.t < kept[0]!.t && a.c > 0 && a.o > 0);
+    const last = usable[usable.length - 1];
+    if (last && spliceContinuous(last.c, kept[0]!.c)) {
+      return [...usable, ...kept];
+    }
+  } catch { /* splice is best-effort — truncate-only is still correct */ }
+  return kept;
 }
 
 export interface Candle {
@@ -80,22 +119,11 @@ export async function GET(
   const fromStr = fromDate.toISOString().slice(0, 10);
   const toStr = toDate.toISOString().slice(0, 10);
 
-  // Fetch daily data (works for recent data unlike weekly DELAYED)
-  const url =
-    `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${fromStr}/${toStr}` +
-    `?adjusted=true&sort=asc&limit=5000&apiKey=${apiKey}`;
-
+  // Fetch daily data (works for recent data unlike weekly DELAYED).
+  // Sanitizes foreign-instrument prefixes left over from ticker reuse and
+  // splices the renamed company's real history back in from its old ticker.
   try {
-    const res = await fetch(url, { next: { revalidate: 3600 } });
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: `Polygon API error: ${res.statusText}` },
-        { status: res.status }
-      );
-    }
-
-    const json = await res.json();
-    const aggs: PolygonAgg[] = json.results ?? [];
+    const aggs = await fetchSanitizedDailyAggs(symbol, fromStr, toStr, apiKey);
 
     if (!aggs.length) {
       const emptyResponse = { symbol, candles: [] };
