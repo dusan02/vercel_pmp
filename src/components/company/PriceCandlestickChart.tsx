@@ -88,6 +88,9 @@ interface MetricDef {
   allowNegative: boolean;
   formula: string;
   gapNote: string;
+  /** Optional plain-English "why this metric exists" — rendered in the
+      bottom caption, after the formula/gap note. */
+  explain?: string;
 }
 
 const METRICS: MetricDef[] = [
@@ -96,7 +99,8 @@ const METRICS: MetricDef[] = [
   { label: 'P/E NTM', unit: '×', field: 'peFwd', lowerIsBetter: true, allowNegative: false,
     seriesLabel: 'NTM P/E (realized)',
     formula: 'close ÷ EPS of the next 4 reported quarters (realized — not a historical estimate)',
-    gapNote: 'The realized series ends ~3–4 quarters before today — later earnings are not reported yet; the amber dot is today\'s Finnhub consensus.' },
+    gapNote: 'The realized series ends ~3–4 quarters before today — later earnings are not reported yet; the amber dot is today\'s Finnhub consensus.',
+    explain: 'Every point prices the four quarters that actually arrived — earnings no analyst had seen yet. When realized NTM P/E sat low while the trailing P/E looked rich, the market had already paid for profits that later showed up. Judge today\'s amber consensus dot against this history.' },
   { label: 'P/S', unit: '×', field: 'ps', lowerIsBetter: true, allowNegative: false,
     formula: 'close ÷ TTM revenue/share', gapNote: 'Gaps mark periods with missing revenue data.' },
   { label: 'P/B', unit: '×', field: 'pb', lowerIsBetter: true, allowNegative: false,
@@ -1715,6 +1719,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             {' '}Actual {activeMetric.label} vs its own {Math.max(1, Math.round(metricStats.n / 252))}Y median
             ({fmtMetric(metricStats.median, activeMetric.unit)}); shaded band = 25th–75th percentile.{' '}
             {activeMetric.gapNote}
+            {activeMetric.explain && <> {activeMetric.explain}</>}
           </>
         )}
       </p>
