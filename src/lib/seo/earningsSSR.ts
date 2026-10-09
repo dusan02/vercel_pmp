@@ -128,7 +128,7 @@ async function enrichEarningsRows(
   const [tickers, mcaps, caches, ews, dailyRefs] = await Promise.all([
     prisma.ticker.findMany({
       where: { symbol: { in: symbols } },
-      select: { symbol: true, sector: true, stdDevReturn20d: true, lastPrice: true, lastChangePct: true, lastMarketCapDiff: true },
+      select: { symbol: true, name: true, sector: true, stdDevReturn20d: true, lastPrice: true, lastChangePct: true, lastMarketCapDiff: true },
     }),
     // DailyValuationHistory is the live market-cap source (Ticker.lastMarketCap
     // and EarningsCalendar.marketCap are both unpopulated).
@@ -182,6 +182,11 @@ async function enrichEarningsRows(
   for (const row of rows) {
     const t = tickerBy.get(row.ticker);
     if (t) {
+      // Finnhub earnings calendar carries no company names — cron stores the
+      // ticker as a placeholder. Prefer the real name from Ticker.
+      if (t.name && (!row.companyName || row.companyName === row.ticker)) {
+        row.companyName = t.name;
+      }
       row.sector = t.sector;
       row.stdDev20d = t.stdDevReturn20d;
       row.price = t.lastPrice;

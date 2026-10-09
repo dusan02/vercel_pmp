@@ -403,13 +403,13 @@ export default function EarningsDayExplorer({
                           delta={r.priceChangePct}
                         />
                         <TdMetric
-                          value={r.hasReported ? formatEps(r.epsActual) : (r.epsEstimate != null ? formatEps(r.epsEstimate) : '-')}
-                          sub={r.hasReported && r.epsEstimate != null ? `Est: ${formatEps(r.epsEstimate)}` : !r.hasReported && r.epsEstimate != null ? 'est.' : undefined}
+                          value={r.epsActual != null ? formatEps(r.epsActual) : '-'}
+                          sub={`Est: ${r.epsEstimate != null ? formatEps(r.epsEstimate) : '-'}`}
                           delta={r.epsSurprisePercent}
                         />
                         <TdMetric
-                          value={r.hasReported ? formatRevenue(r.revenueActual) : (r.revenueEstimate != null ? formatRevenue(r.revenueEstimate) : '-')}
-                          sub={r.hasReported && r.revenueEstimate != null ? `Est: ${formatRevenue(r.revenueEstimate)}` : !r.hasReported && r.revenueEstimate != null ? 'est.' : undefined}
+                          value={r.revenueActual != null ? formatRevenue(r.revenueActual) : '-'}
+                          sub={`Est: ${r.revenueEstimate != null ? formatRevenue(r.revenueEstimate) : '-'}`}
                           delta={r.revenueSurprisePercent}
                         />
                       </tr>
@@ -447,8 +447,8 @@ export default function EarningsDayExplorer({
                     <div className="grid grid-cols-2 gap-1.5">
                       <CardMetric label="Price" value={r.price != null ? `$${r.price.toFixed(2)}` : '-'} delta={r.priceChangePct} />
                       <CardMetric label="Mkt Cap" value={formatMcap(r.marketCap) || '-'} delta={r.marketCapDiff} deltaText={r.marketCapDiff != null ? formatSignedMcap(r.marketCapDiff) : undefined} />
-                      <CardMetric label="EPS" value={r.hasReported ? formatEps(r.epsActual) : formatEps(r.epsEstimate)} sub={r.hasReported && r.epsEstimate != null ? `Est ${formatEps(r.epsEstimate)}` : undefined} delta={r.epsSurprisePercent} />
-                      <CardMetric label="Revenue" value={r.hasReported ? formatRevenue(r.revenueActual) : formatRevenue(r.revenueEstimate)} sub={r.hasReported && r.revenueEstimate != null ? `Est ${formatRevenue(r.revenueEstimate)}` : undefined} delta={r.revenueSurprisePercent} />
+                      <CardMetric label="EPS" value={r.epsActual != null ? formatEps(r.epsActual) : '-'} sub={`Est ${r.epsEstimate != null ? formatEps(r.epsEstimate) : '-'}`} delta={r.epsSurprisePercent} />
+                      <CardMetric label="Revenue" value={r.revenueActual != null ? formatRevenue(r.revenueActual) : '-'} sub={`Est ${r.revenueEstimate != null ? formatRevenue(r.revenueEstimate) : '-'}`} delta={r.revenueSurprisePercent} />
                     </div>
                   </div>
                 );

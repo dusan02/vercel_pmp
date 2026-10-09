@@ -122,13 +122,13 @@ function EarningsRow({ row, eligible }: { row: EarningsSSRRow; eligible: Set<str
         delta={row.priceChangePct}
       />
       <MetricTd
-        value={row.hasReported ? formatEps(row.epsActual) : (row.epsEstimate != null ? formatEps(row.epsEstimate) : '-')}
-        sub={row.hasReported && row.epsEstimate != null ? `Est: ${formatEps(row.epsEstimate)}` : !row.hasReported && row.epsEstimate != null ? 'est.' : undefined}
+        value={row.epsActual != null ? formatEps(row.epsActual) : '-'}
+        sub={`Est: ${row.epsEstimate != null ? formatEps(row.epsEstimate) : '-'}`}
         delta={row.epsSurprisePercent}
       />
       <MetricTd
-        value={row.hasReported ? formatRevenue(row.revenueActual) : (row.revenueEstimate != null ? formatRevenue(row.revenueEstimate) : '-')}
-        sub={row.hasReported && row.revenueEstimate != null ? `Est: ${formatRevenue(row.revenueEstimate)}` : !row.hasReported && row.revenueEstimate != null ? 'est.' : undefined}
+        value={row.revenueActual != null ? formatRevenue(row.revenueActual) : '-'}
+        sub={`Est: ${row.revenueEstimate != null ? formatRevenue(row.revenueEstimate) : '-'}`}
         delta={row.revenueSurprisePercent}
       />
     </tr>
