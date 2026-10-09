@@ -217,11 +217,11 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
         const TICKER_FIELDS = new Set(['symbol', 'name', 'sector', 'industry', 'lastPrice', 'lastChangePct', 'lastMarketCap', 'lastPriceUpdated']);
 
         let orderBy: any;
-        if (sortField === 'ticker.lastMarketCapDiff') {
+        const isMcapDiffSort = sortField === 'ticker.lastMarketCapDiff';
+        if (isMcapDiffSort) {
             // marketCapDiff is a derived field (mcap·pct/(100+pct)) — not a DB
-            // column. Closest DB-expressible approximation is lastChangePct
-            // ordering (large-cap weighting can't be expressed in orderBy).
-            orderBy = { lastChangePct: { sort: sortOrder, nulls: 'last' } };
+            // column, so Prisma can't orderBy it. Handled in fetchPage below.
+            orderBy = { lastMarketCap: { sort: 'desc', nulls: 'last' } };
         } else if (sortField.startsWith('ticker.')) {
             const field = sortField.slice('ticker.'.length);
             // Base query is ticker.findMany — ticker fields are direct columns
@@ -249,69 +249,98 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
 
         const skip = (page - 1) * limit;
 
-        const [tickers, total, industryRows] = await Promise.all([
-            prisma.ticker.findMany({
-                where,
-                include: {
-                    analysisCache: {
-                        select: {
-                            healthScore: true,
-                            profitabilityScore: true,
-                            valuationScore: true,
-                            growthScore: true,
-                            qualityScore: true,
-                            overallScore: true,
-                            altmanZ: true,
-                            piotroskiScore: true,
-                            beneishScore: true,
-                            fcfMargin: true,
-                            debtRepaymentYears: true,
-                        },
-                    },
-                    insiderAggregate: {
-                        select: {
-                            netBuyPct90d: true,
-                            netBuyValue90d: true,
-                            largestBuyValue90d: true,
-                            largestSellValue90d: true,
-                            uniqueBuyers14d: true,
-                            uniqueSellers14d: true,
-                        },
-                    },
-                    finnhubMetrics: {
-                        select: {
-                            roe: true,
-                            roa: true,
-                            peRatio: true,
-                            forwardPe: true,
-                            psRatio: true,
-                            pbRatio: true,
-                            pegRatio: true,
-                            evEbitda: true,
-                            evSales: true,
-                            priceFreeCashFlow: true,
-                            priceCashFlow: true,
-                            grossMargin: true,
-                            operatingMargin: true,
-                            netMargin: true,
-                            revenueGrowth: true,
-                            earningsGrowth: true,
-                            bookValueGrowth: true,
-                            dividendYield: true,
-                            payoutRatio: true,
-                            beta: true,
-                            currentRatio: true,
-                            quickRatio: true,
-                            debtEquityRatio: true,
-                            interestCoverage: true,
-                            week52Position: true,
-                        },
-                    },
+        const include = {
+            analysisCache: {
+                select: {
+                    healthScore: true,
+                    profitabilityScore: true,
+                    valuationScore: true,
+                    growthScore: true,
+                    qualityScore: true,
+                    overallScore: true,
+                    altmanZ: true,
+                    piotroskiScore: true,
+                    beneishScore: true,
+                    fcfMargin: true,
+                    debtRepaymentYears: true,
                 },
-                orderBy,
-                skip,
-                take: limit,
-            }),
+            },
+            insiderAggregate: {
+                select: {
+                    netBuyPct90d: true,
+                    netBuyValue90d: true,
+                    largestBuyValue90d: true,
+                    largestSellValue90d: true,
+                    uniqueBuyers14d: true,
+                    uniqueSellers14d: true,
+                },
+            },
+            finnhubMetrics: {
+                select: {
+                    roe: true,
+                    roa: true,
+                    peRatio: true,
+                    forwardPe: true,
+                    psRatio: true,
+                    pbRatio: true,
+                    pegRatio: true,
+                    evEbitda: true,
+                    evSales: true,
+                    priceFreeCashFlow: true,
+                    priceCashFlow: true,
+                    grossMargin: true,
+                    operatingMargin: true,
+                    netMargin: true,
+                    revenueGrowth: true,
+                    earningsGrowth: true,
+                    bookValueGrowth: true,
+                    dividendYield: true,
+                    payoutRatio: true,
+                    beta: true,
+                    currentRatio: true,
+                    quickRatio: true,
+                    debtEquityRatio: true,
+                    interestCoverage: true,
+                    week52Position: true,
+                },
+            },
+        } as const;
+
+        const diffOf = (t: { lastMarketCap: number | null; lastChangePct: number | null }) =>
+            t.lastMarketCap != null && t.lastMarketCap > 0 && t.lastChangePct != null && 100 + t.lastChangePct > 0
+                ? (t.lastMarketCap * t.lastChangePct) / (100 + t.lastChangePct)
+                : null;
+
+        const fetchPage = async () => {
+            if (!isMcapDiffSort) {
+                return prisma.ticker.findMany({ where, include, orderBy, skip, take: limit });
+            }
+            // Rank the full match set on a slim projection (mcap·pct/(100+pct)),
+            // then load only the page's rows. Nulls sort last either way.
+            const slim = await prisma.ticker.findMany({
+                where,
+                select: { symbol: true, lastMarketCap: true, lastChangePct: true },
+            });
+            const ranked = [...slim].sort((a, b) => {
+                const da = diffOf(a);
+                const db = diffOf(b);
+                if (da === null && db === null) return 0;
+                if (da === null) return 1;
+                if (db === null) return -1;
+                return sortOrder === 'asc' ? da - db : db - da;
+            });
+            const pageSymbols = ranked.slice(skip, skip + limit).map((r) => r.symbol);
+            const rows = await prisma.ticker.findMany({
+                where: { symbol: { in: pageSymbols } },
+                include,
+            });
+            const pos = new Map(pageSymbols.map((s, i) => [s, i]));
+            rows.sort((a, b) => (pos.get(a.symbol) ?? 0) - (pos.get(b.symbol) ?? 0));
+            return rows;
+        };
+
+        const [tickers, total, industryRows] = await Promise.all([
+            fetchPage(),
             prisma.ticker.count({ where }),
             // Distinct industries for the filter dropdown (cached with the page)
             prisma.ticker.findMany({
@@ -389,7 +418,7 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
                 lastChangePct: t.lastChangePct,
                 lastMarketCap: t.lastMarketCap,
                 // Derived: prevMcap = mcap / (1 + pct/100) → diff = mcap·pct/(100+pct), in $B
-                marketCapDiff: t.lastMarketCap != null && t.lastChangePct != null && (100 + t.lastChangePct) > 0
+                marketCapDiff: t.lastMarketCap != null && t.lastMarketCap > 0 && t.lastChangePct != null && (100 + t.lastChangePct) > 0
                     ? t.lastMarketCap * t.lastChangePct / (100 + t.lastChangePct)
                     : null,
             },
