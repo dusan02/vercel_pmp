@@ -52,6 +52,46 @@ function CardMetric({ label, value, sub, delta, deltaText }: { label: string; va
   );
 }
 
+// ─── Filtering ────────────────────────────────────────────────────────────────
+
+type SessionFilter = 'all' | 'bmo' | 'amc' | 'tbd';
+type StatusFilter = 'all' | 'reported' | 'upcoming';
+
+const SESSION_FILTERS: { key: SessionFilter; label: string; activeCls: string }[] = [
+  { key: 'all', label: 'All', activeCls: 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-transparent' },
+  { key: 'bmo', label: 'Pre', activeCls: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700' },
+  { key: 'amc', label: 'After', activeCls: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700' },
+  { key: 'tbd', label: 'TBD', activeCls: 'bg-neutral-200 dark:bg-slate-600 text-neutral-700 dark:text-neutral-200 border-transparent' },
+];
+
+const STATUS_FILTERS: { key: StatusFilter; label: string; activeCls: string }[] = [
+  { key: 'all', label: 'All', activeCls: 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 border-transparent' },
+  { key: 'reported', label: 'Reported', activeCls: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700' },
+  { key: 'upcoming', label: 'Upcoming', activeCls: 'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-700' },
+];
+
+function FilterChip({ active, activeCls, onClick, children }: {
+  active: boolean;
+  activeCls: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`text-[10px] font-semibold px-2 py-1 rounded-full border transition-colors whitespace-nowrap ${
+        active
+          ? activeCls
+          : 'border-neutral-200 dark:border-slate-700 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-slate-800'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 // ─── Sorting ─────────────────────────────────────────────────────────────────
 
 type SortKey = 'ticker' | 'marketCap' | 'price' | 'eps' | 'revenue';
@@ -93,6 +133,8 @@ export default function EarningsDayExplorer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [session, setSession] = useState<SessionFilter>('all');
+  const [status, setStatus] = useState<StatusFilter>('all');
   const [sortKey, setSortKey] = useState<SortKey>('marketCap');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
@@ -151,11 +193,27 @@ export default function EarningsDayExplorer({
 
   const allRows = rowsByDate[selectedDate] ?? [];
 
+  // Per-day bucket counts shown on the filter chips (computed on the full day
+  // set so they reflect the day's composition, not the current search).
+  const bucketCounts = useMemo(() => {
+    const c = { bmo: 0, amc: 0, tbd: 0, reported: 0, upcoming: 0 };
+    for (const r of allRows) {
+      if (r.time === 'bmo') c.bmo++;
+      else if (r.time === 'amc') c.amc++;
+      else c.tbd++;
+      if (r.hasReported) c.reported++; else c.upcoming++;
+    }
+    return c;
+  }, [allRows]);
+
   const filteredRows = useMemo(() => {
-    if (!search.trim()) return allRows;
-    const q = search.toLowerCase();
-    return allRows.filter(r => r.ticker.toLowerCase().includes(q) || r.companyName.toLowerCase().includes(q));
-  }, [allRows, search]);
+    let rows = allRows;
+    if (session !== 'all') rows = rows.filter(r => r.time === session);
+    if (status !== 'all') rows = rows.filter(r => status === 'reported' ? r.hasReported : !r.hasReported);
+    const q = search.trim().toLowerCase();
+    if (q) rows = rows.filter(r => r.ticker.toLowerCase().includes(q) || r.companyName.toLowerCase().includes(q));
+    return rows;
+  }, [allRows, session, status, search]);
 
   const sortedRows = useMemo(() => {
     const sorted = [...filteredRows];
@@ -226,6 +284,33 @@ export default function EarningsDayExplorer({
           </span>
         </div>
 
+        {/* Filter chips: session (Pre/After/TBD) + report status */}
+        {allRows.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 mb-3" role="group" aria-label="Filter earnings">
+            {SESSION_FILTERS.map(f => (
+              <FilterChip
+                key={f.key}
+                active={session === f.key}
+                activeCls={f.activeCls}
+                onClick={() => setSession(f.key)}
+              >
+                {f.label} <span className="tabular-nums opacity-70">{f.key === 'all' ? allRows.length : bucketCounts[f.key]}</span>
+              </FilterChip>
+            ))}
+            <span className="mx-0.5 h-3.5 w-px bg-neutral-200 dark:bg-slate-700" aria-hidden="true" />
+            {STATUS_FILTERS.map(f => (
+              <FilterChip
+                key={f.key}
+                active={status === f.key}
+                activeCls={f.activeCls}
+                onClick={() => setStatus(f.key)}
+              >
+                {f.label} <span className="tabular-nums opacity-70">{f.key === 'all' ? allRows.length : bucketCounts[f.key]}</span>
+              </FilterChip>
+            ))}
+          </div>
+        )}
+
         {loading && (
           <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-8">
             <div className="space-y-2">{[0,1,2,3,4].map(i => <div key={i} className="h-10 rounded-lg bg-neutral-100 dark:bg-neutral-800 animate-pulse" />)}</div>
@@ -244,7 +329,20 @@ export default function EarningsDayExplorer({
           </div>
         )}
 
-        {!loading && !error && allRows.length > 0 && (
+        {!loading && !error && allRows.length > 0 && sortedRows.length === 0 && (
+          <div className="bg-white dark:bg-slate-900 border border-neutral-200 dark:border-slate-800 rounded-2xl p-8 text-center">
+            <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">No earnings match the current filters</p>
+            <button
+              type="button"
+              onClick={() => { setSearch(''); setSession('all'); setStatus('all'); }}
+              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && sortedRows.length > 0 && (
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-neutral-200 dark:border-slate-800 overflow-hidden">
             {/* Desktop table */}
             <div className="hidden md:block overflow-x-auto">
