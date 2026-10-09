@@ -58,6 +58,15 @@
 - **TradingView scanner overlay** (`src/workers/polygon/tradingviewOverlay.ts`): počas pre/live/after session merge-uje real-time `premarket_close`/`close`/`postmarket_close` do Polygon snapshotov pred normalize→upsert. Batch ~100 tickerov/POST, bez auth. Opt-out: `TV_OVERLAY=0`. Pri 429/chybách automaticky degraduje na Polygon-only (5min cooldown)
 - **Yahoo neoficiálne API NEPOUŽÍVAŤ pre polling** — v7 quote aj v8 chart 429-ujú datacenter IP po ~10 requestoch (testované 2026-09-15)
 
+## Earnings architektúra (cleanup 2026-10-09)
+
+- **Jediná živá cesta**: PM2 `cron-earnings-calendar` → Finnhub+Yahoo → `EarningsCalendar` DB → `getEarningsRange()`/`getEarningsWeekMap()` (batch enrichment, žiadne N+1) → SSR/ISR stránky + `/api/earnings/{day,dates,week,today}`. Všetko okolo toho (`/api/earnings-calendar`, `/api/earnings/yahoo`, `/api/earnings-finnhub`, `/api/earnings/monitor`, `services/earningsService.ts`, `earningsScheduler.ts`, `earnings-filter.ts`) bolo mŕtve — ZMAZANÉ, nevracať
+- **Response envelope**: všetky `/api/earnings/*` vracajú `{ success, data, count, timestamp }`
+- **Time vocab**: DB môže obsahovať `bmo|amc|dmh|dmt|tbd`; čítacia vrstva normalizuje cez `normalizeTime()` (earningsSSR) / `classifyEarningsTime()` → `dmh`/`dmt` = during-market → bucket `tbd`/`timeTbd`. Nikdy nebucketuj `dmt` do afterMarket
+- **Cron write je transakcia** `deleteMany`+`createMany` per deň a beží len keď replacement data existujú — transient outage nesmie vyčistiť naplnený deň
+- **`FINNHUB_TOKEN` bez fallbacku** — hardkódovaný token bol odstránený z `cron/earnings-calendar/route.ts` (žije v git history → **rotovať na Finnhub dashboardi**). Bez env premennej cron len loguje skip
+- Zdieľaná tabuľka `/earnings` + `/earnings/date/[date]` = `EarningsTable` v `src/components/earnings/EarningsShared.tsx`
+
 ## Verifikácia po deplloy
 
 ```bash

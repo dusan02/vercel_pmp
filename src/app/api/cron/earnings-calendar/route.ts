@@ -2,31 +2,14 @@
 import { serverLog } from '@/lib/utils/serverLog';
 import { checkEarningsForOurTickers } from '@/lib/clients/yahooFinanceScraper';
 import { prisma } from '@/lib/db/prisma';
-import { DEFAULT_TICKERS } from '@/data/defaultTickers';
 import { verifyCronAuth, verifyCronAuthOptional, withCronLock } from '@/lib/utils/cronAuth';
 
-const FINNHUB_KEY = process.env.FINNHUB_TOKEN || 'd28f1dhr01qjsuf342ogd28f1dhr01qjsuf342p0';
-
-// Move Prisma Client inside functions to avoid build-time issues
-// let prisma: any = null;
-
-// function getPrismaClient() {
-//   if (!prisma) {
-//     try {
-//       const { PrismaClient } = require('@prisma/client');
-//       prisma = new PrismaClient();
-//     } catch (error) {
-//       console.error('❌ Prisma Client not available:', error);
-//       return null;
-//     }
-//   }
-//   return prisma;
-// }
+const FINNHUB_KEY = process.env.FINNHUB_TOKEN;
 
 interface EarningsData {
   ticker: string;
   companyName: string;
-  time: string; // "bmo" | "amc" | "dmt"
+  time: string; // 'bmo' | 'amc' | 'dmh' | 'tbd'
   epsEstimate?: number | undefined;
   epsActual?: number | undefined;
   revenueEstimate?: number | undefined;
@@ -36,31 +19,24 @@ interface EarningsData {
 }
 
 /**
- * Získa kompletný zoznam tickerov zo všetkých tierov
+ * Atomicky nahradí earnings dáta pre daný dátum (delete + insert v transakcii).
  */
-function getAllTickers(): string[] {
-  const allTickers = new Set<string>();
+async function replaceEarningsForDate(earningsData: EarningsData[], date: string): Promise<void> {
+  const records = earningsData.map(earning => ({
+    ticker: earning.ticker,
+    companyName: earning.companyName,
+    date: new Date(date + 'T00:00:00Z'),
+    time: earning.time,
+    epsEstimate: earning.epsEstimate || null,
+    epsActual: earning.epsActual || null,
+    revenueEstimate: earning.revenueEstimate || null,
+    revenueActual: earning.revenueActual || null,
+    epsSurprisePercent: earning.epsSurprisePercent || null,
+    revenueSurprisePercent: earning.revenueSurprisePercent || null
+  }));
 
-  // Pridaj všetky tickery zo všetkých tierov
-  (Object.values(DEFAULT_TICKERS) as string[][]).forEach((tier: string[]) => {
-    tier.forEach(ticker => allTickers.add(ticker));
-  });
-
-  return Array.from(allTickers);
-}
-
-/**
- * Vyčistí earnings calendar pre daný dátum
- */
-async function clearEarningsCalendar(date: string): Promise<void> {
-  const prismaClient = prisma;
-  if (!prismaClient) {
-    serverLog('⚠️ Prisma not available, skipping database clear');
-    return;
-  }
-
-  try {
-    const deleteCount = await prismaClient.earningsCalendar.deleteMany({
+  await prisma.$transaction(async (tx) => {
+    const deleted = await tx.earningsCalendar.deleteMany({
       where: {
         date: {
           gte: new Date(date + 'T00:00:00Z'),
@@ -68,73 +44,19 @@ async function clearEarningsCalendar(date: string): Promise<void> {
         }
       }
     });
-
-    serverLog(`🗑️ Cleared ${deleteCount.count} earnings records for ${date}`);
-  } catch (error) {
-    console.error('❌ Error clearing earnings calendar:', error);
-  }
-}
-
-/**
- * Uloží earnings data do databázy
- */
-async function saveEarningsToDatabase(earningsData: EarningsData[], date: string): Promise<void> {
-  const prismaClient = prisma;
-  if (!prismaClient) {
-    serverLog('⚠️ Prisma not available, skipping database save');
-    return;
-  }
-
-  try {
-    const records = earningsData.map(earning => ({
-      ticker: earning.ticker,
-      companyName: earning.companyName,
-      date: new Date(date + 'T00:00:00Z'),
-      time: earning.time,
-      epsEstimate: earning.epsEstimate || null,
-      epsActual: earning.epsActual || null,
-      revenueEstimate: earning.revenueEstimate || null,
-      revenueActual: earning.revenueActual || null,
-      epsSurprisePercent: earning.epsSurprisePercent || null,
-      revenueSurprisePercent: earning.revenueSurprisePercent || null
-    }));
-
-    // Použij upsert pre každý záznam (efektívnejšie ako create + updateMany)
-    for (const record of records) {
-      try {
-        await prismaClient.earningsCalendar.upsert({
-          where: {
-            ticker_date: {
-              ticker: record.ticker,
-              date: record.date,
-            },
-          },
-          create: record,
-          update: record,
-        });
-      } catch (error) {
-        // Fallback: updateMany ak upsert zlyhá (napr. unikátny constraint rozdiel)
-        await prismaClient.earningsCalendar.updateMany({
-          where: {
-            ticker: record.ticker,
-            date: record.date
-          },
-          data: record
-        });
-      }
-    }
-
-    serverLog(`✅ Saved ${records.length} earnings records to database for ${date}`);
-  } catch (error) {
-    console.error('❌ Error saving earnings to database:', error);
-    throw error;
-  }
+    await tx.earningsCalendar.createMany({ data: records });
+    serverLog(`✅ Replaced ${deleted.count} → ${records.length} earnings records for ${date}`);
+  });
 }
 
 /**
  * Získa earnings data z Finnhub pre daný dátum (ALL tickers, nielen DEFAULT_TICKERS)
  */
 async function fetchEarningsFromFinnhub(date: string): Promise<EarningsData[]> {
+  if (!FINNHUB_KEY) {
+    serverLog('⚠️ FINNHUB_TOKEN is not set, skipping Finnhub fetch');
+    return [];
+  }
   try {
     const url = `https://finnhub.io/api/v1/calendar/earnings?from=${date}&to=${date}&token=${FINNHUB_KEY}`;
     const res = await fetch(url, { next: { revalidate: 0 } });
@@ -308,11 +230,10 @@ async function runEarningsCalendarUpdate(manual: boolean): Promise<NextResponse>
 
       finnhubRecordCount += finnhubData.length;
 
-      // 5. Ulož do databázy — clear runs only when replacement data exists,
+      // 5. Ulož do databázy — write runs only when replacement data exists,
       // so a transient source outage can't wipe an already-populated day.
       if (earningsData.length > 0) {
-        await clearEarningsCalendar(dateStr);
-        await saveEarningsToDatabase(earningsData, dateStr);
+        await replaceEarningsForDate(earningsData, dateStr);
         totalProcessed += earningsData.length;
       }
     }

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getEarningsForDate } from '@/services/earningsService';
+import { getEarningsWeekMap } from '@/lib/seo/earningsSSR';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
-import { prisma } from '@/lib/db/prisma';
 import { getDateET } from '@/lib/utils/dateET';
-import { classifyEarningsTime } from '@/lib/utils/earningsTime';
 
 export const revalidate = 60; // 1 min cache
 
@@ -12,7 +10,7 @@ const WEEK_CACHE_TTL = 300; // 5 minutes Redis cache
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const startParam = searchParams.get('start');
-  
+
   // Base date — noon-UTC anchored so all getUTC*/setUTC* math is
   // timezone-immune (the previous local-field math only worked because
   // the prod server happens to run in UTC).
@@ -24,17 +22,10 @@ export async function GET(request: NextRequest) {
   const diff = baseDate.getUTCDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
   const monday = new Date(baseDate);
   monday.setUTCDate(diff);
+  const weekStart = monday.toISOString().slice(0, 10);
 
-  // Generate 7 days (Monday to Sunday)
-  const weekDates: string[] = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(monday);
-    d.setUTCDate(monday.getUTCDate() + i);
-    weekDates.push(d.toISOString().slice(0, 10));
-  }
-  
-  const cacheKey = `earnings:week:${weekDates[0]}`;
-  
+  const cacheKey = `earnings:week:${weekStart}`;
+
   // Check Redis cache first for instant load
   try {
     const cached = await getCachedData(cacheKey);
@@ -45,134 +36,31 @@ export async function GET(request: NextRequest) {
     }
   } catch {}
 
-  // DB-first approach: fetch from EarningsCalendar table (populated by cron)
-  // This is much faster than calling Finnhub API for each day
   try {
-    const startDate = new Date(weekDates[0] + 'T00:00:00Z');
-    const endDate = new Date(weekDates[6] + 'T23:59:59Z');
-    
-    const dbEarnings = await prisma.earningsCalendar.findMany({
-      where: {
-        date: { gte: startDate, lte: endDate }
-      },
-      orderBy: [{ date: 'asc' }, { time: 'asc' }, { ticker: 'asc' }],
-    });
-    
-    if (dbEarnings.length > 0) {
-      // Build week data from DB records — full detail fields (same shape as SSR)
-      const toRow = (e: any) => ({
-        ticker: e.ticker,
-        companyName: e.companyName,
-        date: e.date.toISOString().split('T')[0],
-        time: e.time,
-        epsEstimate: e.epsEstimate ?? null,
-        epsActual: e.epsActual ?? null,
-        revenueEstimate: e.revenueEstimate ?? null,
-        revenueActual: e.revenueActual ?? null,
-        epsSurprisePercent: e.epsSurprisePercent ?? null,
-        revenueSurprisePercent: e.revenueSurprisePercent ?? null,
-        marketCap: e.marketCap ?? null,
-        percentChange: e.percentChange ?? null,
-        hasReported: e.epsActual != null || e.revenueActual != null,
-      });
-      const weekData: Record<string, any> = {};
-      for (const dateStr of weekDates) {
-        const dayEarnings = dbEarnings.filter(e =>
-          e.date.toISOString().split('T')[0] === dateStr
-        );
-
-        weekData[dateStr] = {
-          date: dateStr,
-          preMarket: dayEarnings.filter(e => classifyEarningsTime(e.time) === 'preMarket').map(toRow),
-          afterMarket: dayEarnings.filter(e => classifyEarningsTime(e.time) === 'afterMarket').map(toRow),
-          timeTbd: dayEarnings.filter(e => classifyEarningsTime(e.time) === 'timeTbd').map(toRow),
-        };
-      }
-      
-      const responseBody = { success: true, data: weekData };
-      try { await setCachedData(cacheKey, responseBody, WEEK_CACHE_TTL); } catch {}
-      
-      return NextResponse.json(responseBody, {
-        headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
-      });
+    const weekData = await getEarningsWeekMap(weekStart);
+    // getEarningsWeekMap returns {} on transient DB failure — a real week
+    // always has all 7 date keys. Don't serve/cache an empty map as success.
+    if (Object.keys(weekData).length === 0) {
+      throw new Error('Earnings week map unavailable (DB error)');
     }
-  } catch (dbError) {
-    console.warn('⚠️ DB earnings fetch failed, falling back to Finnhub:', dbError);
-  }
-
-  // Fallback: use Finnhub-based earningsService (slower but more complete)
-  const refresh = searchParams.get('refresh') === 'true';
-
-  try {
-    const results = await Promise.all(
-      weekDates.map(async (date) => {
-        try {
-          const result = await getEarningsForDate(date, refresh);
-          // Split into preMarket, afterMarket, timeTbd based on the 'time' field
-          // earningsService pushes everything not 'bmo' to afterMarket, so we check 'time'
-          
-          const allEarnings = [...result.data.preMarket, ...result.data.afterMarket];
-
-          const toRow = (e: any) => ({
-            ticker: e.ticker,
-            companyName: e.companyName || e.ticker,
-            date,
-            time: e.time,
-            epsEstimate: e.epsEstimate ?? null,
-            epsActual: e.epsActual ?? null,
-            revenueEstimate: e.revenueEstimate ?? null,
-            revenueActual: e.revenueActual ?? null,
-            epsSurprisePercent: e.epsSurprisePercent ?? null,
-            revenueSurprisePercent: e.revenueSurprisePercent ?? null,
-            marketCap: e.marketCap ?? null,
-            percentChange: e.percentChange ?? null,
-            hasReported: e.epsActual != null || e.revenueActual != null,
-          });
-
-          const preMarket = allEarnings.filter(e => classifyEarningsTime(e.time) === 'preMarket').map(toRow);
-          const afterMarket = allEarnings.filter(e => classifyEarningsTime(e.time) === 'afterMarket').map(toRow);
-          const timeTbd = allEarnings.filter(e => classifyEarningsTime(e.time) === 'timeTbd').map(toRow);
-          
-          return {
-            date,
-            preMarket,
-            afterMarket,
-            timeTbd
-          };
-        } catch (err) {
-          console.error(`Error fetching earnings for ${date}:`, err);
-          return {
-            date,
-            preMarket: [],
-            afterMarket: [],
-            timeTbd: []
-          };
-        }
-      })
+    const count = Object.values(weekData).reduce(
+      (n, d) => n + d.preMarket.length + d.afterMarket.length + d.timeTbd.length,
+      0
     );
-
-    const weekData = results.reduce((acc, curr) => {
-      acc[curr.date] = curr;
-      return acc;
-    }, {} as Record<string, any>);
-
     const responseBody = {
       success: true,
-      data: weekData
+      data: weekData,
+      count,
+      timestamp: new Date().toISOString(),
     };
 
-    // Cache in Redis (5 min TTL)
     try { await setCachedData(cacheKey, responseBody, WEEK_CACHE_TTL); } catch {}
 
     return NextResponse.json(responseBody, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
-      }
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
     });
-
   } catch (error) {
     console.error('❌ Error in /api/earnings/week:', error);
-
     return NextResponse.json(
       {
         success: false,

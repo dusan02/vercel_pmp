@@ -2,14 +2,11 @@ import { Metadata } from 'next';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { StructuredData } from '@/components/StructuredData';
 import Link from 'next/link';
-import { getEarningsRange, getEarningsDateCounts, type EarningsSSRRow, type EarningsSSRGroup } from '@/lib/seo/earningsSSR';
+import { getEarningsRange, getEarningsDateCounts, type EarningsSSRGroup } from '@/lib/seo/earningsSSR';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { getSessionDateStr } from '@/lib/utils/timeUtils';
-import { formatPercent } from '@/lib/utils/heatmapFormat';
 import { toJsonLd } from '@/lib/seo/jsonLd';
-import {
-  formatEps, formatRevenue, formatMcap, timeLabel, timeColor, FeaturedEarningsCard,
-} from '@/components/earnings/EarningsShared';
+import { EarningsTable, FeaturedEarningsCard } from '@/components/earnings/EarningsShared';
 import EarningsDayExplorer from '@/components/earnings/EarningsDayExplorer';
 
 const baseUrl = 'https://premarketprice.com';
@@ -37,54 +34,6 @@ function formatDateDisplay(dateStr: string): string {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-function EarningsRow({ row, eligible }: { row: EarningsSSRRow; eligible: Set<string> }) {
-  const surprise = row.epsSurprisePercent;
-  const surpriseClass =
-    surprise != null
-      ? surprise >= 0
-        ? 'text-emerald-600 dark:text-emerald-400'
-        : 'text-rose-600 dark:text-rose-400'
-      : '';
-
-  return (
-    <tr className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60">
-      <td className="px-3 py-2 font-semibold">
-        {eligible.has(row.ticker) ? (
-          <Link href={`/analysis/${row.ticker}`} className="hover:underline">{row.ticker}</Link>
-        ) : (
-          <span className="text-slate-400 dark:text-slate-500">{row.ticker}</span>
-        )}
-      </td>
-      <td className="px-3 py-2 text-slate-700 dark:text-slate-300 max-w-[200px] truncate">{row.companyName}</td>
-      <td className={`px-3 py-2 text-xs font-medium ${timeColor(row.time)}`}>{timeLabel(row.time)}</td>
-      <td className="px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">{formatEps(row.epsEstimate)}</td>
-      <td className="px-3 py-2 tabular-nums text-slate-700 dark:text-slate-300">
-        {row.hasReported ? formatEps(row.epsActual) : '-'}
-      </td>
-      <td className={`px-3 py-2 tabular-nums font-semibold ${surpriseClass}`}>
-        {surprise != null ? formatPercent(surprise) : '-'}
-      </td>
-      <td className="px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">{formatRevenue(row.revenueEstimate)}</td>
-      <td className="px-3 py-2 tabular-nums text-slate-700 dark:text-slate-300">
-        {row.hasReported ? formatRevenue(row.revenueActual) : '-'}
-      </td>
-      <td className="px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">{formatMcap(row.marketCap) || '-'}</td>
-      <td className={`px-3 py-2 tabular-nums font-semibold ${
-        row.earningsDayMovePct !== null
-          ? row.earningsDayMovePct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-          : 'text-slate-400'
-      }`}>
-        {row.hasReported && row.earningsDayMovePct !== null ? formatPercent(row.earningsDayMovePct) : '-'}
-      </td>
-      <td className="px-3 py-2 tabular-nums">
-        {row.overallScore !== null ? (
-          <span className="font-semibold text-slate-700 dark:text-slate-200">{Math.round(row.overallScore)}</span>
-        ) : '-'}
-      </td>
-    </tr>
-  );
-}
-
 function EarningsDaySection({ group, eligible }: { group: EarningsSSRGroup; eligible: Set<string> }) {
   if (group.total === 0) return null;
   const allRows = [...group.preMarket, ...group.afterMarket, ...group.timeTbd];
@@ -97,30 +46,7 @@ function EarningsDaySection({ group, eligible }: { group: EarningsSSRGroup; elig
         </Link>
         <span className="ml-2 text-sm font-normal text-slate-500">{group.total} earnings</span>
       </h3>
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-950">
-              <tr className="text-left text-slate-600 dark:text-slate-400">
-                <th className="px-3 py-2">Ticker</th>
-                <th className="px-3 py-2">Company</th>
-                <th className="px-3 py-2">Time</th>
-                <th className="px-3 py-2">EPS Est.</th>
-                <th className="px-3 py-2">EPS Actual</th>
-                <th className="px-3 py-2">Surprise</th>
-                <th className="px-3 py-2">Rev Est.</th>
-                <th className="px-3 py-2">Rev Actual</th>
-                <th className="px-3 py-2">Mkt Cap</th>
-                <th className="px-3 py-2">Move</th>
-                <th className="px-3 py-2">PMP</th>
-              </tr>
-            </thead>
-            <tbody>
-              {allRows.map((r) => <EarningsRow key={`${r.ticker}-${r.date}`} row={r} eligible={eligible} />)}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <EarningsTable rows={allRows} eligible={eligible} />
     </div>
   );
 }

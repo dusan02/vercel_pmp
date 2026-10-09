@@ -7,7 +7,7 @@ export interface EarningsSSRRow {
   ticker: string;
   companyName: string;
   date: string; // YYYY-MM-DD
-  time: string; // 'bmo' | 'amc' | 'dmt' | 'tbd'
+  time: string; // 'bmo' | 'amc' | 'tbd'
   epsEstimate: number | null;
   epsActual: number | null;
   revenueEstimate: number | null;
@@ -47,11 +47,12 @@ export interface EarningsSSRGroup {
   total: number;
 }
 
-function normalizeTime(time: string): 'bmo' | 'amc' | 'dmt' | 'tbd' {
+// Matches classifyEarningsTime() buckets: 'dmh'/'dmt' (during market hours)
+// land in 'tbd' — neither pre-market nor after-hours.
+function normalizeTime(time: string): 'bmo' | 'amc' | 'tbd' {
   const t = time?.toLowerCase() ?? '';
   if (t === 'bmo' || t === 'before') return 'bmo';
   if (t === 'amc' || t === 'after') return 'amc';
-  if (t === 'dmt') return 'dmt';
   return 'tbd';
 }
 
@@ -209,7 +210,7 @@ async function enrichEarningsRows(
       if (refs && refs.length > 0) {
         const afterReport = row.time === 'bmo'
           ? refs.find((r) => r.dateStr === row.date)
-          : refs.find((r) => r.dateStr > row.date); // amc/dmt → next session
+          : refs.find((r) => r.dateStr > row.date); // amc/tbd → next session
         if (afterReport && afterReport.previousClose > 0 && afterReport.regularClose !== null) {
           row.earningsDayMovePct =
             ((afterReport.regularClose - afterReport.previousClose) / afterReport.previousClose) * 100;
@@ -325,7 +326,7 @@ export async function getEarningsWeekMap(
       map[dateStr] = {
         date: dateStr,
         preMarket: dayRows.filter((r) => r.time === 'bmo'),
-        afterMarket: dayRows.filter((r) => r.time === 'amc' || r.time === 'dmt'),
+        afterMarket: dayRows.filter((r) => r.time === 'amc'),
         timeTbd: dayRows.filter((r) => r.time === 'tbd'),
       };
     }
@@ -410,7 +411,7 @@ export async function getEarningsRange(
       groups.push({
         date: dateStr,
         preMarket: dayRows.filter((r) => r.time === 'bmo'),
-        afterMarket: dayRows.filter((r) => r.time === 'amc' || r.time === 'dmt'),
+        afterMarket: dayRows.filter((r) => r.time === 'amc'),
         timeTbd: dayRows.filter((r) => r.time === 'tbd'),
         total: dayRows.length,
       });

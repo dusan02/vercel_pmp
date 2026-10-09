@@ -52,7 +52,7 @@ export function EarningsSection({ upcoming, recent }: EarningsSectionProps) {
     if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
     return `$${v.toFixed(0)}`;
   };
-  const timeLabel = (t: string) => (t === 'bmo' ? 'Pre-Mkt' : t === 'amc' ? 'After-Hrs' : t === 'dmt' ? 'During' : 'TBD');
+  const timeLabel = (t: string) => (t === 'bmo' ? 'Pre-Mkt' : t === 'amc' ? 'After-Hrs' : 'TBD');
   const formatDateShort = (d: string) => {
     // Handle both 'YYYY-MM-DD' and full ISO strings safely
     const date = d.length === 10 ? new Date(d + 'T12:00:00Z') : new Date(d);

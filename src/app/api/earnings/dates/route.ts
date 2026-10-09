@@ -19,7 +19,8 @@ export async function GET(_request: NextRequest) {
   return NextResponse.json({
     success: true,
     data: dates,
-    total: dates.length,
+    count: dates.length,
+    timestamp: new Date().toISOString(),
   }, {
     headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60' },
   });

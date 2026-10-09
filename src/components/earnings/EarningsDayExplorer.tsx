@@ -54,7 +54,6 @@ function timeChip(t: string): { label: string; cls: string } {
   switch (t) {
     case 'bmo': return { label: 'Pre', cls: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' };
     case 'amc': return { label: 'After', cls: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' };
-    case 'dmt': return { label: 'During', cls: 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400' };
     default: return { label: 'TBD', cls: 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400' };
   }
 }

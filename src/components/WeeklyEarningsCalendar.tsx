@@ -46,7 +46,6 @@ function timeLabel(time: string): string {
   switch (time) {
     case 'bmo': case 'before': return 'Pre';
     case 'amc': case 'after': return 'After';
-    case 'dmt': return 'During';
     default: return 'TBD';
   }
 }

@@ -32,7 +32,12 @@ export async function GET(request: NextRequest) {
     const groups = await getEarningsRange(date, date, { enrich: true });
     const g = groups[0];
     const rows = g ? [...g.preMarket, ...g.afterMarket, ...g.timeTbd] : [];
-    const body = { success: true, data: { date, rows, total: rows.length } };
+    const body = {
+      success: true,
+      data: { date, rows },
+      count: rows.length,
+      timestamp: new Date().toISOString(),
+    };
     try { await setCachedData(cacheKey, body, DAY_CACHE_TTL); } catch {}
     return NextResponse.json(body, {
       headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },

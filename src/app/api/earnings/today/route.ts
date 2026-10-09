@@ -47,18 +47,21 @@ export async function GET(request: NextRequest) {
 
     const preMarket = earningsData.filter(earning => classifyEarningsTime(earning.time) === 'preMarket');
     const afterMarket = earningsData.filter(earning => classifyEarningsTime(earning.time) === 'afterMarket');
+    const timeTbd = earningsData.filter(earning => classifyEarningsTime(earning.time) === 'timeTbd');
 
     const response = {
       success: true,
       data: {
+        date,
         preMarket,
-        afterMarket
+        afterMarket,
+        timeTbd
       },
-      message: `Found ${earningsData.length} earnings for ${date}`,
-      cached: true
+      count: earningsData.length,
+      timestamp: new Date().toISOString()
     };
 
-    console.log(`✅ Returning ${earningsData.length} earnings records from database (${preMarket.length} pre-market, ${afterMarket.length} after-market)`);
+    console.log(`✅ Returning ${earningsData.length} earnings records from database (${preMarket.length} pre-market, ${afterMarket.length} after-market, ${timeTbd.length} tbd)`);
 
     return NextResponse.json(response);
 
