@@ -11,6 +11,9 @@ import Link from 'next/link';
 import { Search, X, ArrowUpDown, ArrowUp, ArrowDown, Calendar as CalendarIcon } from 'lucide-react';
 import MonthCalendar from '@/components/MonthCalendar';
 import CompanyLogo from '@/components/CompanyLogo';
+import {
+  formatEps, formatRevenue, formatMcap, formatSignedMcap, capBadge, timeChip,
+} from '@/components/earnings/EarningsShared';
 import type { EarningsSSRRow } from '@/lib/seo/earningsSSR';
 
 const parseDate = (s: string) => new Date(`${s}T12:00:00Z`);
@@ -18,45 +21,11 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const formatDayLong = (d: Date) => `${DAY_NAMES[d.getUTCDay()]}, ${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
 
-function formatEps(v: number | null): string {
-  return v == null ? '-' : `$${v.toFixed(2)}`;
-}
-function formatMoney(v: number | null): string {
-  if (v == null) return '-';
-  if (v >= 1e12) return `$${(v / 1e12).toFixed(2)}T`;
-  if (v >= 1e9) return `$${(v / 1e9).toFixed(2)}B`;
-  if (v >= 1e6) return `$${(v / 1e6).toFixed(0)}M`;
-  return `$${v.toFixed(0)}`;
-}
-function formatSignedMoney(v: number | null): string {
-  if (v == null) return '';
-  const sign = v >= 0 ? '+' : '-';
-  const a = Math.abs(v);
-  if (a >= 1e12) return `${sign}$${(a / 1e12).toFixed(2)}T`;
-  if (a >= 1e9) return `${sign}$${(a / 1e9).toFixed(2)}B`;
-  if (a >= 1e6) return `${sign}$${(a / 1e6).toFixed(0)}M`;
-  return `${sign}$${a.toFixed(0)}`;
-}
 function formatPct(v: number | null): string {
   return v == null ? '' : `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
 }
 const deltaColor = (v: number | null | undefined) =>
   v == null ? '' : v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
-
-function capBadge(mcap: number | null): { label: string; cls: string } | null {
-  if (mcap == null) return null;
-  if (mcap >= 2e11) return { label: 'Mega', cls: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300' };
-  if (mcap >= 1e10) return { label: 'Large', cls: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' };
-  if (mcap >= 2e9) return { label: 'Mid', cls: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' };
-  return { label: 'Small', cls: 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400' };
-}
-function timeChip(t: string): { label: string; cls: string } {
-  switch (t) {
-    case 'bmo': return { label: 'Pre', cls: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' };
-    case 'amc': return { label: 'After', cls: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' };
-    default: return { label: 'TBD', cls: 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400' };
-  }
-}
 
 // ─── Metric cells (value / sub / delta — earningstable.com convention) ───────
 
@@ -210,7 +179,7 @@ export default function EarningsDayExplorer({
   const reported = allRows.filter(r => r.hasReported).length;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] xl:grid-cols-[420px_1fr] gap-4 items-start">
       {/* Left rail: month calendar + selected date */}
       <div className="lg:sticky lg:top-4 space-y-3">
         <MonthCalendar
@@ -327,9 +296,9 @@ export default function EarningsDayExplorer({
                           </div>
                         </td>
                         <TdMetric
-                          value={formatMoney(r.marketCap)}
+                          value={formatMcap(r.marketCap) || '-'}
                           delta={r.marketCapDiff}
-                          deltaText={r.marketCapDiff != null ? formatSignedMoney(r.marketCapDiff) : undefined}
+                          deltaText={r.marketCapDiff != null ? formatSignedMcap(r.marketCapDiff) : undefined}
                         />
                         <TdMetric
                           value={r.price != null ? `$${r.price.toFixed(2)}` : '-'}
@@ -341,8 +310,8 @@ export default function EarningsDayExplorer({
                           delta={r.epsSurprisePercent}
                         />
                         <TdMetric
-                          value={r.hasReported ? formatMoney(r.revenueActual) : (r.revenueEstimate != null ? formatMoney(r.revenueEstimate) : '-')}
-                          sub={r.hasReported && r.revenueEstimate != null ? `Est: ${formatMoney(r.revenueEstimate)}` : !r.hasReported && r.revenueEstimate != null ? 'est.' : undefined}
+                          value={r.hasReported ? formatRevenue(r.revenueActual) : (r.revenueEstimate != null ? formatRevenue(r.revenueEstimate) : '-')}
+                          sub={r.hasReported && r.revenueEstimate != null ? `Est: ${formatRevenue(r.revenueEstimate)}` : !r.hasReported && r.revenueEstimate != null ? 'est.' : undefined}
                           delta={r.revenueSurprisePercent}
                         />
                       </tr>
@@ -379,9 +348,9 @@ export default function EarningsDayExplorer({
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">
                       <CardMetric label="Price" value={r.price != null ? `$${r.price.toFixed(2)}` : '-'} delta={r.priceChangePct} />
-                      <CardMetric label="Mkt Cap" value={formatMoney(r.marketCap)} delta={r.marketCapDiff} deltaText={r.marketCapDiff != null ? formatSignedMoney(r.marketCapDiff) : undefined} />
+                      <CardMetric label="Mkt Cap" value={formatMcap(r.marketCap) || '-'} delta={r.marketCapDiff} deltaText={r.marketCapDiff != null ? formatSignedMcap(r.marketCapDiff) : undefined} />
                       <CardMetric label="EPS" value={r.hasReported ? formatEps(r.epsActual) : formatEps(r.epsEstimate)} sub={r.hasReported && r.epsEstimate != null ? `Est ${formatEps(r.epsEstimate)}` : undefined} delta={r.epsSurprisePercent} />
-                      <CardMetric label="Revenue" value={r.hasReported ? formatMoney(r.revenueActual) : formatMoney(r.revenueEstimate)} sub={r.hasReported && r.revenueEstimate != null ? `Est ${formatMoney(r.revenueEstimate)}` : undefined} delta={r.revenueSurprisePercent} />
+                      <CardMetric label="Revenue" value={r.hasReported ? formatRevenue(r.revenueActual) : formatRevenue(r.revenueEstimate)} sub={r.hasReported && r.revenueEstimate != null ? `Est ${formatRevenue(r.revenueEstimate)}` : undefined} delta={r.revenueSurprisePercent} />
                     </div>
                   </div>
                 );

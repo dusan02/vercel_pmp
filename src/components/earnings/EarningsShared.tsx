@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { formatPercent } from '@/lib/utils/heatmapFormat';
+import CompanyLogo from '@/components/CompanyLogo';
 import type { EarningsSSRRow } from '@/lib/seo/earningsSSR';
 
 // Shared presentational helpers for /earnings pages (server components).
@@ -43,73 +44,111 @@ export function timeColor(time: string): string {
   }
 }
 
+/** Signed dollar delta — marketCapDiff is an absolute $ value, NOT a percent. */
+export function formatSignedMcap(value: number | null): string {
+  if (value == null) return '';
+  const sign = value >= 0 ? '+' : '-';
+  const a = Math.abs(value);
+  if (a >= 1e12) return `${sign}$${(a / 1e12).toFixed(2)}T`;
+  if (a >= 1e9) return `${sign}$${(a / 1e9).toFixed(2)}B`;
+  if (a >= 1e6) return `${sign}$${(a / 1e6).toFixed(0)}M`;
+  return `${sign}$${a.toFixed(0)}`;
+}
+
+export function capBadge(mcap: number | null): { label: string; cls: string } | null {
+  if (mcap == null) return null;
+  if (mcap >= 2e11) return { label: 'Mega', cls: 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300' };
+  if (mcap >= 1e10) return { label: 'Large', cls: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' };
+  if (mcap >= 2e9) return { label: 'Mid', cls: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' };
+  return { label: 'Small', cls: 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400' };
+}
+
+export function timeChip(t: string): { label: string; cls: string } {
+  switch (t) {
+    case 'bmo': return { label: 'Pre', cls: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400' };
+    case 'amc': return { label: 'After', cls: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' };
+    default: return { label: 'TBD', cls: 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400' };
+  }
+}
+
+const deltaColor = (v: number | null | undefined) =>
+  v == null ? '' : v >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400';
+
+/** Stacked metric cell (value / est-sub / colored delta) — earningstable.com convention. */
+function MetricTd({ value, sub, delta, deltaText }: { value: string; sub?: string | undefined; delta?: number | null; deltaText?: string | undefined }) {
+  const text = deltaText ?? (delta != null ? formatPercent(delta) : '');
+  return (
+    <td className="px-3 py-2.5 text-right tabular-nums">
+      <div className="text-sm font-bold text-neutral-900 dark:text-white">{value}</div>
+      {sub && <div className="text-[11px] text-neutral-400 dark:text-neutral-500">{sub}</div>}
+      {text && <div className={`text-xs font-semibold ${deltaColor(delta)}`}>{text}</div>}
+    </td>
+  );
+}
+
 function EarningsRow({ row, eligible }: { row: EarningsSSRRow; eligible: Set<string> }) {
-  const surprise = row.epsSurprisePercent;
-  const surpriseClass =
-    surprise != null
-      ? surprise >= 0
-        ? 'text-emerald-600 dark:text-emerald-400'
-        : 'text-rose-600 dark:text-rose-400'
-      : '';
+  const badge = capBadge(row.marketCap);
+  const chip = timeChip(row.time);
+  const linked = eligible.has(row.ticker);
 
   return (
     <tr className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60">
-      <td className="px-3 py-2 font-semibold">
-        {eligible.has(row.ticker) ? (
-          <Link href={`/analysis/${row.ticker}`} className="hover:underline">{row.ticker}</Link>
-        ) : (
-          <span className="text-slate-400 dark:text-slate-500">{row.ticker}</span>
-        )}
+      <td className="px-3 py-2.5">
+        <div className="flex items-center gap-2.5">
+          <CompanyLogo ticker={row.ticker} size={28} />
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              {linked ? (
+                <Link href={`/analysis/${row.ticker}`} className="text-sm font-bold text-neutral-900 dark:text-white hover:underline">{row.ticker}</Link>
+              ) : (
+                <span className="text-sm font-bold text-neutral-500 dark:text-neutral-400">{row.ticker}</span>
+              )}
+              {badge && <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md ${badge.cls}`}>{badge.label}</span>}
+              <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md ${chip.cls}`}>{chip.label}</span>
+            </div>
+            {row.companyName && row.companyName.toUpperCase() !== row.ticker.toUpperCase() && (
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate max-w-[220px]">{row.companyName}</div>
+            )}
+          </div>
+        </div>
       </td>
-      <td className="px-3 py-2 text-slate-700 dark:text-slate-300 max-w-[200px] truncate">{row.companyName}</td>
-      <td className={`px-3 py-2 text-xs font-medium ${timeColor(row.time)}`}>{timeLabel(row.time)}</td>
-      <td className="px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">{formatEps(row.epsEstimate)}</td>
-      <td className="px-3 py-2 tabular-nums text-slate-700 dark:text-slate-300">
-        {row.hasReported ? formatEps(row.epsActual) : '-'}
-      </td>
-      <td className={`px-3 py-2 tabular-nums font-semibold ${surpriseClass}`}>
-        {surprise != null ? formatPercent(surprise) : '-'}
-      </td>
-      <td className="px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">{formatRevenue(row.revenueEstimate)}</td>
-      <td className="px-3 py-2 tabular-nums text-slate-700 dark:text-slate-300">
-        {row.hasReported ? formatRevenue(row.revenueActual) : '-'}
-      </td>
-      <td className="px-3 py-2 tabular-nums text-slate-600 dark:text-slate-400">{formatMcap(row.marketCap) || '-'}</td>
-      <td className={`px-3 py-2 tabular-nums font-semibold ${
-        row.earningsDayMovePct !== null
-          ? row.earningsDayMovePct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-          : 'text-slate-400'
-      }`}>
-        {row.hasReported && row.earningsDayMovePct !== null ? formatPercent(row.earningsDayMovePct) : '-'}
-      </td>
-      <td className="px-3 py-2 tabular-nums">
-        {row.overallScore !== null ? (
-          <span className="font-semibold text-slate-700 dark:text-slate-200">{Math.round(row.overallScore)}</span>
-        ) : '-'}
-      </td>
+      <MetricTd
+        value={formatMcap(row.marketCap) || '-'}
+        delta={row.marketCapDiff}
+        deltaText={row.marketCapDiff != null ? formatSignedMcap(row.marketCapDiff) : undefined}
+      />
+      <MetricTd
+        value={row.price != null ? `$${row.price.toFixed(2)}` : '-'}
+        delta={row.priceChangePct}
+      />
+      <MetricTd
+        value={row.hasReported ? formatEps(row.epsActual) : (row.epsEstimate != null ? formatEps(row.epsEstimate) : '-')}
+        sub={row.hasReported && row.epsEstimate != null ? `Est: ${formatEps(row.epsEstimate)}` : !row.hasReported && row.epsEstimate != null ? 'est.' : undefined}
+        delta={row.epsSurprisePercent}
+      />
+      <MetricTd
+        value={row.hasReported ? formatRevenue(row.revenueActual) : (row.revenueEstimate != null ? formatRevenue(row.revenueEstimate) : '-')}
+        sub={row.hasReported && row.revenueEstimate != null ? `Est: ${formatRevenue(row.revenueEstimate)}` : !row.hasReported && row.revenueEstimate != null ? 'est.' : undefined}
+        delta={row.revenueSurprisePercent}
+      />
     </tr>
   );
 }
 
-/** Shared earnings table — identical columns on /earnings and /earnings/date/[date]. */
+/** Shared earnings table (ET-style: Company / Mkt Cap / Price / EPS / Revenue)
+ *  used on /earnings and /earnings/date/[date]. */
 export function EarningsTable({ rows, eligible }: { rows: EarningsSSRRow[]; eligible: Set<string> }) {
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[720px]">
           <thead className="bg-slate-50 dark:bg-slate-950">
-            <tr className="text-left text-slate-600 dark:text-slate-400">
-              <th className="px-3 py-2">Ticker</th>
-              <th className="px-3 py-2">Company</th>
-              <th className="px-3 py-2">Time</th>
-              <th className="px-3 py-2">EPS Est.</th>
-              <th className="px-3 py-2">EPS Actual</th>
-              <th className="px-3 py-2">Surprise</th>
-              <th className="px-3 py-2">Rev Est.</th>
-              <th className="px-3 py-2">Rev Actual</th>
-              <th className="px-3 py-2">Mkt Cap</th>
-              <th className="px-3 py-2">Move</th>
-              <th className="px-3 py-2">PMP</th>
+            <tr className="text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left">Company</th>
+              <th className="px-3 py-3 text-right">Mkt Cap</th>
+              <th className="px-3 py-3 text-right">Price</th>
+              <th className="px-3 py-3 text-right">EPS</th>
+              <th className="px-3 py-3 text-right">Revenue</th>
             </tr>
           </thead>
           <tbody>
