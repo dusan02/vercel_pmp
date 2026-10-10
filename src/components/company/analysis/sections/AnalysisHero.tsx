@@ -97,7 +97,7 @@ export function AnalysisHero({
   const hasStats = (ewScore?.totalScore != null && ewScore?.maxPossible != null)
     || marketCap != null || peRatio != null
     || (dividendYield != null && dividendYield > 0) || roe != null
-    || (week52Low != null && week52High != null) || earningsLabel != null;
+    || earningsLabel != null;
 
   return (
     <div className="mb-4 lg:mb-0">
@@ -273,16 +273,6 @@ export function AnalysisHero({
             <strong className="font-semibold text-gray-900 dark:text-white">{roe.toFixed(1)}%</strong>
           </span>
         )}
-        {week52Low != null && week52High != null && (
-          <span className="text-gray-600 dark:text-gray-400" title="52-week range over daily closes">
-            <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">52wk </span>
-            <strong className="font-semibold text-gray-900 dark:text-white tabular-nums">
-              {week52Low === week52High
-                ? `$${formatPrice(week52Low)}`
-                : `$${formatPrice(week52Low)}–$${formatPrice(week52High)}`}
-            </strong>
-          </span>
-        )}
         {earningsLabel && (
           <span className="text-gray-600 dark:text-gray-400" title={earningsDate ? `Next earnings report: ${earningsDate}` : undefined}>
             <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">Earnings </span>
@@ -290,6 +280,29 @@ export function AnalysisHero({
           </span>
         )}
       </div>
+      )}
+      {/* 52-week range — the price's position inside its own year, as a
+          gradient bar instead of a bare low–high text chip. */}
+      {week52Low != null && week52High != null && price != null && price > 0 && (
+        <div className="mt-2 max-w-sm" title="52-week range over daily closes">
+          <div className="relative h-1.5 rounded-full bg-gradient-to-r from-red-200/80 via-gray-200 to-emerald-200/80 dark:from-red-900/40 dark:via-gray-700 dark:to-emerald-900/40">
+            <span
+              className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white dark:border-gray-900 bg-blue-700 shadow"
+              style={{
+                left: `${Math.min(100, Math.max(0, week52High > week52Low ? ((price - week52Low) / (week52High - week52Low)) * 100 : 50))}%`,
+              }}
+              aria-hidden
+            />
+          </div>
+          <div className="mt-1 flex justify-between text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+            <span>Low ${formatPrice(week52Low)}</span>
+            <span className="font-semibold text-gray-800 dark:text-gray-200">${formatPrice(price)}</span>
+            <span>High ${formatPrice(week52High)}</span>
+          </div>
+          <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+            Price is {Math.round(week52High > week52Low ? ((price - week52Low) / (week52High - week52Low)) * 100 : 50)}% of the way from the year&apos;s low to its high.
+          </p>
+        </div>
       )}
     </div>
   );
