@@ -132,9 +132,47 @@ export function AnalysisHero({
         {/* Right column — 52-week position + cash-vs-debt, stacked */}
         {((week52Low != null && week52High != null && price != null && price > 0) || cashVsDebt != null) && (
           <div className="ml-auto w-full sm:w-72 space-y-4">
-            {/* 52-week range — the price's position inside its own year, as a
-                gradient bar instead of a bare low–high text chip. */}
-            {week52Low != null && week52High != null && price != null && price > 0 && (
+            {/* P/E vs own history — the valuation read: where today's multiple
+                sits inside its own min–max range (green cheap → red rich).
+                Falls back to the 52-week price range when no P/E history. */}
+            {peHistory != null && peHistory.current != null && peHistory.min != null && peHistory.max != null && peHistory.max > peHistory.min ? (
+              (() => {
+                const min = peHistory.min!, max = peHistory.max!;
+                const span = max - min;
+                const pos = Math.min(100, Math.max(0, ((peHistory.current! - min) / span) * 100));
+                const medPos = peHistory.median != null && peHistory.median > min && peHistory.median < max
+                  ? Math.min(100, Math.max(0, ((peHistory.median - min) / span) * 100))
+                  : null;
+                const pct = peHistory.percentile != null ? Math.round(peHistory.percentile) : null;
+                const ord = pct != null ? `${pct}${['th', 'st', 'nd', 'rd'][(pct % 100 > 10 && pct % 100 < 14) ? 0 : Math.min(pct % 10, 3)] || 'th'}` : null;
+                return (
+                  <div title={`P/E range over ~${peHistory.years ?? 'several'} years of daily history`}>
+                    <div className="relative h-1.5 rounded-full bg-gradient-to-r from-emerald-200/80 via-gray-200 to-red-200/80 dark:from-emerald-900/40 dark:via-gray-700 dark:to-red-900/40">
+                      {medPos != null && (
+                        <span
+                          className="absolute top-1/2 h-2.5 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gray-400 dark:bg-gray-500"
+                          style={{ left: `${medPos}%` }}
+                          aria-hidden
+                        />
+                      )}
+                      <span
+                        className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white dark:border-gray-900 bg-blue-700 shadow"
+                        style={{ left: `${pos}%` }}
+                        aria-hidden
+                      />
+                    </div>
+                    <div className="mt-1 flex justify-between text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+                      <span>Low {min.toFixed(1)}×</span>
+                      <span className="font-semibold text-gray-800 dark:text-gray-200">{peHistory.current!.toFixed(1)}×</span>
+                      <span>High {max.toFixed(1)}×</span>
+                    </div>
+                    <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+                      P/E {peHistory.current!.toFixed(1)}×{ord != null ? ` sits at the ${ord} percentile` : ''} of its{peHistory.years != null ? ` ${peHistory.years}-year` : ''} history.
+                    </p>
+                  </div>
+                );
+              })()
+            ) : week52Low != null && week52High != null && price != null && price > 0 ? (
               <div title="52-week range over daily closes">
                 <div className="relative h-1.5 rounded-full bg-gradient-to-r from-emerald-200/80 via-gray-200 to-red-200/80 dark:from-emerald-900/40 dark:via-gray-700 dark:to-red-900/40">
                   <span
@@ -154,7 +192,7 @@ export function AnalysisHero({
                   Price is {Math.round(week52High > week52Low ? ((price - week52Low) / (week52High - week52Low)) * 100 : 50)}% of the way from the year&apos;s low to its high.
                 </p>
               </div>
-            )}
+            ) : null}
             {/* Cash vs debt — the bar is the larger pool and the contrasting
                 segment is the smaller one, so debt stays visible even when
                 cash covers it: a red right-edge slice = debt relative to cash. */}
