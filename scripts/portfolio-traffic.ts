@@ -35,8 +35,8 @@ const API = 'https://analyticsdata.googleapis.com/v1beta/properties';
 const PROPERTIES: [string, string | undefined][] = [
   ['PMP', process.env.GA4_PROPERTY_ID ?? '517675266'],
   ['ET', process.env.ET_GA4_PROPERTY_ID],
-  ['VERIFA', process.env.VERIFA_GA4_PROPERTY_ID],
-  ['STOCKCV', process.env.STOCKCV_GA4_PROPERTY_ID],
+  ['VERIFA', process.env.VERIFA_GA4_PROPERTY_ID ?? '549637432'],
+  ['STOCKCV', process.env.STOCKCV_GA4_PROPERTY_ID ?? '558473004'],
 ];
 
 const FARM_SOURCES = new Set(['(not set)', '(data not available)']);
