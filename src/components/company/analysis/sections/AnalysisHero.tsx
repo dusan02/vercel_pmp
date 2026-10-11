@@ -144,7 +144,7 @@ export function AnalysisHero({
                   ? Math.min(100, Math.max(0, ((peHistory.median - min) / span) * 100))
                   : null;
                 const pct = peHistory.percentile != null ? Math.round(peHistory.percentile) : null;
-                const ord = pct != null ? `${pct}${['th', 'st', 'nd', 'rd'][(pct % 100 > 10 && pct % 100 < 14) ? 0 : Math.min(pct % 10, 3)] || 'th'}` : null;
+                const ord = pct != null ? `${pct}${['th', 'st', 'nd', 'rd'][(pct % 100 >= 11 && pct % 100 <= 13) ? 0 : pct % 10] || 'th'}` : null;
                 return (
                   <div title={`P/E range over ~${peHistory.years ?? 'several'} years of daily history`}>
                     <div className="relative h-1.5 rounded-full bg-gradient-to-r from-emerald-200/80 via-gray-200 to-red-200/80 dark:from-emerald-900/40 dark:via-gray-700 dark:to-red-900/40">
