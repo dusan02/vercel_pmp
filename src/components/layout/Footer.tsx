@@ -145,6 +145,11 @@ function FooterContent() {
                   Widgets for your site
                 </Link>
               </li>
+              <li>
+                <a href="https://stockcv.com" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  StockCV — company CVs
+                </a>
+              </li>
             </ul>
           </div>
 

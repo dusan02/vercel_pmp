@@ -29,6 +29,12 @@ export function AnalysisCrossLinks({ ticker, companyName, description }: Analysi
       >
         {companyName} ({ticker}) Financial Statements →
       </Link>
+      <a
+        href={`https://stockcv.com/${ticker}`}
+        className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+      >
+        {companyName} ({ticker}) Stock CV →
+      </a>
       <ShareButtons
         url={`https://premarketprice.com/analysis/${ticker}`}
         title={`${companyName} (${ticker}) Stock Analysis | PreMarketPrice`}
