@@ -155,16 +155,33 @@ export function AnalysisHero({
                 </p>
               </div>
             )}
-            {/* Cash vs debt — green cash segment over the red debt bar; a
-                full green bar means the company could retire all debt. */}
+            {/* Cash vs debt — the bar is the larger pool and the contrasting
+                segment is the smaller one, so debt stays visible even when
+                cash covers it: a red right-edge slice = debt relative to cash. */}
             {cashVsDebt != null && cashVsDebt.debt >= 0 && (
-              <div title={`Latest reported balance sheet (${cashVsDebt.label})`}>
-                <div className="flex h-1.5 overflow-hidden rounded-full bg-red-200/80 dark:bg-red-900/40">
-                  <span
-                    className="bg-emerald-500 dark:bg-emerald-400"
-                    style={{ width: `${Math.min(100, cashVsDebt.debt > 0 ? (cashVsDebt.cash / cashVsDebt.debt) * 100 : 100)}%` }}
-                    aria-hidden
-                  />
+              <div title={`Cash $${formatMarketCap(cashVsDebt.cash)} vs debt $${formatMarketCap(cashVsDebt.debt)} — latest reported balance sheet (${cashVsDebt.label})`}>
+                <div
+                  className={`flex h-1.5 overflow-hidden rounded-full ${
+                    cashVsDebt.debt > 0 && cashVsDebt.cash < cashVsDebt.debt
+                      ? 'bg-red-200/80 dark:bg-red-900/40'
+                      : 'bg-emerald-500 dark:bg-emerald-400'
+                  }`}
+                >
+                  {cashVsDebt.debt > 0 && (
+                    cashVsDebt.cash >= cashVsDebt.debt ? (
+                      <span
+                        className="ml-auto bg-red-400/80 dark:bg-red-500/70"
+                        style={{ width: `${Math.min(100, cashVsDebt.cash > 0 ? (cashVsDebt.debt / cashVsDebt.cash) * 100 : 100)}%` }}
+                        aria-hidden
+                      />
+                    ) : (
+                      <span
+                        className="bg-emerald-500 dark:bg-emerald-400"
+                        style={{ width: `${(cashVsDebt.cash / cashVsDebt.debt) * 100}%` }}
+                        aria-hidden
+                      />
+                    )
+                  )}
                 </div>
                 <div className="mt-1 flex justify-between text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
                   <span>Cash ${formatMarketCap(cashVsDebt.cash)}</span>
