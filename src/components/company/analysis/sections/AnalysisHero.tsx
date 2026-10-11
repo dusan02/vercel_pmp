@@ -129,123 +129,6 @@ export function AnalysisHero({
           <AddToWatchlist ticker={ticker} />
           <MoveAlertButton symbol={ticker} />
         </div>
-        {/* Right column — 52-week position + cash-vs-debt, stacked */}
-        {((week52Low != null && week52High != null && price != null && price > 0) || cashVsDebt != null) && (
-          <div className="ml-auto w-full sm:w-72 space-y-4">
-            {/* P/E vs own history — the valuation read: where today's multiple
-                sits inside its own min–max range (green cheap → red rich).
-                Falls back to the 52-week price range when no P/E history. */}
-            {peHistory != null && peHistory.current != null && peHistory.min != null && peHistory.max != null && peHistory.max > peHistory.min ? (
-              (() => {
-                const min = peHistory.min!, max = peHistory.max!;
-                const span = max - min;
-                const pos = Math.min(100, Math.max(0, ((peHistory.current! - min) / span) * 100));
-                const medPos = peHistory.median != null && peHistory.median > min && peHistory.median < max
-                  ? Math.min(100, Math.max(0, ((peHistory.median - min) / span) * 100))
-                  : null;
-                const pct = peHistory.percentile != null ? Math.round(peHistory.percentile) : null;
-                const ord = pct != null ? `${pct}${['th', 'st', 'nd', 'rd'][(pct % 100 >= 11 && pct % 100 <= 13) ? 0 : pct % 10] || 'th'}` : null;
-                return (
-                  <div title={`P/E range over ~${peHistory.years ?? 'several'} years of daily history`}>
-                    <div className="relative h-1.5 rounded-full bg-gradient-to-r from-emerald-200/80 via-gray-200 to-red-200/80 dark:from-emerald-900/40 dark:via-gray-700 dark:to-red-900/40">
-                      {medPos != null && (
-                        <span
-                          className="absolute top-1/2 h-2.5 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gray-400 dark:bg-gray-500"
-                          style={{ left: `${medPos}%` }}
-                          aria-hidden
-                        />
-                      )}
-                      <span
-                        className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white dark:border-gray-900 bg-blue-700 shadow"
-                        style={{ left: `${pos}%` }}
-                        aria-hidden
-                      />
-                    </div>
-                    <div className="mt-1 flex justify-between text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
-                      <span>Low {min.toFixed(1)}×</span>
-                      <span className="font-semibold text-gray-800 dark:text-gray-200">{peHistory.current!.toFixed(1)}×</span>
-                      <span>High {max.toFixed(1)}×</span>
-                    </div>
-                    <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
-                      P/E {peHistory.current!.toFixed(1)}×{ord != null ? ` sits at the ${ord} percentile` : ''} of its{peHistory.years != null ? ` ${peHistory.years}-year` : ''} history.
-                    </p>
-                  </div>
-                );
-              })()
-            ) : week52Low != null && week52High != null && price != null && price > 0 ? (
-              <div title="52-week range over daily closes">
-                <div className="relative h-1.5 rounded-full bg-gradient-to-r from-emerald-200/80 via-gray-200 to-red-200/80 dark:from-emerald-900/40 dark:via-gray-700 dark:to-red-900/40">
-                  <span
-                    className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white dark:border-gray-900 bg-blue-700 shadow"
-                    style={{
-                      left: `${Math.min(100, Math.max(0, week52High > week52Low ? ((price - week52Low) / (week52High - week52Low)) * 100 : 50))}%`,
-                    }}
-                    aria-hidden
-                  />
-                </div>
-                <div className="mt-1 flex justify-between text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
-                  <span>Low ${formatPrice(week52Low)}</span>
-                  <span className="font-semibold text-gray-800 dark:text-gray-200">${formatPrice(price)}</span>
-                  <span>High ${formatPrice(week52High)}</span>
-                </div>
-                <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
-                  Price is {Math.round(week52High > week52Low ? ((price - week52Low) / (week52High - week52Low)) * 100 : 50)}% of the way from the year&apos;s low to its high.
-                </p>
-              </div>
-            ) : null}
-            {/* Cash vs debt — the bar is the larger pool and the contrasting
-                segment is the smaller one, so debt stays visible even when
-                cash covers it: a red right-edge slice = debt relative to cash. */}
-            {cashVsDebt != null && cashVsDebt.debt >= 0 && (
-              <div title={`Cash $${formatMarketCap(cashVsDebt.cash)} vs debt $${formatMarketCap(cashVsDebt.debt)} — latest reported balance sheet (${cashVsDebt.label})`}>
-                <div
-                  className={`flex h-1.5 overflow-hidden rounded-full ${
-                    cashVsDebt.debt > 0 && cashVsDebt.cash < cashVsDebt.debt
-                      ? 'bg-red-200/80 dark:bg-red-900/40'
-                      : 'bg-emerald-500 dark:bg-emerald-400'
-                  }`}
-                >
-                  {cashVsDebt.debt > 0 && (
-                    cashVsDebt.cash >= cashVsDebt.debt ? (
-                      <span
-                        className="ml-auto bg-red-400/80 dark:bg-red-500/70"
-                        style={{ width: `${Math.min(100, cashVsDebt.cash > 0 ? (cashVsDebt.debt / cashVsDebt.cash) * 100 : 100)}%` }}
-                        aria-hidden
-                      />
-                    ) : (
-                      <span
-                        className="bg-emerald-500 dark:bg-emerald-400"
-                        style={{ width: `${(cashVsDebt.cash / cashVsDebt.debt) * 100}%` }}
-                        aria-hidden
-                      />
-                    )
-                  )}
-                </div>
-                <div className="mt-1 flex justify-between text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
-                  <span>Cash ${formatMarketCap(cashVsDebt.cash)}</span>
-                  <span
-                    className={`font-semibold tabular-nums ${
-                      cashVsDebt.debt - cashVsDebt.cash <= 0
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-gray-800 dark:text-gray-200'
-                    }`}
-                  >
-                    {cashVsDebt.debt - cashVsDebt.cash <= 0
-                      ? `Net cash $${formatMarketCap(cashVsDebt.cash - cashVsDebt.debt)}`
-                      : `Net debt $${formatMarketCap(cashVsDebt.debt - cashVsDebt.cash)}`}
-                  </span>
-                  <span>Debt ${formatMarketCap(cashVsDebt.debt)}</span>
-                </div>
-                <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
-                  {cashVsDebt.debt > 0
-                    ? `Cash covers ${Math.round((cashVsDebt.cash / cashVsDebt.debt) * 100)}% of debt`
-                    : 'No reported debt'}
-                  {cashVsDebt.label ? ` · ${cashVsDebt.label}` : ''}.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
       </div>
       {/* Price line — separate row */}
       <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -400,6 +283,121 @@ export function AnalysisHero({
           </span>
         )}
       </div>
+      )}
+      {/* Valuation bars — below the stats band, two-up on desktop.
+          P/E vs own history (green cheap → red rich, marker = today,
+          tick = median); falls back to the 52-week price range when no
+          P/E history exists. Cash-vs-debt keeps the larger pool as the
+          bar so debt stays visible when cash covers it. */}
+      {((week52Low != null && week52High != null && price != null && price > 0) || cashVsDebt != null) && (
+        <div className="mt-3 grid w-full gap-4 sm:grid-cols-2">
+            {peHistory != null && peHistory.current != null && peHistory.min != null && peHistory.max != null && peHistory.max > peHistory.min ? (
+              (() => {
+                const min = peHistory.min!, max = peHistory.max!;
+                const span = max - min;
+                const pos = Math.min(100, Math.max(0, ((peHistory.current! - min) / span) * 100));
+                const medPos = peHistory.median != null && peHistory.median > min && peHistory.median < max
+                  ? Math.min(100, Math.max(0, ((peHistory.median - min) / span) * 100))
+                  : null;
+                const pct = peHistory.percentile != null ? Math.round(peHistory.percentile) : null;
+                const ord = pct != null ? `${pct}${['th', 'st', 'nd', 'rd'][(pct % 100 >= 11 && pct % 100 <= 13) ? 0 : pct % 10] || 'th'}` : null;
+                return (
+                  <div title={`P/E range over ~${peHistory.years ?? 'several'} years of daily history`}>
+                    <div className="relative h-1.5 rounded-full bg-gradient-to-r from-emerald-200/80 via-gray-200 to-red-200/80 dark:from-emerald-900/40 dark:via-gray-700 dark:to-red-900/40">
+                      {medPos != null && (
+                        <span
+                          className="absolute top-1/2 h-2.5 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gray-400 dark:bg-gray-500"
+                          style={{ left: `${medPos}%` }}
+                          aria-hidden
+                        />
+                      )}
+                      <span
+                        className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white dark:border-gray-900 bg-blue-700 shadow"
+                        style={{ left: `${pos}%` }}
+                        aria-hidden
+                      />
+                    </div>
+                    <div className="mt-1 flex justify-between text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+                      <span>Low {min.toFixed(1)}×</span>
+                      <span className="font-semibold text-gray-800 dark:text-gray-200">{peHistory.current!.toFixed(1)}×</span>
+                      <span>High {max.toFixed(1)}×</span>
+                    </div>
+                    <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+                      P/E {peHistory.current!.toFixed(1)}×{ord != null ? ` sits at the ${ord} percentile` : ''} of its{peHistory.years != null ? ` ${peHistory.years}-year` : ''} history.
+                    </p>
+                  </div>
+                );
+              })()
+            ) : week52Low != null && week52High != null && price != null && price > 0 ? (
+              <div title="52-week range over daily closes">
+                <div className="relative h-1.5 rounded-full bg-gradient-to-r from-emerald-200/80 via-gray-200 to-red-200/80 dark:from-emerald-900/40 dark:via-gray-700 dark:to-red-900/40">
+                  <span
+                    className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white dark:border-gray-900 bg-blue-700 shadow"
+                    style={{
+                      left: `${Math.min(100, Math.max(0, week52High > week52Low ? ((price - week52Low) / (week52High - week52Low)) * 100 : 50))}%`,
+                    }}
+                    aria-hidden
+                  />
+                </div>
+                <div className="mt-1 flex justify-between text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+                  <span>Low ${formatPrice(week52Low)}</span>
+                  <span className="font-semibold text-gray-800 dark:text-gray-200">${formatPrice(price)}</span>
+                  <span>High ${formatPrice(week52High)}</span>
+                </div>
+                <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+                  Price is {Math.round(week52High > week52Low ? ((price - week52Low) / (week52High - week52Low)) * 100 : 50)}% of the way from the year&apos;s low to its high.
+                </p>
+              </div>
+            ) : null}
+            {cashVsDebt != null && cashVsDebt.debt >= 0 && (
+              <div title={`Cash $${formatMarketCap(cashVsDebt.cash)} vs debt $${formatMarketCap(cashVsDebt.debt)} — latest reported balance sheet (${cashVsDebt.label})`}>
+                <div
+                  className={`flex h-1.5 overflow-hidden rounded-full ${
+                    cashVsDebt.debt > 0 && cashVsDebt.cash < cashVsDebt.debt
+                      ? 'bg-red-200/80 dark:bg-red-900/40'
+                      : 'bg-emerald-500 dark:bg-emerald-400'
+                  }`}
+                >
+                  {cashVsDebt.debt > 0 && (
+                    cashVsDebt.cash >= cashVsDebt.debt ? (
+                      <span
+                        className="ml-auto bg-red-400/80 dark:bg-red-500/70"
+                        style={{ width: `${Math.min(100, cashVsDebt.cash > 0 ? (cashVsDebt.debt / cashVsDebt.cash) * 100 : 100)}%` }}
+                        aria-hidden
+                      />
+                    ) : (
+                      <span
+                        className="bg-emerald-500 dark:bg-emerald-400"
+                        style={{ width: `${(cashVsDebt.cash / cashVsDebt.debt) * 100}%` }}
+                        aria-hidden
+                      />
+                    )
+                  )}
+                </div>
+                <div className="mt-1 flex justify-between text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+                  <span>Cash ${formatMarketCap(cashVsDebt.cash)}</span>
+                  <span
+                    className={`font-semibold tabular-nums ${
+                      cashVsDebt.debt - cashVsDebt.cash <= 0
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-gray-800 dark:text-gray-200'
+                    }`}
+                  >
+                    {cashVsDebt.debt - cashVsDebt.cash <= 0
+                      ? `Net cash $${formatMarketCap(cashVsDebt.cash - cashVsDebt.debt)}`
+                      : `Net debt $${formatMarketCap(cashVsDebt.debt - cashVsDebt.cash)}`}
+                  </span>
+                  <span>Debt ${formatMarketCap(cashVsDebt.debt)}</span>
+                </div>
+                <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+                  {cashVsDebt.debt > 0
+                    ? `Cash covers ${Math.round((cashVsDebt.cash / cashVsDebt.debt) * 100)}% of debt`
+                    : 'No reported debt'}
+                  {cashVsDebt.label ? ` · ${cashVsDebt.label}` : ''}.
+                </p>
+              </div>
+            )}
+        </div>
       )}
     </div>
   );
