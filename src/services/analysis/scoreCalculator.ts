@@ -44,6 +44,13 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     });
 
     const latestStmt = stmts[0];
+    // Balance-sheet reads come from the newest statement that reports them —
+    // Finnhub ships income-only quarterly rows (DELL Q1/Q2-FY27: EBIT+NI but
+    // null debt/cash/equity); stmts[0] reads then collapse to fake zeroes
+    // (0−0 net debt → "effectively debt-free" takeaway on a $20B-debt firm).
+    const bsStmt = stmts.find(s =>
+        s.totalAssets != null || s.totalDebt != null || s.totalEquity != null ||
+        s.cashAndEquivalents != null || s.totalLiabilities != null) ?? null;
     if (!latestStmt) {
         // No financial statements (foreign ADRs Finnhub doesn't cover — TSM,
         // ASML, BABA...) — a silent return froze the last written score forever
@@ -115,21 +122,20 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
 
     // --- Altman Z-Score ---
     let altmanZ: number | null = null;
-    if (latestStmt.totalAssets && latestStmt.totalAssets > 0) {
-        const sharesOutstanding = isSuspiciousShareCount(latestStmt.sharesOutstanding, latestStmt.netIncome, tickerData?.sharesOutstanding)
+    if (bsStmt && bsStmt.totalAssets && bsStmt.totalAssets > 0) {
+        const sharesOutstanding = isSuspiciousShareCount(bsStmt.sharesOutstanding, bsStmt.netIncome, tickerData?.sharesOutstanding)
             ? tickerData?.sharesOutstanding
-            : (latestStmt.sharesOutstanding || tickerData?.sharesOutstanding);
+            : (bsStmt.sharesOutstanding || tickerData?.sharesOutstanding);
         const marketValueOfEquity = sharesOutstanding && sharesOutstanding > 0 && currentPrice > 0
             ? sharesOutstanding * currentPrice
             : marketCap;
-        
-        const A = ((latestStmt.currentAssets || 0) - (latestStmt.currentLiabilities || 0)) / latestStmt.totalAssets;
-        const B = (latestStmt.retainedEarnings || 0) / latestStmt.totalAssets;
-        const C = (latestStmt.ebit || 0) / latestStmt.totalAssets;
-        const D = latestStmt.totalLiabilities && latestStmt.totalLiabilities > 0 && marketValueOfEquity > 0 
-            ? marketValueOfEquity / latestStmt.totalLiabilities 
+        const A = ((bsStmt.currentAssets || 0) - (bsStmt.currentLiabilities || 0)) / bsStmt.totalAssets;
+        const B = (bsStmt.retainedEarnings || 0) / bsStmt.totalAssets;
+        const C = (bsStmt.ebit || 0) / bsStmt.totalAssets;
+        const D = bsStmt.totalLiabilities && bsStmt.totalLiabilities > 0 && marketValueOfEquity > 0
+            ? marketValueOfEquity / bsStmt.totalLiabilities
             : 0;
-        const E = (latestStmt.revenue || 0) / latestStmt.totalAssets;
+        const E = (bsStmt.revenue || 0) / bsStmt.totalAssets;
         altmanZ = 1.2 * A + 1.4 * B + 3.3 * C + 0.6 * D + 1.0 * E;
     }
 
@@ -140,13 +146,19 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
 
     if (ttmOcf !== null && ttmCapex !== null) {
         fcf = ttmOcf - Math.abs(ttmCapex);
-        const netDebt = (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0);
+        // No balance-sheet row at all → claim nothing about debt rather than
+        // treating missing values as zeros (the old `|| 0` on a null row
+        // printed "effectively debt-free" for any income-only latest row).
+        const netDebtNow = bsStmt ? (bsStmt.totalDebt || 0) - (bsStmt.cashAndEquivalents || 0) : null;
 
-        if (netDebt <= 0) {
+        if (netDebtNow === null) {
+            debtRepaymentYears = null;
+            humanDebtInfo = null;
+        } else if (netDebtNow <= 0) {
             debtRepaymentYears = 0;
             humanDebtInfo = "Company is effectively debt-free after netting cash.";
         } else if (fcf > 0) {
-            debtRepaymentYears = netDebt / fcf;
+            debtRepaymentYears = netDebtNow / fcf;
             humanDebtInfo = `Takes ~${debtRepaymentYears.toFixed(1)} years to repay net debt from free cash flow.`;
         } else {
             humanDebtInfo = "Company has negative FCF, making debt repayment from operations difficult.";
@@ -182,20 +194,21 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     }
 
     // --- Interest Coverage ---
-    const interestCoverage = (latestStmt.ebit !== null && latestStmt.interestExpense !== null && latestStmt.interestExpense !== 0)
-        ? latestStmt.ebit / Math.abs(latestStmt.interestExpense)
+    const interestStmt = stmts.find(s => s.ebit != null && s.interestExpense != null && s.interestExpense !== 0);
+    const interestCoverage = interestStmt
+        ? interestStmt.ebit! / Math.abs(interestStmt.interestExpense!)
         : (finnhubMetrics?.interestCoverage ?? null);
 
     // ─── PILLAR INPUTS: Health ────────────────────────────────────────────
     // Legs live in services/analysis/pillars.ts (shared with the read path).
-    const currentRatio = ((latestStmt.currentAssets && latestStmt.currentLiabilities && latestStmt.currentLiabilities > 0)
-        ? latestStmt.currentAssets / latestStmt.currentLiabilities
+    const currentRatio = ((bsStmt?.currentAssets && bsStmt.currentLiabilities && bsStmt.currentLiabilities > 0)
+        ? bsStmt.currentAssets / bsStmt.currentLiabilities
         : null) ?? finnhubMetrics?.currentRatio ?? null;
-    const hasBalanceData = latestStmt.totalDebt !== null || latestStmt.cashAndEquivalents !== null;
-    const currentNetDebt = (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0);
-    const netCash = hasBalanceData ? currentNetDebt <= 0 : null;
-    const netDebtRatio = (hasBalanceData && currentNetDebt > 0 && latestStmt.totalAssets && latestStmt.totalAssets > 0)
-        ? currentNetDebt / latestStmt.totalAssets
+    const hasBalanceData = bsStmt !== null && (bsStmt.totalDebt !== null || bsStmt.cashAndEquivalents !== null);
+    const currentNetDebt = hasBalanceData ? (bsStmt.totalDebt || 0) - (bsStmt.cashAndEquivalents || 0) : null;
+    const netCash = currentNetDebt !== null ? currentNetDebt <= 0 : null;
+    const netDebtRatio = (currentNetDebt !== null && currentNetDebt > 0 && bsStmt!.totalAssets && bsStmt!.totalAssets > 0)
+        ? currentNetDebt / bsStmt!.totalAssets
         : null;
 
     // ─── PILLAR INPUTS: Profitability (own TTM basis, Finnhub fallback) ───
@@ -210,12 +223,14 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     const pillarOpMargin = (ttmEbit !== null && ttmRevenue !== null && ttmRevenue > 0)
         ? ttmEbit / ttmRevenue
         : fhOpMargin;
-    const investedCapital = (latestStmt.totalEquity || 0) + (latestStmt.totalDebt || 0) - (latestStmt.cashAndEquivalents || 0);
-    const pillarRoic = (ttmEbit !== null && investedCapital > 0)
+    const investedCapital = bsStmt
+        ? (bsStmt.totalEquity || 0) + (bsStmt.totalDebt || 0) - (bsStmt.cashAndEquivalents || 0)
+        : null;
+    const pillarRoic = (ttmEbit !== null && investedCapital !== null && investedCapital > 0)
         ? (ttmEbit * 0.79) / investedCapital  // NOPAT ≈ EBIT × (1 − 21% tax)
         : null;
-    const pillarRoe = (latestStmt.totalEquity && latestStmt.totalEquity > 0)
-        ? (ttmNetIncome !== null ? ttmNetIncome / latestStmt.totalEquity : fhRoe)
+    const pillarRoe = (bsStmt?.totalEquity && bsStmt.totalEquity > 0)
+        ? (ttmNetIncome !== null ? ttmNetIncome / bsStmt.totalEquity : fhRoe)
         : null;
 
     // ─── PILLAR INPUTS: Valuation ────────────────────────────────────────
@@ -282,8 +297,8 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         ? mcapNow / ttmRevenue
         : (finnhubMetrics?.psRatio ?? null);
 
-    const evNow = (mcapNow !== null && mcapNow > 0 && latestStmt.totalDebt !== null && latestStmt.cashAndEquivalents !== null)
-        ? mcapNow + latestStmt.totalDebt - latestStmt.cashAndEquivalents
+    const evNow = (mcapNow !== null && mcapNow > 0 && bsStmt?.totalDebt !== null && bsStmt?.totalDebt !== undefined && bsStmt.cashAndEquivalents !== null && bsStmt.cashAndEquivalents !== undefined)
+        ? mcapNow + bsStmt.totalDebt - bsStmt.cashAndEquivalents
         : null;
     const pillarEvEbit = (evNow !== null && evNow > 0 && ttmEbit !== null && ttmEbit > 0)
         ? evNow / ttmEbit

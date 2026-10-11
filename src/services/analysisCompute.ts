@@ -108,15 +108,22 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     const altmanZ = cached.altmanZ;
     const debtRepaymentYears = cached.debtRepaymentYears;
 
-    // Snapshot variables MUST come from latestStmt (most recent quarter or annual)
-    const totalDebt = latestStmt?.totalDebt ?? null;
-    const cash = latestStmt?.cashAndEquivalents ?? null;
+    // Balance-sheet positions come from the newest statement that actually
+    // reports them — Finnhub often delivers fresh quarterly rows with income
+    // fields only (DELL Q1/Q2-FY27 have EBIT+NI but a null balance sheet), and
+    // reading stmts[0] blindly would null out debt/cash/equity → pillar legs
+    // showed n/a and netDebt coerced to 0 → fake "debt-free" takeaways.
+    const bsStmt = stmts.find(s =>
+        s.totalAssets != null || s.totalDebt != null || s.totalEquity != null ||
+        s.cashAndEquivalents != null || s.totalLiabilities != null) ?? latestStmt;
+    const totalDebt = bsStmt?.totalDebt ?? null;
+    const cash = bsStmt?.cashAndEquivalents ?? null;
     const netDebt = (totalDebt !== null && cash !== null) ? totalDebt - cash : null;
-    const totalEquity = latestStmt?.totalEquity ?? null;
-    const totalAssets = latestStmt?.totalAssets ?? null;
-    const totalLiabilities = latestStmt?.totalLiabilities ?? null;
-    const currentAssets = latestStmt?.currentAssets ?? null;
-    const currentLiabilities = latestStmt?.currentLiabilities ?? null;
+    const totalEquity = bsStmt?.totalEquity ?? null;
+    const totalAssets = bsStmt?.totalAssets ?? null;
+    const totalLiabilities = bsStmt?.totalLiabilities ?? null;
+    const currentAssets = bsStmt?.currentAssets ?? null;
+    const currentLiabilities = bsStmt?.currentLiabilities ?? null;
     // Corrupted-shares guard: when a statement's count carries the
     // netIncome/integer signature (bad EPS fallback) and deviates >30% from
     // the trusted Ticker count, substitute the trusted count for the LATEST
@@ -126,7 +133,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     const sharesOutstanding = isSuspiciousShareCount(rawShares, latestStmt?.netIncome ?? null, trustedShares)
         ? trustedShares
         : rawShares;
-    const sbcSnapshot = latestStmt?.sbc ?? null;
+    const sbcSnapshot = stmts.find(s => s.sbc != null)?.sbc ?? null;
     const saneShares = (s: { sharesOutstanding: number | null; netIncome: number | null } | undefined | null) =>
         isSuspiciousShareCount(s?.sharesOutstanding, s?.netIncome ?? null, trustedShares)
             ? null
@@ -247,10 +254,12 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         ? ttmSbc / ttmRevenue : null;
     const sbcRatio = (ttmSbc !== null && ttmNetIncome !== null && ttmNetIncome > 0)
         ? (ttmSbc / ttmNetIncome) * 100 : null;
-    // Own-first (latest-statement EBIT / |interest|), Finnhub fallback — same
-    // convention the pillar radar uses, so Key Metrics and radar can't diverge.
-    const interestCoverage = (latestStmt?.ebit != null && latestStmt.interestExpense != null && latestStmt.interestExpense !== 0)
-        ? latestStmt.ebit / Math.abs(latestStmt.interestExpense)
+    // Own-first (EBIT / |interest| from the latest row reporting both),
+    // Finnhub fallback — same convention the pillar radar uses, so Key
+    // Metrics and radar can't diverge.
+    const interestStmt = stmts.find(s => s.ebit != null && s.interestExpense != null && s.interestExpense !== 0);
+    const interestCoverage = interestStmt
+        ? interestStmt.ebit! / Math.abs(interestStmt.interestExpense!)
         : (finnhubMetrics?.interestCoverage ?? null);
 
     // Calculate Dilution (Share Count change)
