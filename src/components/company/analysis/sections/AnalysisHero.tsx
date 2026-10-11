@@ -129,7 +129,7 @@ export function AnalysisHero({
         {/* 52-week range — the price's position inside its own year, as a
             gradient bar instead of a bare low–high text chip. */}
         {week52Low != null && week52High != null && price != null && price > 0 && (
-          <div className="w-full sm:w-72" title="52-week range over daily closes">
+          <div className="ml-auto w-full sm:w-72" title="52-week range over daily closes">
             <div className="relative h-1.5 rounded-full bg-gradient-to-r from-emerald-200/80 via-gray-200 to-red-200/80 dark:from-emerald-900/40 dark:via-gray-700 dark:to-red-900/40">
               <span
                 className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white dark:border-gray-900 bg-blue-700 shadow"
