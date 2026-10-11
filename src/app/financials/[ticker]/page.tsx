@@ -356,18 +356,29 @@ export default async function FinancialsPage({ params }: PageProps) {
               Quarterly figures are standalone quarters, de-cumulated from YTD filings (Q4 = FY − Q3 YTD when not reported).
             </p>
             <div className="overflow-x-auto">
+              {(() => {
+                // Hide a column entirely when no displayed period reports it —
+                // e.g. banks never report gross profit, so a wall of N/A.
+                const cols = (
+                  [
+                    { label: 'Revenue', get: (s: (typeof displayStatements)[number]) => s.revenue },
+                    { label: 'Net Income', get: (s: (typeof displayStatements)[number]) => s.netIncome },
+                    { label: 'Gross Profit', get: (s: (typeof displayStatements)[number]) => s.grossProfit },
+                    { label: 'EBIT', get: (s: (typeof displayStatements)[number]) => s.ebit },
+                    { label: 'Op. Cash Flow', get: (s: (typeof displayStatements)[number]) => s.operatingCashFlow },
+                    { label: 'Total Assets', get: (s: (typeof displayStatements)[number]) => s.totalAssets },
+                    { label: 'Total Debt', get: (s: (typeof displayStatements)[number]) => s.totalDebt },
+                    { label: 'Equity', get: (s: (typeof displayStatements)[number]) => s.totalEquity },
+                  ] as const
+                ).filter((c) => displayStatements.some((s) => c.get(s) != null));
+                return (
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b-2 border-gray-200 dark:border-gray-700">
                     <th className="py-2 pr-3 text-left text-gray-600 dark:text-gray-400 font-semibold">Period</th>
-                    <th className="py-2 pr-3 text-right text-gray-600 dark:text-gray-400 font-semibold">Revenue</th>
-                    <th className="py-2 pr-3 text-right text-gray-600 dark:text-gray-400 font-semibold">Net Income</th>
-                    <th className="py-2 pr-3 text-right text-gray-600 dark:text-gray-400 font-semibold">Gross Profit</th>
-                    <th className="py-2 pr-3 text-right text-gray-600 dark:text-gray-400 font-semibold">EBIT</th>
-                    <th className="py-2 pr-3 text-right text-gray-600 dark:text-gray-400 font-semibold">Op. Cash Flow</th>
-                    <th className="py-2 pr-3 text-right text-gray-600 dark:text-gray-400 font-semibold">Total Assets</th>
-                    <th className="py-2 pr-3 text-right text-gray-600 dark:text-gray-400 font-semibold">Total Debt</th>
-                    <th className="py-2 pr-3 text-right text-gray-600 dark:text-gray-400 font-semibold">Equity</th>
+                    {cols.map((c) => (
+                      <th key={c.label} className="py-2 pr-3 text-right text-gray-600 dark:text-gray-400 font-semibold">{c.label}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -380,40 +391,26 @@ export default async function FinancialsPage({ params }: PageProps) {
                         <td className="py-2 pr-3 text-gray-600 dark:text-gray-400 font-medium whitespace-nowrap">
                           {periodLabel(s.fiscalYear, s.fiscalPeriod)}
                         </td>
-                        <td className="py-2 pr-3 tabular-nums text-gray-900 dark:text-gray-100 text-right">
-                          {formatLargeNumber(s.revenue)}
-                          {revYoY != null && (
-                            <span className={`block text-[10px] ${revYoY >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                              {formatPercent(revYoY)}
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2 pr-3 tabular-nums text-right text-gray-700 dark:text-gray-300">
-                          {formatLargeNumber(s.netIncome)}
-                        </td>
-                        <td className="py-2 pr-3 tabular-nums text-right text-gray-700 dark:text-gray-300">
-                          {formatLargeNumber(s.grossProfit)}
-                        </td>
-                        <td className="py-2 pr-3 tabular-nums text-right text-gray-700 dark:text-gray-300">
-                          {formatLargeNumber(s.ebit)}
-                        </td>
-                        <td className="py-2 pr-3 tabular-nums text-right text-gray-700 dark:text-gray-300">
-                          {formatLargeNumber(s.operatingCashFlow)}
-                        </td>
-                        <td className="py-2 pr-3 tabular-nums text-right text-gray-700 dark:text-gray-300">
-                          {formatLargeNumber(s.totalAssets)}
-                        </td>
-                        <td className="py-2 pr-3 tabular-nums text-right text-gray-700 dark:text-gray-300">
-                          {formatLargeNumber(s.totalDebt)}
-                        </td>
-                        <td className="py-2 pr-3 tabular-nums text-right text-gray-700 dark:text-gray-300">
-                          {formatLargeNumber(s.totalEquity)}
-                        </td>
+                        {cols.map((c) => (
+                          <td
+                            key={c.label}
+                            className={`py-2 pr-3 tabular-nums text-right ${c.label === 'Revenue' ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}`}
+                          >
+                            {formatLargeNumber(c.get(s))}
+                            {c.label === 'Revenue' && revYoY != null && (
+                              <span className={`block text-[10px] ${revYoY >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {formatPercent(revYoY)}
+                              </span>
+                            )}
+                          </td>
+                        ))}
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
+                );
+              })()}
             </div>
 
             {/* Balance sheet summary — the actual latest statement (any
