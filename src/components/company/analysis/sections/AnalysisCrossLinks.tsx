@@ -71,6 +71,13 @@ export function AnalysisCrossLinks({ ticker, companyName, description }: Analysi
           />
         </svg>
       </a>
+      <a
+        href="https://stockcv.com/embed"
+        rel="noopener"
+        className="max-w-md pl-4 text-xs text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:underline"
+      >
+        Writing about {ticker}? Embed this CV card on your site →
+      </a>
       <ShareButtons
         url={`https://premarketprice.com/analysis/${ticker}`}
         title={`${companyName} (${ticker}) Stock Analysis | PreMarketPrice`}
