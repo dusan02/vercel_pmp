@@ -49,6 +49,8 @@ interface AnalysisHeroProps {
   /** Analyst consensus — rendered as a compact strip right of the sector line */
   priceTarget?: PriceTargetData | null;
   recommendation?: RecommendationData | null;
+  /** Latest reported balance sheet — cash vs debt bar under the 52w range */
+  cashVsDebt?: { cash: number; debt: number; label: string } | null;
 }
 
 
@@ -73,6 +75,7 @@ export function AnalysisHero({
   ewScore,
   priceTarget,
   recommendation,
+  cashVsDebt,
 }: AnalysisHeroProps) {
   const isClosed = marketSession === 'closed';
   const earningsLabel =
@@ -126,27 +129,66 @@ export function AnalysisHero({
           <AddToWatchlist ticker={ticker} />
           <MoveAlertButton symbol={ticker} />
         </div>
-        {/* 52-week range — the price's position inside its own year, as a
-            gradient bar instead of a bare low–high text chip. */}
-        {week52Low != null && week52High != null && price != null && price > 0 && (
-          <div className="ml-auto w-full sm:w-72" title="52-week range over daily closes">
-            <div className="relative h-1.5 rounded-full bg-gradient-to-r from-emerald-200/80 via-gray-200 to-red-200/80 dark:from-emerald-900/40 dark:via-gray-700 dark:to-red-900/40">
-              <span
-                className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white dark:border-gray-900 bg-blue-700 shadow"
-                style={{
-                  left: `${Math.min(100, Math.max(0, week52High > week52Low ? ((price - week52Low) / (week52High - week52Low)) * 100 : 50))}%`,
-                }}
-                aria-hidden
-              />
-            </div>
-            <div className="mt-1 flex justify-between text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
-              <span>Low ${formatPrice(week52Low)}</span>
-              <span className="font-semibold text-gray-800 dark:text-gray-200">${formatPrice(price)}</span>
-              <span>High ${formatPrice(week52High)}</span>
-            </div>
-            <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
-              Price is {Math.round(week52High > week52Low ? ((price - week52Low) / (week52High - week52Low)) * 100 : 50)}% of the way from the year&apos;s low to its high.
-            </p>
+        {/* Right column — 52-week position + cash-vs-debt, stacked */}
+        {((week52Low != null && week52High != null && price != null && price > 0) || cashVsDebt != null) && (
+          <div className="ml-auto w-full sm:w-72 space-y-4">
+            {/* 52-week range — the price's position inside its own year, as a
+                gradient bar instead of a bare low–high text chip. */}
+            {week52Low != null && week52High != null && price != null && price > 0 && (
+              <div title="52-week range over daily closes">
+                <div className="relative h-1.5 rounded-full bg-gradient-to-r from-emerald-200/80 via-gray-200 to-red-200/80 dark:from-emerald-900/40 dark:via-gray-700 dark:to-red-900/40">
+                  <span
+                    className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white dark:border-gray-900 bg-blue-700 shadow"
+                    style={{
+                      left: `${Math.min(100, Math.max(0, week52High > week52Low ? ((price - week52Low) / (week52High - week52Low)) * 100 : 50))}%`,
+                    }}
+                    aria-hidden
+                  />
+                </div>
+                <div className="mt-1 flex justify-between text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+                  <span>Low ${formatPrice(week52Low)}</span>
+                  <span className="font-semibold text-gray-800 dark:text-gray-200">${formatPrice(price)}</span>
+                  <span>High ${formatPrice(week52High)}</span>
+                </div>
+                <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+                  Price is {Math.round(week52High > week52Low ? ((price - week52Low) / (week52High - week52Low)) * 100 : 50)}% of the way from the year&apos;s low to its high.
+                </p>
+              </div>
+            )}
+            {/* Cash vs debt — green cash segment over the red debt bar; a
+                full green bar means the company could retire all debt. */}
+            {cashVsDebt != null && cashVsDebt.debt >= 0 && (
+              <div title={`Latest reported balance sheet (${cashVsDebt.label})`}>
+                <div className="flex h-1.5 overflow-hidden rounded-full bg-red-200/80 dark:bg-red-900/40">
+                  <span
+                    className="bg-emerald-500 dark:bg-emerald-400"
+                    style={{ width: `${Math.min(100, cashVsDebt.debt > 0 ? (cashVsDebt.cash / cashVsDebt.debt) * 100 : 100)}%` }}
+                    aria-hidden
+                  />
+                </div>
+                <div className="mt-1 flex justify-between text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+                  <span>Cash ${formatMarketCap(cashVsDebt.cash)}</span>
+                  <span
+                    className={`font-semibold tabular-nums ${
+                      cashVsDebt.debt - cashVsDebt.cash <= 0
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-gray-800 dark:text-gray-200'
+                    }`}
+                  >
+                    {cashVsDebt.debt - cashVsDebt.cash <= 0
+                      ? `Net cash $${formatMarketCap(cashVsDebt.cash - cashVsDebt.debt)}`
+                      : `Net debt $${formatMarketCap(cashVsDebt.debt - cashVsDebt.cash)}`}
+                  </span>
+                  <span>Debt ${formatMarketCap(cashVsDebt.debt)}</span>
+                </div>
+                <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+                  {cashVsDebt.debt > 0
+                    ? `Cash covers ${Math.round((cashVsDebt.cash / cashVsDebt.debt) * 100)}% of debt`
+                    : 'No reported debt'}
+                  {cashVsDebt.label ? ` · ${cashVsDebt.label}` : ''}.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

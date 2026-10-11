@@ -217,6 +217,17 @@ export default async function AnalysisPage({ params }: PageProps) {
   // client analysis tab — build once.
   const flowPeriods = buildFlowPeriods(flowStatements);
 
+  // Latest balance-sheet snapshot for the hero "Cash vs debt" bar —
+  // first row with both fields (flowStatements come newest-first).
+  const bsRow = flowStatements.find((s) => s.totalDebt != null && s.cashAndEquivalents != null);
+  const cashVsDebt = bsRow
+    ? {
+        cash: bsRow.cashAndEquivalents!,
+        debt: bsRow.totalDebt!,
+        label: `${bsRow.fiscalPeriod ?? ''} ${bsRow.fiscalYear ?? ''}`.trim(),
+      }
+    : null;
+
   // Right rail = pillar profile radar (always present once analysis data
   // loads). Analyst consensus renders as a compact strip in the hero.
   // The EW score stays a Key Metrics cell — it is a quant timing signal,
@@ -311,6 +322,7 @@ export default async function AnalysisPage({ params }: PageProps) {
                 roe={roeStat}
                 week52Low={week52?.low ?? null}
                 week52High={week52?.high ?? null}
+                cashVsDebt={cashVsDebt}
                 earningsDate={nextEarnings?.date ?? null}
                 earningsDays={earningsDays}
                 ewScore={ewScore}
