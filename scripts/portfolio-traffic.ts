@@ -124,7 +124,7 @@ DATE=$(date -d "$D days ago" +%d/%b/%Y)
 echo "nginx log date: $DATE"
 BOTUA='googlebot|bingbot|semrush|ahrefs|claudebot|gptbot|bytespider|petal|exabot|exasearch|meta-external|applebot|duckduckbot|yandex|baiduspider|mj12|dotbot|screaming|headless|slurp|sistrix|crawler|spider|bot/'
 ASSETS='/api/|/_next|/static/|/logos|/icons|/assets|\\.js|\\.css|\\.png|\\.jpe?g|\\.svg|\\.ico|\\.woff|\\.ttf|\\.webp|\\.gif|\\.txt|\\.xml|\\.json|/sw\\.js|manifest|favicon|sitemap|robots|llms|/offline|\\.env|\\.php|wp-|/vendor/|/\\.git|\\.map'
-SELF='^(89\\.185\\.250\\.213|95\\.102\\.193\\.78)$'
+SELF='^(89\\.185\\.250\\.213|95\\.102\\.)'
 
 pick() {
   local base=$1
