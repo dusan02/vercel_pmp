@@ -3,6 +3,7 @@
 ## Súvisiace projekty
 
 - **StockCV** (`~/Projects/stockcv`, budúce stockcv.com, port 3011): samostatná Next.js appka, ktorá **read-only** číta PMP produkčnú DB (`better-sqlite3 readonly:true`, cesta cez `STOCKCV_DB`, na VPS `/var/www/premarketprice/prisma/data/premarket.db`). Nemá vlastnú pipeline ani secrets — PMP crony udržiavajú dáta čerstvé. Detaily v `stockcv/README.md`. Pri zmenách schémy PMP DB (rename/drop tabuliek `Ticker`, `FinancialStatement`, `AnalysisCache`, `FinnhubMetrics`, `EarningsCalendar`) skontrolovať aj `stockcv/src/lib/db.ts`.
+- **GainersLosers** (`~/Desktop/Projects/gainerslosers`, gainerslosers.com, port 3012): rovnaký read-only pattern cez `GL_DB`. Movers boardy + verdict engine + `/ticker/[symbol]` + `/week`. Deploy: `ssh ... 'cd /var/www/gainerslosers && bash scripts/vps-deploy.sh'` (npm build na VPS). Data-contract check: `node scripts/check-contract.mjs` (tabuľky v `src/lib/dataContract.ts` — držať sync s GL SQL queries). Spec: `docs/gainerslosers-spec.md`.
 
 ## Deployment
 
@@ -43,6 +44,7 @@
 - **`NEXT_PUBLIC_*` hodnoty sa bake-ujú do bundle pri builde** — v CI ich má smoke-test job ako env (secrets `NEXT_PUBLIC_GA_ID`/`NEXT_PUBLIC_VAPID_PUBLIC_KEY` s public-literal fallbackmi — sú to verejné hodnoty z JS bundle). Pri pridaní novej `NEXT_PUBLIC_*` env treba ju doplniť aj do `ci.yml`, inak sa na produkcii potichu rozbije príslušná feature
 - **`vps-deploy.sh` nereštartuje `pmp-polygon-worker`** — po zmene `src/workers/**` treba manuálne `ssh root@89.185.250.213 'pm2 restart pmp-polygon-worker'` (worker beží cez tsx, nepotrebuje Next build)
 - **Junk-filter Fáza 1 (2026-10-12)**: `conf.d/zz-junk-filter.conf` = `$junk_ua` map (whitelist `89.185.250.213` VPS cron + `95.102.` owner prefix → inak 403 pre python-requests/curl/wget/scrapy/nmap/nuclei/Go-http/okhttp/Java/axios/node-fetch/undici/got) + `snippets/junk_filter.conf` = include do 443 server blokov všetkých 4 webov (403 pre junk UA + 404 pre scanner cesty wp-*/\.env/\.git/php/exe ext; `.txt/.xml/.json/.well-known` otvorené kvôli IndexNow/ACME/manifest). **NIKDY nedeny `HeadlessChrome` — to je msnbot render crawler** (Bing renderuje stránky headless Edge, ~7k req/day; omylom zablokovaný ~10 min pri nasadení). Rollback: vymazať include riadok zo site configu
+- **SEO-bot filter Fáza 2 (2026-10-12)**: `conf.d/zz-seo-bot-filter.conf` = `$seo_bot_ua` map (ShapBot/SERanking/DataForSeo/Keenable/Ahrefs/Semrush/MJ12/DotBot/Sistrix/BLEX/Timpibot/Imagesift/ScreamingFrog/Velen) — `if ($seo_bot_ua) { return 403; }` v 443 bloku každého webu hneď za junk_filter include. Zero-referral SEO-tool crawlery; verifa ~325k req/týždeň (~32 % objemu), stockcv ~11k, PMP ~12k. **Verifa navyše**: `conf.d/zz-verifa-limits.conf` = per-IP HTML rate `verifa_pages:20m 60r/m` (assety/API/ext neúčtované cez `$verifa_page` map), `limit_req ... burst=30 nodelay` server-level + v `/firma/` locations (vlastné limit_req → nededuje sa). Backupy site configov: `/etc/nginx/backup/*.bak-20261012`
 
 ## Analytika (GSC/GA4) a traffic
 

@@ -147,6 +147,7 @@ report access.log PMP premarketprice
 report earnings-table.access.log ET earningstable
 report verifa_perf.log VERIFA verifa
 report stockcv.access.log STOCKCV stockcv
+report gainerslosers.access.log GL gainerslosers
 
 V=/tmp/pt_VERIFA.log
 echo "----- VERIFA bots -----"
