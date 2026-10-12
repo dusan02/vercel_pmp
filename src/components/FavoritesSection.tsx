@@ -42,25 +42,13 @@ export function FavoritesSection({
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const handleBrowseStocks = () => {
-    // On mobile: trigger tab change via custom event
-    if (typeof window !== 'undefined') {
-      // Trigger navigation via custom event for both mobile and desktop (since both use tab-based navigation)
-      window.dispatchEvent(new CustomEvent('mobile-nav-change', { detail: 'screener' }));
-
-      // Update URL
-      const url = new URL(window.location.href);
-      url.searchParams.set('tab', 'screener');
-      window.history.pushState({}, '', url.toString());
-    }
+    // Straight to the canonical screener page — works identically from the
+    // homepage tab and the standalone /favorites route (no event listener needed)
+    router.push('/screener');
   };
 
   const handleRowClick = (stock: StockData) => {
-    if (typeof window !== 'undefined') {
-      // Dispatch unified event with both tab and ticker
-      window.dispatchEvent(new CustomEvent('mobile-nav-change', {
-        detail: { tab: 'analysis', ticker: stock.ticker }
-      }));
-    }
+    router.push(`/analysis/${stock.ticker.toUpperCase()}`);
   };
 
   // Column Definitions for UniversalTable (Identical to AllStocksSection for consistency)

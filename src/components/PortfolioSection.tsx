@@ -57,12 +57,8 @@ export function PortfolioSection({
   const router = useRouter();
 
   const handleRowClick = useCallback((stock: StockData) => {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('mobile-nav-change', {
-        detail: { tab: 'analysis', ticker: stock.ticker }
-      }));
-    }
-  }, []);
+    router.push(`/analysis/${stock.ticker.toUpperCase()}`);
+  }, [router]);
 
   // Pre-calculate value (Daily P&L) for sorting
   const enhancedPortfolioStocks = useMemo(() => {

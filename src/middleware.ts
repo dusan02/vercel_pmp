@@ -147,6 +147,10 @@ export async function middleware(request: NextRequest) {
       : tab === 'heatmap' ? '/heatmap'
       : tab === 'earnings' ? '/earnings'
       : tab === 'blog' ? '/blog'
+      : tab === 'analysis' ? '/analysis'
+      : tab === 'portfolio' ? '/portfolio'
+      : tab === 'favorites' ? '/favorites'
+      : tab === 'pricing' ? '/pricing'
       : null;
     if (tabTarget) {
       const redirect = NextResponse.redirect(new URL(tabTarget, request.url), 301);

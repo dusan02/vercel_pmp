@@ -12,10 +12,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'heatmap',   label: 'Heatmap',    icon: 'heatmap',   href: '/heatmap' },
-  { id: 'analysis',  label: 'Analysis',   icon: 'analysis',  href: '/?tab=analysis' },
+  { id: 'analysis',  label: 'Analysis',   icon: 'analysis',  href: '/analysis' },
   { id: 'movers',    label: 'Movers',     icon: 'zap',       href: '/premarket-movers' },
-  { id: 'portfolio', label: 'Portfolio',  icon: 'pie',       href: '/?tab=portfolio' },
-  { id: 'favorites', label: 'Favorites',  icon: 'star',      href: '/?tab=favorites' },
+  { id: 'portfolio', label: 'Portfolio',  icon: 'pie',       href: '/portfolio' },
+  { id: 'favorites', label: 'Favorites',  icon: 'star',      href: '/favorites' },
   { id: 'earnings',  label: 'Earnings',   icon: 'calendar',  href: '/earnings' },
   { id: 'screener',  label: 'Screener',   icon: 'screener',  href: '/screener' },
   { id: 'blog',      label: 'Blog',       icon: 'book',      href: '/blog' },

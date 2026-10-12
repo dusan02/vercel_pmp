@@ -27,10 +27,14 @@ const normalizeTab = (tab: string): string => (tab === 'allStocks' ? 'screener' 
 // ?tab → standalone double hop.
 const SECTION_ROUTES: Record<string, string> = {
   heatmap: '/heatmap',
+  analysis: '/analysis',
   movers: '/premarket-movers',
+  portfolio: '/portfolio',
+  favorites: '/favorites',
   earnings: '/earnings',
   screener: '/screener',
   blog: '/blog',
+  pricing: '/pricing',
 };
 
 interface UseHomeNavigationOptions {

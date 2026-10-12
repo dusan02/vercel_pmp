@@ -27,21 +27,21 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
       id: 'analysis',
       label: 'Analysis',
       icon: BarChart3,
-      path: '/#analysis',
+      path: '/analysis',
       isActive: (section?: string) => section === 'analysis'
     },
     {
       id: 'portfolio',
       label: 'Portfolio',
       icon: PieChart,
-      path: '/#portfolio',
+      path: '/portfolio',
       isActive: (section?: string) => section === 'portfolio'
     },
     {
       id: 'favorites',
       label: 'Favorites',
       icon: Star,
-      path: '/#favorites',
+      path: '/favorites',
       isActive: (section?: string) => section === 'favorites'
     },
     {
