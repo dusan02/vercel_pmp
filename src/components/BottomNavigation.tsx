@@ -48,14 +48,14 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
       id: 'earnings',
       label: 'Earnings',
       icon: Calendar,
-      path: '/#earnings',
+      path: '/earnings',
       isActive: (section?: string) => section === 'earnings'
     },
     {
       id: 'movers',
       label: 'Movers',
       icon: Zap,
-      path: '/#movers',
+      path: '/premarket-movers',
       isActive: (section?: string) => section === 'movers'
     },
     {

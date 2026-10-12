@@ -22,6 +22,17 @@ const VALID_SECTIONS: ActiveSection[] = [
 // Legacy 'allStocks' tab id → 'screener' (kept for old ?tab= URLs and events)
 const normalizeTab = (tab: string): string => (tab === 'allStocks' ? 'screener' : tab);
 
+// Sections backed by a standalone canonical page — middleware 301s ?tab=X
+// to these anyway, so navigating there directly avoids the visible
+// ?tab → standalone double hop.
+const SECTION_ROUTES: Record<string, string> = {
+  heatmap: '/heatmap',
+  movers: '/premarket-movers',
+  earnings: '/earnings',
+  screener: '/screener',
+  blog: '/blog',
+};
+
 interface UseHomeNavigationOptions {
   isMounted: boolean;
 }
@@ -103,6 +114,11 @@ export function useHomeNavigation({ isMounted }: UseHomeNavigationOptions) {
         router.push(`/analysis/${ticker.toUpperCase()}`);
         return;
       }
+      const standalone = SECTION_ROUTES[normalizeTab(tab)];
+      if (standalone) {
+        router.push(standalone);
+        return;
+      }
       if (!setActiveTab(tab)) return;
       if (ticker) setAnalysisTicker(ticker.toUpperCase());
       const url = new URL(window.location.href);
@@ -124,6 +140,11 @@ export function useHomeNavigation({ isMounted }: UseHomeNavigationOptions) {
     // shareable URL + real pageview (tab variant already 301s server-side).
     if (section === 'analysis' && ticker) {
       router.push(`/analysis/${ticker.toUpperCase()}`);
+      return;
+    }
+    const standalone = SECTION_ROUTES[section];
+    if (standalone) {
+      router.push(standalone);
       return;
     }
     // startTransition keeps the UI responsive — first-activation mounts of
