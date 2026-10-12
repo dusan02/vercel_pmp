@@ -19,15 +19,17 @@ import { Sparkline } from './Sparkline';
 import { formatBillions, formatMarketCapDiff, formatCurrencyCompact } from '@/lib/utils/format';
 import { useState, useEffect } from 'react';
 
-// Column views — thematic subsets of the full column set. The Company column
-// (ticker.name) is always first; views only switch the metric columns shown.
-// Filters/sort are view-independent — switching a tab never changes the dataset.
+// Column views — thematic subsets of the full column set. Every view opens
+// with the same identity block (Company · 1Y · Price · Change% · MktCap) so a
+// row is never bare numbers without market context; only the trailing columns
+// change per theme. Filters/sort are view-independent — switching a tab never
+// changes the dataset. Tab order runs general → specialised.
 const COLUMN_VIEWS = [
   { id: 'overview', label: 'Overview', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'overallScore', 'valuationScore', 'growthScore', 'profitabilityScore', 'healthScore', 'qualityScore', 'screens'] },
-  { id: 'insiders', label: 'Insiders', keys: ['ticker.name', 'ticker.lastPrice', 'ticker.lastMarketCap', 'insider.netBuyValue90d', 'insider.largestBuyValue90d', 'insider.largestSellValue90d', 'insider.uniqueSellers14d', 'overallScore'] },
-  { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'healthScore', 'qualityScore', 'overallScore'] },
-  { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'sector', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'ticker.lastMarketCapDiff'] },
-  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'metrics.peRatio', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position'] },
+  { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'sector', 'ticker.lastMarketCapDiff'] },
+  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'metrics.peRatio', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position'] },
+  { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'healthScore', 'qualityScore', 'overallScore'] },
+  { id: 'insiders', label: 'Insiders', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'insider.netBuyValue90d', 'insider.largestBuyValue90d', 'insider.largestSellValue90d', 'insider.uniqueSellers14d', 'overallScore'] },
   { id: 'all', label: 'All columns', keys: null }, // null = every defined column
   { id: 'custom', label: 'Custom', keys: null },   // user-defined ordered set
 ] as const;
