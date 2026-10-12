@@ -77,12 +77,15 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
     const tickerRanges = metricRanges.filter((r) => r.source === 'ticker');
     const finnhubRanges = metricRanges.filter((r) => r.source === 'finnhub');
     const insiderRanges = metricRanges.filter((r) => r.source === 'insider');
+    const recommendationRanges = metricRanges.filter((r) => r.source === 'recommendation');
 
     // Price & day-change ranges (Ticker columns, source='ticker')
     const minPrice = tickerRanges.find((r) => r.field === 'lastPrice')?.min;
     const maxPrice = tickerRanges.find((r) => r.field === 'lastPrice')?.max;
     const minChangePct = tickerRanges.find((r) => r.field === 'lastChangePct')?.min;
     const maxChangePct = tickerRanges.find((r) => r.field === 'lastChangePct')?.max;
+    const minEmployees = tickerRanges.find((r) => r.field === 'employees')?.min;
+    const maxEmployees = tickerRanges.find((r) => r.field === 'employees')?.max;
 
     // Pagination & Sorting — clamp NaN/negative/oversized values
     const page = Math.max(1, int('page') ?? 1);
@@ -136,6 +139,11 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
             if (minChangePct !== undefined) tickerWhere.lastChangePct.gte = minChangePct;
             if (maxChangePct !== undefined) tickerWhere.lastChangePct.lte = maxChangePct;
         }
+        if (minEmployees !== undefined || maxEmployees !== undefined) {
+            tickerWhere.employees = {};
+            if (minEmployees !== undefined) tickerWhere.employees.gte = minEmployees;
+            if (maxEmployees !== undefined) tickerWhere.employees.lte = maxEmployees;
+        }
 
         // ── Relation range filters (FinnhubMetrics + InsiderAggregate) ──
         // Same pattern as analysisCache — an active range requires the
@@ -157,6 +165,15 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
                 if (r.max !== undefined) ins[r.field].lte = r.max;
             }
             tickerWhere.insiderAggregate = { is: ins };
+        }
+        if (recommendationRanges.length > 0) {
+            const rec: any = {};
+            for (const r of recommendationRanges) {
+                rec[r.field] = {};
+                if (r.min !== undefined) rec[r.field].gte = r.min;
+                if (r.max !== undefined) rec[r.field].lte = r.max;
+            }
+            tickerWhere.finnhubRecommendation = { is: rec };
         }
 
         // ── Fundamental filters apply on the AnalysisCache relation ──
@@ -209,12 +226,14 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
 
         // Build Prisma orderBy — score fields live on analysisCache, market
         // fields on ticker. Nulls (tickers without analysis) always last.
-        const SCORE_FIELDS = new Set(['healthScore', 'profitabilityScore', 'valuationScore', 'growthScore', 'qualityScore', 'overallScore', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'debtRepaymentYears']);
+        const SCORE_FIELDS = new Set(['healthScore', 'profitabilityScore', 'valuationScore', 'growthScore', 'qualityScore', 'overallScore', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'debtRepaymentYears', 'revenueCagr', 'netIncomeCagr', 'fcfConversion', 'marginStability']);
         // Insider aggregate sort fields (insider.<field> → insiderAggregate rel)
         const INSIDER_FIELDS = new Set(['netBuyPct90d', 'netBuyValue90d', 'largestBuyValue90d', 'largestSellValue90d', 'uniqueBuyers14d', 'uniqueSellers14d']);
+        // Analyst-consensus sort fields (analyst.<field> → finnhubRecommendation rel)
+        const ANALYST_FIELDS = new Set(['strongBuy', 'buy', 'hold', 'sell', 'strongSell']);
         // Whitelist of sortable Ticker columns — an arbitrary `sort=ticker.X`
         // value would otherwise reach Prisma orderBy and 500 on unknown fields.
-        const TICKER_FIELDS = new Set(['symbol', 'name', 'sector', 'industry', 'lastPrice', 'lastChangePct', 'lastMarketCap', 'lastPriceUpdated']);
+        const TICKER_FIELDS = new Set(['symbol', 'name', 'sector', 'industry', 'employees', 'lastPrice', 'lastChangePct', 'lastMarketCap', 'lastPriceUpdated']);
 
         let orderBy: any;
         const isMcapDiffSort = sortField === 'ticker.lastMarketCapDiff';
@@ -232,6 +251,11 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
             const field = sortField.slice('insider.'.length);
             orderBy = INSIDER_FIELDS.has(field)
                 ? { insiderAggregate: { [field]: { sort: sortOrder, nulls: 'last' } } }
+                : { lastMarketCap: { sort: 'desc', nulls: 'last' } };
+        } else if (sortField.startsWith('analyst.')) {
+            const field = sortField.slice('analyst.'.length);
+            orderBy = ANALYST_FIELDS.has(field)
+                ? { finnhubRecommendation: { [field]: { sort: sortOrder, nulls: 'last' } } }
                 : { lastMarketCap: { sort: 'desc', nulls: 'last' } };
         } else if (sortField.startsWith('metrics.')) {
             // FinnhubMetrics columns — whitelist = finnhub-source keys from
@@ -263,6 +287,19 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
                     beneishScore: true,
                     fcfMargin: true,
                     debtRepaymentYears: true,
+                    revenueCagr: true,
+                    netIncomeCagr: true,
+                    fcfConversion: true,
+                    marginStability: true,
+                },
+            },
+            finnhubRecommendation: {
+                select: {
+                    strongBuy: true,
+                    buy: true,
+                    hold: true,
+                    sell: true,
+                    strongSell: true,
                 },
             },
             insiderAggregate: {
@@ -403,6 +440,19 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
             beneishScore: t.analysisCache?.beneishScore ?? null,
             fcfMargin: t.analysisCache?.fcfMargin ?? null,
             debtRepaymentYears: t.analysisCache?.debtRepaymentYears ?? null,
+            revenueCagr: t.analysisCache?.revenueCagr ?? null,
+            netIncomeCagr: t.analysisCache?.netIncomeCagr ?? null,
+            fcfConversion: t.analysisCache?.fcfConversion ?? null,
+            marginStability: t.analysisCache?.marginStability ?? null,
+            analysts: t.finnhubRecommendation
+                ? {
+                      strongBuy: t.finnhubRecommendation.strongBuy,
+                      buy: t.finnhubRecommendation.buy,
+                      hold: t.finnhubRecommendation.hold,
+                      sell: t.finnhubRecommendation.sell,
+                      strongSell: t.finnhubRecommendation.strongSell,
+                  }
+                : null,
             insiderNetBuyPct90d: t.insiderAggregate?.netBuyPct90d ?? null,
             insiderNetBuyValue90d: t.insiderAggregate?.netBuyValue90d ?? null,
             insiderLargestBuyValue90d: t.insiderAggregate?.largestBuyValue90d ?? null,
@@ -414,6 +464,7 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
                 sector: t.sector,
                 industry: t.industry,
                 logoUrl: t.logoUrl,
+                employees: t.employees,
                 lastPrice: t.lastPrice,
                 lastChangePct: t.lastChangePct,
                 lastMarketCap: t.lastMarketCap,

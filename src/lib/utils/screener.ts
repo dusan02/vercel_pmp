@@ -47,6 +47,14 @@ export interface ScreenerResult {
     netIncomeCagr: number | null;
     marginStability: number | null;
     lastQualitySignalAt: string | null;
+    /** Analyst consensus counts (FinnhubRecommendation, latest period). */
+    analysts: {
+        strongBuy: number | null;
+        buy: number | null;
+        hold: number | null;
+        sell: number | null;
+        strongSell: number | null;
+    } | null;
     // Insider activity aggregates (90d P/S window; null = no insider data)
     insiderNetBuyPct90d: number | null;
     insiderNetBuyValue90d: number | null;
@@ -59,6 +67,7 @@ export interface ScreenerResult {
         sector: string | null;
         industry: string | null;
         logoUrl: string | null;
+        employees: number | null;
         lastPrice: number | null;
         lastChangePct: number | null;
         lastMarketCap: number | null;
@@ -203,16 +212,31 @@ export const INSIDER_RANGE_FILTERS = [
  * matches the metric params (minPrice/maxPrice/minChangePct/maxChangePct).
  */
 export const MARKET_RANGE_FILTERS = [
-    { key: 'price', label: 'Price $', min: 0, max: 1000, step: 10 },
-    { key: 'changePct', label: 'Day Change %', min: -20, max: 20, step: 0.5 },
+    { key: 'price', label: 'Price $', min: 0, max: 1000, step: 10, field: 'lastPrice' },
+    { key: 'changePct', label: 'Day Change %', min: -20, max: 20, step: 0.5, field: 'lastChangePct' },
+    { key: 'employees', label: 'Employees', min: 0, max: 3_000_000, step: 1000, field: 'employees' },
+] as const;
+
+/**
+ * Analyst-consensus range filters (FinnhubRecommendation relation). Same
+ * registry/param convention as insider filters — valid as URL/preset keys,
+ * not rendered as sliders (per-count ranges are niche; the Analysts column
+ * shows the full picture).
+ */
+export const ANALYST_RANGE_FILTERS = [
+    { key: 'strongBuy', label: 'Analyst Strong Buys', min: 0, max: 60, step: 1 },
+    { key: 'buy', label: 'Analyst Buys', min: 0, max: 60, step: 1 },
+    { key: 'sell', label: 'Analyst Sells', min: 0, max: 20, step: 1 },
+    { key: 'strongSell', label: 'Analyst Strong Sells', min: 0, max: 20, step: 1 },
 ] as const;
 
 export type RangeFilterKey =
     | MetricFilterKey
     | (typeof MARKET_RANGE_FILTERS)[number]['key']
-    | (typeof INSIDER_RANGE_FILTERS)[number]['key'];
+    | (typeof INSIDER_RANGE_FILTERS)[number]['key']
+    | (typeof ANALYST_RANGE_FILTERS)[number]['key'];
 
-export type RangeFilterSource = 'ticker' | 'finnhub' | 'insider';
+export type RangeFilterSource = 'ticker' | 'finnhub' | 'insider' | 'recommendation';
 
 /**
  * Unified range-filter registry — the single source of truth for which
@@ -226,13 +250,10 @@ export const RANGE_FILTERS: {
     min: number; max: number; step: number;
     source: RangeFilterSource; field?: string;
 }[] = [
-    ...MARKET_RANGE_FILTERS.map((d) => ({
-        ...d,
-        source: 'ticker' as const,
-        field: d.key === 'price' ? 'lastPrice' : 'lastChangePct',
-    })),
+    ...MARKET_RANGE_FILTERS.map((d) => ({ ...d, source: 'ticker' as const })),
     ...METRIC_FILTERS.map((d) => ({ ...d, source: 'finnhub' as const })),
     ...INSIDER_RANGE_FILTERS.map((d) => ({ ...d, source: 'insider' as const })),
+    ...ANALYST_RANGE_FILTERS.map((d) => ({ ...d, source: 'recommendation' as const })),
 ];
 
 /**
@@ -482,6 +503,14 @@ export const SORT_OPTIONS = [
     { value: 'insider.uniqueBuyers14d:desc', label: 'Insider Buyer Cluster ↓ (14D)' },
     { value: 'insider.uniqueSellers14d:desc', label: 'Insider Seller Cluster ↓ (14D)' },
     { value: 'debtRepaymentYears:desc', label: 'Debt Repay ↓ (slowest)' },
+    { value: 'revenueCagr:desc', label: 'Revenue CAGR ↓ (5Y)' },
+    { value: 'netIncomeCagr:desc', label: 'Net Income CAGR ↓ (5Y)' },
+    { value: 'fcfConversion:desc', label: 'FCF Conversion ↓' },
+    { value: 'analyst.buy:desc', label: 'Analyst Buys ↓ (count)' },
+    { value: 'analyst.strongBuy:desc', label: 'Analyst Strong Buys ↓ (count)' },
+    { value: 'analyst.sell:asc', label: 'Analyst Sells ↑ (fewest)' },
+    { value: 'ticker.employees:desc', label: 'Employees ↓' },
+    { value: 'ticker.employees:asc', label: 'Employees ↑' },
     { value: 'metrics.roe:desc', label: 'ROE ↓' },
     { value: 'metrics.netMargin:desc', label: 'Net Margin ↓' },
     { value: 'metrics.revenueGrowth:desc', label: 'Rev Growth ↓' },

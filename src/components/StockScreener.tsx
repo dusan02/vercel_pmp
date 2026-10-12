@@ -26,9 +26,9 @@ import { useState, useEffect } from 'react';
 // changes the dataset. Tab order runs general → specialised.
 const COLUMN_VIEWS = [
   { id: 'overview', label: 'Overview', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'overallScore', 'valuationScore', 'growthScore', 'profitabilityScore', 'healthScore', 'qualityScore', 'screens'] },
-  { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'sector', 'ticker.lastMarketCapDiff'] },
-  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'metrics.peRatio', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position'] },
-  { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'healthScore', 'qualityScore', 'overallScore'] },
+  { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'sector', 'ticker.employees', 'ticker.lastMarketCapDiff', 'analysts'] },
+  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'revenueCagr', 'netIncomeCagr', 'metrics.peRatio', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position'] },
+  { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'fcfConversion', 'debtRepaymentYears', 'healthScore', 'qualityScore', 'overallScore'] },
   { id: 'insiders', label: 'Insiders', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'insider.netBuyValue90d', 'insider.largestBuyValue90d', 'insider.largestSellValue90d', 'insider.uniqueSellers14d', 'overallScore'] },
   { id: 'all', label: 'All columns', keys: null }, // null = every defined column
   { id: 'custom', label: 'Custom', keys: null },   // user-defined ordered set
@@ -43,6 +43,13 @@ const COLUMN_LABELS: Record<string, string> = {
   'ticker.lastChangePct': 'Change %',
   'ticker.lastMarketCap': 'Market Cap',
   'ticker.lastMarketCapDiff': 'Mkt Cap Δ',
+  'ticker.employees': 'Employees',
+  'analysts': 'Analysts',
+  'debtRepaymentYears': 'Debt Repay',
+  'revenueCagr': 'Rev CAGR 5Y',
+  'netIncomeCagr': 'NI CAGR 5Y',
+  'fcfConversion': 'FCF Conv.',
+  'marginStability': 'Margin Var.',
   'overallScore': 'Overall',
   'valuationScore': 'Valuation',
   'growthScore': 'Growth',
@@ -138,6 +145,42 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       header: 'Sector',
       align: 'left',
       render: (r) => <span className="text-xs text-gray-600 dark:text-gray-300">{r.ticker?.sector || '-'}</span>
+    },
+    {
+      key: 'ticker.employees',
+      header: <>Employees <SortIcon field="ticker.employees" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => (
+        <span className="text-sm tabular-nums text-gray-700 dark:text-gray-200">
+          {r.ticker?.employees != null ? r.ticker.employees.toLocaleString('en-US') : '-'}
+        </span>
+      )
+    },
+    {
+      // Analyst consensus — buy-side share of the latest rating counts.
+      // Sorts by raw buy count (analyst.buy) — a workable proxy for "most
+      // loved" that stays orderBy-able on the relation.
+      key: 'analysts',
+      header: <>Analysts <SortIcon field="analyst.buy" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => {
+        const a = r.analysts;
+        if (!a) return <span className="text-gray-400">-</span>;
+        const total = (a.strongBuy ?? 0) + (a.buy ?? 0) + (a.hold ?? 0) + (a.sell ?? 0) + (a.strongSell ?? 0);
+        if (total === 0) return <span className="text-gray-400">-</span>;
+        const buyPct = Math.round((((a.strongBuy ?? 0) + (a.buy ?? 0)) / total) * 100);
+        const sellN = (a.sell ?? 0) + (a.strongSell ?? 0);
+        return (
+          <span
+            className={`text-sm font-semibold tabular-nums ${buyPct >= 60 ? 'text-green-600 dark:text-green-400' : buyPct >= 40 ? 'text-gray-700 dark:text-gray-200' : 'text-red-600 dark:text-red-400'}`}
+            title={`${buyPct}% buy-side of ${total} ratings — ${a.strongBuy ?? 0} SB · ${a.buy ?? 0} B · ${a.hold ?? 0} H · ${a.sell ?? 0} S · ${a.strongSell ?? 0} SS`}
+          >
+            {buyPct}%{sellN > 0 ? <span className="ml-1 text-[10px] font-medium text-red-500">↓{sellN}</span> : null}
+          </span>
+        );
+      },
     },
     {
       key: 'sparkline',
@@ -273,6 +316,52 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         const f = fcfMarginLabel(r.fcfMargin);
         return <span className={f.color}>{r.fcfMargin !== null ? `${(r.fcfMargin * 100).toFixed(1)}%` : '-'}</span>;
       },
+    },
+    {
+      key: 'fcfConversion',
+      header: <>FCF Conv. <SortIcon field="fcfConversion" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => {
+        const v = r.fcfConversion;
+        const color = v == null ? 'text-gray-400' : v >= 0.9 ? 'text-green-600 dark:text-green-400' : v >= 0.5 ? 'text-gray-700 dark:text-gray-200' : 'text-red-600 dark:text-red-400';
+        return <span className={`text-sm tabular-nums ${color}`} title="Free cash flow ÷ net income — >100% means cash exceeds reported profit">{v != null ? `${(v * 100).toFixed(0)}%` : '-'}</span>;
+      },
+    },
+    {
+      key: 'debtRepaymentYears',
+      header: <>Debt Repay <SortIcon field="debtRepaymentYears" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => {
+        const d = debtRepayLabel(r.debtRepaymentYears);
+        return (
+          <span className={`text-sm tabular-nums ${d.color}`} title={`Years to repay net debt from FCF — ${d.label}`}>
+            {r.debtRepaymentYears !== null ? `${r.debtRepaymentYears.toFixed(1)}y` : '-'}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'revenueCagr',
+      header: <>Rev CAGR <SortIcon field="revenueCagr" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => <span className="text-sm tabular-nums text-gray-700 dark:text-gray-200" title="5-year revenue CAGR">{r.revenueCagr !== null ? `${r.revenueCagr > 0 ? '+' : ''}${r.revenueCagr.toFixed(1)}%` : '-'}</span>,
+    },
+    {
+      key: 'netIncomeCagr',
+      header: <>NI CAGR <SortIcon field="netIncomeCagr" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => <span className="text-sm tabular-nums text-gray-700 dark:text-gray-200" title="5-year net income CAGR">{r.netIncomeCagr !== null ? `${r.netIncomeCagr > 0 ? '+' : ''}${r.netIncomeCagr.toFixed(1)}%` : '-'}</span>,
+    },
+    {
+      key: 'marginStability',
+      header: <>Margin Var. <SortIcon field="marginStability" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => <span className="text-sm tabular-nums text-gray-700 dark:text-gray-200" title="Margin variance across years — lower means more consistent">{r.marginStability !== null ? r.marginStability.toFixed(2) : '-'}</span>,
     },
     {
       // Which strategy quick-screens this row currently satisfies — the

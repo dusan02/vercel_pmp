@@ -1,4 +1,4 @@
-import { downsampleSeries, METRIC_FILTERS, METRIC_GROUPS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, RANGE_FILTERS, QUICK_SCREENS, PRESET_GROUPS, presetToQueryString, isValidScreenParams, matchesPreset } from '@/lib/utils/screener';
+import { downsampleSeries, METRIC_FILTERS, METRIC_GROUPS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, ANALYST_RANGE_FILTERS, RANGE_FILTERS, QUICK_SCREENS, PRESET_GROUPS, presetToQueryString, isValidScreenParams, matchesPreset } from '@/lib/utils/screener';
 import { LEADERBOARDS } from '@/lib/seo/leaderboards';
 
 describe('downsampleSeries (screener 1Y sparkline)', () => {
@@ -49,8 +49,8 @@ describe('screener filter param conventions', () => {
         expect(MARKET_RANGE_FILTERS.map(d => d.key)).not.toContain('roe');
     });
 
-    it('registry covers market + metric + insider arrays exactly once', () => {
-        const all = [...MARKET_RANGE_FILTERS, ...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS];
+    it('registry covers market + metric + insider + analyst arrays exactly once', () => {
+        const all = [...MARKET_RANGE_FILTERS, ...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS, ...ANALYST_RANGE_FILTERS];
         expect(RANGE_FILTERS.length).toBe(all.length);
         for (const d of all) {
             expect(RANGE_FILTERS.filter((r) => r.key === d.key).length).toBe(1);
@@ -59,7 +59,7 @@ describe('screener filter param conventions', () => {
 
     it('ticker-source defs map to real Ticker columns', () => {
         const ticker = RANGE_FILTERS.filter((d) => d.source === 'ticker');
-        expect(ticker.map((d) => d.field).sort()).toEqual(['lastChangePct', 'lastPrice']);
+        expect(ticker.map((d) => d.field).sort()).toEqual(['employees', 'lastChangePct', 'lastPrice']);
     });
 });
 

@@ -75,7 +75,9 @@
     "quant:e2e": "tsx src/lib/quant/p4-engine/consensus/synthetic-e2e-cli.ts",
     "quant:status": "tsx src/lib/quant/project-status-cli.ts",
     "quant:score": "tsx src/lib/quant/ew-engine/current-signal-cli.ts",
-    "traffic": "tsx scripts/traffic-report.ts"
+    "traffic": "tsx scripts/traffic-report.ts",
+    "traffic:all": "tsx scripts/portfolio-traffic.ts",
+    "traffic:humans": "tsx scripts/human-filter.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

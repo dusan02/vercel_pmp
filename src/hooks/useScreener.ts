@@ -67,11 +67,13 @@ export function useScreener({
             insiderLargestSellValue90d: r.insiderLargestSellValue90d ?? null,
             insiderUniqueBuyers14d: r.insiderUniqueBuyers14d ?? null,
             insiderUniqueSellers14d: r.insiderUniqueSellers14d ?? null,
+            analysts: r.analysts ?? null,
             ticker: r.ticker ? {
                 name: r.ticker.name ?? null,
                 sector: r.ticker.sector ?? null,
                 industry: r.ticker.industry ?? null,
                 logoUrl: r.ticker.logoUrl ?? null,
+                employees: r.ticker.employees ?? null,
                 lastPrice: r.ticker.lastPrice ?? null,
                 lastChangePct: r.ticker.lastChangePct ?? null,
                 lastMarketCap: r.ticker.lastMarketCap ?? null,

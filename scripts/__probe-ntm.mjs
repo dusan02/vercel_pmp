@@ -1,0 +1,15 @@
+import { chromium } from 'playwright';
+const b = await chromium.launch();
+const p = await b.newPage({ viewport: { width: 1400, height: 1000 } });
+await p.goto('https://premarketprice.com/analysis/AAPL', { waitUntil: 'domcontentloaded', timeout: 60000 });
+await p.waitForSelector('button:has-text("P/E NTM")', { state: 'attached', timeout: 30000 });
+await p.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Valuation')?.click());
+await p.waitForTimeout(1800);
+await p.evaluate(() => [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'P/E NTM')?.click());
+await p.waitForTimeout(1800);
+const el = await p.$('button:has-text("P/E NTM")');
+await el?.scrollIntoViewIfNeeded();
+await p.waitForTimeout(800);
+await p.screenshot({ path: '/tmp/ntm-prod.png' });
+await b.close();
+console.log('done');
