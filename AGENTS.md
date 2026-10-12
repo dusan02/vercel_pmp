@@ -85,6 +85,12 @@ curl -s https://premarketprice.com/analysis/AAPL | grep -c FinancialProduct  # �
 - Lokálne bez Redis/DB: ticker stránky vracajú 404 (environmentálny limit, nie bug)
 - **`next dev` (Turbopack) zlyháva na `globals.css`** — "Invalid empty selector" pri vnorenom `@supports` v `@media` (pre-existing, webpack build prejde). Na lokálny render smoke použi `npm run build` + `NODE_ENV=production npx tsx server.ts`
 
+## Screener — P/E vs vlastná história (2026-10-12)
+
+- `AnalysisCache.pePercentile` + `peVsMedian3yPct` — materializované scoreCalculatorom (`calculateScores`, pri každom recompute). Backfill: `npx tsx scripts/backfill-pillar-scores.ts` (skipVerdict+skipNotify, bez AI volaní). Nové polia na prode vyžadujú `git pull` + `npx prisma generate` na VPS pred backfillom — tsx skripty používajú generovaného klienta z node_modules, nie schema.prisma
+- Screener source `'analysis'` v `RANGE_FILTERS` mapuje min/max params na `analysisCache.is` relation filter — spája sa so score filtrami do jedného `is:` (nekombinovať do dvoch relation blokov, Prisma by spojil AND pníkmi nesprávne)
+- `peVsMedian3yPct` okno sa kotví na posledný DVH riadok (nie wall-clock), min. ~120 obs inak null — null riadky filter automaticky vylučuje (relation `is` semantics), čo je želané: história-chudobné tickery nesmú vyzerať lacno
+
 ## Early Winners score pipeline
 
 - **Tok**: quant engine (separátna Postgres PIT DB, `QUANT_DB_URL`) → `npm run quant:score -- --as-of <dátum> --json-out <súbor>` → JSON sa prenesie na VPS → `scripts/import-ew-scores.ts` upsertne do `EwScoreSnapshot` (SQLite) → renderuje `/screener/early-winners` + minimalistickú `EW Score` bunku v Key Metrics na `/analysis/[ticker]`
