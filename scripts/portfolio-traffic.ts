@@ -74,6 +74,34 @@ async function ga4Tiers(token: string, propertyId: string): Promise<Record<strin
   return days;
 }
 
+// Realtime has no sessionSource/landingPage dims — country is the only
+// farm signal available; flag suspicious-country share in parens.
+async function ga4Realtime(token: string, propertyId: string): Promise<{ total: number; farm: number; top: string }> {
+  const res = await fetch(`${API}/${propertyId}:runRealtimeReport`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      metrics: [{ name: 'activeUsers' }],
+      dimensions: [{ name: 'country' }],
+      minuteRanges: [{ startMinutesAgo: 29, endMinutesAgo: 0 }],
+      limit: 50,
+    }),
+  });
+  if (!res.ok) throw new Error(`GA4rt ${propertyId}: ${res.status} ${(await res.text()).slice(0, 120)}`);
+  let total = 0, farm = 0;
+  const byCountry: Record<string, number> = {};
+  for (const r of (await res.json()).rows ?? []) {
+    const c = String(r.dimensionValues?.[0]?.value ?? '?');
+    const n = +r.metricValues[0].value;
+    byCountry[c] = (byCountry[c] ?? 0) + n;
+    total += n;
+    if (FARM_COUNTRIES.has(c)) farm += n;
+  }
+  const top = Object.entries(byCountry).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    .map(([c, n]) => `${c}:${n}`).join(' ');
+  return { total, farm, top };
+}
+
 function printGa4(label: string, days: Record<string, DayStat>) {
   console.log(`  GA4 ${label}:   date        raw   rend   human~   eng`);
   for (const date of Object.keys(days).sort()) {
@@ -141,6 +169,8 @@ async function main() {
     }
     try {
       printGa4(label2, await ga4Tiers(token, prop));
+      const rt = await ga4Realtime(token, prop);
+      console.log(`           RT(30m): ${String(rt.total).padStart(3)} active (${rt.farm} farm-country)   ${rt.top}`);
     } catch (e: any) {
       console.log(`  GA4 ${label2}:   ERROR ${e.message}`);
     }
