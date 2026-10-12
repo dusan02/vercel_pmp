@@ -1,8 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import {
     ArrowDown, ArrowUpRight, BadgeCheck, Banknote, Check, Coins, Gem,
-    HandCoins, Landmark, Percent, RefreshCcw, Scale, ShieldCheck, Sprout,
-    Tag, TrendingDown, TrendingUp, Trophy, Vault, Zap,
+    HandCoins, History, Landmark, Percent, RefreshCcw, Scale, ShieldCheck,
+    Sprout, Tag, TrendingDown, TrendingUp, Trophy, Vault, Zap,
 } from 'lucide-react';
 
 /**
@@ -32,6 +32,7 @@ export const PRESET_ICONS: Record<string, { Icon: LucideIcon; cls: string }> = {
     HandCoins:    { Icon: HandCoins,    cls: 'text-emerald-500' },
     ArrowDown:    { Icon: ArrowDown,    cls: 'text-red-500' },
     Zap:          { Icon: Zap,          cls: 'text-green-500' },
+    History:      { Icon: History,      cls: 'text-indigo-500' },
 };
 
 /** Render-size helper: preset icons sit inside 11px-text pills/chips. */

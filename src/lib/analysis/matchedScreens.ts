@@ -28,6 +28,7 @@ export const getMatchedScreens = cache(async (symbol: string): Promise<MatchedSc
                     healthScore: true, profitabilityScore: true, valuationScore: true,
                     growthScore: true, qualityScore: true, overallScore: true,
                     altmanZ: true, fcfMargin: true,
+                    pePercentile: true, peVsMedian3yPct: true,
                 },
             },
             finnhubMetrics: {

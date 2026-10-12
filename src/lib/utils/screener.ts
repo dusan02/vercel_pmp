@@ -362,6 +362,8 @@ export const QUICK_SCREENS: {
     { label: 'Insider Buying', tip: 'Net insider buying >$0 (90d) · Quality ≥60 · Fin. Health ≥50, sorted by insider buy $', group: 'discovery', icon: 'HandCoins', preset: { minQuality: 60, minHealth: 50, ranges: { netBuyValue90d: { min: 1 } }, sort: 'insider.netBuyValue90d:desc' } },
     { label: 'Selloff + Fundamentals', tip: 'Day change ≤-5% · Overall ≥70 · Quality ≥70 — abnormal drop on strong fundamentals', group: 'discovery', icon: 'ArrowDown', preset: { minOverall: 70, minQuality: 70, ranges: { changePct: { max: -5 } }, sort: 'ticker.lastChangePct:asc' } },
     { label: 'Momentum + Fundamentals', tip: 'Day change ≥+5% · Overall ≥70 · Quality ≥70 — abnormal move on strong fundamentals', group: 'discovery', icon: 'Zap', preset: { minOverall: 70, minQuality: 70, ranges: { changePct: { min: 5 } }, sort: 'ticker.lastChangePct:desc' } },
+    { label: 'P/E Below 3Y Median', tip: 'Current P/E below its own trailing-3Y median — sorted by deepest discount vs that median', group: 'discovery', icon: 'History', preset: { ranges: { peVsMedian3yPct: { max: 0 } }, sort: 'peVsMedian3yPct:asc' } },
+    { label: 'P/E at Historical Low', tip: 'Current P/E in the bottom decile of its own valuation history (≤10ᵗʰ percentile)', group: 'discovery', icon: 'History', preset: { ranges: { pePercentile: { max: 10 } }, sort: 'pePercentile:asc' } },
 ];
 
 /** Render order + labels for the preset pill groups (screener UI only). */
@@ -389,6 +391,10 @@ export interface PresetMatchContext {
         valuationScore?: number | null; growthScore?: number | null;
         qualityScore?: number | null; overallScore?: number | null;
         altmanZ?: number | null; fcfMargin?: number | null;
+        // Analysis-derived range-filter fields (AnalysisCache columns).
+        pePercentile?: number | null; peVsMedian3yPct?: number | null;
+        revenueCagr?: number | null; netIncomeCagr?: number | null;
+        fcfConversion?: number | null; marginStability?: number | null;
     } | null;
     metrics?: Partial<Record<MetricFilterKey, number | null>> | null;
     market?: { price?: number | null; changePct?: number | null; marketCapB?: number | null } | null;
@@ -423,6 +429,7 @@ export function matchesPreset(p: ScreenerPreset, ctx: PresetMatchContext): boole
         let v: number | null | undefined;
         if (def.source === 'finnhub') v = ctx.metrics?.[key as MetricFilterKey];
         else if (def.source === 'insider') v = ctx.insider?.[key as 'netBuyValue90d' | 'netBuyPct90d'];
+        else if (def.source === 'analysis') v = ctx.scores?.[key as 'pePercentile' | 'peVsMedian3yPct' | 'revenueCagr' | 'netIncomeCagr' | 'fcfConversion' | 'marginStability'];
         else v = def.field === 'lastPrice' ? ctx.market?.price : ctx.market?.changePct;
         if (!inRange(v, r)) return false;
     }
