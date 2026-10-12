@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
-import { downsampleSeries, RANGE_FILTERS } from '@/lib/utils/screener';
+import { downsampleSeries, RANGE_FILTERS, SCORE_FILTERS, ADVANCED_FILTERS, ANALYSIS_SORT_FIELDS } from '@/lib/utils/screener';
 
 const SCREENER_CACHE_TTL = 600; // 10 minutes
 
@@ -29,26 +29,25 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
         return isFinite(n) ? n : undefined;
     };
 
-    // Score filters (min/max)
-    const minHealth = num('minHealth');
-    const minProfitability = num('minProfitability');
-    const minValuation = num('minValuation');
-    const minAltman = num('minAltman');
-    const minPiotroski = int('minPiotroski');
-    // Beneish: lower = better. maxBeneish filters "at most this manipulation risk"
-    const maxBeneish = num('maxBeneish');
-    const minFcfMargin = num('minFcfMargin');
-    // Debt repayment: lower = better. maxDebtRepayment filters "at most this many years"
-    const maxDebtRepayment = num('maxDebtRepayment');
-    const maxHealth = num('maxHealth');
-    const maxProfitability = num('maxProfitability');
-    const maxValuation = num('maxValuation');
-    const minGrowth = num('minGrowth');
-    const maxGrowth = num('maxGrowth');
-    const minQuality = num('minQuality');
-    const maxQuality = num('maxQuality');
-    const minOverall = num('minOverall');
-    const maxOverall = num('maxOverall');
+    // Score + advanced filters — param→AnalysisCache mapping lives in the
+    // SCORE_FILTERS/ADVANCED_FILTERS registries (shared with the UI + saved-
+    // screen validator). New score field = one line in screener.ts.
+    const scoreRanges: { field: string; min?: number; max?: number }[] = [];
+    for (const d of SCORE_FILTERS) {
+        const lo = num(d.apiMin), hi = num(d.apiMax);
+        if (lo !== undefined || hi !== undefined) {
+            const r: { field: string; min?: number; max?: number } = { field: d.field };
+            if (lo !== undefined) r.min = lo;
+            if (hi !== undefined) r.max = hi;
+            scoreRanges.push(r);
+        }
+    }
+    for (const d of ADVANCED_FILTERS) {
+        const v = 'int' in d && d.int ? int(d.param) : num(d.param);
+        if (v !== undefined) {
+            scoreRanges.push({ field: d.field, ...(d.param.startsWith('min') ? { min: v } : { max: v }) });
+        }
+    }
     const sector = searchParams.get('sector') || undefined;
     const industry = searchParams.get('industry') || undefined;
     // Search: symbol or company name (case-insensitive contains)
@@ -101,7 +100,12 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
     const metricsKey = metricRanges
         .map((r) => `${r.source}.${r.field}=${r.min ?? ''}-${r.max ?? ''}`)
         .join('|');
-    const cacheKey = `screener:${minHealth || ''}:${maxHealth || ''}:${minProfitability || ''}:${maxProfitability || ''}:${minValuation || ''}:${maxValuation || ''}:${minGrowth || ''}:${maxGrowth || ''}:${minQuality || ''}:${maxQuality || ''}:${minOverall || ''}:${maxOverall || ''}:${minAltman || ''}:${minPiotroski || ''}:${maxBeneish || ''}:${minFcfMargin || ''}:${maxDebtRepayment || ''}:${sector || ''}:${industry || ''}:${q || ''}:${minMarketCap || ''}:${maxMarketCap || ''}:${minPrice || ''}:${maxPrice || ''}:${minChangePct || ''}:${maxChangePct || ''}:${metricsKey}:${page}:${limit}:${sortParams}`;
+    // scoreRanges serializes like metricRanges — deterministic field order
+    // (registry order) means equal filter sets share one cache entry.
+    const scoresKey = scoreRanges
+        .map((r) => `ac.${r.field}=${r.min ?? ''}-${r.max ?? ''}`)
+        .join('|');
+    const cacheKey = `screener:${scoresKey}:${sector || ''}:${industry || ''}:${q || ''}:${minMarketCap || ''}:${maxMarketCap || ''}:${metricsKey}:${page}:${limit}:${sortParams}`;
     try {
         const cached = await getCachedData(cacheKey);
         if (cached) return cached as Record<string, any>;
@@ -178,52 +182,12 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
         }
 
         // ── Fundamental filters apply on the AnalysisCache relation ──
-        // When any score or analysis-range filter is active, tickers without
-        // analysis are excluded automatically (they cannot match).
-        const hasScoreFilter = [minHealth, maxHealth, minProfitability, maxProfitability, minValuation, maxValuation, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment].some((v) => v !== undefined);
-        if (hasScoreFilter || analysisRanges.length > 0) {
+        // Score ranges + analysis-derived ranges merge into ONE `is` clause —
+        // an active filter requires the relation row, so tickers without
+        // analysis are excluded automatically (they cannot match a bound).
+        if (scoreRanges.length > 0 || analysisRanges.length > 0) {
             const ac: any = {};
-            if (minHealth !== undefined || maxHealth !== undefined) {
-                ac.healthScore = {};
-                if (minHealth !== undefined) ac.healthScore.gte = minHealth;
-                if (maxHealth !== undefined) ac.healthScore.lte = maxHealth;
-            }
-            if (minProfitability !== undefined || maxProfitability !== undefined) {
-                ac.profitabilityScore = {};
-                if (minProfitability !== undefined) ac.profitabilityScore.gte = minProfitability;
-                if (maxProfitability !== undefined) ac.profitabilityScore.lte = maxProfitability;
-            }
-            if (minValuation !== undefined || maxValuation !== undefined) {
-                ac.valuationScore = {};
-                if (minValuation !== undefined) ac.valuationScore.gte = minValuation;
-                if (maxValuation !== undefined) ac.valuationScore.lte = maxValuation;
-            }
-            if (minGrowth !== undefined || maxGrowth !== undefined) {
-                ac.growthScore = {};
-                if (minGrowth !== undefined) ac.growthScore.gte = minGrowth;
-                if (maxGrowth !== undefined) ac.growthScore.lte = maxGrowth;
-            }
-            if (minQuality !== undefined || maxQuality !== undefined) {
-                ac.qualityScore = {};
-                if (minQuality !== undefined) ac.qualityScore.gte = minQuality;
-                if (maxQuality !== undefined) ac.qualityScore.lte = maxQuality;
-            }
-            if (minOverall !== undefined || maxOverall !== undefined) {
-                ac.overallScore = {};
-                if (minOverall !== undefined) ac.overallScore.gte = minOverall;
-                if (maxOverall !== undefined) ac.overallScore.lte = maxOverall;
-            }
-            if (minAltman !== undefined) ac.altmanZ = { gte: minAltman };
-            if (minPiotroski !== undefined) ac.piotroskiScore = { gte: minPiotroski };
-            // Beneish: lower = better. maxBeneish means "show only companies with Beneish <= X"
-            if (maxBeneish !== undefined) ac.beneishScore = { lte: maxBeneish };
-            if (minFcfMargin !== undefined) ac.fcfMargin = { gte: minFcfMargin };
-            // Debt repayment: lower = better. maxDebtRepayment means "show only companies with debt repayment <= X years"
-            if (maxDebtRepayment !== undefined) ac.debtRepaymentYears = { lte: maxDebtRepayment };
-            // Analysis-derived range filters (pePercentile, peVsMedian3yPct,
-            // CAGRs, fcfConversion, marginStability) merge into the same
-            // relation filter — combined score+range queries hit one `is`.
-            for (const r of analysisRanges) {
+            for (const r of [...scoreRanges, ...analysisRanges]) {
                 ac[r.field] = {};
                 if (r.min !== undefined) ac[r.field].gte = r.min;
                 if (r.max !== undefined) ac[r.field].lte = r.max;
@@ -235,7 +199,10 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
 
         // Build Prisma orderBy — score fields live on analysisCache, market
         // fields on ticker. Nulls (tickers without analysis) always last.
-        const SCORE_FIELDS = new Set(['healthScore', 'profitabilityScore', 'valuationScore', 'growthScore', 'qualityScore', 'overallScore', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'debtRepaymentYears', 'revenueCagr', 'netIncomeCagr', 'fcfConversion', 'marginStability', 'pePercentile', 'peVsMedian3yPct']);
+        // AnalysisCache sort whitelist — derived in screener.ts from the
+        // score/advanced/analysis registries (any new field is sortable once
+        // it has a filter def).
+        const SCORE_FIELDS = ANALYSIS_SORT_FIELDS;
         // Insider aggregate sort fields (insider.<field> → insiderAggregate rel)
         const INSIDER_FIELDS = new Set(['netBuyPct90d', 'netBuyValue90d', 'largestBuyValue90d', 'largestSellValue90d', 'uniqueBuyers14d', 'uniqueSellers14d']);
         // Analyst-consensus sort fields (analyst.<field> → finnhubRecommendation rel)

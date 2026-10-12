@@ -37,12 +37,19 @@ export interface ValuationHistoryRow {
     fcfYield: number | null;
 }
 
-function median(sorted: number[]): number | null {
+/** Median of an ascending-sorted series (null when empty). */
+export function medianOf(sorted: number[]): number | null {
     if (sorted.length === 0) return null;
     const mid = Math.floor(sorted.length / 2);
     return sorted.length % 2 === 0
         ? (sorted[mid - 1]! + sorted[mid]!) / 2
         : sorted[mid]!;
+}
+
+/** Share of an ascending-sorted series strictly below `current`, 0–100. */
+export function percentileBelow(sorted: number[], current: number): number {
+    const idx = sorted.findIndex(v => v >= current);
+    return idx === -1 ? 100 : (idx / sorted.length) * 100;
 }
 
 /** Summarize one series + rank `current` against it. */
@@ -57,15 +64,13 @@ export function summarizeSeries(
     }
     let percentile: number | null = null;
     if (current != null && Number.isFinite(current)) {
-        let below = 0;
-        for (const v of sorted) if (v < current) below++;
-        percentile = (below / sorted.length) * 100;
+        percentile = percentileBelow(sorted, current);
     }
     return {
         current,
         min: sorted[0]!,
         max: sorted[sorted.length - 1]!,
-        median: median(sorted),
+        median: medianOf(sorted),
         percentile,
         sampleSize: sorted.length,
         years,

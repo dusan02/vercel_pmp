@@ -5,6 +5,7 @@ import { summarizeLossYears } from '@/lib/utils/analysisMath';
 import { computePillars, deriveMoatInputs } from './pillars';
 import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
 import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
+import { medianOf, percentileBelow } from './valuationHistory';
 
 export interface CalculateScoresOptions {
     /** No-op — AI verdict generation was removed (cost vs. value). */
@@ -283,8 +284,7 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     const peForPct = latestPeRow?.peRatio ?? currentPE;
     let pePercentile: number | null = null;
     if (allValuations.length > 0 && peForPct !== null && peForPct > 0) {
-        const index = allValuations.findIndex(v => v.peRatio !== null && v.peRatio >= peForPct);
-        pePercentile = index === -1 ? 100 : (index / allValuations.length) * 100;
+        pePercentile = percentileBelow(allValuations.map(v => v.peRatio!), peForPct);
         humanPeInfo = formatPePercentile(peForPct, pePercentile);
     }
 
@@ -302,11 +302,8 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         });
         // ~120 trading days ≈ half a year — below that the median is noise.
         if (windowRows.length >= 120) {
-            const n = windowRows.length;
-            const median3y = n % 2 === 1
-                ? windowRows[(n - 1) / 2]!.peRatio!
-                : (windowRows[n / 2 - 1]!.peRatio! + windowRows[n / 2]!.peRatio!) / 2;
-            if (median3y > 0) peVsMedian3yPct = ((peForPct - median3y) / median3y) * 100;
+            const median3y = medianOf(windowRows.map(r => r.peRatio!));
+            if (median3y !== null && median3y > 0) peVsMedian3yPct = ((peForPct - median3y) / median3y) * 100;
         }
     }
 

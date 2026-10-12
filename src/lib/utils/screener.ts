@@ -105,12 +105,12 @@ export interface ScreenerPagination {
  * hazard between the hook's fetch and the route's parsing.
  */
 export const SCORE_FILTERS = [
-    { key: 'overall',       label: 'Overall',       urlMin: 'minOverall', urlMax: 'maxOverall', apiMin: 'minOverall',       apiMax: 'maxOverall',       accent: 'amber'   },
-    { key: 'valuation',     label: 'Valuation',     urlMin: 'minValue',   urlMax: 'maxValue',   apiMin: 'minValuation',     apiMax: 'maxValuation',     accent: 'violet'  },
-    { key: 'growth',        label: 'Growth',        urlMin: 'minGrowth',  urlMax: 'maxGrowth',  apiMin: 'minGrowth',        apiMax: 'maxGrowth',        accent: 'sky'     },
-    { key: 'profitability', label: 'Profitability', urlMin: 'minProfit',  urlMax: 'maxProfit',  apiMin: 'minProfitability', apiMax: 'maxProfitability', accent: 'emerald' },
-    { key: 'health',        label: 'Fin. Health',   urlMin: 'minHealth',  urlMax: 'maxHealth',  apiMin: 'minHealth',        apiMax: 'maxHealth',        accent: 'blue'    },
-    { key: 'quality',       label: 'Quality',       urlMin: 'minQuality', urlMax: 'maxQuality', apiMin: 'minQuality',       apiMax: 'maxQuality',       accent: 'rose'    },
+    { key: 'overall',       label: 'Overall',       urlMin: 'minOverall', urlMax: 'maxOverall', apiMin: 'minOverall',       apiMax: 'maxOverall',       field: 'overallScore',       accent: 'amber'   },
+    { key: 'valuation',     label: 'Valuation',     urlMin: 'minValue',   urlMax: 'maxValue',   apiMin: 'minValuation',     apiMax: 'maxValuation',     field: 'valuationScore',     accent: 'violet'  },
+    { key: 'growth',        label: 'Growth',        urlMin: 'minGrowth',  urlMax: 'maxGrowth',  apiMin: 'minGrowth',        apiMax: 'maxGrowth',        field: 'growthScore',        accent: 'sky'     },
+    { key: 'profitability', label: 'Profitability', urlMin: 'minProfit',  urlMax: 'maxProfit',  apiMin: 'minProfitability', apiMax: 'maxProfitability', field: 'profitabilityScore', accent: 'emerald' },
+    { key: 'health',        label: 'Fin. Health',   urlMin: 'minHealth',  urlMax: 'maxHealth',  apiMin: 'minHealth',        apiMax: 'maxHealth',        field: 'healthScore',        accent: 'blue'    },
+    { key: 'quality',       label: 'Quality',       urlMin: 'minQuality', urlMax: 'maxQuality', apiMin: 'minQuality',       apiMax: 'maxQuality',       field: 'qualityScore',       accent: 'rose'    },
 ] as const;
 export type ScoreFilterKey = (typeof SCORE_FILTERS)[number]['key'];
 export type ScoreRange = { min?: number; max?: number };
@@ -126,11 +126,11 @@ export const SCORE_RANGE_MAX = 100;
  * stored as a decimal, displayed as %).
  */
 export const ADVANCED_FILTERS = [
-    { key: 'minAltman',        param: 'minAltman',        def: 0,    displayScale: 1,   active: (v: number) => v > 0,    label: 'Min Altman Z',           hint: 'Safe >3, Grey 1.8–3, Risk <1.8' },
-    { key: 'minPiotroski',     param: 'minPiotroski',     def: 0,    displayScale: 1,   active: (v: number) => v > 0,    label: 'Min Piotroski F (0–9)',   hint: '≥7 Strong, 4–6 Avg, <4 Weak' },
-    { key: 'maxBeneish',       param: 'maxBeneish',       def: 10,   displayScale: 1,   active: (v: number) => v < 10,   label: 'Max Beneish M',           hint: '<-2.22 Safe, -2.22 to -1.78 Grey, >-1.78 Risky' },
-    { key: 'minFcfMargin',     param: 'minFcfMargin',     def: -100, displayScale: 100, active: (v: number) => v > -100, label: 'Min FCF Margin (%)',      hint: '≥15% High, ≥5% Good, <0% Negative' },
-    { key: 'maxDebtRepayment', param: 'maxDebtRepayment', def: 350,  displayScale: 1,   active: (v: number) => v < 350,  label: 'Max Debt Repay (years)', hint: '0 = No debt, ≤3 Fast, ≤5 OK, >5 Slow' },
+    { key: 'minAltman',        param: 'minAltman',        field: 'altmanZ',             def: 0,    displayScale: 1,   active: (v: number) => v > 0,    label: 'Min Altman Z',           hint: 'Safe >3, Grey 1.8–3, Risk <1.8' },
+    { key: 'minPiotroski',     param: 'minPiotroski',     field: 'piotroskiScore',      def: 0,    displayScale: 1,   active: (v: number) => v > 0,    label: 'Min Piotroski F (0–9)',   hint: '≥7 Strong, 4–6 Avg, <4 Weak', int: true },
+    { key: 'maxBeneish',       param: 'maxBeneish',       field: 'beneishScore',        def: 10,   displayScale: 1,   active: (v: number) => v < 10,   label: 'Max Beneish M',           hint: '<-2.22 Safe, -2.22 to -1.78 Grey, >-1.78 Risky' },
+    { key: 'minFcfMargin',     param: 'minFcfMargin',     field: 'fcfMargin',           def: -100, displayScale: 100, active: (v: number) => v > -100, label: 'Min FCF Margin (%)',      hint: '≥15% High, ≥5% Good, <0% Negative' },
+    { key: 'maxDebtRepayment', param: 'maxDebtRepayment', field: 'debtRepaymentYears',  def: 350,  displayScale: 1,   active: (v: number) => v < 350,  label: 'Max Debt Repay (years)', hint: '0 = No debt, ≤3 Fast, ≤5 OK, >5 Slow' },
 ] as const;
 export type AdvancedFilterKey = (typeof ADVANCED_FILTERS)[number]['key'];
 
@@ -249,6 +249,16 @@ export const ANALYSIS_RANGE_FILTERS = [
     { key: 'fcfConversion', label: 'FCF Conv ×', min: -1, max: 3, step: 0.05, group: 'Analysis' },
     { key: 'marginStability', label: 'Margin Var', min: 0, max: 1, step: 0.01, group: 'Analysis' },
 ] as const;
+
+/**
+ * AnalysisCache columns valid as bare `sort=<field>:asc|desc` values —
+ * derived from the score/advanced/analysis registries (single source).
+ */
+export const ANALYSIS_SORT_FIELDS: ReadonlySet<string> = new Set([
+    ...SCORE_FILTERS.map((d) => d.field),
+    ...ADVANCED_FILTERS.map((d) => d.field),
+    ...ANALYSIS_RANGE_FILTERS.map((d) => d.key),
+]);
 
 export type RangeFilterKey =
     | MetricFilterKey

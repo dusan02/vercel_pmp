@@ -12,7 +12,7 @@ import { useSavedScreens, MAX_SAVED_SCREENS } from '@/hooks/useSavedScreens';
 import { LivePrice } from './LivePrice';
 import {
   ScreenerResult, scoreColor, altmanZLabel, piotroskiLabel, beneishLabel, fcfMarginLabel, debtRepayLabel,
-  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, METRIC_GROUPS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, ANALYSIS_RANGE_FILTERS, RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS, PRESET_GROUPS,
+  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, ANALYSIS_RANGE_FILTERS, RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS, PRESET_GROUPS,
   SCORE_FILTERS, ADVANCED_FILTERS, matchesPreset,
 } from '@/lib/utils/screener';
 import { Sparkline } from './Sparkline';
@@ -72,6 +72,14 @@ const columnLabel = (key: string) =>
   COLUMN_LABELS[key]
   ?? METRIC_FILTERS.find((d) => `metrics.${d.key}` === key)?.label
   ?? key;
+
+/** All slider-rendered range defs (Finnhub metrics + our analysis metrics) —
+    grouped by `group` so each registry adds its section automatically. */
+const SLIDER_DEFS: { key: RangeFilterKey; label: string; min: number; max: number; step: number; group: string }[] = [
+  ...METRIC_FILTERS,
+  ...ANALYSIS_RANGE_FILTERS,
+];
+const SLIDER_GROUPS = [...new Set(SLIDER_DEFS.map((d) => d.group))];
 // Company is the row identifier — always first, never removable.
 const PINNED_COLUMN = 'ticker.name';
 
@@ -874,8 +882,8 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         {metricsVisible && (
           <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
             {/* Grouped by category — 20 sliders flat was unscannable. */}
-            {METRIC_GROUPS.map((group) => {
-              const defs = METRIC_FILTERS.filter((d) => d.group === group);
+            {SLIDER_GROUPS.map((group) => {
+              const defs = SLIDER_DEFS.filter((d) => d.group === group);
               const activeInGroup = defs.filter((d) => metricRanges[d.key]).length;
               return (
                 <div key={group}>
@@ -899,29 +907,6 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
                 </div>
               );
             })}
-            {/* Analysis-derived metrics — computed per-ticker on our own
-                statement/valuation history (not Finnhub snapshots). */}
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Analysis</span>
-                {ANALYSIS_RANGE_FILTERS.filter((d) => metricRanges[d.key]).length > 0 && (
-                  <span className="text-[10px] text-blue-500 font-medium">{ANALYSIS_RANGE_FILTERS.filter((d) => metricRanges[d.key]).length} active</span>
-                )}
-                <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-2">
-                {ANALYSIS_RANGE_FILTERS.map((def) => (
-                  <div key={def.key} className={metricRanges[def.key] ? 'rounded-md ring-1 ring-blue-400/60 bg-blue-50/50 dark:bg-blue-950/20 -m-0.5 p-0.5' : ''}>
-                    <DualRangeSlider
-                      label={def.label}
-                      min={def.min} max={def.max} step={def.step}
-                      {...rangeSliderProps(def)}
-                      accentColor="sky"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
             <div className="col-span-full flex items-center justify-between">
               <span className="text-[10px] text-gray-400">Metrics from Finnhub fundamentals + our own analysis history (coverage ~70–99 % per field; filtered-out tickers without data are excluded).</span>
               {metricsActive && (
