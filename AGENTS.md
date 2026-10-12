@@ -42,6 +42,7 @@
 - **OTVORENÉ: sshd povolené `PasswordAuthentication yes` + `PermitRootLogin yes`** — odporúčané zmeniť na `prohibit-password` (vyžaduje potvrdenie vlastníka — riziko lockoutu)
 - **`NEXT_PUBLIC_*` hodnoty sa bake-ujú do bundle pri builde** — v CI ich má smoke-test job ako env (secrets `NEXT_PUBLIC_GA_ID`/`NEXT_PUBLIC_VAPID_PUBLIC_KEY` s public-literal fallbackmi — sú to verejné hodnoty z JS bundle). Pri pridaní novej `NEXT_PUBLIC_*` env treba ju doplniť aj do `ci.yml`, inak sa na produkcii potichu rozbije príslušná feature
 - **`vps-deploy.sh` nereštartuje `pmp-polygon-worker`** — po zmene `src/workers/**` treba manuálne `ssh root@89.185.250.213 'pm2 restart pmp-polygon-worker'` (worker beží cez tsx, nepotrebuje Next build)
+- **Junk-filter Fáza 1 (2026-10-12)**: `conf.d/zz-junk-filter.conf` = `$junk_ua` map (whitelist `89.185.250.213` VPS cron + `95.102.` owner prefix → inak 403 pre python-requests/curl/wget/scrapy/nmap/nuclei/Go-http/okhttp/Java/axios/node-fetch/undici/got) + `snippets/junk_filter.conf` = include do 443 server blokov všetkých 4 webov (403 pre junk UA + 404 pre scanner cesty wp-*/\.env/\.git/php/exe ext; `.txt/.xml/.json/.well-known` otvorené kvôli IndexNow/ACME/manifest). **NIKDY nedeny `HeadlessChrome` — to je msnbot render crawler** (Bing renderuje stránky headless Edge, ~7k req/day; omylom zablokovaný ~10 min pri nasadení). Rollback: vymazať include riadok zo site configu
 
 ## Analytika (GSC/GA4) a traffic
 
