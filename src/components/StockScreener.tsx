@@ -75,7 +75,7 @@ const columnLabel = (key: string) =>
 
 /** All slider-rendered range defs (Finnhub metrics + our analysis metrics) —
     grouped by `group` so each registry adds its section automatically. */
-const SLIDER_DEFS: { key: RangeFilterKey; label: string; min: number; max: number; step: number; group: string }[] = [
+const SLIDER_DEFS: { key: RangeFilterKey; label: string; min: number; max: number; step: number; group: string; hint?: string }[] = [
   ...METRIC_FILTERS,
   ...ANALYSIS_RANGE_FILTERS,
 ];
@@ -897,6 +897,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
                       <div key={def.key} className={metricRanges[def.key] ? 'rounded-md ring-1 ring-blue-400/60 bg-blue-50/50 dark:bg-blue-950/20 -m-0.5 p-0.5' : ''}>
                         <DualRangeSlider
                           label={def.label}
+                          hint={'hint' in def ? def.hint : undefined}
                           min={def.min} max={def.max} step={def.step}
                           {...rangeSliderProps(def)}
                           accentColor="sky"

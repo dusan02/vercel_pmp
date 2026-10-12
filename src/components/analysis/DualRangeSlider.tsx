@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useState } from 'react';
+import { Info } from 'lucide-react';
 
 /**
  * Compact numeric entry paired with the slider — lets users hit exact
@@ -47,6 +48,8 @@ function NumInput({
 
 interface DualRangeSliderProps {
   label: string;
+  /** Plain-language explanation — shown on hover/tap via native tooltip. */
+  hint?: string | undefined;
   min: number;
   max: number;
   step?: number;
@@ -59,6 +62,7 @@ interface DualRangeSliderProps {
 
 export function DualRangeSlider({
   label,
+  hint,
   min,
   max,
   step = 1,
@@ -96,8 +100,13 @@ export function DualRangeSlider({
   return (
     <div className="flex flex-col gap-0.5 min-w-[110px] flex-1">
       <div className="flex items-center justify-between">
-        <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">
+        <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide flex items-center gap-0.5">
           {label}
+          {hint && (
+            <span title={hint} className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 cursor-help inline-flex">
+              <Info size={9} strokeWidth={2.5} />
+            </span>
+          )}
         </label>
         <div className="flex items-center text-[11px] font-semibold tabular-nums">
           <NumInput

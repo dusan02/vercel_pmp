@@ -242,12 +242,18 @@ export const ANALYST_RANGE_FILTERS = [
  * Rendered as sliders in the "Analysis" group of Metric filters.
  */
 export const ANALYSIS_RANGE_FILTERS = [
-    { key: 'pePercentile', label: 'P/E %ile vs Hist', min: 0, max: 100, step: 1, group: 'Analysis' },
-    { key: 'peVsMedian3yPct', label: 'P/E vs 3Y Med %', min: -80, max: 50, step: 1, group: 'Analysis' },
-    { key: 'revenueCagr', label: 'Rev CAGR 5Y %', min: -30, max: 60, step: 1, group: 'Analysis' },
-    { key: 'netIncomeCagr', label: 'NI CAGR 5Y %', min: -50, max: 100, step: 1, group: 'Analysis' },
-    { key: 'fcfConversion', label: 'FCF Conv ×', min: -1, max: 3, step: 0.05, group: 'Analysis' },
-    { key: 'marginStability', label: 'Margin Var', min: 0, max: 1, step: 0.01, group: 'Analysis' },
+    { key: 'pePercentile', label: 'P/E %ile vs Hist', min: 0, max: 100, step: 1, group: 'Analysis',
+      hint: 'Share of the stock’s own ~10Y P/E history priced below today — 0 = cheapest day on record, 50 ≈ at the median, 100 = most expensive. Low = cheap vs own history.' },
+    { key: 'peVsMedian3yPct', label: 'P/E vs 3Y Med %', min: -80, max: 50, step: 1, group: 'Analysis',
+      hint: 'Current P/E vs its own trailing-3-year median — negative = below the 3Y median (−20 means a 20 % discount). Set max to 0 to find stocks below their 3Y median.' },
+    { key: 'revenueCagr', label: 'Rev CAGR 5Y %', min: -30, max: 60, step: 1, group: 'Analysis',
+      hint: '5-year revenue compound annual growth rate — sustained top-line momentum, not one-off spikes.' },
+    { key: 'netIncomeCagr', label: 'NI CAGR 5Y %', min: -50, max: 100, step: 1, group: 'Analysis',
+      hint: '5-year net income compound annual growth rate — earnings trajectory over the cycle.' },
+    { key: 'fcfConversion', label: 'FCF Conv ×', min: -1, max: 3, step: 0.05, group: 'Analysis',
+      hint: 'Free cash flow ÷ net income — >1 means cash exceeds reported profit (high earnings quality).' },
+    { key: 'marginStability', label: 'Margin Var', min: 0, max: 1, step: 0.01, group: 'Analysis',
+      hint: 'Variance of margins across years — lower means more consistent profitability.' },
 ] as const;
 
 /**
