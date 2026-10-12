@@ -320,6 +320,27 @@ module.exports = {
       autorestart: false,
     },
     {
+      name: "cron-mover-impact",
+      script: "scripts/trigger-mover-impact.ts",
+      interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: {
+        NODE_ENV: "production",
+        BASE_URL: "http://127.0.0.1:3001",
+        CRON_SECRET_KEY: envVars.CRON_SECRET_KEY || envVars.CRON_SECRET || process.env.CRON_SECRET_KEY || process.env.CRON_SECRET,
+      },
+      error_file: path.join(__dirname, "logs", "pm2", "cron-mover-impact-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "cron-mover-impact-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // Every 15 min, 13:00–22:59 server time (Europe/Prague) = 07:00–16:59 ET —
+      // fills MoverEvent.impact1h (~event+1h), impactEndDay (event-day close),
+      // impactNextDay (event-day close → next-day close, pure fade signal).
+      cron_restart: "*/15 13-22 * * 1-5",
+      autorestart: false,
+    },
+    {
       name: "cron-post-social",
       script: "scripts/trigger-post-social.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",

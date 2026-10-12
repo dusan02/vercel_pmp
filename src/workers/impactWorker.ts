@@ -1,18 +1,22 @@
 import { prisma } from '@/lib/db/prisma';
-import { nowET } from '@/lib/utils/dateET';
-import { calculatePercentChange } from '@/lib/utils/priceResolver';
 
 /**
  * Impact Worker: Tracks the performance of MoverEvents over time.
- * This worker updates 'impact1h' and 'impactEndDay' for historical moves.
+ *
+ * Field semantics (each is a distinct, non-interchangeable measure):
+ * - impact1h:      % change priceAtEvent → ticker.lastPrice, written on the
+ *                  first run ≥1h after the event (≈1h ± cron interval). Only
+ *                  tracked for events <24h old.
+ * - impactEndDay:  % change priceAtEvent → regular close of event.date.
+ * - impactNextDay: % change event-day regular close → NEXT trading day's
+ *                  regular close (pure next-day return — the fade signal).
  */
 export async function updateMoverImpacts() {
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
     try {
-        // 1. Update 1-hour impact (impact1h)
-        // Find events that are older than 1h, but haven't been tracked yet
+        // 1. 1-hour impact — first run ≥1h after the event
         const pending1h = await prisma.moverEvent.findMany({
             where: {
                 impact1h: null,
@@ -34,35 +38,58 @@ export async function updateMoverImpacts() {
             }
         }
 
-        // 2. Update End of Day impact (impactEndDay)
-        // Find events from current/previous trading day that are now closed
-        // This usually runs at market close or after.
-        const pendingEOD = await prisma.moverEvent.findMany({
+        // 2. EOD + next-day impact — events ≥6h old with any unfilled field.
+        // Per event, fetch the first two DailyRef closes on/after event.date
+        // (event day + next trading day) and fill both fields in one pass.
+        const pending = await prisma.moverEvent.findMany({
             where: {
-                impactEndDay: null,
-                // Only follow up for events older than 6 hours (usually end of session)
-                timestamp: { lt: new Date(now.getTime() - 6 * 60 * 60 * 1000) }
+                timestamp: { lt: new Date(now.getTime() - 6 * 60 * 60 * 1000) },
+                OR: [{ impactEndDay: null }, { impactNextDay: null }]
             },
-            include: { ticker: true }
+            select: {
+                id: true, symbol: true, date: true, priceAtEvent: true,
+                impactEndDay: true, impactNextDay: true
+            }
         });
 
-        for (const event of pendingEOD) {
-            // If the ticker has a regular close for that day, use it
-            const dailyRef = await prisma.dailyRef.findUnique({
-                where: { symbol_date: { symbol: event.symbol, date: event.date } }
+        let filled = 0;
+        for (const event of pending) {
+            const refs = await prisma.dailyRef.findMany({
+                where: {
+                    symbol: event.symbol,
+                    date: { gte: event.date },
+                    regularClose: { not: null }
+                },
+                orderBy: { date: 'asc' },
+                take: 2,
+                select: { date: true, regularClose: true }
             });
 
-            if (dailyRef && dailyRef.regularClose) {
-                const impact = ((dailyRef.regularClose - event.priceAtEvent) / event.priceAtEvent) * 100;
-                await prisma.moverEvent.update({
-                    where: { id: event.id },
-                    data: { impactEndDay: impact }
-                });
+            const eventDay = refs[0];
+            const nextDay = refs[1];
+            // Guard: refs[0] must BE the event day — if event.date's DailyRef is
+            // missing (data gap), refs[0] is a later day and EOD would be wrong.
+            const hasEventDay = eventDay != null
+                && eventDay.date.getTime() === event.date.getTime()
+                && eventDay.regularClose != null;
+
+            const data: { impactEndDay?: number; impactNextDay?: number } = {};
+            if (hasEventDay && event.impactEndDay == null) {
+                data.impactEndDay =
+                    ((eventDay.regularClose! - event.priceAtEvent) / event.priceAtEvent) * 100;
+            }
+            if (hasEventDay && nextDay?.regularClose != null && event.impactNextDay == null) {
+                data.impactNextDay =
+                    ((nextDay.regularClose - eventDay.regularClose!) / eventDay.regularClose!) * 100;
+            }
+            if (Object.keys(data).length > 0) {
+                await prisma.moverEvent.update({ where: { id: event.id }, data });
+                filled++;
             }
         }
 
-        if (pending1h.length > 0 || pendingEOD.length > 0) {
-            console.log(`📈 [ImpactWorker] Updated ${pending1h.length} 1h-impacts and ${pendingEOD.length} EOD-impacts.`);
+        if (pending1h.length > 0 || filled > 0) {
+            console.log(`📈 [ImpactWorker] Updated ${pending1h.length} 1h-impacts and ${filled} EOD/next-day impacts.`);
         }
     } catch (error) {
         console.error('❌ [ImpactWorker] Error updating mover impacts:', error);
