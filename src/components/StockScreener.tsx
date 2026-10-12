@@ -12,7 +12,7 @@ import { useSavedScreens, MAX_SAVED_SCREENS } from '@/hooks/useSavedScreens';
 import { LivePrice } from './LivePrice';
 import {
   ScreenerResult, scoreColor, altmanZLabel, piotroskiLabel, beneishLabel, fcfMarginLabel, debtRepayLabel,
-  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, METRIC_GROUPS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS, PRESET_GROUPS,
+  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, METRIC_GROUPS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, ANALYSIS_RANGE_FILTERS, RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS, PRESET_GROUPS,
   SCORE_FILTERS, ADVANCED_FILTERS, matchesPreset,
 } from '@/lib/utils/screener';
 import { Sparkline } from './Sparkline';
@@ -27,7 +27,7 @@ import { useState, useEffect } from 'react';
 const COLUMN_VIEWS = [
   { id: 'overview', label: 'Overview', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'overallScore', 'valuationScore', 'growthScore', 'profitabilityScore', 'healthScore', 'qualityScore', 'screens'] },
   { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'sector', 'ticker.employees', 'ticker.lastMarketCapDiff', 'analysts'] },
-  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'revenueCagr', 'netIncomeCagr', 'metrics.peRatio', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position'] },
+  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'revenueCagr', 'netIncomeCagr', 'metrics.peRatio', 'pePercentile', 'peVsMedian3yPct', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position'] },
   { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'fcfConversion', 'debtRepaymentYears', 'healthScore', 'qualityScore', 'overallScore'] },
   { id: 'insiders', label: 'Insiders', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'insider.netBuyValue90d', 'insider.largestBuyValue90d', 'insider.largestSellValue90d', 'insider.uniqueSellers14d', 'overallScore'] },
   { id: 'all', label: 'All columns', keys: null }, // null = every defined column
@@ -50,6 +50,8 @@ const COLUMN_LABELS: Record<string, string> = {
   'netIncomeCagr': 'NI CAGR 5Y',
   'fcfConversion': 'FCF Conv.',
   'marginStability': 'Margin Var.',
+  'pePercentile': 'P/E %ile vs Hist',
+  'peVsMedian3yPct': 'P/E vs 3Y Med',
   'overallScore': 'Overall',
   'valuationScore': 'Valuation',
   'growthScore': 'Growth',
@@ -364,6 +366,29 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       render: (r) => <span className="text-sm tabular-nums text-gray-700 dark:text-gray-200" title="Margin variance across years — lower means more consistent">{r.marginStability !== null ? r.marginStability.toFixed(2) : '-'}</span>,
     },
     {
+      key: 'pePercentile',
+      header: <>P/E %ile <SortIcon field="pePercentile" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => {
+        const v = r.pePercentile;
+        if (v == null) return <span className="text-gray-400">-</span>;
+        const color = v <= 30 ? 'text-green-600 dark:text-green-400' : v >= 70 ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-200';
+        return <span className={`text-sm tabular-nums ${color}`} title="Current P/E percentile vs own valuation history (0 = cheapest day on record, 100 = most expensive)">{Math.round(v)}ᵗʰ</span>;
+      },
+    },
+    {
+      key: 'peVsMedian3yPct',
+      header: <>P/E vs 3Y Med <SortIcon field="peVsMedian3yPct" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => {
+        const v = r.peVsMedian3yPct;
+        if (v == null) return <span className="text-gray-400">-</span>;
+        return <span className={`text-sm tabular-nums ${v < 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} title="Current P/E vs trailing 3-year median P/E — negative = trading below its own 3Y median">{v > 0 ? '+' : ''}{v.toFixed(0)}%</span>;
+      },
+    },
+    {
       // Which strategy quick-screens this row currently satisfies — the
       // "what kind of stock is it" discovery loop, computed client-side via
       // the same matchesPreset() the analysis-page badges use (null-safe:
@@ -477,7 +502,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
   // Metric filters use DualRangeSlider (min+max) — active when any Finnhub
   // or insider key has a range (price/changePct live in the main grid and
   // don't count; insider keys are preset-only but still count as active).
-  const METRIC_KEY_SET = new Set<string>([...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS].map(d => d.key));
+  const METRIC_KEY_SET = new Set<string>([...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS, ...ANALYSIS_RANGE_FILTERS].map(d => d.key));
   const [showMetrics, setShowMetrics] = useState(false);
   const metricsActiveCount = Object.keys(metricRanges).filter(k => METRIC_KEY_SET.has(k)).length;
   const metricsActive = metricsActiveCount > 0;
@@ -874,11 +899,34 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
                 </div>
               );
             })}
+            {/* Analysis-derived metrics — computed per-ticker on our own
+                statement/valuation history (not Finnhub snapshots). */}
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Analysis</span>
+                {ANALYSIS_RANGE_FILTERS.filter((d) => metricRanges[d.key]).length > 0 && (
+                  <span className="text-[10px] text-blue-500 font-medium">{ANALYSIS_RANGE_FILTERS.filter((d) => metricRanges[d.key]).length} active</span>
+                )}
+                <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-2">
+                {ANALYSIS_RANGE_FILTERS.map((def) => (
+                  <div key={def.key} className={metricRanges[def.key] ? 'rounded-md ring-1 ring-blue-400/60 bg-blue-50/50 dark:bg-blue-950/20 -m-0.5 p-0.5' : ''}>
+                    <DualRangeSlider
+                      label={def.label}
+                      min={def.min} max={def.max} step={def.step}
+                      {...rangeSliderProps(def)}
+                      accentColor="sky"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
             <div className="col-span-full flex items-center justify-between">
-              <span className="text-[10px] text-gray-400">Metrics from Finnhub fundamentals (coverage ~70–99 % per field; filtered-out tickers without data are excluded).</span>
+              <span className="text-[10px] text-gray-400">Metrics from Finnhub fundamentals + our own analysis history (coverage ~70–99 % per field; filtered-out tickers without data are excluded).</span>
               {metricsActive && (
                 <button
-                  onClick={() => { for (const def of [...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS]) setMetricRange(def.key as RangeFilterKey, undefined); }}
+                  onClick={() => { for (const def of [...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS, ...ANALYSIS_RANGE_FILTERS]) setMetricRange(def.key as RangeFilterKey, undefined); }}
                   className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
                 >
                   Clear metric filters

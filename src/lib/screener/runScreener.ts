@@ -78,6 +78,7 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
     const finnhubRanges = metricRanges.filter((r) => r.source === 'finnhub');
     const insiderRanges = metricRanges.filter((r) => r.source === 'insider');
     const recommendationRanges = metricRanges.filter((r) => r.source === 'recommendation');
+    const analysisRanges = metricRanges.filter((r) => r.source === 'analysis');
 
     // Price & day-change ranges (Ticker columns, source='ticker')
     const minPrice = tickerRanges.find((r) => r.field === 'lastPrice')?.min;
@@ -177,10 +178,10 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
         }
 
         // ── Fundamental filters apply on the AnalysisCache relation ──
-        // When any score filter is active, tickers without analysis are
-        // excluded automatically (they cannot match a score condition).
+        // When any score or analysis-range filter is active, tickers without
+        // analysis are excluded automatically (they cannot match).
         const hasScoreFilter = [minHealth, maxHealth, minProfitability, maxProfitability, minValuation, maxValuation, minGrowth, maxGrowth, minQuality, maxQuality, minOverall, maxOverall, minAltman, minPiotroski, maxBeneish, minFcfMargin, maxDebtRepayment].some((v) => v !== undefined);
-        if (hasScoreFilter) {
+        if (hasScoreFilter || analysisRanges.length > 0) {
             const ac: any = {};
             if (minHealth !== undefined || maxHealth !== undefined) {
                 ac.healthScore = {};
@@ -219,6 +220,14 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
             if (minFcfMargin !== undefined) ac.fcfMargin = { gte: minFcfMargin };
             // Debt repayment: lower = better. maxDebtRepayment means "show only companies with debt repayment <= X years"
             if (maxDebtRepayment !== undefined) ac.debtRepaymentYears = { lte: maxDebtRepayment };
+            // Analysis-derived range filters (pePercentile, peVsMedian3yPct,
+            // CAGRs, fcfConversion, marginStability) merge into the same
+            // relation filter — combined score+range queries hit one `is`.
+            for (const r of analysisRanges) {
+                ac[r.field] = {};
+                if (r.min !== undefined) ac[r.field].gte = r.min;
+                if (r.max !== undefined) ac[r.field].lte = r.max;
+            }
             tickerWhere.analysisCache = { is: ac };
         }
 
@@ -226,7 +235,7 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
 
         // Build Prisma orderBy — score fields live on analysisCache, market
         // fields on ticker. Nulls (tickers without analysis) always last.
-        const SCORE_FIELDS = new Set(['healthScore', 'profitabilityScore', 'valuationScore', 'growthScore', 'qualityScore', 'overallScore', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'debtRepaymentYears', 'revenueCagr', 'netIncomeCagr', 'fcfConversion', 'marginStability']);
+        const SCORE_FIELDS = new Set(['healthScore', 'profitabilityScore', 'valuationScore', 'growthScore', 'qualityScore', 'overallScore', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'debtRepaymentYears', 'revenueCagr', 'netIncomeCagr', 'fcfConversion', 'marginStability', 'pePercentile', 'peVsMedian3yPct']);
         // Insider aggregate sort fields (insider.<field> → insiderAggregate rel)
         const INSIDER_FIELDS = new Set(['netBuyPct90d', 'netBuyValue90d', 'largestBuyValue90d', 'largestSellValue90d', 'uniqueBuyers14d', 'uniqueSellers14d']);
         // Analyst-consensus sort fields (analyst.<field> → finnhubRecommendation rel)
@@ -291,6 +300,8 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
                     netIncomeCagr: true,
                     fcfConversion: true,
                     marginStability: true,
+                    pePercentile: true,
+                    peVsMedian3yPct: true,
                 },
             },
             finnhubRecommendation: {
@@ -444,6 +455,8 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
             netIncomeCagr: t.analysisCache?.netIncomeCagr ?? null,
             fcfConversion: t.analysisCache?.fcfConversion ?? null,
             marginStability: t.analysisCache?.marginStability ?? null,
+            pePercentile: t.analysisCache?.pePercentile ?? null,
+            peVsMedian3yPct: t.analysisCache?.peVsMedian3yPct ?? null,
             analysts: t.finnhubRecommendation
                 ? {
                       strongBuy: t.finnhubRecommendation.strongBuy,

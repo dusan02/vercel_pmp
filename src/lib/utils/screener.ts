@@ -46,6 +46,10 @@ export interface ScreenerResult {
     revenueCagr: number | null;
     netIncomeCagr: number | null;
     marginStability: number | null;
+    /** Current P/E percentile vs own DailyValuationHistory (0=cheapest, 100=priciest). */
+    pePercentile: number | null;
+    /** Signed % vs trailing-3Y P/E median (negative = below median). */
+    peVsMedian3yPct: number | null;
     lastQualitySignalAt: string | null;
     /** Analyst consensus counts (FinnhubRecommendation, latest period). */
     analysts: {
@@ -230,13 +234,30 @@ export const ANALYST_RANGE_FILTERS = [
     { key: 'strongSell', label: 'Analyst Strong Sells', min: 0, max: 20, step: 1 },
 ] as const;
 
+/**
+ * Analysis-derived range filters (AnalysisCache relation). pePercentile /
+ * peVsMedian3yPct rank the CURRENT P/E against the stock's own
+ * DailyValuationHistory series (pePercentile 0 = cheapest day on record,
+ * 50 ≈ at/below median; peVsMedian3yPct < 0 = below the trailing-3Y median).
+ * Rendered as sliders in the "Analysis" group of Metric filters.
+ */
+export const ANALYSIS_RANGE_FILTERS = [
+    { key: 'pePercentile', label: 'P/E %ile vs Hist', min: 0, max: 100, step: 1, group: 'Analysis' },
+    { key: 'peVsMedian3yPct', label: 'P/E vs 3Y Med %', min: -80, max: 50, step: 1, group: 'Analysis' },
+    { key: 'revenueCagr', label: 'Rev CAGR 5Y %', min: -30, max: 60, step: 1, group: 'Analysis' },
+    { key: 'netIncomeCagr', label: 'NI CAGR 5Y %', min: -50, max: 100, step: 1, group: 'Analysis' },
+    { key: 'fcfConversion', label: 'FCF Conv ×', min: -1, max: 3, step: 0.05, group: 'Analysis' },
+    { key: 'marginStability', label: 'Margin Var', min: 0, max: 1, step: 0.01, group: 'Analysis' },
+] as const;
+
 export type RangeFilterKey =
     | MetricFilterKey
     | (typeof MARKET_RANGE_FILTERS)[number]['key']
     | (typeof INSIDER_RANGE_FILTERS)[number]['key']
-    | (typeof ANALYST_RANGE_FILTERS)[number]['key'];
+    | (typeof ANALYST_RANGE_FILTERS)[number]['key']
+    | (typeof ANALYSIS_RANGE_FILTERS)[number]['key'];
 
-export type RangeFilterSource = 'ticker' | 'finnhub' | 'insider' | 'recommendation';
+export type RangeFilterSource = 'ticker' | 'finnhub' | 'insider' | 'recommendation' | 'analysis';
 
 /**
  * Unified range-filter registry — the single source of truth for which
@@ -254,6 +275,7 @@ export const RANGE_FILTERS: {
     ...METRIC_FILTERS.map((d) => ({ ...d, source: 'finnhub' as const })),
     ...INSIDER_RANGE_FILTERS.map((d) => ({ ...d, source: 'insider' as const })),
     ...ANALYST_RANGE_FILTERS.map((d) => ({ ...d, source: 'recommendation' as const })),
+    ...ANALYSIS_RANGE_FILTERS.map((d) => ({ ...d, source: 'analysis' as const })),
 ];
 
 /**
@@ -506,6 +528,10 @@ export const SORT_OPTIONS = [
     { value: 'revenueCagr:desc', label: 'Revenue CAGR ↓ (5Y)' },
     { value: 'netIncomeCagr:desc', label: 'Net Income CAGR ↓ (5Y)' },
     { value: 'fcfConversion:desc', label: 'FCF Conversion ↓' },
+    { value: 'pePercentile:asc', label: 'P/E %ile ↑ (cheapest vs hist)' },
+    { value: 'pePercentile:desc', label: 'P/E %ile ↓ (priciest vs hist)' },
+    { value: 'peVsMedian3yPct:asc', label: 'P/E vs 3Y Med ↑ (biggest discount)' },
+    { value: 'peVsMedian3yPct:desc', label: 'P/E vs 3Y Med ↓ (biggest premium)' },
     { value: 'analyst.buy:desc', label: 'Analyst Buys ↓ (count)' },
     { value: 'analyst.strongBuy:desc', label: 'Analyst Strong Buys ↓ (count)' },
     { value: 'analyst.sell:asc', label: 'Analyst Sells ↑ (fewest)' },

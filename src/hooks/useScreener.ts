@@ -60,6 +60,8 @@ export function useScreener({
             revenueCagr: null,
             netIncomeCagr: null,
             marginStability: null,
+            pePercentile: r.pePercentile ?? null,
+            peVsMedian3yPct: r.peVsMedian3yPct ?? null,
             lastQualitySignalAt: null,
             insiderNetBuyPct90d: r.insiderNetBuyPct90d ?? null,
             insiderNetBuyValue90d: r.insiderNetBuyValue90d ?? null,

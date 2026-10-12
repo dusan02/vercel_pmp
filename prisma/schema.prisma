@@ -377,6 +377,8 @@ model AnalysisCache {
   lastQualitySignalAt DateTime?
   marginStability     Float?
   negativeNiYears     Int?
+  pePercentile        Float?
+  peVsMedian3yPct     Float?
   ticker              Ticker    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@index([healthScore])
@@ -384,6 +386,7 @@ model AnalysisCache {
   @@index([growthScore])
   @@index([qualityScore])
   @@index([overallScore])
+  @@index([pePercentile])
 }
 
 model Subscription {

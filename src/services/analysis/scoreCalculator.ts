@@ -66,6 +66,7 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
                 altmanZ: null, debtRepaymentYears: null, fcfConversion: null,
                 fcfMargin: null, humanDebtInfo: null, humanPeInfo: null,
                 marginStability: null, negativeNiYears: null,
+                pePercentile: null, peVsMedian3yPct: null,
             },
             create: { symbol },
         });
@@ -277,7 +278,7 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     const latestPeRow = await prisma.dailyValuationHistory.findFirst({
         where: { symbol, peRatio: { not: null } },
         orderBy: { date: 'desc' },
-        select: { peRatio: true },
+        select: { peRatio: true, date: true },
     });
     const peForPct = latestPeRow?.peRatio ?? currentPE;
     let pePercentile: number | null = null;
@@ -285,6 +286,28 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         const index = allValuations.findIndex(v => v.peRatio !== null && v.peRatio >= peForPct);
         pePercentile = index === -1 ? 100 : (index / allValuations.length) * 100;
         humanPeInfo = formatPePercentile(peForPct, pePercentile);
+    }
+
+    // 3Y-window median vs current — the screener "PE below its 3Y median"
+    // signal. Window anchors at the latest DVH row (not wall-clock today) so
+    // a lagging history doesn't silently shrink it. Sparse windows stay null
+    // instead of producing a noisy discount number.
+    let peVsMedian3yPct: number | null = null;
+    if (latestPeRow?.date && peForPct !== null && peForPct > 0) {
+        const cutoff3y = new Date(latestPeRow.date.getTime() - 3 * 365.25 * 86_400_000);
+        const windowRows = await prisma.dailyValuationHistory.findMany({
+            where: { symbol, peRatio: { not: null, gt: 0 }, date: { gte: cutoff3y } },
+            select: { peRatio: true },
+            orderBy: { peRatio: 'asc' },
+        });
+        // ~120 trading days ≈ half a year — below that the median is noise.
+        if (windowRows.length >= 120) {
+            const n = windowRows.length;
+            const median3y = n % 2 === 1
+                ? windowRows[(n - 1) / 2]!.peRatio!
+                : (windowRows[n / 2 - 1]!.peRatio! + windowRows[n / 2]!.peRatio!) / 2;
+            if (median3y > 0) peVsMedian3yPct = ((peForPct - median3y) / median3y) * 100;
+        }
     }
 
     // fcfYield leg: own TTM basis, then the latest daily snapshot (read path).
@@ -499,7 +522,8 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
             growthScore, qualityScore, overallScore,
             piotroskiScore, beneishScore, interestCoverage, revenueCagr, netIncomeCagr,
             altmanZ, debtRepaymentYears, fcfMargin, fcfConversion,
-            humanDebtInfo, humanPeInfo, marginStability, negativeNiYears,
+            humanDebtInfo, humanPeInfo, marginStability, negativeNiYears, pePercentile,
+            peVsMedian3yPct,
             ...(lastQualitySignalAt ? { lastQualitySignalAt } : {})
         },
         create: {
@@ -507,8 +531,8 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
             growthScore, qualityScore, overallScore,
             piotroskiScore, beneishScore, interestCoverage, revenueCagr, netIncomeCagr,
             altmanZ, debtRepaymentYears, fcfMargin, fcfConversion,
-            humanDebtInfo, humanPeInfo, marginStability, negativeNiYears,
-            lastQualitySignalAt
+            humanDebtInfo, humanPeInfo, marginStability, negativeNiYears, pePercentile,
+            peVsMedian3yPct, lastQualitySignalAt
         }
     });
 }
