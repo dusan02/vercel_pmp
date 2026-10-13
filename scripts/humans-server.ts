@@ -32,7 +32,8 @@ function arg(flag: string, def: string): string {
   return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : def;
 }
 const PORT = parseInt(arg('--port', '7890'), 10);
-const DAYS = Math.min(parseInt(arg('--days', '7'), 10), 8); // nginx retention ~8
+const DAYS = parseInt(arg('--days', '28'), 10);
+const NGX_DAYS = Math.min(DAYS, 8); // nginx rotated-log retention ~8 days
 const SSH = process.env.PMP_SSH ?? 'root@89.185.250.213';
 const CACHE_FILE = path.join(os.homedir(), '.cache', 'pmp-ipinfo.json');
 const CACHE_TTL = 30 * 86400_000;
@@ -97,7 +98,7 @@ emit() {
     }'
 }
 echo "===SRVDATE|$(date +%F)==="
-for d in $(seq 0 ${DAYS - 1}); do
+for d in $(seq 0 ${NGX_DAYS - 1}); do
 ${emits}
 done
 `;
@@ -162,7 +163,7 @@ async function ga4Engaged(prop: string): Promise<Record<string, number>> {
 }
 
 // ---------------- data assembly ----------------
-type DayCell = { min: number | null; max: number; date: string; partial: boolean };
+type DayCell = { min: number; max: number | null; date: string; partial: boolean };
 type SiteResult = { site: SiteKey; days: DayCell[] };
 let cache: { at: number; data: SiteResult[] } | null = null;
 
@@ -188,7 +189,9 @@ async function compute(): Promise<SiteResult[]> {
       const ymd = d.toISOString().slice(0, 10);
       const ga4key = ymd.replace(/-/g, '');
       const rows = sections[s.key].get(back) ?? [];
-      const humans = rows.filter(isCandidate).filter(behaviorOk).filter((r) => !isDc(info[r.ip])).length;
+      const humans = back < NGX_DAYS
+        ? rows.filter(isCandidate).filter(behaviorOk).filter((r) => !isDc(info[r.ip])).length
+        : null;
       days.push({ date: ymd, min: ga4[s.key][ga4key] ?? 0, max: humans, partial: back === 0 });
     }
     return { site: s.key, days };
@@ -197,50 +200,144 @@ async function compute(): Promise<SiteResult[]> {
 
 // ---------------- HTML ----------------
 const COLORS: Record<SiteKey, string> = { PMP: '#3b82f6', VERIFA: '#f59e0b', STOCKCV: '#8b5cf6', ET: '#9ca3af', GL: '#10b981' };
+const fmtBand = (d: DayCell) => `${d.min}–${d.max === null ? '—' : d.max}`;
+
+// Band chart: shaded area between MIN (bottom) and MAX (top) over days.
+// MAX is null beyond nginx retention — those days draw only the MIN line.
+function bandChart(days: { min: number; max: number | null }[], w: number, h: number, color: string, label: string): string {
+  const ML = 34, MR = 6, PT = 18, PB = 18;
+  const pw = w - ML - MR, ph = h - PT - PB;
+  const n = days.length;
+  const x = (i: number) => ML + (i / (n - 1)) * pw;
+  const yMax = Math.max(4, ...days.map((d) => d.max ?? 0), ...days.map((d) => d.min));
+  const y = (v: number) => PT + ph - (v / yMax) * ph;
+
+  const minPts = days.map((d, i) => `${x(i).toFixed(1)},${y(d.min).toFixed(1)}`);
+  // contiguous MAX segments (nulls break the line)
+  const maxSegs: string[][] = [];
+  let seg: string[] = [];
+  days.forEach((d, i) => {
+    if (d.max === null) { if (seg.length) maxSegs.push(seg), seg = []; }
+    else seg.push(`${x(i).toFixed(1)},${y(d.max).toFixed(1)}`);
+  });
+  if (seg.length) maxSegs.push(seg);
+
+  // band polygon = max line fwd + min line rev (only where max exists)
+  let band = '';
+  const idxs = days.map((d, i) => (d.max === null ? -1 : i)).filter((i) => i >= 0);
+  if (idxs.length) {
+    const top = idxs.map((i) => `${x(i).toFixed(1)},${y(days[i].max!).toFixed(1)}`);
+    const bot = idxs.map((i) => `${x(i).toFixed(1)},${y(days[i].min).toFixed(1)}`).reverse();
+    band = `<polygon points="${[...top, ...bot].join(' ')}" fill="${color}" opacity="0.15"/>`;
+  }
+  const lines = maxSegs.map((s2) => `<polyline points="${s2.join(' ')}" fill="none" stroke="${color}" stroke-width="1.8" opacity="0.85"/>`).join('');
+  const minLine = `<polyline points="${minPts.join(' ')}" fill="none" stroke="#059669" stroke-width="1.5"/>`;
+  const ticks = [0, 0.5, 1].map((f) => {
+    const v = Math.round(yMax * f);
+    return `<line x1="${ML}" x2="${w - MR}" y1="${y(v)}" y2="${y(v)}" stroke="#e5e7eb"/><text x="${ML - 5}" y="${y(v) + 3}" font-size="9" fill="#9ca3af" text-anchor="end">${v}</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" font-family="ui-sans-serif,system-ui,sans-serif">
+<text x="${ML}" y="12" font-size="10.5" font-weight="600" fill="#374151">${label}</text>
+${ticks}${band}${lines}${minLine}</svg>`;
+}
 
 function html(data: SiteResult[], at: number): string {
+  const nDays = data[0]?.days.length ?? 0;
   const dates = data[0]?.days.map((d) => d.date.slice(5).split('-').reverse().join('.')) ?? [];
+
+  // per-day TOTAL row across all 5 sites
+  const totals: DayCell[] = dates.map((_, i) => ({
+    date: data[0].days[i].date,
+    min: data.reduce((s, r) => s + r.days[i].min, 0),
+    max: data[0].days[i].max === null ? null : data.reduce((s, r) => s + (r.days[i].max ?? 0), 0),
+    partial: data[0].days[i].partial,
+  }));
+
+  const cell = (s: SiteResult, d: DayCell) => {
+    const scale = Math.max(1, ...s.days.map((x) => x.max ?? 0));
+    const w = Math.min(100, d.max ? 8 + (d.max / scale) * 92 : 0);
+    return `<td class="${d.partial ? 'partial' : ''}" title="${d.date} ${s.site}: min(GA4 engaged)=${d.min} max(nginx humans~)=${d.max ?? 'n/a (log rotated out)'}">
+      <div class="band">${fmtBand(d)}</div><div class="bar"><i style="width:${w}%;background:${COLORS[s.site]}"></i></div></td>`;
+  };
   const rows = data.map((s) => {
-    const cells = s.days.map((d) => {
-      const band = `${d.min ?? '?'}–${d.max}`;
-      const w = Math.min(100, d.max === 0 ? 0 : 8 + (d.max / Math.max(1, ...s.days.map((x) => x.max))) * 92);
-      return `<td class="${d.partial ? 'partial' : ''}" title="${d.date} ${s.site}: min(GA4 engaged)=${d.min ?? 'n/a'} max(nginx humans~)=${d.max}">
-        <div class="band">${band}</div><div class="bar"><i style="width:${w}%;background:${COLORS[s.site]}"></i></div></td>`;
-    }).join('');
-    const today = s.days[s.days.length - 1];
-    return `<tr><th style="border-left:4px solid ${COLORS[s.site]}">${s.site}</th>${cells}<td class="today">${today.min ?? '?' }–${today.max}</td></tr>`;
+    const today = s.days[nDays - 1];
+    const sumMin = s.days.reduce((a, d) => a + d.min, 0);
+    const maxDays = s.days.filter((d) => d.max !== null);
+    const sumMax = maxDays.reduce((a, d) => a + (d.max ?? 0), 0);
+    return `<tr><th style="border-left:4px solid ${COLORS[s.site]}">${s.site}</th>${s.days.map((d) => cell(s, d)).join('')}
+      <td class="sum">${sumMin}–${maxDays.length ? sumMax : '—'}</td><td class="today">${fmtBand(today)}</td></tr>`;
   }).join('');
+  const totMin = totals.reduce((a, d) => a + d.min, 0);
+  const totMax = totals.filter((d) => d.max !== null).reduce((a, d) => a + (d.max ?? 0), 0);
+  const totalRow = `<tr class="total"><th>SPOLU</th>${totals.map((d) => `<td class="${d.partial ? 'partial' : ''}"><div class="band">${fmtBand(d)}</div></td>`).join('')}
+    <td class="sum">${totMin}–${totMax}</td><td class="today">${fmtBand(totals[nDays - 1])}</td></tr>`;
+
+  // monthly summary table: 5 site rows + total
+  const sumRows = data.map((s) => {
+    const sumMin = s.days.reduce((a, d) => a + d.min, 0);
+    const maxDays = s.days.filter((d) => d.max !== null);
+    const sumMax = maxDays.reduce((a, d) => a + (d.max ?? 0), 0);
+    return `<tr><th style="border-left:4px solid ${COLORS[s.site]}">${s.site}</th>
+      <td>${sumMin}</td><td>${(sumMin / nDays).toFixed(1)}</td><td>${maxDays.length ? sumMax : '—'}</td><td>${maxDays.length ? (sumMax / maxDays.length).toFixed(1) : '—'}</td></tr>`;
+  }).join('');
+  const totMinAvg = (totMin / nDays).toFixed(1);
+  const totMaxAvg = (totMax / NGX_DAYS).toFixed(1);
+  const sumTable = `<table class="sums">
+<tr><th>web</th><th>MIN Σ (${nDays}d)</th><th>MIN ⌀/deň</th><th>MAX Σ (${NGX_DAYS}d)</th><th>MAX ⌀/deň</th></tr>
+${sumRows}
+<tr class="total"><th>SPOLU</th><td>${totMin}</td><td>${totMinAvg}</td><td>${totMax}</td><td>${totMaxAvg}</td></tr>
+</table>`;
+
+  // charts: big TOTAL band + per-site minis
+  const charts = [
+    bandChart(totals.map((d) => ({ min: d.min, max: d.max })), 920, 190, '#111827', `SPOLU všetky weby — MIN (zelená linka) až MAX (pásmo)`),
+    `<div class="grid">${data.map((s) => `<div>${bandChart(s.days.map((d) => ({ min: d.min, max: d.max })), 440, 150, COLORS[s.site], `${s.site}`)}</div>`).join('')}</div>`,
+  ].join('');
 
   return `<!doctype html><html><head><meta charset="utf-8"><title>humans min–max</title>
 <meta http-equiv="refresh" content="600">
 <style>
-body{margin:28px;font-family:ui-sans-serif,system-ui,sans-serif;color:#111;max-width:900px}
+body{margin:28px;font-family:ui-sans-serif,system-ui,sans-serif;color:#111;max-width:960px}
 h1{font-size:18px;margin:0 0 4px}
+h2{font-size:14px;margin:22px 0 8px;color:#374151}
 .sub{color:#6b7280;font-size:12px;margin-bottom:18px;line-height:1.5;max-width:760px}
-table{border-collapse:collapse;width:100%;font-size:13px}
-th,td{border:1px solid #e5e7eb;padding:6px 8px;text-align:center}
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{border:1px solid #e5e7eb;padding:5px 6px;text-align:center;white-space:nowrap}
 th{background:#f9fafb;text-align:left;font-weight:600}
 td.partial{background:#fefce8}
 td.today{background:#f0fdf4;font-weight:700}
+td.sum{background:#f8fafc;font-weight:700}
+tr.total td,tr.total th{background:#eff6ff;font-weight:700}
 .band{font-weight:600;font-variant-numeric:tabular-nums}
 .bar{height:3px;background:#f3f4f6;margin-top:4px;border-radius:2px;overflow:hidden}
 .bar i{display:block;height:100%;border-radius:2px}
-.foot{color:#9ca3af;font-size:11px;margin-top:14px;line-height:1.5;max-width:760px}
+.sums{max-width:560px}
+.sums td{font-variant-numeric:tabular-nums}
+svg{width:100%;height:auto;display:block}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.foot{color:#9ca3af;font-size:11px;margin-top:14px;line-height:1.5;max-width:860px}
 a{color:#3b82f6}
 </style></head><body>
-<h1>Reálna ľudská návštevnosť — MIN–MAX odhad</h1>
+<h1>Reálna ľudská návštevnosť — MIN–MAX odhad (${nDays} dní)</h1>
 <div class="sub">
 <b>MIN</b> = GA4 engagedSessions (konzervatívna podlaha — vyžaduje JS + engagement, premešká adblock).<br>
-<b>MAX</b> = nginx humans~ — unikátne IP s reálnym renderom a normálnym správaním, mínus boti a datacenter/proxy ASN (horný strop — residential proxy ešte prechádza).<br>
-Žltý stĺpec = rozbehnutý dnešok. Zelený = dnešný odhad.
+<b>MAX</b> = nginx humans~ — unikátne IP s reálnym renderom a normálnym správaním, mínus boti a datacenter/proxy ASN.
+<b>Pozor:</b> nginx logy držia len ~${NGX_DAYS} dní → MAX existuje len pre posledné dni (staršie = „—").<br>
+Žltý stĺpec = rozbehnutý dnešok. Modrá = súčty.
 </div>
-<table>
-<tr><th>site</th>${dates.map((d, i) => `<th>${d}${i === dates.length - 1 ? ' *' : ''}</th>`).join('')}<th>dnes</th></tr>
-${rows}
-</table>
+${charts}
+<h2>Po dňoch</h2>
+<div class="wrap"><table>
+<tr><th>site</th>${dates.map((d, i) => `<th>${d}${i === dates.length - 1 ? ' *' : ''}</th>`).join('')}<th>Σ</th><th>dnes</th></tr>
+${rows}${totalRow}
+</table></div>
+<h2>Mesačný súčet</h2>
+${sumTable}
 <div class="foot">
 Vygenerované ${new Date(at).toLocaleTimeString('sk-SK')} · cache 10 min · <a href="/api/data">JSON</a> · <a href="/?refresh=1">refresh</a><br>
 MIN podlieha GA4 consent/adblock strate; MAX podlieha CGNAT (viac ľudí = 1 IP) a residential-proxy farme (1 bot = 1 IP).
+MAX Σ je súčet len za posledných ${NGX_DAYS} dní (staršie logy sú rotované preč). MIN Σ za ${nDays} dní.
 Pravda je v pásme — pre PMP bližšie k MIN (renderujúca farma), pre Verifa bližšie k MAX.
 </div>
 </body></html>`;
