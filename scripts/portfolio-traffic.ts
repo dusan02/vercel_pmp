@@ -37,6 +37,7 @@ const PROPERTIES: [string, string | undefined][] = [
   ['ET', process.env.ET_GA4_PROPERTY_ID ?? '503907803'],
   ['VERIFA', process.env.VERIFA_GA4_PROPERTY_ID ?? '549637432'],
   ['STOCKCV', process.env.STOCKCV_GA4_PROPERTY_ID ?? '558473004'],
+  ['GL', process.env.GL_GA4_PROPERTY_ID],
 ];
 
 const FARM_SOURCES = new Set(['(not set)', '(data not available)']);
