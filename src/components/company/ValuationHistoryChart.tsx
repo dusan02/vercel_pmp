@@ -66,8 +66,13 @@ function formatXTick(dateStr: string | unknown) {
 // ── Custom Tooltip ──────────────────────────────────────────────────────────
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
-  const price = payload.find((p: any) => p.dataKey === 'price')?.value;
-  const intrinsic = payload.find((p: any) => p.dataKey === 'intrinsic')?.value;
+  const point = payload[0]?.payload;
+  const price = typeof point?.price === 'number'
+    ? point.price
+    : payload.find((p: any) => p.dataKey === 'priceGreen' || p.dataKey === 'priceRed')?.value;
+  const intrinsic = typeof point?.intrinsic === 'number'
+    ? point.intrinsic
+    : payload.find((p: any) => p.dataKey === 'intrinsic')?.value;
 
   const undervalued = typeof price === 'number' && typeof intrinsic === 'number' && intrinsic > 0
     ? ((intrinsic - price) / intrinsic) * 100
@@ -126,16 +131,25 @@ function logTicks(lo: number, hi: number): number[] {
 function splitPriceByRelation(data: ValuationPoint[]) {
   const green: (number | null)[] = [];
   const red: (number | null)[] = [];
+  let prevUnder: boolean | null = null;
 
-  data.forEach(d => {
-    if (d.isForecast || d.intrinsic <= 0) {
+  data.forEach((d, i) => {
+    if (d.isForecast || d.intrinsic <= 0 || typeof d.price !== 'number') {
       green.push(null);
       red.push(null);
+      prevUnder = null;
       return;
     }
     const isUnder = d.price <= d.intrinsic;
     green.push(isUnder ? d.price : null);
     red.push(!isUnder ? d.price : null);
+    // Bridge the crossing point so the line never leaves a 1-week gap when
+    // switching between green (undervalued) and red (overvalued).
+    if (prevUnder !== null && prevUnder !== isUnder && i > 0) {
+      if (isUnder) red[i] = d.price;
+      else green[i] = d.price;
+    }
+    prevUnder = isUnder;
   });
 
   return { green, red };

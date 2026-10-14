@@ -55,7 +55,6 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
         const filtered = filterStatementsByViewMode(statements, viewMode);
         const sorted = [...filtered].sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
         return sorted.map(s => {
-            const ebitValue = s.ebit ?? 0;
             const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);
             const revM = s.revenue != null ? s.revenue / 1e6 : null;
             return {
@@ -65,7 +64,7 @@ export default function FinancialChart({ statements }: FinancialChartProps) {
                 // render as a zero bar (indistinguishable from a real zero)
                 revenue: revM,
                 netIncome: s.netIncome != null ? s.netIncome / 1e6 : null,
-                ebit: ebitValue / 1e6,
+                ebit: s.ebit != null ? s.ebit / 1e6 : null,
                 opMargin: s.revenue != null && s.revenue > 0 && s.ebit != null
                     ? (s.ebit / s.revenue) * 100 : null,
                 netMargin: s.revenue != null && s.revenue > 0 && s.netIncome != null

@@ -197,8 +197,9 @@ export async function getHeatmapData(query: HeatmapQuery = {}): Promise<HeatmapS
       fetchPerfRefCloses(tickerSymbols, now, todayYMD),
     ]);
 
+    const effectiveDailyRefs = rawDailyRefs.length > 0 ? rawDailyRefs : ((slimWeekRefs ?? []) as any[]);
     const sessionPrices = deduplicateSessionPrices(rawSessionPrices);
-    const dailyRefs = deduplicateDailyRefs(rawDailyRefs);
+    const dailyRefs = deduplicateDailyRefs(effectiveDailyRefs);
 
     // 6. Freshness check
     const recentCount = sessionPrices.filter(sp => {
@@ -227,7 +228,7 @@ export async function getHeatmapData(query: HeatmapQuery = {}): Promise<HeatmapS
 
     // 9. Build price map + preliminary prevClose map for on-demand fetch
     const priceMap = buildPriceMap(tickerMap, sessionPrices);
-    const prelimPrevCloseMaps = buildPrevCloseMaps(rawDailyRefs, ctx);
+    const prelimPrevCloseMaps = buildPrevCloseMaps(effectiveDailyRefs, ctx);
 
     // 10. On-demand prevClose fetch
     const prevCloseBatchMap = await fetchPrevCloseOnDemand(
@@ -236,7 +237,7 @@ export async function getHeatmapData(query: HeatmapQuery = {}): Promise<HeatmapS
 
     // 11. Transform all data into heatmap rows (pass precomputed maps to avoid double computation)
     const transformResult = transformToHeatmap(
-      tickerSymbols, tickerMap, sessionPrices, rawDailyRefs,
+      tickerSymbols, tickerMap, sessionPrices, effectiveDailyRefs,
       cachedStockDataMap, prevCloseBatchMap, ctx, now, debug,
       slimWeekRefs ?? undefined, perfRefs,
       { previousCloseMap: prelimPrevCloseMaps.previousCloseMap, regularCloseMap: prelimPrevCloseMaps.regularCloseMap, priceMap, lastSessionRefMap: lastSessionRefs }

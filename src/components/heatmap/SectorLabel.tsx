@@ -15,10 +15,10 @@ interface SectorLabelProps {
     isMobile: boolean;
     metric: HeatmapMetric;
     treemapBoundsNotNull: boolean;
-    zoomedSectorClass?: boolean;
-    onMouseEnter?: () => void;
-    onMouseLeave?: () => void;
-    onClick?: () => void;
+    zoomedSectorClass?: boolean | undefined;
+    onMouseEnter?: (() => void) | undefined;
+    onMouseLeave?: (() => void) | undefined;
+    onClick?: (() => void) | undefined;
 }
 
 export function SectorLabel({

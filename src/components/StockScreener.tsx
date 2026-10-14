@@ -26,7 +26,7 @@ import { useState, useEffect } from 'react';
 // changes the dataset. Tab order runs general → specialised.
 const COLUMN_VIEWS = [
   { id: 'overview', label: 'Overview', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'overallScore', 'valuationScore', 'growthScore', 'profitabilityScore', 'healthScore', 'qualityScore', 'screens'] },
-  { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'sector', 'ticker.employees', 'ticker.lastMarketCapDiff', 'analysts'] },
+  { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'ticker.sector', 'ticker.employees', 'ticker.lastMarketCapDiff', 'analyst.buy'] },
   { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'revenueCagr', 'netIncomeCagr', 'metrics.peRatio', 'pePercentile', 'peVsMedian3yPct', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position'] },
   { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'fcfConversion', 'debtRepaymentYears', 'healthScore', 'qualityScore', 'overallScore'] },
   { id: 'insiders', label: 'Insiders', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'insider.netBuyValue90d', 'insider.largestBuyValue90d', 'insider.largestSellValue90d', 'insider.uniqueSellers14d', 'overallScore'] },
@@ -37,6 +37,7 @@ const COLUMN_VIEWS = [
 /** Plain-text labels for the column picker (column headers contain icons). */
 const COLUMN_LABELS: Record<string, string> = {
   'ticker.name': 'Company',
+  'ticker.sector': 'Sector',
   'sector': 'Sector',
   'sparkline': '1Y Chart',
   'ticker.lastPrice': 'Price',
@@ -44,6 +45,7 @@ const COLUMN_LABELS: Record<string, string> = {
   'ticker.lastMarketCap': 'Market Cap',
   'ticker.lastMarketCapDiff': 'Mkt Cap Δ',
   'ticker.employees': 'Employees',
+  'analyst.buy': 'Analysts',
   'analysts': 'Analysts',
   'debtRepaymentYears': 'Debt Repay',
   'revenueCagr': 'Rev CAGR 5Y',
@@ -151,9 +153,10 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       )
     },
     {
-      key: 'sector',
-      header: 'Sector',
+      key: 'ticker.sector',
+      header: <>Sector <SortIcon field="ticker.sector" /></>,
       align: 'left',
+      sortable: true,
       render: (r) => <span className="text-xs text-gray-600 dark:text-gray-300">{r.ticker?.sector || '-'}</span>
     },
     {
@@ -171,7 +174,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       // Analyst consensus — buy-side share of the latest rating counts.
       // Sorts by raw buy count (analyst.buy) — a workable proxy for "most
       // loved" that stays orderBy-able on the relation.
-      key: 'analysts',
+      key: 'analyst.buy',
       header: <>Analysts <SortIcon field="analyst.buy" /></>,
       align: 'right',
       sortable: true,

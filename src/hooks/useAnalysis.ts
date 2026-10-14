@@ -11,38 +11,42 @@ const ANALYSIS_STEPS = [
     'Finalizing AI Verdict...',
 ] as const;
 
+function mergeAnalysisPayload(json: any, histJson: any = {}): AnalysisData | null {
+    if (!json) return null;
+    const h = histJson ?? {};
+    const historyExtras = {
+        priceHistory: h.priceHistory ?? [],
+        impliedPricePS: h.impliedPricePS ?? [],
+        impliedPricePE: h.impliedPricePE ?? [],
+        correlation: h.correlation ?? undefined,
+        valuationHistory: h.valuationHistory ?? [],
+        valuationHistoryPE: h.valuationHistoryPE ?? [],
+        valuationHistoryPS: h.valuationHistoryPS ?? [],
+        valuationSummary: h.valuationSummary ?? null,
+        valuationSummaryPE: h.valuationSummaryPE ?? null,
+        valuationSummaryPS: h.valuationSummaryPS ?? null,
+        valuationForecast: h.valuationForecast ?? [],
+        valuationForecastPE: h.valuationForecastPE ?? [],
+        valuationForecastPS: h.valuationForecastPS ?? [],
+        peHistory: h.peHistory ?? [],
+        psHistory: h.psHistory ?? [],
+        valuationCurrent: h.current ?? null,
+        valuationStats: h.stats ?? null,
+        epsCagr3y: h.epsCagr3y ?? null,
+        epsCagr5y: h.epsCagr5y ?? null,
+    };
+    if (json.primary) {
+        return { ...json.primary, ...historyExtras, peers: json.peers || [], finnhub: json.primary.finnhub ?? null } as AnalysisData;
+    }
+    return { ...json, ...historyExtras, finnhub: json.finnhub ?? null } as AnalysisData;
+}
+
 export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHistoryData?: any) {
     // Build initial data from SSR pre-fetched API responses
-    const ssrData = useMemo(() => {
-        if (!initialAnalysisData) return null;
-        const json = initialAnalysisData;
-        const histJson = initialHistoryData ?? {};
-        const historyExtras = {
-            priceHistory: histJson.priceHistory ?? [],
-            impliedPricePS: histJson.impliedPricePS ?? [],
-            impliedPricePE: histJson.impliedPricePE ?? [],
-            correlation: histJson.correlation ?? undefined,
-            valuationHistory: histJson.valuationHistory ?? [],
-            valuationHistoryPE: histJson.valuationHistoryPE ?? [],
-            valuationHistoryPS: histJson.valuationHistoryPS ?? [],
-            valuationSummary: histJson.valuationSummary ?? null,
-            valuationSummaryPE: histJson.valuationSummaryPE ?? null,
-            valuationSummaryPS: histJson.valuationSummaryPS ?? null,
-            valuationForecast: histJson.valuationForecast ?? [],
-            valuationForecastPE: histJson.valuationForecastPE ?? [],
-            valuationForecastPS: histJson.valuationForecastPS ?? [],
-            peHistory: histJson.peHistory ?? [],
-            psHistory: histJson.psHistory ?? [],
-            valuationCurrent: histJson.current ?? null,
-            valuationStats: histJson.stats ?? null,
-            epsCagr3y: histJson.epsCagr3y ?? null,
-            epsCagr5y: histJson.epsCagr5y ?? null,
-        };
-        if (json && json.primary) {
-            return { ...json.primary, ...historyExtras, peers: json.peers || [], finnhub: json.primary.finnhub ?? null } as AnalysisData;
-        }
-        return { ...json, ...historyExtras, finnhub: json.finnhub ?? null } as AnalysisData;
-    }, [initialAnalysisData, initialHistoryData]);
+    const ssrData = useMemo(
+        () => mergeAnalysisPayload(initialAnalysisData, initialHistoryData),
+        [initialAnalysisData, initialHistoryData]
+    );
 
     const [data, setData] = useState<AnalysisData | null>(() => ssrData);
     const [loading, setLoading] = useState(() => !ssrData);
@@ -138,35 +142,7 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
             // Discard if a newer request was started
             if (reqId !== fetchIdRef.current) return;
 
-            // Fields sourced from /history endpoint
-            const historyExtras = {
-                priceHistory: histJson.priceHistory ?? [],
-                impliedPricePS: histJson.impliedPricePS ?? [],
-                impliedPricePE: histJson.impliedPricePE ?? [],
-                correlation: histJson.correlation ?? undefined,
-                valuationHistory: histJson.valuationHistory ?? [],
-                valuationHistoryPE: histJson.valuationHistoryPE ?? [],
-                valuationHistoryPS: histJson.valuationHistoryPS ?? [],
-                valuationSummary: histJson.valuationSummary ?? null,
-                valuationSummaryPE: histJson.valuationSummaryPE ?? null,
-                valuationSummaryPS: histJson.valuationSummaryPS ?? null,
-                valuationForecast: histJson.valuationForecast ?? [],
-                valuationForecastPE: histJson.valuationForecastPE ?? [],
-                valuationForecastPS: histJson.valuationForecastPS ?? [],
-                peHistory: histJson.peHistory ?? [],
-                psHistory: histJson.psHistory ?? [],
-                valuationCurrent: histJson.current ?? null,
-                valuationStats: histJson.stats ?? null,
-                epsCagr3y: histJson.epsCagr3y ?? null,
-                epsCagr5y: histJson.epsCagr5y ?? null,
-            };
-
-            if (json && json.primary) {
-                // Pass through finnhub data from API response
-                setData({ ...json.primary, ...historyExtras, peers: json.peers || [], finnhub: json.primary.finnhub ?? null });
-            } else {
-                setData(json ? { ...json, ...historyExtras, finnhub: json.finnhub ?? null } : null);
-            }
+            setData(mergeAnalysisPayload(json, histJson));
         } catch (err) {
             if (err instanceof DOMException && err.name === 'AbortError') return;
             if (tickerRef.current !== reqTicker) return;

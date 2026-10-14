@@ -69,13 +69,15 @@ export function useScenarioModel({
     const normalizedBaseGrowth = clamp(rawGrowth5y ?? rawGrowth3y ?? 10, -10, GROWTH_CAP);
     const growthWasCapped = (rawGrowth5y !== null && rawGrowth5y > GROWTH_CAP) || (rawGrowth5y === null && rawGrowth3y !== null && rawGrowth3y > GROWTH_CAP);
 
+    const rawBear = Math.min(rawGrowth3y ?? normalizedBaseGrowth, rawGrowth5y ?? normalizedBaseGrowth);
+    const rawBull = Math.max(rawGrowth3y ?? normalizedBaseGrowth, rawGrowth5y ?? normalizedBaseGrowth);
+    const defaultBaseGrowth = normalizedBaseGrowth;
     const defaultBearGrowth = clamp(
-        Math.min(rawGrowth3y ?? normalizedBaseGrowth, rawGrowth5y ?? normalizedBaseGrowth),
+        rawBear < defaultBaseGrowth ? rawBear : defaultBaseGrowth - 4,
         GROWTH_FLOOR, GROWTH_CAP
     );
-    const defaultBaseGrowth = normalizedBaseGrowth;
     const defaultBullGrowth = clamp(
-        Math.max(rawGrowth3y ?? normalizedBaseGrowth, rawGrowth5y ?? normalizedBaseGrowth),
+        rawBull > defaultBaseGrowth ? rawBull : defaultBaseGrowth + 4,
         -10, 35
     );
 
@@ -231,11 +233,13 @@ export function useScenarioModel({
         }
 
         if (hist.length > 0) {
-            hist[hist.length - 1]!.projection = currentPrice;
+            const bridgePrice = currentPrice > 0 ? currentPrice : hist[hist.length - 1]!.historical;
+            hist[hist.length - 1]!.historical = bridgePrice;
+            hist[hist.length - 1]!.projection = bridgePrice;
             if (mode === 'dataDriven') {
-                hist[hist.length - 1]!.bear = currentPrice;
-                hist[hist.length - 1]!.base = currentPrice;
-                hist[hist.length - 1]!.bull = currentPrice;
+                hist[hist.length - 1]!.bear = bridgePrice;
+                hist[hist.length - 1]!.base = bridgePrice;
+                hist[hist.length - 1]!.bull = bridgePrice;
             }
         }
 

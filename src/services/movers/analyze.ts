@@ -14,6 +14,8 @@
 import { prisma } from '@/lib/db/prisma';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { FINNHUB_API_KEY } from '@/lib/clients/finnhubClient';
+import { isAboutTicker } from '@/lib/analysis/newsService';
+import { getCompanyName } from '@/lib/companyNames';
 import {
     CatalystCandidate, CatalystResult, CatalystType, EvidenceItem,
     attributeMove, buildInterpretation, catalystLabel, classifyHeadline,
@@ -167,6 +169,7 @@ async function fetchAnalystActions(symbol: string): Promise<FinnhubUpgradeRow[] 
 // ─── Catalyst detection per symbol ──────────────────────────────────────────
 interface MoverInput {
     symbol: string;
+    name?: string | null;
     sector: string | null;
     changePct: number | null;
     zScore: number | null;
@@ -222,11 +225,16 @@ async function detectCatalyst(
     }
 
     // 2. Finnhub company news — headline keyword classification.
+    // Relevance gate: Finnhub tags company-news loosely by sector/theme
+    // (e.g. an SLS buyout story tagged under NVS/AZN). Require the headline
+    // to mention the ticker or brand token before treating it as a catalyst.
     const news = await fetchCompanyNews(mover.symbol);
     if (news === 'unavailable') {
         sawUnavailable = true;
     } else {
+        const companyName = mover.name ?? getCompanyName(mover.symbol);
         for (const item of news) {
+            if (!isAboutTicker(item, mover.symbol, companyName)) continue;
             const type = classifyHeadline(item.headline);
             if (type === 'news_other') continue; // generic news isn't evidence
             const pub = new Date(item.datetime * 1000);

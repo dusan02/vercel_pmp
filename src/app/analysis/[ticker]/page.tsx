@@ -12,7 +12,6 @@ import {
   getAnalysisQuote,
   getRecentSignificantMoves,
   getFinancialFlowsData,
-  getSectorPeers,
   get52WeekRange,
   getInsiderActivity90d,
   prefetchAnalysisData,
@@ -20,7 +19,7 @@ import {
   prefetchTopNews,
 } from '@/lib/analysis/pageData';
 import { buildStockSchema } from '@/lib/seo/analysisSchemas';
-import { buildFlowPeriods } from '@/components/company/analysis/sections/FinancialFlowsSection';
+import { buildFlowPeriods, type StatementRow } from '@/components/company/analysis/sections/FinancialFlowsSection';
 import { AnalysisHero } from '@/components/company/analysis/sections/AnalysisHero';
 import { TickerNavigator } from '@/components/company/analysis/TickerNavigator';
 import { getTickerNav } from '@/lib/analysis/tickerNav';
@@ -120,20 +119,27 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   // Fetch everything in parallel (independent queries).
   // Includes SSR pre-fetch of analysis API + history for instant client hydration.
-  const [earningsData, recentMoves, sectorPeers, relatedOpps, analysisData, historyData, flowStatements, week52, topNews, matchedScreens, tickerNav, insiderActivity] = await Promise.all([
+  const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, insiderActivity] = await Promise.all([
     getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
-    getSectorPeers(data?.sector, tickerUpper),
     getRelatedOpportunities(tickerUpper),
     prefetchAnalysisData(tickerUpper),
     prefetchHistoryData(tickerUpper),
-    getFinancialFlowsData(tickerUpper),
     get52WeekRange(tickerUpper),
     prefetchTopNews(tickerUpper, companyName),
     getMatchedScreens(tickerUpper),
     getTickerNav(tickerUpper),
     getInsiderActivity90d(tickerUpper),
   ]);
+
+  // Reuse statements already loaded by prefetchAnalysisData; only hit the DB
+  // when analysisData is absent (e.g. unanalyzed ticker).
+  const flowStatements: StatementRow[] = analysisData?.statements?.length
+    ? (analysisData.statements as StatementRow[]).filter((s) => (s.revenue ?? 0) > 0).slice(0, 16)
+    : await getFinancialFlowsData(tickerUpper);
+
+  const peersCount = relatedOpps.groups.reduce((n, g) => n + g.items.length, 0)
+    || (analysisData?.peers?.length ?? 0);
 
   const { price: displayPrice, changePct: displayChangePct, marketSession } = getAnalysisQuote(data);
 
@@ -165,6 +171,11 @@ export default async function AnalysisPage({ params }: PageProps) {
     companyName,
     description: data?.description,
     sector: data?.sector,
+    price: displayPrice,
+    marketCapB: data?.lastMarketCap,
+    peRatio: displayPeRatio,
+    healthScore: analysisData?.pillars?.health.score ?? data?.analysisCache?.healthScore ?? null,
+    valuationScore: analysisData?.pillars?.valuation.score ?? data?.analysisCache?.valuationScore ?? null,
   });
 
   // Earnings countdown — next scheduled report within 14 days
@@ -487,7 +498,7 @@ export default async function AnalysisPage({ params }: PageProps) {
             hasEarnings={earningsData.upcoming.length > 0 || earningsData.recent.length > 0}
             hasValuation={!!data?.analysisCache}
             hasFinancials={!!data?.analysisCache}
-            peersCount={sectorPeers.length}
+            peersCount={peersCount}
           />
 
           {/* Cross-links to related report pages + share — grouped with the

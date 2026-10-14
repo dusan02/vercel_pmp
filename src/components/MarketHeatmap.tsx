@@ -168,9 +168,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   );
 
   // -- Render mode (DOM on mobile, Canvas on desktop) -----------------------
-  const [renderMode] = useState<'dom' | 'canvas'>(() =>
-    typeof window !== 'undefined' && window.innerWidth <= 768 ? 'dom' : 'canvas',
-  );
+  const renderMode: 'dom' | 'canvas' = isMobile ? 'dom' : 'canvas';
 
   // -- Interaction handlers -------------------------------------------------
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -328,8 +326,13 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
             metric={metric}
             timeframe={timeframe}
             colorScale={colorScale}
+            hoveredSector={hoveredSector}
+            zoomedSector={zoomedSector}
             onTileClick={onTileClick}
             onHover={handleCanvasHover}
+            onSectorMouseEnter={setHoveredSector}
+            onSectorMouseLeave={() => setHoveredSector(null)}
+            onSectorClick={handleSectorClick}
           />
         ) : (
           <HeatmapDomView

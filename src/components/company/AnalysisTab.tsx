@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { KeyMetricsTable } from './analysis/KeyMetricsTable';
 import { AnalysisControlsBar } from './analysis/AnalysisControlsBar';
@@ -7,7 +8,7 @@ import { AnalysisCharts } from './AnalysisCharts';
 import { useAnalysis } from '../../hooks/useAnalysis';
 import { LoadingSkeleton } from './analysis/LoadingSkeleton';
 import type { AnalysisTabProps } from './analysis/types';
-import type { FlowPeriods } from './analysis/sections/FinancialFlowsSection';
+import { buildFlowPeriods, type FlowPeriods } from './analysis/sections/FinancialFlowsSection';
 
 // Re-export types for backward compatibility (other files import from here)
 export type {
@@ -36,6 +37,11 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
         analysisStep,
         runDeepAnalysis,
     } = useAnalysis(ticker, initialAnalysisData, initialHistoryData);
+
+    const effectiveFlowPeriods = useMemo(
+        () => flowPeriods ?? (data?.statements?.length ? buildFlowPeriods(data.statements as any) : null),
+        [flowPeriods, data?.statements]
+    );
 
     if (loading) return <LoadingSkeleton analysisStep={analysisStep} />;
 
@@ -112,7 +118,7 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
             {!initialAnalysisData && <KeyMetricsTable data={data} />}
 
             {/* ── Charts Dashboard (2-Column Grid) — detail behind the numbers ── */}
-            <AnalysisCharts ticker={ticker} data={data} flowPeriods={flowPeriods} />
+            <AnalysisCharts ticker={ticker} data={data} flowPeriods={effectiveFlowPeriods} />
 
             {/* ── Controls: Last Updated + Refresh — utility chrome as footer ── */}
             <AnalysisControlsBar

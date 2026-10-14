@@ -113,7 +113,7 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
         }
     }, [movers, selectedSector, activeTab]);
 
-    const gainers = useMemo(() => filteredMovers.filter(m => (m.lastChangePct || 0) >= 0), [filteredMovers]);
+    const gainers = useMemo(() => filteredMovers.filter(m => (m.lastChangePct || 0) > 0), [filteredMovers]);
     const losers = useMemo(() => filteredMovers.filter(m => (m.lastChangePct || 0) < 0), [filteredMovers]);
 
     const renderZScoreBadge = (zscore: number | null) => {
@@ -240,13 +240,6 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
             </div>
         );
     };
-
-    const renderNewsBadge = (reason: string | null) => {
-        if (!reason) return null;
-        // now handled inline in the card – keep for backwards compatibility
-        return null;
-    };
-
 
     const renderCategoryBadge = (category: string | null) => {
         if (!category) return null;

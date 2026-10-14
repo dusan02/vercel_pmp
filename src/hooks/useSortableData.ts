@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 
-export type SortKey = "ticker" | "marketCap" | "currentPrice" | "percentChange" | "marketCapDiff" | "sector" | "industry" | "estimate_eps" | "actual_eps" | "estimate_revenue" | "actual_revenue" | "percent_change" | "market_cap_diff" | "value";
+export type SortKey = "ticker" | "marketCap" | "currentPrice" | "percentChange" | "marketCapDiff" | "sector" | "industry" | "estimate_eps" | "actual_eps" | "estimate_revenue" | "actual_revenue" | "percent_change" | "market_cap_diff" | "value" | "dailyPnl" | "quantity";
 
 export interface UseSortableDataOptions<T> {
   items: T[];

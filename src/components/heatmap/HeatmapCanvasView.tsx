@@ -26,8 +26,13 @@ interface HeatmapCanvasViewProps {
     timeframe: 'day' | 'week' | 'month';
     /** Shared color scale from MarketHeatmap (adaptive for mcap) — must match DOM view + legend. */
     colorScale: (v: number) => string;
+    hoveredSector?: string | null | undefined;
+    zoomedSector?: string | null | undefined;
     onTileClick?: ((company: CompanyNode) => void) | undefined;
     onHover: (company: CompanyNode | null, x: number, y: number) => void;
+    onSectorMouseEnter?: ((name: string) => void) | undefined;
+    onSectorMouseLeave?: (() => void) | undefined;
+    onSectorClick?: ((name: string) => void) | undefined;
 }
 
 export function HeatmapCanvasView({
@@ -44,8 +49,13 @@ export function HeatmapCanvasView({
     metric,
     timeframe,
     colorScale,
+    hoveredSector,
+    zoomedSector,
     onTileClick,
     onHover,
+    onSectorMouseEnter,
+    onSectorMouseLeave,
+    onSectorClick,
 }: HeatmapCanvasViewProps) {
     const effectiveScale = scale * panZoom.zoom;
     const effectiveOffset = {
@@ -61,6 +71,7 @@ export function HeatmapCanvasView({
                 .map((node) => {
                     const { x0, y0, x1, y1 } = node as TreemapNode;
                     if (x0 == null || y0 == null || x1 == null || y1 == null) return null;
+                    const isHovered = hoveredSector === node.data.name;
                     return (
                         <div
                             key={`sector-border-${node.data.name}-${x0}-${y0}`}
@@ -70,12 +81,12 @@ export function HeatmapCanvasView({
                                 top: y0 * effectiveScale + effectiveOffset.y,
                                 width: (x1 - x0) * effectiveScale,
                                 height: (y1 - y0) * effectiveScale,
-                                borderTop: '1.5px solid #000000',
-                                borderLeft: '1.5px solid #000000',
-                                borderRight: '1.5px solid #000000',
-                                borderBottom: '1px solid rgba(0,0,0,0.4)',
+                                borderTop: isHovered ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid #000000',
+                                borderLeft: isHovered ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid #000000',
+                                borderRight: isHovered ? '2px solid rgba(255,255,255,0.85)' : '1.5px solid #000000',
+                                borderBottom: isHovered ? '2px solid rgba(255,255,255,0.85)' : '1px solid rgba(0,0,0,0.4)',
                                 boxSizing: 'border-box',
-                                zIndex: 10,
+                                zIndex: isHovered ? 20 : 10,
                             }}
                         />
                     );
@@ -132,6 +143,10 @@ export function HeatmapCanvasView({
                         isMobile={isMobile}
                         metric={metric}
                         treemapBoundsNotNull={treemapBoundsNotNull}
+                        zoomedSectorClass={!!zoomedSector}
+                        onMouseEnter={onSectorMouseEnter ? () => onSectorMouseEnter(node.data.name) : undefined}
+                        onMouseLeave={onSectorMouseLeave}
+                        onClick={onSectorClick ? () => onSectorClick(node.data.name) : undefined}
                     />
                 ))}
 

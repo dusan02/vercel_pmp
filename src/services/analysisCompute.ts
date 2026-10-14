@@ -288,8 +288,13 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     const annualStmts = stmts.filter(s => s.fiscalPeriod === 'FY');
     const moatDerived = deriveMoatInputs(annualStmts);
     const latestAnnual = annualStmts[0] ?? null;
-    const stmt5yAgoAnnual = annualStmts[4] ?? annualStmts[annualStmts.length - 1] ?? null;
-    const yearsBack = annualStmts.length >= 5 ? 4 : (annualStmts.length - 1);
+    const stmt5yAgoAnnual = (latestAnnual?.fiscalYear != null
+        ? annualStmts.find(s => s.fiscalYear === latestAnnual.fiscalYear - 4)
+        : null) ?? annualStmts[4] ?? annualStmts[annualStmts.length - 1] ?? null;
+    const fyDiff = (latestAnnual?.fiscalYear != null && stmt5yAgoAnnual?.fiscalYear != null)
+        ? latestAnnual.fiscalYear - stmt5yAgoAnnual.fiscalYear
+        : 0;
+    const yearsBack = fyDiff > 0 ? fyDiff : (annualStmts.length >= 5 ? 4 : (annualStmts.length - 1));
     let epsCagr5y: number | null = null;
     const epsNowShares = saneShares(latestAnnual);
     const epsThenShares = saneShares(stmt5yAgoAnnual);
@@ -318,9 +323,9 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         ? (ttmEbit * 0.79) / investedCapital
         : null;
     const pillarInterestCoverage = interestCoverage;
-    const pillarNetCash = (totalDebt !== null || cash !== null) ? (totalDebt || 0) - (cash || 0) <= 0 : null;
-    const pillarNetDebtRatio = (pillarNetCash === false && totalAssets !== null && totalAssets > 0)
-        ? ((totalDebt || 0) - (cash || 0)) / totalAssets
+    const pillarNetCash = netDebt !== null ? netDebt <= 0 : null;
+    const pillarNetDebtRatio = (pillarNetCash === false && netDebt !== null && totalAssets !== null && totalAssets > 0)
+        ? netDebt / totalAssets
         : null;
 
     // 0 statements with fundamentals ≠ weak fundamentals — ADR/foreign

@@ -87,16 +87,14 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
             const prevShares = prevYear?.sharesOutstanding
                 ? prevYear.sharesOutstanding / 1e6
                 : null;
-            // Positive = shares decreased (buyback), negative = dilution.
+            // Negative = shares decreased (buyback, green), positive = dilution (red) —
+            // matches the footnote's sharesDelta and KeyMetricsTable's Dilution (5Y).
             // null when no prior-year comparison exists — 0 would fake "no change".
-            // Same sign convention for cumulative: + = net buyback since start.
-            // NOTE: ratios are NOT split-adjusted; a stock split shows as a large
-            // false dilution spike (backend split-adjusted counts are a known gap).
             const buybackRatio = prevShares && prevShares > 0
-                ? ((prevShares - shares) / prevShares) * 100
+                ? ((shares - prevShares) / prevShares) * 100
                 : null;
             const cumulative = base && base > 0
-                ? ((base - shares) / base) * 100
+                ? ((shares - base) / base) * 100
                 : null;
             const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);
             return { name: label, date: label, shares, buybackRatio, cumulative };
@@ -156,7 +154,7 @@ export default function ShareDilutionChart({ statements }: ShareDilutionChartPro
                         {showYoy && (
                             <Bar dataKey="buybackRatio" name="YoY Change" maxBarSize={36} isAnimationActive={false}>
                                 {chartData.map((d, i) => (
-                                    <Cell key={i} fill={d.buybackRatio == null ? 'transparent' : d.buybackRatio >= 0 ? BUYBACK_GREEN : DILUTION_RED} />
+                                    <Cell key={i} fill={d.buybackRatio == null ? 'transparent' : d.buybackRatio <= 0 ? BUYBACK_GREEN : DILUTION_RED} />
                                 ))}
                             </Bar>
                         )}

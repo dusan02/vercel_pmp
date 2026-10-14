@@ -60,13 +60,18 @@ export function PortfolioSection({
     router.push(`/analysis/${stock.ticker.toUpperCase()}`);
   }, [router]);
 
-  // Pre-calculate value (Daily P&L) for sorting
+  // Pre-calculate value (Daily P&L) and quantity for sorting
   const enhancedPortfolioStocks = useMemo(() => {
-    return portfolioStocks.map(stock => ({
-      ...stock,
-      value: calculatePortfolioValue(stock) || 0
-    }));
-  }, [portfolioStocks, calculatePortfolioValue]);
+    return portfolioStocks.map(stock => {
+      const pnl = calculatePortfolioValue(stock) || 0;
+      return {
+        ...stock,
+        value: pnl,
+        dailyPnl: pnl,
+        quantity: portfolioHoldings[stock.ticker] || 0,
+      };
+    });
+  }, [portfolioStocks, portfolioHoldings, calculatePortfolioValue]);
 
   // Sorting Logic
   const {
@@ -138,8 +143,8 @@ export function PortfolioSection({
       render: (stock) => <strong>{stock.ticker}</strong>
     },
     {
-      key: 'value', // Consistent key for both desktop and mobile
-      header: 'Value',
+      key: isDesktop ? 'currentPrice' : 'value',
+      header: isDesktop ? 'Price' : 'Value',
       sortable: true,
       align: 'right',
       className: 'text-right',
@@ -148,7 +153,7 @@ export function PortfolioSection({
       disableRowClick: true,
       render: (stock) => {
         const price = stock.currentPrice ?? 0;
-        return <span className="tabular-nums block w-full text-right">${isFinite(price) ? Math.round(price).toLocaleString('en-US') : '0'}</span>;
+        return <span className="tabular-nums block w-full text-right">${isFinite(price) ? formatPrice(price) : '0.00'}</span>;
       }
     },
     {
@@ -237,7 +242,7 @@ export function PortfolioSection({
         </button>
       )
     }
-  ], [portfolioHoldings, onUpdateQuantity, onRemoveStock, calculatePortfolioValue]);
+  ], [portfolioHoldings, onUpdateQuantity, onRemoveStock, calculatePortfolioValue, isDesktop]);
 
   // Transform data for charts
   const chartData = useMemo(() => {
@@ -328,7 +333,7 @@ export function PortfolioSection({
             <div className="pl-4">
               <div className="text-xs text-[var(--clr-subtext)] mb-1">Daily Change</div>
               <div className={`text-lg font-bold ${totalDailyChange >= 0 ? 'positive' : 'negative'}`}>
-                {formatCurrencyCompact(totalDailyChange, true)}
+                {formatCurrencyCompact(totalDailyChange, true)} <span className="text-sm font-medium">({formatPercent(weightedDailyChangePercent)})</span>
               </div>
             </div>
           </div>

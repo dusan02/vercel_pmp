@@ -32,7 +32,7 @@ function formatDate(dateStr: string): string {
     const d = new Date(dateStr + 'T12:00:00Z');
     if (isNaN(d.getTime())) return dateStr;
     return d.toLocaleDateString('en-US', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC',
     });
   } catch {
     return dateStr;
@@ -59,12 +59,13 @@ export function HomeBlog({ initialSnapshots }: { initialSnapshots?: Snapshot[] |
   const [loading, setLoading] = useState(!initialSnapshots || initialSnapshots.length === 0);
 
   useEffect(() => {
+    if (initialSnapshots && initialSnapshots.length > 0) return;
     fetch('/api/blog/snapshots')
       .then(r => r.json())
       .then(d => { setSnapshots(d.snapshots ?? []); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [initialSnapshots]);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -136,9 +137,15 @@ export function HomeBlog({ initialSnapshots }: { initialSnapshots?: Snapshot[] |
                       </p>
                     )}
                   </div>
-                  <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${SENTIMENT_STYLE[sentiment] ?? SENTIMENT_STYLE.Mixed}`}>
-                    {sentiment}
-                  </span>
+                  {weekly ? (
+                    <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+                      Weekly Earnings
+                    </span>
+                  ) : (
+                    <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${SENTIMENT_STYLE[sentiment] ?? SENTIMENT_STYLE.Mixed}`}>
+                      {sentiment}
+                    </span>
+                  )}
                 </div>
               </Link>
             );

@@ -95,7 +95,7 @@ export function FavoritesSection({
       render: (stock) => stock.industry || 'N/A'
     },
     {
-      key: isDesktop ? 'marketCap' : 'marketCapDiffMobile',
+      key: 'marketCap',
       header: isDesktop ? 'Market Cap' : 'M Cap',
       sortable: true,
       align: 'right',
@@ -105,7 +105,7 @@ export function FavoritesSection({
       render: (stock) => <span className="tabular-nums block w-full text-right">{formatBillions(stock.marketCap)}</span>
     },
     {
-      key: 'marketCapDiffDesktop',
+      key: 'marketCapDiff',
       header: 'Cap Diff',
       sortable: isDesktop,
       align: 'center',
@@ -130,7 +130,7 @@ export function FavoritesSection({
         const price = stock.currentPrice ?? 0;
         return (
           <span className="tabular-nums block w-full text-right">
-            {isFinite(price) ? formatPrice(price) : '—'}
+            {isFinite(price) ? `$${formatPrice(price)}` : '—'}
           </span>
         );
       }
@@ -173,7 +173,7 @@ export function FavoritesSection({
         );
       }
     }
-  ], [isFavorite, onToggleFavorite]);
+  ], [isFavorite, onToggleFavorite, isDesktop]);
 
   const emptyState = (
     <div

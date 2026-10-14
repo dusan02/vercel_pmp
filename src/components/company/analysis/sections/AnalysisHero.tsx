@@ -291,7 +291,7 @@ export function AnalysisHero({
           bar so debt stays visible when cash covers it. */}
       {((week52Low != null && week52High != null && price != null && price > 0) || cashVsDebt != null) && (
         <div className="mt-3 grid w-full gap-4 sm:grid-cols-2">
-            {peHistory != null && peHistory.current != null && peHistory.min != null && peHistory.max != null && peHistory.max > peHistory.min ? (
+            {peHistory != null && peHistory.current != null && peHistory.min != null && peHistory.max != null && peHistory.max > peHistory.min && !isPeDistorted(peHistory.current, peHistory.median) ? (
               (() => {
                 const min = peHistory.min!, max = peHistory.max!;
                 const span = max - min;

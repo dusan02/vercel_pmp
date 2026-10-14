@@ -111,7 +111,31 @@ export function buildFlowPeriods(statements: StatementRow[]): FlowPeriods | null
 
     const fyRow = sorted.find(isFy) ?? null;
     const latestYtd = sorted.find((r) => !isFy(r)) ?? null;
-    const qRow = latestYtd ? deriveQuarter(latestYtd, sorted) : null;
+    // When the newest filing is FY and Q3 of that same fiscal year exists
+    // without an explicit Q4 row, derive standalone Q4 = FY − Q3_YTD so the
+    // quarterly Sankey doesn't stay stuck on Q3 after the annual report drops.
+    let qRow: StatementRow | null = null;
+    if (
+        fyRow &&
+        (!latestYtd || new Date(fyRow.endDate).getTime() >= new Date(latestYtd.endDate).getTime()) &&
+        !sorted.some((r) => r.fiscalYear === fyRow.fiscalYear && (r.period ?? r.fiscalPeriod) === 'Q4')
+    ) {
+        const q3 = sorted.find(
+            (r) => r.fiscalYear === fyRow.fiscalYear && (r.period ?? r.fiscalPeriod) === 'Q3',
+        );
+        if (q3) {
+            const derived: StatementRow = { ...fyRow, period: 'Q4', fiscalPeriod: 'Q4' };
+            for (const f of FLOW_FIELDS) {
+                const a = fyRow[f];
+                const b = q3[f];
+                derived[f] = a != null && b != null ? a - b : a;
+            }
+            qRow = derived;
+        }
+    }
+    if (!qRow && latestYtd) {
+        qRow = deriveQuarter(latestYtd, sorted);
+    }
 
     const annual = fyRow ? toPeriod(fyRow, `FY ${fyRow.fiscalYear ?? new Date(fyRow.endDate).getUTCFullYear()}`) : null;
     const qLabel = qRow

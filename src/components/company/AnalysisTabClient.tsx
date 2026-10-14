@@ -28,6 +28,11 @@ interface EwScoreLite {
 export function AnalysisTabClient({ ticker, initialAnalysisData, initialHistoryData, flowPeriods, ewScore }: { ticker: string; initialAnalysisData?: unknown; initialHistoryData?: unknown; flowPeriods?: FlowPeriods | null; ewScore?: EwScoreLite | null }) {
   useEffect(() => {
     event('analysis_view', { ticker });
+    try {
+      const prev = JSON.parse(localStorage.getItem('pmp:recentTickers') ?? '[]');
+      const next = [ticker, ...(Array.isArray(prev) ? prev : []).filter((x: string) => x !== ticker)].slice(0, 6);
+      localStorage.setItem('pmp:recentTickers', JSON.stringify(next));
+    } catch { /* storage unavailable */ }
   }, [ticker]);
 
   return <AnalysisTab ticker={ticker} initialAnalysisData={initialAnalysisData} initialHistoryData={initialHistoryData} flowPeriods={flowPeriods} ewScore={ewScore} />;

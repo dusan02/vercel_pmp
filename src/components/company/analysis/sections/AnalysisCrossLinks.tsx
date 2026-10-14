@@ -29,6 +29,13 @@ export function AnalysisCrossLinks({ ticker, companyName, description }: Analysi
       >
         {companyName} ({ticker}) Financial Statements →
       </Link>
+      <a
+        href={`https://gainerslosers.com/ticker/${ticker}`}
+        rel="noopener"
+        className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+      >
+        {companyName} ({ticker}) Unusual Moves &amp; Catalyst History — GainersLosers →
+      </a>
       {/* StockCV cross-link — a document-tile button, not another text link,
           so the one-page résumé reads as its own product. */}
       <a

@@ -49,15 +49,19 @@ export function useHomeData({ initialData, activeSection }: UseHomeDataOptions) 
     portfolioStocks,
   } = usePortfolio({ stockData });
 
-  // Load portfolio tickers missing from stockData (debounced)
+  // Load portfolio and favorite tickers missing from stockData (debounced)
   useEffect(() => {
-    const missing = Object.keys(portfolioHoldings).filter(
+    const wanted = new Set([
+      ...Object.keys(portfolioHoldings),
+      ...favorites.map(f => f.ticker),
+    ]);
+    const missing = Array.from(wanted).filter(
       ticker => !stockData.some(s => s.ticker === ticker)
     );
     if (missing.length === 0) return;
     const id = setTimeout(() => fetchSpecificTickers(missing), 300);
     return () => clearTimeout(id);
-  }, [portfolioHoldings, stockData, fetchSpecificTickers]);
+  }, [portfolioHoldings, favorites, stockData, fetchSpecificTickers]);
 
   const {
     searchTerm, setSearchTerm,

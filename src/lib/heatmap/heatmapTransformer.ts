@@ -276,8 +276,8 @@ export function transformToHeatmap(
       );
 
       const regularClose = regularCloseMap.get(ticker) || null;
-      const cachedPct = Number(cachedStockData.percentChange);
-      changePercent = (cachedPct && isFinite(cachedPct))
+      const cachedPct = cachedStockData.percentChange != null ? Number(cachedStockData.percentChange) : NaN;
+      changePercent = Number.isFinite(cachedPct)
         ? cachedPct
         : computePercentChange(currentPrice, previousClose, ctx.session as any, regularClose);
 
@@ -309,8 +309,8 @@ export function transformToHeatmap(
       }
 
       const regularClose = regularCloseMap.get(ticker) || null;
-      const cachedChange = Number(cachedStockData.change);
-      changePercent = (cachedChange && isFinite(cachedChange))
+      const cachedChange = cachedStockData.change != null ? Number(cachedStockData.change) : NaN;
+      changePercent = Number.isFinite(cachedChange)
         ? cachedChange
         : computePercentChange(currentPrice, previousClose, ctx.session as any, regularClose);
 
@@ -381,14 +381,14 @@ export function transformToHeatmap(
       const sharesOutstanding = tickerInfo.sharesOutstanding || 0;
       marketCap = sharesOutstanding > 0
         ? computeMarketCap(currentPrice, sharesOutstanding)
-        : (tickerInfo.lastMarketCap ? tickerInfo.lastMarketCap / 1_000_000_000 : 0);
+        : (tickerInfo.lastMarketCap || 0);
 
       if (marketCap <= 0) { skippedNoMarketCap++; continue; }
 
       const referencePrice = previousClose > 0 ? previousClose : (regularClose && regularClose > 0 ? regularClose : 0);
       marketCapDiff = (sharesOutstanding > 0 && referencePrice > 0)
         ? computeMarketCapDiff(currentPrice, referencePrice, sharesOutstanding)
-        : (tickerInfo.lastMarketCapDiff ? tickerInfo.lastMarketCapDiff / 1_000_000_000 : 0);
+        : (tickerInfo.lastMarketCapDiff || 0);
     }
 
     if (currentPrice === 0) { skippedNoPrice++; continue; }
@@ -421,7 +421,7 @@ export function transformToHeatmap(
     }
 
     const thresholdMin = ctx.session === 'live' ? 5 : ctx.session === 'pre' ? 30 : ctx.session === 'after' ? 30 : 60;
-    const nowMs = ctx.etNow.getTime();
+    const nowMs = now.getTime();
     const isStale = currentPrice > 0 && priceTsMs > 0 && (nowMs - priceTsMs) > thresholdMin * 60_000;
     const lastUpdatedIso = priceTsMs ? new Date(priceTsMs).toISOString() : undefined;
 

@@ -46,16 +46,22 @@ function extractDateFromWeekly(dateStr: string): string {
   return dateStr.replace('weekly-', '');
 }
 
-function parseLocalDate(dateStr: string): Date {
+function parseUtcNoon(dateStr: string): Date {
   const cleanDate = isWeeklyDate(dateStr) ? extractDateFromWeekly(dateStr) : dateStr;
-  const parts = cleanDate.split('-');
-  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  return new Date(`${cleanDate}T12:00:00Z`);
 }
 
 function formatDateLong(dateStr: string): string {
-  return parseLocalDate(dateStr).toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  const d = parseUtcNoon(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC',
   });
+}
+
+function safeJson<T>(raw: string | null | undefined, fallback: T): T {
+  if (!raw) return fallback;
+  try { return JSON.parse(raw) as T; } catch { return fallback; }
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ date: string }> }): Promise<Metadata> {
@@ -63,7 +69,7 @@ export async function generateMetadata({ params }: { params: Promise<{ date: str
   const snapshot = await prisma.dailyBlogSnapshot.findUnique({ where: { date } });
   if (!snapshot) return { title: 'Report Not Found | PreMarketPrice' };
 
-  const overview: Overview = JSON.parse(snapshot.overviewJson);
+  const overview: Overview = safeJson<Overview>(snapshot.overviewJson, {});
   const isWeekly = isWeeklyDate(date);
 
   if (isWeekly) {
@@ -83,7 +89,7 @@ export async function generateMetadata({ params }: { params: Promise<{ date: str
     };
   }
 
-  const gainers: TickerSnapshot[] = JSON.parse(snapshot.gainersJson || '[]');
+  const gainers: TickerSnapshot[] = safeJson<TickerSnapshot[]>(snapshot.gainersJson, []);
   const top3 = gainers.slice(0, 3).map(g => `${g.ticker} ${g.percentChange > 0 ? '+' : ''}${(g.percentChange ?? 0).toFixed(1)}%`).join(', ');
 
   const title = `Premarket Report ${formatDateLong(date)} | PreMarketPrice`;
@@ -183,11 +189,11 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
   const snapshot = await prisma.dailyBlogSnapshot.findUnique({ where: { date } });
   if (!snapshot) notFound();
 
-  const overview: Overview = JSON.parse(snapshot.overviewJson);
-  const gainers: TickerSnapshot[] = JSON.parse(snapshot.gainersJson || '[]');
-  const losers: TickerSnapshot[] = JSON.parse(snapshot.losersJson || '[]');
-  const mcapMovers: TickerSnapshot[] = JSON.parse(snapshot.mcapMoversJson || '[]');
-  const earningsParsed = JSON.parse(snapshot.earningsJson || '[]');
+  const overview: Overview = safeJson<Overview>(snapshot.overviewJson, {});
+  const gainers: TickerSnapshot[] = safeJson<TickerSnapshot[]>(snapshot.gainersJson, []);
+  const losers: TickerSnapshot[] = safeJson<TickerSnapshot[]>(snapshot.losersJson, []);
+  const mcapMovers: TickerSnapshot[] = safeJson<TickerSnapshot[]>(snapshot.mcapMoversJson, []);
+  const earningsParsed = safeJson<unknown>(snapshot.earningsJson, []);
   const earnings: EarningsItem[] = Array.isArray(earningsParsed) ? earningsParsed : [];
   const isWeekly = isWeeklyDate(date) || overview.type === 'weekly-earnings';
   const eligibleAnalysis = await getEligibleAnalysisSet();
@@ -249,7 +255,7 @@ export default async function BlogDatePage({ params }: { params: Promise<{ date:
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
 
       <div className="max-w-4xl mx-auto px-4 py-10">
 

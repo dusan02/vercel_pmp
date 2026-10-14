@@ -52,17 +52,17 @@ export function useScreener({
             overallScore: r.overallScore ?? null,
             altmanZ: r.altmanZ ?? null,
             piotroskiScore: r.piotroskiScore ?? null,
-            beneishScore: null,
-            fcfMargin: null,
-            fcfConversion: null,
-            debtRepaymentYears: null,
-            interestCoverage: null,
-            revenueCagr: null,
-            netIncomeCagr: null,
-            marginStability: null,
+            beneishScore: r.beneishScore ?? null,
+            fcfMargin: r.fcfMargin ?? null,
+            fcfConversion: r.fcfConversion ?? null,
+            debtRepaymentYears: r.debtRepaymentYears ?? null,
+            interestCoverage: r.interestCoverage ?? null,
+            revenueCagr: r.revenueCagr ?? null,
+            netIncomeCagr: r.netIncomeCagr ?? null,
+            marginStability: r.marginStability ?? null,
             pePercentile: r.pePercentile ?? null,
             peVsMedian3yPct: r.peVsMedian3yPct ?? null,
-            lastQualitySignalAt: null,
+            lastQualitySignalAt: r.lastQualitySignalAt ?? null,
             insiderNetBuyPct90d: r.insiderNetBuyPct90d ?? null,
             insiderNetBuyValue90d: r.insiderNetBuyValue90d ?? null,
             insiderLargestBuyValue90d: r.insiderLargestBuyValue90d ?? null,
@@ -251,20 +251,25 @@ export function useScreener({
         const adv = { ...ADVANCED_DEFAULTS };
         for (const def of ADVANCED_FILTERS) adv[def.key] = num(def.param, def.def);
         setAdvanced(adv);
-        setSelectedSector(sp.get('sector') ?? '');
-        setSelectedIndustry(sp.get('industry') ?? '');
-        setSearchQuery(sp.get('q') ?? '');
+        const sectorVal = sp.get('sector') ?? '';
+        const industryVal = sp.get('industry') ?? '';
+        const qVal = sp.get('q') ?? '';
         const m = sp.get('mcap') ?? 'all';
-        setMarketCapPreset(MARKET_CAP_PRESETS.some((p) => p.id === m) ? m : 'all');
+        const mcapVal = MARKET_CAP_PRESETS.some((p) => p.id === m) ? m : 'all';
         const sort = sp.get('sort');
+        let nextSortField = 'ticker.lastMarketCap';
+        let nextSortOrder: 'asc' | 'desc' = 'desc';
         if (sort) {
             const [f, o] = sort.split(':');
-            if (f) setSortField(f); else setSortField('ticker.lastMarketCap');
-            setSortOrder(o === 'asc' || o === 'desc' ? o : 'desc');
-        } else {
-            setSortField('ticker.lastMarketCap');
-            setSortOrder('desc');
+            if (f) nextSortField = f;
+            nextSortOrder = o === 'asc' || o === 'desc' ? o : 'desc';
         }
+        setSelectedSector(sectorVal);
+        setSelectedIndustry(industryVal);
+        setSearchQuery(qVal);
+        setMarketCapPreset(mcapVal);
+        setSortField(nextSortField);
+        setSortOrder(nextSortOrder);
         // Range filters: minRoe/maxRoe/... (camelCase key names, registry-driven)
         const restored: typeof metricRanges = {};
         for (const def of RANGE_FILTERS) {
@@ -283,14 +288,33 @@ export function useScreener({
             if (range.min !== undefined || range.max !== undefined) restored[def.key] = range;
         }
         setMetricRanges(restored);
+        setDebouncedFilters({
+            scoreRanges: scores,
+            advanced: adv,
+            selectedSector: sectorVal,
+            selectedIndustry: industryVal,
+            searchQuery: qVal,
+            marketCapPreset: mcapVal,
+            sortField: nextSortField,
+            sortOrder: nextSortOrder,
+            metricRanges: restored,
+        });
     }, []);
 
+    const urlRestoredRef = useRef(false);
     // Restore once from the landing URL — /screener page only.
     useEffect(() => {
-        if (window.location.pathname !== '/screener') return;
-        const sp = new URLSearchParams(window.location.search);
-        if (sp.size === 0) return;
-        restoreFromParams(sp);
+        if (window.location.pathname === '/screener') {
+            const sp = new URLSearchParams(window.location.search);
+            // Ignore view/cols-only query strings when deciding whether to restore filters
+            const filterSp = new URLSearchParams(sp);
+            filterSp.delete('view');
+            filterSp.delete('cols');
+            if (filterSp.size > 0) {
+                restoreFromParams(sp);
+            }
+        }
+        urlRestoredRef.current = true;
     }, [restoreFromParams]);
 
     /** Serialize current filter state to the query-string form. */
@@ -355,12 +379,15 @@ export function useScreener({
     // Standalone /screener page only — the homepage embed lives under
     // /?tab=screener and its URL belongs to tab navigation.
     useEffect(() => {
+        if (!urlRestoredRef.current) return;
         if (window.location.pathname !== '/screener') return;
         const sp = new URLSearchParams(buildParamsString());
-        // Preserve the ?view= param — it is owned by the column-view state in
-        // StockScreener, not by this hook's filter state.
-        const view = new URLSearchParams(window.location.search).get('view');
+        // Preserve the ?view= and ?cols= params — owned by column-view state in StockScreener.
+        const cur = new URLSearchParams(window.location.search);
+        const view = cur.get('view');
+        const cols = cur.get('cols');
         if (view) sp.set('view', view);
+        if (cols) sp.set('cols', cols);
         const qs = sp.toString();
         window.history.replaceState(null, '', qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
     }, [buildParamsString]);

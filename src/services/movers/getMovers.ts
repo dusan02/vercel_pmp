@@ -55,22 +55,22 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
     //    carry yesterday's move (ACN stayed a "5.4σ mover" overnight on a
     //    +0.45% drift, Oct 2026). Requiring a today-dated price confines
     //    stored-field qualification to the current trading day.
-    const TWENTY_FOUR_HOURS_AGO = new Date(Date.now() - 24 * 60 * 60 * 1000);
     // Trading-day-aware: on weekends/holidays "today" is the last session
-    // (Friday) — otherwise lastPriceUpdated from Friday's close fails the
-    // >= midnight cutoff and the movers list renders empty.
+    // (Friday) — a wall-clock 24h gate would empty the movers list ~24h after
+    // Friday's close. Anchoring to todayStartET keeps Friday's movers visible
+    // through the weekend while dropping tickers with no prints in the session.
     const todayStartET = getTradingDay(etNow);
     const freshToday = { lastPriceUpdated: { gte: todayStartET } };
     const topMovers = await prisma.ticker.findMany({
         where: {
             lastPrice: { gt: 0 },
-            lastPriceUpdated: { gte: TWENTY_FOUR_HOURS_AGO },
+            ...freshToday,
             OR: [
-                { ...freshToday, latestMoversZScore: { gte: minZScore } },
-                { ...freshToday, latestMoversZScore: { lte: -minZScore } },
-                { ...freshToday, lastChangePct: { gte: 5.0 } },
-                { ...freshToday, lastChangePct: { lte: -5.0 } },
-                { ...freshToday, latestMoversRVOL: { gte: 3.0 } }
+                { latestMoversZScore: { gte: minZScore } },
+                { latestMoversZScore: { lte: -minZScore } },
+                { lastChangePct: { gte: 5.0 } },
+                { lastChangePct: { lte: -5.0 } },
+                { latestMoversRVOL: { gte: 3.0 } }
             ]
         },
         take: limit * 2, // Fetch more for ranking
@@ -233,6 +233,7 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
         } else {
             const inputs = finalMovers.map(m => ({
                 symbol: m.symbol,
+                name: m.name,
                 sector: m.sector,
                 changePct: m.lastChangePct,
                 zScore: m.latestMoversZScore,

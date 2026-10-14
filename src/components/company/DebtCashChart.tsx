@@ -44,7 +44,7 @@ export default function DebtCashChart({ statements }: DebtCashChartProps) {
             const hasDebt = s.totalDebt != null;
             const cashVal = hasCash ? s.cashAndEquivalents! / 1e6 : null;
             const debtVal = hasDebt ? s.totalDebt! / 1e6 : null;
-            const netDebtVal = (hasDebt || hasCash) ? (debtVal ?? 0) - (cashVal ?? 0) : null;
+            const netDebtVal = (hasDebt && hasCash) ? debtVal! - cashVal! : null;
             const label = buildPeriodLabel(s.fiscalPeriod, s.fiscalYear);
             return { name: label, date: label, cash: cashVal, totalDebt: debtVal, netDebt: netDebtVal };
         });

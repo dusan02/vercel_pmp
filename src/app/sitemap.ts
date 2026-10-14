@@ -41,6 +41,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'hourly',
       priority: 0.9,
     },
+    {
+      url: `${baseUrl}/analysis`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.85,
+    },
     ...METRIC_PAGES.map((p) => ({
       url: `${baseUrl}/heatmap/${p.slug}`,
       lastModified: currentDate,
@@ -430,9 +436,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       select: { date: true },
     });
     for (const snap of snapshots) {
+      const cleanDate = snap.date.replace(/^weekly-/, '');
+      const parsed = new Date(`${cleanDate}T12:00:00Z`);
       blogPages.push({
         url: `${baseUrl}/blog/${snap.date}`,
-        lastModified: new Date(snap.date).toISOString(),
+        lastModified: isNaN(parsed.getTime()) ? currentDate : parsed.toISOString(),
         changeFrequency: 'monthly' as const,
         priority: snap.date.startsWith('weekly-') ? 0.75 : 0.7,
       });

@@ -151,7 +151,9 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         // No balance-sheet row at all → claim nothing about debt rather than
         // treating missing values as zeros (the old `|| 0` on a null row
         // printed "effectively debt-free" for any income-only latest row).
-        const netDebtNow = bsStmt ? (bsStmt.totalDebt || 0) - (bsStmt.cashAndEquivalents || 0) : null;
+        const netDebtNow = (bsStmt && bsStmt.totalDebt !== null && bsStmt.cashAndEquivalents !== null)
+            ? bsStmt.totalDebt - bsStmt.cashAndEquivalents
+            : null;
 
         if (netDebtNow === null) {
             debtRepaymentYears = null;
@@ -206,8 +208,8 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     const currentRatio = ((bsStmt?.currentAssets && bsStmt.currentLiabilities && bsStmt.currentLiabilities > 0)
         ? bsStmt.currentAssets / bsStmt.currentLiabilities
         : null) ?? finnhubMetrics?.currentRatio ?? null;
-    const hasBalanceData = bsStmt !== null && (bsStmt.totalDebt !== null || bsStmt.cashAndEquivalents !== null);
-    const currentNetDebt = hasBalanceData ? (bsStmt.totalDebt || 0) - (bsStmt.cashAndEquivalents || 0) : null;
+    const hasBalanceData = bsStmt !== null && bsStmt.totalDebt !== null && bsStmt.cashAndEquivalents !== null;
+    const currentNetDebt = hasBalanceData ? bsStmt.totalDebt! - bsStmt.cashAndEquivalents! : null;
     const netCash = currentNetDebt !== null ? currentNetDebt <= 0 : null;
     const netDebtRatio = (currentNetDebt !== null && currentNetDebt > 0 && bsStmt!.totalAssets && bsStmt!.totalAssets > 0)
         ? currentNetDebt / bsStmt!.totalAssets
@@ -328,8 +330,13 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     let revenueCagr: number | null = null;
     let netIncomeCagr: number | null = null;
     const latestAnnual = annualStmts[0] || null;
-    const stmt5yAgoAnnual = annualStmts[4] || annualStmts[annualStmts.length - 1] || null;
-    const yearsBack = annualStmts.length >= 5 ? 4 : (annualStmts.length - 1);
+    const stmt5yAgoAnnual = (latestAnnual?.fiscalYear != null
+        ? annualStmts.find(s => s.fiscalYear === latestAnnual.fiscalYear - 4)
+        : null) || annualStmts[4] || annualStmts[annualStmts.length - 1] || null;
+    const fyDiff = (latestAnnual?.fiscalYear != null && stmt5yAgoAnnual?.fiscalYear != null)
+        ? latestAnnual.fiscalYear - stmt5yAgoAnnual.fiscalYear
+        : 0;
+    const yearsBack = fyDiff > 0 ? fyDiff : (annualStmts.length >= 5 ? 4 : (annualStmts.length - 1));
     
     if (latestAnnual && stmt5yAgoAnnual && yearsBack > 0) {
         if (latestAnnual.revenue && stmt5yAgoAnnual.revenue && stmt5yAgoAnnual.revenue > 0) {

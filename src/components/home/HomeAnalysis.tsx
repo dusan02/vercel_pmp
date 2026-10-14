@@ -86,6 +86,7 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                 const prev = JSON.parse(localStorage.getItem('pmp:recentTickers') ?? '[]');
                 const next = [t, ...(Array.isArray(prev) ? prev : []).filter((x: string) => x !== t)].slice(0, 6);
                 localStorage.setItem('pmp:recentTickers', JSON.stringify(next));
+                setRecentTickers(next);
             } catch { /* storage unavailable — recents are best-effort */ }
         }
     }, [onTickerChange]);

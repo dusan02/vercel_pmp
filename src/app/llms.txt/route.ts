@@ -27,6 +27,7 @@ PreMarketPrice tracks 1,000+ US stocks during the pre-market session (4:00 AM �
 ## Main pages
 
 - [Homepage](https://premarketprice.com): Live pre-market prices and market overview
+- [Stock Analysis Hub](https://premarketprice.com/analysis): Search any US stock for a 6-pillar fundamental profile (Valuation, Growth, Profitability, Financial Health, Quality, Moat)
 - [Market Heatmap](https://premarketprice.com/heatmap): Color-coded heatmap of the whole US market by sector and market cap
 - [Premarket Movers](https://premarketprice.com/premarket-movers): Stocks moving the most in pre-market trading today, with z-scores and relative volume
 - [Premarket Gainers](https://premarketprice.com/gainers): Top pre-market gainers today with prices and market-cap changes
@@ -86,6 +87,11 @@ Top tickers: ${topTickers.map((t) => `[${t}](https://premarketprice.com/analysis
 - Movers are ranked by percentage change with statistical significance filtering (z-score >= 2.0).
 - Analysis pages include Altman Z-Score, debt ratios, profitability margins, and P/E valuation context.
 - Every page shows a "last updated" timestamp; historical archive pages are kept for each trading day.
+
+## Sister properties
+
+- [GainersLosers](https://gainerslosers.com): Daily US stock gainers, losers, unusual σ moves, catalyst explanations, and historical \`/day/YYYY-MM-DD\` archives
+- [StockCV](https://stockcv.com): One-page fundamental résumé for every US stock (\`https://stockcv.com/[TICKER]\`)
 
 ## Company
 

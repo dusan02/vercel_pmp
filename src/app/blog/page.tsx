@@ -21,20 +21,24 @@ export const metadata: Metadata = {
   },
 };
 
-function parseLocalDate(dateStr: string): Date {
-  const parts = dateStr.split('-');
-  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+function parseUtcNoon(dateStr: string): Date {
+  const clean = dateStr.replace(/^weekly-/, '');
+  return new Date(`${clean}T12:00:00Z`);
 }
 
 function formatDate(dateStr: string): string {
-  return parseLocalDate(dateStr).toLocaleDateString('en-US', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  const d = parseUtcNoon(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC',
   });
 }
 
 function formatDateShort(dateStr: string): string {
-  return parseLocalDate(dateStr).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
+  const d = parseUtcNoon(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
   });
 }
 
@@ -93,7 +97,8 @@ export default async function BlogIndexPage() {
         ) : (
           <div className="space-y-4">
             {snapshots.map((snap: { date: string; overviewJson: string }) => {
-              const overview: Overview = JSON.parse(snap.overviewJson);
+              let overview: Overview = {};
+              try { overview = JSON.parse(snap.overviewJson || '{}'); } catch {}
               const isWeeklyEarnings = overview.type === 'weekly-earnings' || snap.date.startsWith('weekly-');
 
               if (isWeeklyEarnings) {

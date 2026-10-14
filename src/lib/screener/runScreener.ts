@@ -105,7 +105,7 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
     const scoresKey = scoreRanges
         .map((r) => `ac.${r.field}=${r.min ?? ''}-${r.max ?? ''}`)
         .join('|');
-    const cacheKey = `screener:${scoresKey}:${sector || ''}:${industry || ''}:${q || ''}:${minMarketCap || ''}:${maxMarketCap || ''}:${metricsKey}:${page}:${limit}:${sortParams}`;
+    const cacheKey = `screener:${scoresKey}:${sector || ''}:${industry || ''}:${q || ''}:${minMarketCap ?? ''}:${maxMarketCap ?? ''}:${metricsKey}:${page}:${limit}:${sortParams}`;
     try {
         const cached = await getCachedData(cacheKey);
         if (cached) return cached as Record<string, any>;

@@ -1,4 +1,5 @@
 import type { AnalysisData } from '../types';
+import { isPeDistorted } from '@/lib/analysis/peDistortion';
 
 /**
  * Thesis on one screen — scannable bull/bear evidence summary under the hero.
@@ -61,6 +62,7 @@ export function ThesisCard({ analysisData, cache, roe, only }: ThesisCardProps) 
     const lossYears = cache?.negativeNiYears ?? null;
     const pePct = peStat?.percentile ?? null;
     const peYears = peStat?.years ?? null;
+    const peDistorted = isPeDistorted(peStat?.current ?? null, peStat?.median ?? null);
 
     const strengths: string[] = [];
     const risks: string[] = [];
@@ -84,7 +86,7 @@ export function ThesisCard({ analysisData, cache, roe, only }: ThesisCardProps) 
     if (interestCoverage != null && interestCoverage >= 8) {
         strengths.push(`Interest coverage ${fmt(interestCoverage)}× — debt well covered`);
     }
-    if (pePct != null && pePct <= 25 && peStat?.current != null) {
+    if (!peDistorted && pePct != null && pePct <= 25 && peStat?.current != null) {
         strengths.push(`P/E ${fmt(peStat.current)}× at bottom ${Math.round(pePct)}% of ${peYears ? Math.round(peYears) : 'multi'}-year history`);
     }
 
@@ -110,29 +112,29 @@ export function ThesisCard({ analysisData, cache, roe, only }: ThesisCardProps) 
     if (revCagr != null && revCagr < 0) {
         risks.push(`Revenue shrinking ${fmt(Math.abs(revCagr))}%/yr`);
     }
-    if (pePct != null && pePct >= 80 && peStat?.current != null) {
+    if (!peDistorted && pePct != null && pePct >= 80 && peStat?.current != null) {
         risks.push(`P/E ${fmt(peStat.current)}× at top ${Math.round(100 - pePct)}% of ${peYears ? Math.round(peYears) : 'multi'}-year history`);
     }
 
     if (strengths.length === 0 && risks.length === 0) return null;
     if (only === 'strengths') {
         return strengths.length > 0
-            ? <EvidencePanel title="Strengths" items={strengths} icon="✓" iconClass="text-emerald-500" />
+            ? <EvidencePanel title="Bull Case" items={strengths} icon="✓" iconClass="text-emerald-500" />
             : null;
     }
     if (only === 'risks') {
         return risks.length > 0
-            ? <EvidencePanel title="Risks" items={risks} icon="⚠" iconClass="text-amber-500" />
+            ? <EvidencePanel title="Risk Flags" items={risks} icon="⚠" iconClass="text-amber-500" />
             : null;
     }
 
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {strengths.length > 0 && (
-                <EvidencePanel title="Strengths" items={strengths} icon="✓" iconClass="text-emerald-500" />
+                <EvidencePanel title="Bull Case" items={strengths} icon="✓" iconClass="text-emerald-500" />
             )}
             {risks.length > 0 && (
-                <EvidencePanel title="Risks" items={risks} icon="⚠" iconClass="text-amber-500" />
+                <EvidencePanel title="Risk Flags" items={risks} icon="⚠" iconClass="text-amber-500" />
             )}
         </div>
     );

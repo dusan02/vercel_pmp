@@ -253,7 +253,26 @@ export function buildMetrics(data: AnalysisData) {
         def('Asset / Liability', bs?.assetToLiability != null ? `${bs.assetToLiability.toFixed(2)}x` : 'N/A', bs?.assetToLiability == null ? 'neutral' : bs.assetToLiability >= 2 ? 'good' : bs.assetToLiability >= 1 ? 'warn' : 'bad', bs?.assetToLiability == null ? '-' : bs.assetToLiability >= 2 ? 'Solid' : bs.assetToLiability >= 1 ? 'Adequate' : 'Risky', 'Total Assets / Total Liabilities'),
     ];
 
-    return { valuation, profitability, growth, solvency, quality, balanceSheet, market, perShare, capexCtx, lossYears: lossHistory.lossYears, lossHistory };
+    const moatLegs = data.pillars?.moat?.legs ?? [];
+    const moatLeg = (key: string) => moatLegs.find(l => l.key === key);
+    const moatStatus = (pts: number | undefined, disp: string | undefined): [StatusType, string] => {
+        if (!disp || disp === 'n/a') return ['neutral', '-'];
+        if ((pts ?? 0) >= 18) return ['good', 'Durable'];
+        if ((pts ?? 0) >= 12) return ['warn', 'Moderate'];
+        return ['bad', 'Weak'];
+    };
+    const rLeg = moatLeg('roicDurability');
+    const gmLeg = moatLeg('gmMedian');
+    const fcfLeg = moatLeg('fcfDurability');
+    const mfLeg = moatLeg('marginFloor');
+    const moat: MetricCardDef[] = [
+        def('ROIC >12% Years', rLeg && rLeg.display !== 'n/a' ? rLeg.display : 'N/A', ...moatStatus(rLeg?.points, rLeg?.display), 'Share of completed fiscal years with ROIC > 12% — measures multi-year capital-return durability', true),
+        def('Gross Margin (Med.)', gmLeg && gmLeg.display !== 'n/a' ? gmLeg.display : 'N/A', ...moatStatus(gmLeg?.points, gmLeg?.display), 'Median annual gross margin across available fiscal years — pricing-power durability'),
+        def('FCF-Positive Years', fcfLeg && fcfLeg.display !== 'n/a' ? fcfLeg.display : 'N/A', ...moatStatus(fcfLeg?.points, fcfLeg?.display), 'Share of completed fiscal years with positive free cash flow'),
+        def('Net Margin Floor', mfLeg && mfLeg.display !== 'n/a' ? mfLeg.display.replace(/^worst\s+/i, '') : 'N/A', ...moatStatus(mfLeg?.points, mfLeg?.display), 'Weakest annual net margin across completed fiscal years — recession/downcycle resilience'),
+    ];
+
+    return { valuation, profitability, growth, solvency, quality, moat, balanceSheet, market, perShare, capexCtx, lossYears: lossHistory.lossYears, lossHistory };
 }
 
 // ── Letter grades — report-card style. Per-metric grade derives from the
@@ -413,6 +432,7 @@ function Tile({ m }: { m: MetricCardDef }) {
 // ── P/E vs own history — thin percentile bar inside the Valuation card ─────
 function HistBar({ stat }: { stat: ValuationHistoryStat | undefined }) {
     if (!stat || stat.percentile == null || stat.min == null || stat.max == null) return null;
+    if (isPeDistorted(stat.current ?? null, stat.median ?? null)) return null;
     const p = stat.percentile;
     const label = p >= 67 ? 'Above average' : p <= 33 ? 'Below average' : 'In range';
     const barColor = p >= 67 ? 'bg-rose-400 dark:bg-rose-500' : p <= 33 ? 'bg-emerald-400 dark:bg-emerald-500' : 'bg-amber-400 dark:bg-amber-500';
@@ -458,7 +478,7 @@ function PillarCard({ title, score, metrics, children }: { title: string; score?
 
 // ── Main export ──────────────────────────────────────────────────────────────
 export function KeyMetricsTable({ data, insiderTransactions, insiderActivity }: Props) {
-    const { valuation, profitability, growth, solvency, quality, balanceSheet, market, perShare, capexCtx, lossYears, lossHistory } = useMemo(
+    const { valuation, profitability, growth, solvency, quality, moat, balanceSheet, market, perShare, capexCtx, lossYears, lossHistory } = useMemo(
         () => buildMetrics(data),
         [data]
     );
@@ -578,16 +598,17 @@ export function KeyMetricsTable({ data, insiderTransactions, insiderActivity }: 
 
                 {/* ── Small: context cards — collapsed by default so the page
                     doesn't read as a wall of numbers; power users expand. ─── */}
-                {(perShare.length > 0 || balanceSheet.length > 0 || market.length > 0) && (
+                {(moat.length > 0 || perShare.length > 0 || balanceSheet.length > 0 || market.length > 0) && (
                     <details className="col-span-full group/more">
                         <summary className="flex items-center justify-center gap-1.5 py-1.5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden text-[11px] font-medium text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
                             <svg className="w-3 h-3 transition-transform group-open/more:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                                 <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
                             </svg>
-                            <span className="group-open/more:hidden">More metrics — Per Share, Balance Sheet, Market</span>
+                            <span className="group-open/more:hidden">More metrics — Moat, Per Share, Balance Sheet, Market</span>
                             <span className="hidden group-open/more:inline">Hide additional metrics</span>
                         </summary>
-                        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
+                        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
+                            <PillarCard title="Moat" score={data.pillars?.moat?.score ?? null} metrics={moat} />
                             <PillarCard title="Per Share" metrics={perShare} />
                             <PillarCard title="Balance Sheet" metrics={balanceSheet} />
                             <PillarCard title="Market" metrics={market} />
@@ -595,20 +616,6 @@ export function KeyMetricsTable({ data, insiderTransactions, insiderActivity }: 
                     </details>
                 )}
             </div>
-
-            {/* Verdict + human-readable callouts — tinted "takeaway" block so
-                the bottom line reads as the table's conclusion, not a stray note */}
-            {(data.verdictText || data.humanDebtInfo || data.humanPeInfo) && (
-                <div className="mt-4 rounded-lg bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800/60 px-3 py-2.5">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">Takeaway</p>
-                    <div className="text-[11px] text-gray-600 dark:text-gray-300 space-y-1">
-                        {data.verdictText && <p className="leading-relaxed">{data.verdictText}</p>}
-                        {(data.humanDebtInfo || data.humanPeInfo) && (
-                            <p>{[data.humanDebtInfo, data.humanPeInfo].filter(Boolean).join(' · ')}</p>
-                        )}
-                    </div>
-                </div>
-            )}
 
             {/* Grade legend — the two scales are easy to conflate otherwise:
                 rows carry per-metric A–D, cards carry the pillar score's

@@ -240,13 +240,13 @@ export async function fetchWeekRefCloses(
   tickerSymbols: string[],
   oneWeekAgo: Date,
   today: Date
-): Promise<Pick<DailyRef, 'symbol' | 'date' | 'regularClose'>[]> {
+): Promise<Pick<DailyRef, 'symbol' | 'date' | 'regularClose' | 'previousClose'>[]> {
   return prisma.dailyRef.findMany({
     where: {
       symbol: { in: tickerSymbols },
       date: { gte: oneWeekAgo, lte: today },
     },
-    select: { symbol: true, date: true, regularClose: true },
+    select: { symbol: true, date: true, regularClose: true, previousClose: true },
     orderBy: { date: 'desc' },
   });
 }

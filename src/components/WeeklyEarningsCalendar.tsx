@@ -243,9 +243,14 @@ function EarningsDetailTable({
 
   const sortedRows = useMemo(() => {
     const sorted = [...filteredRows];
+    const getVal = (r: EarningsSSRRow, k: SortKey) => {
+      if (k === 'epsEstimate') return r.epsActual ?? r.epsEstimate;
+      if (k === 'revenueEstimate') return r.revenueActual ?? r.revenueEstimate;
+      return r[k];
+    };
     sorted.sort((a, b) => {
-      const aVal = a[sortKey];
-      const bVal = b[sortKey];
+      const aVal = getVal(a, sortKey);
+      const bVal = getVal(b, sortKey);
       if (aVal == null) return 1;
       if (bVal == null) return -1;
       if (typeof aVal === 'string' && typeof bVal === 'string') {

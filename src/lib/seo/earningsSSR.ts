@@ -116,6 +116,7 @@ async function enrichEarningsRows(
   rows: EarningsSSRRow[],
   rangeStart: string,
   rangeEnd: string,
+  opts?: { skipPolygonBackfill?: boolean },
 ): Promise<void> {
   if (rows.length === 0) return;
   const symbols = [...new Set(rows.map((r) => r.ticker))];
@@ -128,7 +129,7 @@ async function enrichEarningsRows(
   const [tickers, mcaps, caches, ews, dailyRefs] = await Promise.all([
     prisma.ticker.findMany({
       where: { symbol: { in: symbols } },
-      select: { symbol: true, name: true, sector: true, stdDevReturn20d: true, lastPrice: true, lastChangePct: true, lastMarketCapDiff: true },
+      select: { symbol: true, name: true, sector: true, stdDevReturn20d: true, lastPrice: true, lastChangePct: true, lastMarketCap: true, lastMarketCapDiff: true },
     }),
     // DailyValuationHistory is the live market-cap source (Ticker.lastMarketCap
     // and EarningsCalendar.marketCap are both unpopulated).
@@ -193,7 +194,9 @@ async function enrichEarningsRows(
       // Ticker.lastMarketCapDiff is stored in $B — scale to dollars.
       row.marketCapDiff = t.lastMarketCapDiff !== null ? t.lastMarketCapDiff * 1e9 : null;
     }
-    row.marketCap = row.marketCap ?? mcapBy.get(row.ticker) ?? null;
+    row.marketCap = row.marketCap
+      ?? mcapBy.get(row.ticker)
+      ?? (t?.lastMarketCap != null && t.lastMarketCap > 0 ? t.lastMarketCap * 1e9 : null);
     const c = cacheBy.get(row.ticker);
     if (c) {
       row.overallScore = c.overallScore;
@@ -231,9 +234,11 @@ async function enrichEarningsRows(
 
   // Last resort for symbols outside the tracked universe (CEFs, small caps):
   // Polygon ticker-details + snapshot, Redis-cached — fills marketCap/price.
-  await backfillEarningsMarketData(rows).catch((e) =>
-    console.warn('[earningsSSR] polygon backfill failed:', e)
-  );
+  if (!opts?.skipPolygonBackfill) {
+    await backfillEarningsMarketData(rows).catch((e) =>
+      console.warn('[earningsSSR] polygon backfill failed:', e)
+    );
+  }
 }
 
 /**
@@ -318,11 +323,19 @@ export async function getEarningsWeekMap(
     });
 
     const byDate = new Map<string, EarningsSSRRow[]>();
+    const allRows: EarningsSSRRow[] = [];
     for (const r of rows) {
       const parsed = rowFromDB(r);
       const existing = byDate.get(parsed.date) ?? [];
       existing.push(parsed);
       byDate.set(parsed.date, existing);
+      allRows.push(parsed);
+    }
+
+    try {
+      await enrichEarningsRows(allRows, weekDates[0]!, weekDates[6]!, { skipPolygonBackfill: true });
+    } catch (e) {
+      console.warn('[earningsSSR] week enrichment failed, continuing without:', e);
     }
 
     const map: Record<string, EarningsWeekDay> = {};

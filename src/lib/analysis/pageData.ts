@@ -6,7 +6,7 @@ import { detectSession } from '@/lib/utils/timeUtils';
 import { nowET } from '@/lib/utils/dateET';
 import { getAnalysisResponse } from './analysisResponse';
 import { getHistoryResponse } from './historyResponse';
-import { getTickerNews, type TickerNewsItem } from './newsService';
+import { getTickerNews, isAboutTicker } from './newsService';
 
 export const getAnalysisQuote = cache((data: {
   lastPrice: number | null;
@@ -306,48 +306,12 @@ export interface TopNewsItem {
 }
 
 /**
- * Relevance check for the context-strip headline. Finnhub company-news tags
- * items loosely by theme/sector, so `related === symbol` is NOT proof the
- * story is about this company — we require the headline/summary to mention
- * the ticker or the company's brand token instead. Dropping a marginally-
- * related story is better than showing an irrelevant one under the ticker's
- * name.
- */
-const NAME_STOPWORDS = new Set([
-  'inc', 'corp', 'corporation', 'company', 'common', 'stock', 'class',
-  'holdings', 'holding', 'group', 'ltd', 'llc', 'plc', 'adr', 'the', 'and',
-  'co', 'sa', 'de', 'nv', 'se', 'ag', 'international', 'technologies',
-]);
-
-function isAboutTicker(item: TickerNewsItem, symbol: string, companyName: string | null): boolean {
-  // Headline only — summaries mention the company tangentially ("he left a
-  // job at Meta to build a game") which passes the check while the story is
-  // not about the stock.
-  const text = item.headline ?? '';
-  // Ticker mention — case-sensitive: "META" in a headline means the symbol,
-  // lowercase "meta" is just a word. Only checked for tickers ≥3 chars where
-  // a bare symbol is unambiguous enough to mention.
-  if (symbol.length >= 3 && new RegExp(`\\b${symbol}\\b`).test(text)) return true;
-  if (!companyName) return false;
-  const tokens = companyName
-    .split(/[^A-Za-z]+/)
-    .map((t) => t.toLowerCase())
-    .filter((t) => t.length >= 4 && !NAME_STOPWORDS.has(t));
-  const brand = tokens[0];
-  if (brand && new RegExp(`\\b${brand}\\b`, 'i').test(text)) return true;
-  // Full brand phrase ("meta platforms", "johnson & johnson") — catches names
-  // whose first token alone is too generic.
-  if (tokens.length >= 2 && text.toLowerCase().includes(tokens.slice(0, 2).join(' '))) return true;
-  return false;
-}
-
-/**
  * SSR pre-fetch top news headline — feeds the "what's happening" context
  * strip when there is no AI mover insight. Returns the first item that is
  * actually about this company (see isAboutTicker), else null.
  */
 export async function prefetchTopNews(symbol: string, companyName: string | null = null): Promise<TopNewsItem | null> {
-  const news = await getTickerNews(symbol);
+  const news = await getTickerNews(symbol, companyName);
   const first = news.find((n) => n.headline && isAboutTicker(n, symbol, companyName)) ?? null;
   return first
     ? {

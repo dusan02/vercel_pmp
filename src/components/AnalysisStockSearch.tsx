@@ -39,7 +39,9 @@ export function AnalysisStockSearch({ onSelect, placeholder = 'Search ticker or 
 
   useEffect(() => {
     const q = query.trim();
-    if (!q) { setResults([]); setOpen(false); return; }
+    setResults([]);
+    setHighlight(-1);
+    if (!q) { setOpen(false); return; }
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       const id = ++reqIdRef.current;
