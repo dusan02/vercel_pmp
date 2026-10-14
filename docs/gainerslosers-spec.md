@@ -107,3 +107,23 @@ event set, then register in PM2/ecosystem with logging + restart policy.
 6. `/movers/[symbol]`
 7. `/week` + SEO plumbing
 8. Deploy (nginx site, CI artifact deploy, GA4/GSC wiring)
+
+## Data experiment baseline (2026-10-14)
+Question: does an identifiable catalyst predict continuation of σ≥2 moves
+(candidate "moves worth investigating" ranking)?
+Population: 837 MoverEvent rows, |zScore|≥2, impactNextDay present
+(~5 weeks). Catalyst = earnings ±1d (EarningsCalendar, scheduled → no
+look-ahead) OR non-empty MoverEvent.category.
+
+Result: continuation ≈ coin flip in all groups (38–49%). Catalyst events
+reverse slightly more often (37% vs 32%) but the delta is driven by
+earnings only (44% rev, n=43), confounded by higher σ (3.1–3.6 vs 2.6)
+and smaller caps (median $21–24B vs $47B), and unstable week-over-week
+(−14pp..+8pp). Winsorized next-day means ≈ 0 both groups.
+
+Decision: NO ranking change. σ/rvol = unusualness, catalyst = narrative
+context. Conclusion is "not proven", not "disproven" — revisit if a
+larger window shows a stable earnings-reversal effect.
+Secondary observation: uncategorized σ≥2 events have avgRvol ≈ 6.7×
+(vs 1.8–3.0× for catalyst events) — pure volume explosions without a
+story; worth knowing for catalyst-coverage estimates.
