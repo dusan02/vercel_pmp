@@ -25,7 +25,7 @@ import { useState, useEffect } from 'react';
 // change per theme. Filters/sort are view-independent — switching a tab never
 // changes the dataset. Tab order runs general → specialised.
 const COLUMN_VIEWS = [
-  { id: 'overview', label: 'Overview', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'overallScore', 'valuationScore', 'growthScore', 'profitabilityScore', 'healthScore', 'qualityScore', 'screens'] },
+  { id: 'overview', label: 'Overview', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'overallScore', 'valuationScore', 'growthScore', 'profitabilityScore', 'healthScore', 'qualityScore', 'moatScore', 'screens'] },
   { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'ticker.sector', 'ticker.employees', 'ticker.lastMarketCapDiff', 'analyst.buy'] },
   { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'revenueCagr', 'netIncomeCagr', 'metrics.peRatio', 'pePercentile', 'peVsMedian3yPct', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position'] },
   { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'fcfConversion', 'debtRepaymentYears', 'healthScore', 'qualityScore', 'overallScore'] },
@@ -60,6 +60,7 @@ const COLUMN_LABELS: Record<string, string> = {
   'profitabilityScore': 'Profitability',
   'healthScore': 'Health',
   'qualityScore': 'Quality',
+  'moatScore': 'Moat',
   'altmanZ': 'Altman Z',
   'piotroskiScore': 'Piotroski F',
   'beneishScore': 'Beneish M',
@@ -289,6 +290,13 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       align: 'right',
       sortable: true,
       render: (r) => <ScoreCell v={r.qualityScore} />
+    },
+    {
+      key: 'moatScore',
+      header: <>Moat <SortIcon field="moatScore" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => <ScoreCell v={r.moatScore ?? null} />
     },
     {
       key: 'altmanZ',

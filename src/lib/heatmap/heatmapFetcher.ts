@@ -25,6 +25,7 @@ export interface TickerInfo {
   growthScore: number | null;
   profitabilityScore: number | null;
   qualityScore: number | null;
+  moatScore: number | null;
   piotroskiScore: number | null;
   altmanZ: number | null;
   beneishScore: number | null;
@@ -88,6 +89,7 @@ export async function fetchTickers(maxTickers: number): Promise<{
           growthScore: true,
           profitabilityScore: true,
           qualityScore: true,
+          moatScore: true,
           piotroskiScore: true,
           altmanZ: true,
           beneishScore: true,
@@ -142,6 +144,7 @@ export async function fetchTickers(maxTickers: number): Promise<{
       growthScore: t.analysisCache?.growthScore ?? null,
       profitabilityScore: t.analysisCache?.profitabilityScore ?? null,
       qualityScore: t.analysisCache?.qualityScore ?? null,
+      moatScore: t.analysisCache?.moatScore ?? null,
       piotroskiScore: t.analysisCache?.piotroskiScore ?? null,
       altmanZ: t.analysisCache?.altmanZ ?? null,
       beneishScore: t.analysisCache?.beneishScore ?? null,

@@ -44,6 +44,54 @@ function sortStockData(results: StockData[], sort: string, order: 'asc' | 'desc'
 }
 
 /**
+ * Enrich StockData rows with PMP composite score (AnalysisCache.overallScore)
+ * and upcoming 14-day earnings countdown (EarningsCalendar) for Portfolio and
+ * Favorites tables. Non-fatal — silently no-ops if DB/mocks are unavailable.
+ */
+async function attachScoresAndEarnings(rows: StockData[]): Promise<void> {
+  if (rows.length === 0) return;
+  try {
+    const syms = rows.map(r => r.ticker);
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const in14d = new Date(todayStart.getTime() + 14 * 86_400_000);
+    const [caches, earnings] = await Promise.all([
+      prisma.analysisCache?.findMany
+        ? prisma.analysisCache.findMany({
+            where: { symbol: { in: syms } },
+            select: { symbol: true, overallScore: true, valuationScore: true, healthScore: true },
+          })
+        : Promise.resolve([]),
+      prisma.earningsCalendar?.findMany
+        ? prisma.earningsCalendar.findMany({
+            where: { ticker: { in: syms }, date: { gte: todayStart, lte: in14d }, epsActual: null },
+            orderBy: { date: 'asc' },
+            select: { ticker: true, date: true },
+          })
+        : Promise.resolve([]),
+    ]);
+    const cacheMap = new Map(caches.map(c => [c.symbol, c]));
+    const earnMap = new Map<string, number>();
+    for (const e of earnings) {
+      if (!earnMap.has(e.ticker)) {
+        const days = Math.max(0, Math.ceil((new Date(e.date).getTime() - todayStart.getTime()) / 86_400_000));
+        earnMap.set(e.ticker, days);
+      }
+    }
+    for (const r of rows) {
+      const c = cacheMap.get(r.ticker);
+      if (c) {
+        if (c.overallScore != null) r.overallScore = Math.round(c.overallScore);
+        if (c.valuationScore != null) r.valuationScore = Math.round(c.valuationScore);
+        if (c.healthScore != null) r.healthScore = Math.round(c.healthScore);
+      }
+      const ed = earnMap.get(r.ticker);
+      if (ed !== undefined) r.earningsDays = ed;
+    }
+  } catch { /* non-fatal enrichment */ }
+}
+
+/**
  * Main entry point for stock data - SQL-first implementation using Ticker table
  * @deprecated Use getStocksList directly.
  */
@@ -156,6 +204,7 @@ export async function getStocksList(options: {
               const missing = tickers.filter(t => !results.some(r => r.ticker === t));
               console.log(`🔄 [stockService] ${missing.length} tickers missing from Redis, falling through to DB/Polygon: ${missing.join(',')}`);
             } else {
+              await attachScoresAndEarnings(results);
               return { data: results, errors: [] };
             }
           }
@@ -489,6 +538,7 @@ export async function getStocksList(options: {
       ? results.slice(offset, (limit && limit > 0) ? offset + limit : undefined)
       : results;
 
+    await attachScoresAndEarnings(paged);
     return { data: paged, errors: [] };
   } catch (error) {
     console.error('Error fetching stock list:', error);

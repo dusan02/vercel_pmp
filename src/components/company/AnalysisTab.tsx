@@ -3,6 +3,8 @@
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { KeyMetricsTable } from './analysis/KeyMetricsTable';
+import { PmpVerdict } from './analysis/sections/PmpVerdict';
+import PillarsRadar from './analysis/PillarsRadar';
 import { AnalysisControlsBar } from './analysis/AnalysisControlsBar';
 import { AnalysisCharts } from './AnalysisCharts';
 import { useAnalysis } from '../../hooks/useAnalysis';
@@ -110,12 +112,36 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
         );
     }
 
+    const hasPillars = data.pillars != null && !data.insufficientData
+        && (data.statements?.length ?? 0) > 0;
+
     return (
         <div className="space-y-6 p-4 bg-transparent dark:bg-gray-900 rounded-xl transition-all animate-fade-in">
-            {/* ── Key metrics — normally SSR'd at page level directly under
-                Price History (crawler-visible). Rendered here only when the
-                SSR prefetch missed and the data came from the client fetch ── */}
-            {!initialAnalysisData && <KeyMetricsTable data={data} />}
+            {/* ── Verdict + Radar + Key metrics — normally SSR'd at page level
+                on /analysis/[ticker]. Rendered here when inside HomeAnalysis tab
+                (or when SSR prefetch missed) so clicking a Heatmap tile into the
+                Analysis tab shows the full Verdict + 6-axis Radar + Key Metrics ── */}
+            {!initialAnalysisData && (
+                <>
+                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+                        <PmpVerdict
+                            pillars={data.pillars ?? null}
+                            insufficientData={data.insufficientData ?? null}
+                            pePercentile={data.valuationHistoryStats?.pe?.percentile ?? null}
+                            peCurrent={data.metrics?.currentPe ?? null}
+                            peMedian={data.valuationHistoryStats?.pe?.median ?? null}
+                            peYears={data.valuationHistoryStats?.pe?.years ?? null}
+                            psPercentile={data.valuationHistoryStats?.ps?.percentile ?? null}
+                            forwardPe={data.finnhub?.forwardPe ?? null}
+                            revenueGrowthYoY={data.finnhub?.revenueGrowth ?? null}
+                            revenueCagr={data.revenueCagr ?? null}
+                            changePct={data.ticker?.lastChangePct ?? null}
+                        />
+                        {hasPillars && <PillarsRadar pillars={data.pillars!} />}
+                    </div>
+                    <KeyMetricsTable data={data} />
+                </>
+            )}
 
             {/* ── Charts Dashboard (2-Column Grid) — detail behind the numbers ── */}
             <AnalysisCharts ticker={ticker} data={data} flowPeriods={effectiveFlowPeriods} />

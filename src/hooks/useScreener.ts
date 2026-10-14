@@ -49,6 +49,7 @@ export function useScreener({
             valuationScore: r.valuationScore ?? null,
             growthScore: r.growthScore ?? null,
             qualityScore: r.qualityScore ?? null,
+            moatScore: r.moatScore ?? null,
             overallScore: r.overallScore ?? null,
             altmanZ: r.altmanZ ?? null,
             piotroskiScore: r.piotroskiScore ?? null,
@@ -169,10 +170,12 @@ export function useScreener({
                 limit: initialLimit.toString(),
                 page: page.toString()
             });
-            // Score ranges — always sent (explicit bounds keep null-score
-            // tickers out of the scored universe, the historical semantics).
+            // Score ranges — always sent for the 5 core scores (explicit bounds
+            // keep null-score tickers out of the scored universe). Moat is only
+            // sent when constrained so rows before a moat backfill stay visible.
             for (const def of SCORE_FILTERS) {
                 const r = debouncedFilters.scoreRanges[def.key];
+                if (def.key === 'moat' && r?.min === undefined && r?.max === undefined) continue;
                 params.append(def.apiMin, (r?.min ?? SCORE_RANGE_MIN).toString());
                 params.append(def.apiMax, (r?.max ?? SCORE_RANGE_MAX).toString());
             }

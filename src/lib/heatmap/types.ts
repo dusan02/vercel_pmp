@@ -15,6 +15,7 @@ export type HeatmapMetric =
   | 'growth'         // AnalysisCache.growthScore (0-100)
   | 'profitability'  // AnalysisCache.profitabilityScore (0-100)
   | 'quality'        // AnalysisCache.qualityScore (0-100)
+  | 'moat'           // AnalysisCache.moatScore (0-100)
   | 'piotroski'      // AnalysisCache.piotroskiScore (0-9)
   | 'altman'         // AnalysisCache.altmanZ (higher = safer)
   | 'beneish'        // AnalysisCache.beneishScore (lower = better, inverted)
@@ -65,6 +66,7 @@ export type CompanyNode = {
   growthScore?: number | undefined;
   profitabilityScore?: number | undefined;
   qualityScore?: number | undefined;
+  moatScore?: number | undefined;
   piotroskiScore?: number | undefined;
   zScore?: number | undefined;
   /** 1-month / YTD / 1-year % change (DailyValuationHistory closes) */

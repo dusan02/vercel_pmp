@@ -15,6 +15,7 @@ import { PortfolioSectorDistributionChart } from './PortfolioSectorDistributionC
 import { PortfolioStockDistributionChart } from './PortfolioStockDistributionChart';
 import { PortfolioPerformanceTreemap } from './PortfolioTreemapNew';
 import { formatCurrencyCompact, formatPercent, formatPrice, formatSectorName } from '@/lib/utils/format';
+import { scoreColor } from '@/lib/utils/screener';
 import { event } from '@/lib/ga';
 import { useSortableData, SortKey } from '@/hooks/useSortableData';
 import {
@@ -140,7 +141,19 @@ export function PortfolioSection({
       align: 'left',
       showInMobileSort: true,
       mobileWidth: 'w-28',
-      render: (stock) => <strong>{stock.ticker}</strong>
+      render: (stock) => (
+        <div className="flex items-center gap-1.5">
+          <strong>{stock.ticker}</strong>
+          {stock.earningsDays != null && stock.earningsDays <= 14 && (
+            <span
+              className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
+              title={`Reports earnings ${stock.earningsDays === 0 ? 'today' : stock.earningsDays === 1 ? 'tomorrow' : `in ${stock.earningsDays} days`}`}
+            >
+              Earn {stock.earningsDays === 0 ? 'today' : stock.earningsDays === 1 ? 'tmrw' : `${stock.earningsDays}d`}
+            </span>
+          )}
+        </div>
+      )
     },
     {
       key: isDesktop ? 'currentPrice' : 'value',
@@ -192,6 +205,19 @@ export function PortfolioSection({
       className: 'hidden md:table-cell',
       disableRowClick: true,
       render: (stock) => stock.industry || 'N/A'
+    },
+    {
+      key: 'overallScore',
+      header: 'Score',
+      sortable: isDesktop,
+      align: 'right',
+      className: 'text-right hidden md:table-cell',
+      disableRowClick: true,
+      render: (stock) => (
+        <span className={`tabular-nums font-bold ${scoreColor(stock.overallScore ?? null)}`} title="PMP Composite Score (0–100)">
+          {stock.overallScore != null ? stock.overallScore : '—'}
+        </span>
+      )
     },
     {
       key: 'percentChange',
@@ -282,7 +308,7 @@ export function PortfolioSection({
   // Footer Row for UniversalTable
   const footerRow = portfolioStocks.length > 0 ? (
     <tr className="portfolio-total-row hidden md:table-row" style={{ backgroundColor: 'var(--clr-bg-yellow-light, #fffbeb)', borderTop: '3px double #3b82f6' }}>
-      <td colSpan={7} className="text-right font-semibold py-4 px-2 align-middle">
+      <td colSpan={8} className="text-right font-semibold py-4 px-2 align-middle">
         Total:
       </td>
       <td className={`${weightedDailyChangePercent >= 0 ? 'positive' : 'negative'} text-right tabular-nums font-semibold py-4 px-2 whitespace-nowrap align-middle`}>

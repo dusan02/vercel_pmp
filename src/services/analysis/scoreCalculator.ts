@@ -61,7 +61,7 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
             where: { symbol },
             update: {
                 healthScore: null, profitabilityScore: null, valuationScore: null,
-                growthScore: null, qualityScore: null, overallScore: null,
+                growthScore: null, qualityScore: null, moatScore: null, overallScore: null,
                 verdictText: null, piotroskiScore: null, beneishScore: null,
                 interestCoverage: null, revenueCagr: null, netIncomeCagr: null,
                 altmanZ: null, debtRepaymentYears: null, fcfConversion: null,
@@ -496,7 +496,8 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     valuationScore = pillars.valuation.score;
     const growthScore = pillars.growth.score;
     const qualityScore = pillars.quality.score;
-    // Composite = plain mean of the five 0–100 pillar scores. Distinct from
+    const moatScore = pillars.moat.score;
+    // Composite = plain mean of the five core 0–100 pillar scores. Distinct from
     // the Early Winners EW score (quant engine, different scale/coverage).
     const overallScore = (healthScore + profitabilityScore + valuationScore + growthScore + qualityScore) / 5;
 
@@ -523,7 +524,7 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         where: { symbol },
         update: {
             healthScore, profitabilityScore, valuationScore,
-            growthScore, qualityScore, overallScore,
+            growthScore, qualityScore, moatScore, overallScore,
             piotroskiScore, beneishScore, interestCoverage, revenueCagr, netIncomeCagr,
             altmanZ, debtRepaymentYears, fcfMargin, fcfConversion,
             humanDebtInfo, humanPeInfo, marginStability, negativeNiYears, pePercentile,
@@ -532,7 +533,7 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         },
         create: {
             symbol, healthScore, profitabilityScore, valuationScore,
-            growthScore, qualityScore, overallScore,
+            growthScore, qualityScore, moatScore, overallScore,
             piotroskiScore, beneishScore, interestCoverage, revenueCagr, netIncomeCagr,
             altmanZ, debtRepaymentYears, fcfMargin, fcfConversion,
             humanDebtInfo, humanPeInfo, marginStability, negativeNiYears, pePercentile,

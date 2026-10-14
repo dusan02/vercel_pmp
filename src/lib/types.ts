@@ -38,6 +38,10 @@ export interface StockData {
   growthScore?: number;
   profitabilityScore?: number;
   qualityScore?: number;
+  moatScore?: number;
+  overallScore?: number;
+  /** Days until next scheduled earnings report (0..14) when within 2 weeks. */
+  earningsDays?: number;
   piotroskiScore?: number;
   altmanZ?: number;
   beneishScore?: number;

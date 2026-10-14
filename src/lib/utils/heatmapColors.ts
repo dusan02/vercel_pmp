@@ -72,7 +72,8 @@ function scaleConfig(
     case 'valuation':
     case 'growth':
     case 'profitability':
-    case 'quality':       return scoreScale;
+    case 'quality':
+    case 'moat':          return scoreScale;
     case 'piotroski':     return piotroskiScale;
     case 'altman':        return altmanScale;
     case 'beneish':       return beneishScale;

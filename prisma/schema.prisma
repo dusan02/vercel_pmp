@@ -360,6 +360,7 @@ model AnalysisCache {
   valuationScore      Float?
   growthScore         Float?
   qualityScore        Float?
+  moatScore           Float?
   overallScore        Float?
   verdictText         String?
   piotroskiScore      Int?
@@ -385,6 +386,7 @@ model AnalysisCache {
   @@index([valuationScore])
   @@index([growthScore])
   @@index([qualityScore])
+  @@index([moatScore])
   @@index([overallScore])
   @@index([pePercentile])
 }

@@ -23,6 +23,7 @@ export const HEATMAP_METRICS: { id: HeatmapMetric; label: string; short?: string
   { id: 'growth',        label: 'Growth score',        short: 'Growth',      group: 'Scores' },
   { id: 'profitability', label: 'Profitability score', short: 'Profit.',     group: 'Scores' },
   { id: 'quality',       label: 'Quality score',       short: 'Quality',     group: 'Scores' },
+  { id: 'moat',          label: 'Moat score',          short: 'Moat',        group: 'Scores' },
   { id: 'piotroski',     label: 'Piotroski F-score',   short: 'Piotroski',   group: 'Scores' },
   { id: 'altman',        label: 'Altman Z-score',      short: 'Altman',      group: 'Scores' },
   { id: 'beneish',       label: 'Beneish M-score',     short: 'Beneish',     group: 'Scores' },
@@ -112,6 +113,7 @@ export function getCompanyMetricValue(company: CompanyNode, metric: HeatmapMetri
     case 'growth':        return company.growthScore ?? null;
     case 'profitability': return company.profitabilityScore ?? null;
     case 'quality':       return company.qualityScore ?? null;
+    case 'moat':          return company.moatScore ?? null;
     case 'piotroski':     return company.piotroskiScore ?? null;
     case 'altman':        return company.altmanZ ?? null;
     case 'beneish':       return company.beneishScore ?? null;

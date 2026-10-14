@@ -51,7 +51,19 @@ export const PortfolioCardMobile = memo(({
 
         {/* 2. Ticker & Name */}
         <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <div className="font-bold text-base text-gray-900 dark:text-gray-100 leading-tight truncate">{stock.ticker}</div>
+          <div className="flex items-center gap-1.5">
+            <span className="font-bold text-base text-gray-900 dark:text-gray-100 leading-tight truncate">{stock.ticker}</span>
+            {stock.overallScore != null && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 tabular-nums shrink-0" title="PMP Score">
+                {stock.overallScore}
+              </span>
+            )}
+            {stock.earningsDays != null && stock.earningsDays <= 14 && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 shrink-0">
+                Earn {stock.earningsDays === 0 ? 'today' : stock.earningsDays === 1 ? 'tmrw' : `${stock.earningsDays}d`}
+              </span>
+            )}
+          </div>
           <div className="text-xs text-gray-500 dark:text-gray-400 truncate leading-tight mt-0.5">
             {getCompanyName(stock.ticker)}
           </div>

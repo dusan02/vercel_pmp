@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import Link from 'next/link';
 import useSWR from 'swr';
 import { motion } from 'framer-motion';
 import { Zap, RefreshCw, Info, AlertCircle } from 'lucide-react';
@@ -386,6 +387,12 @@ export function MoversSection({ onTileClick, initialData }: { onTileClick?: (tic
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <Link
+                        href="/premarket-movers"
+                        className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline whitespace-nowrap"
+                    >
+                        Full Movers Explorer →
+                    </Link>
                     <div className="w-56 flex-shrink-0">
                         <CustomDropdown
                             value={selectedSector || 'all'}

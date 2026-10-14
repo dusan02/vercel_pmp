@@ -35,6 +35,7 @@ export interface ScreenerResult {
     valuationScore: number | null;
     growthScore: number | null;
     qualityScore: number | null;
+    moatScore?: number | null;
     overallScore: number | null;
     altmanZ: number | null;
     piotroskiScore: number | null;
@@ -111,6 +112,7 @@ export const SCORE_FILTERS = [
     { key: 'profitability', label: 'Profitability', urlMin: 'minProfit',  urlMax: 'maxProfit',  apiMin: 'minProfitability', apiMax: 'maxProfitability', field: 'profitabilityScore', accent: 'emerald' },
     { key: 'health',        label: 'Fin. Health',   urlMin: 'minHealth',  urlMax: 'maxHealth',  apiMin: 'minHealth',        apiMax: 'maxHealth',        field: 'healthScore',        accent: 'blue'    },
     { key: 'quality',       label: 'Quality',       urlMin: 'minQuality', urlMax: 'maxQuality', apiMin: 'minQuality',       apiMax: 'maxQuality',       field: 'qualityScore',       accent: 'rose'    },
+    { key: 'moat',          label: 'Moat',          urlMin: 'minMoat',    urlMax: 'maxMoat',    apiMin: 'minMoat',          apiMax: 'maxMoat',          field: 'moatScore',          accent: 'indigo'  },
 ] as const;
 export type ScoreFilterKey = (typeof SCORE_FILTERS)[number]['key'];
 export type ScoreRange = { min?: number; max?: number };
@@ -138,6 +140,7 @@ export type AdvancedFilterKey = (typeof ADVANCED_FILTERS)[number]['key'];
 export const PRESET_SCORE_KEYS = {
     minOverall: 'overall', minValue: 'valuation', minGrowth: 'growth',
     minProfit: 'profitability', minHealth: 'health', minQuality: 'quality',
+    minMoat: 'moat',
 } as const satisfies Record<string, ScoreFilterKey>;
 
 export interface ScreenerResponse {
@@ -315,7 +318,7 @@ export function downsampleSeries(values: number[], maxPoints = 52): number[] {
  */
 export interface ScreenerPreset {
     minValue?: number; minGrowth?: number; minProfit?: number;
-    minHealth?: number; minQuality?: number; minOverall?: number;
+    minHealth?: number; minQuality?: number; minMoat?: number; minOverall?: number;
     minAltman?: number; minFcfMargin?: number;
     marketCapPreset?: string;
     sort?: string;
@@ -405,7 +408,7 @@ export interface PresetMatchContext {
     scores?: {
         healthScore?: number | null; profitabilityScore?: number | null;
         valuationScore?: number | null; growthScore?: number | null;
-        qualityScore?: number | null; overallScore?: number | null;
+        qualityScore?: number | null; moatScore?: number | null; overallScore?: number | null;
         altmanZ?: number | null; fcfMargin?: number | null;
         // Analysis-derived range-filter fields (AnalysisCache columns).
         pePercentile?: number | null; peVsMedian3yPct?: number | null;
@@ -429,6 +432,7 @@ export function matchesPreset(p: ScreenerPreset, ctx: PresetMatchContext): boole
     if (p.minProfit !== undefined && !inRange(s?.profitabilityScore, { min: p.minProfit })) return false;
     if (p.minHealth !== undefined && !inRange(s?.healthScore, { min: p.minHealth })) return false;
     if (p.minQuality !== undefined && !inRange(s?.qualityScore, { min: p.minQuality })) return false;
+    if (p.minMoat !== undefined && !inRange(s?.moatScore, { min: p.minMoat })) return false;
     if (p.minOverall !== undefined && !inRange(s?.overallScore, { min: p.minOverall })) return false;
     if (p.minAltman !== undefined && !inRange(s?.altmanZ, { min: p.minAltman })) return false;
     if (p.minFcfMargin !== undefined && !inRange(s?.fcfMargin, { min: p.minFcfMargin })) return false;
@@ -524,6 +528,8 @@ export const SORT_OPTIONS = [
     { value: 'growthScore:asc', label: 'Growth ↑' },
     { value: 'qualityScore:desc', label: 'Quality ↓' },
     { value: 'qualityScore:asc', label: 'Quality ↑' },
+    { value: 'moatScore:desc', label: 'Moat ↓' },
+    { value: 'moatScore:asc', label: 'Moat ↑' },
     { value: 'healthScore:desc', label: 'Health Score ↓' },
     { value: 'healthScore:asc', label: 'Health Score ↑' },
     { value: 'profitabilityScore:desc', label: 'Profitability ↓' },

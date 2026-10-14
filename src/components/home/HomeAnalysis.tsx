@@ -232,7 +232,7 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                                             <div className="text-[11px] text-gray-400 truncate">{r.ticker?.name || ''}</div>
                                         </div>
                                         <div className="flex gap-2 shrink-0">
-                                            {([['V', 'Valuation', r.valuationScore], ['G', 'Growth', r.growthScore], ['P', 'Profitability', r.profitabilityScore], ['H', 'Health', r.healthScore], ['Q', 'Quality', r.qualityScore]] as [string, string, number | null][]).map(([letter, name, v]) => (
+                                            {([['V', 'Valuation', r.valuationScore], ['G', 'Growth', r.growthScore], ['P', 'Profitability', r.profitabilityScore], ['H', 'Health', r.healthScore], ['Q', 'Quality', r.qualityScore], ['M', 'Moat', r.moatScore ?? null]] as [string, string, number | null][]).map(([letter, name, v]) => (
                                                 <span key={letter} title={`${name}: ${v !== null ? Math.round(v) : 'n/a'} / 100`} className="flex flex-col items-center w-5">
                                                     <span className="text-[8px] font-semibold text-gray-400 dark:text-gray-500 leading-none">{letter}</span>
                                                     <span className={`text-[10px] font-bold tabular-nums leading-tight ${scoreColor(v)}`}>{v !== null ? Math.round(v) : '–'}</span>
@@ -242,7 +242,7 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                                     </button>
                                 ))}
                             </div>
-                            <p className="mt-3 text-[10px] text-gray-400 dark:text-gray-500">Columns: Valuation · Growth · Profitability · Health · Quality</p>
+                            <p className="mt-3 text-[10px] text-gray-400 dark:text-gray-500">Columns: Valuation · Growth · Profitability · Health · Quality · Moat</p>
                         </div>
                     )}
 

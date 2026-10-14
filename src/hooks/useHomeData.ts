@@ -29,10 +29,12 @@ export function useHomeData({ initialData, activeSection }: UseHomeDataOptions) 
     loadData,
   } = useStockData({ initialData, favorites });
 
-  // Auto-load all stocks when user navigates to the Screener section
+  // Auto-load remaining stocks only when user opens Portfolio or Favorites
+  // (where the add-stock search bar filters over `allStocks`). Screener uses
+  // its own /api/analysis/screener endpoint; Heatmap uses /api/heatmap.
   const allStocksLoadedRef = useRef(false);
   useEffect(() => {
-    if (activeSection === 'screener' && !allStocksLoadedRef.current && !loadingStates.remainingStocks) {
+    if ((activeSection === 'portfolio' || activeSection === 'favorites') && !allStocksLoadedRef.current && !loadingStates.remainingStocks) {
       fetchRemainingStocksData();
       allStocksLoadedRef.current = true;
     }
@@ -80,17 +82,6 @@ export function useHomeData({ initialData, activeSection }: UseHomeDataOptions) 
     ascending: allAscending,
     searchTerm: '', // already applied in useStockFilter
   });
-
-  // Safety net: trigger remaining stocks if count is suspiciously low after 3s
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (allStocksSorted.length < 200) {
-        logger.data('Auto-triggering remaining stocks load (low count detected)');
-        fetchRemainingStocksData();
-      }
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [allStocksSorted.length, fetchRemainingStocksData]);
 
   const {
     displayLimit,

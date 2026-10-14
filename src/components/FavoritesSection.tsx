@@ -11,6 +11,7 @@ import { StockCardMobile } from './StockCardMobile';
 import { SectionLoader } from './SectionLoader';
 import { StockData } from '@/lib/types';
 import { formatSectorName, formatBillions, formatMarketCapDiff, formatPrice, formatPercent } from '@/lib/utils/format';
+import { scoreColor } from '@/lib/utils/screener';
 import CompanyLogo from './CompanyLogo';
 import { getCompanyName } from '@/lib/companyNames';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -72,7 +73,19 @@ export function FavoritesSection({
       align: 'left',
       showInMobileSort: true,
       mobileWidth: 'w-28',
-      render: (stock) => <strong>{stock.ticker}</strong>
+      render: (stock) => (
+        <div className="flex items-center gap-1.5">
+          <strong>{stock.ticker}</strong>
+          {stock.earningsDays != null && stock.earningsDays <= 14 && (
+            <span
+              className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
+              title={`Reports earnings ${stock.earningsDays === 0 ? 'today' : stock.earningsDays === 1 ? 'tomorrow' : `in ${stock.earningsDays} days`}`}
+            >
+              Earn {stock.earningsDays === 0 ? 'today' : stock.earningsDays === 1 ? 'tmrw' : `${stock.earningsDays}d`}
+            </span>
+          )}
+        </div>
+      )
     },
     {
       key: 'companyName',
@@ -93,6 +106,18 @@ export function FavoritesSection({
       sortable: true,
       className: 'hidden md:table-cell', // Consistent responsive behavior
       render: (stock) => stock.industry || 'N/A'
+    },
+    {
+      key: 'overallScore',
+      header: 'Score',
+      sortable: isDesktop,
+      align: 'right',
+      className: 'hidden md:table-cell',
+      render: (stock) => (
+        <span className={`tabular-nums block w-full text-right font-bold ${scoreColor(stock.overallScore ?? null)}`} title="PMP Composite Score (0–100)">
+          {stock.overallScore != null ? stock.overallScore : '—'}
+        </span>
+      )
     },
     {
       key: 'marketCap',

@@ -528,11 +528,17 @@ export default function WeeklyEarningsCalendar({
     <div className="w-full flex flex-col gap-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-lg font-bold text-neutral-900 dark:text-white">Earnings Calendar</h2>
           <span className="text-sm text-neutral-500 dark:text-neutral-400 tabular-nums">
             {startLabel} — {endLabel}
           </span>
+          <Link
+            href="/earnings"
+            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline ml-1"
+          >
+            Full Month Calendar →
+          </Link>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

@@ -29,6 +29,7 @@ export interface HeatmapPayloadRow {
   growthScore?: number;
   profitabilityScore?: number;
   qualityScore?: number;
+  moatScore?: number;
   piotroskiScore?: number;
   altmanZ?: number;
   beneishScore?: number;
@@ -457,6 +458,7 @@ export function transformToHeatmap(
       ...(tickerInfo.growthScore != null ? { growthScore: tickerInfo.growthScore } : {}),
       ...(tickerInfo.profitabilityScore != null ? { profitabilityScore: tickerInfo.profitabilityScore } : {}),
       ...(tickerInfo.qualityScore != null ? { qualityScore: tickerInfo.qualityScore } : {}),
+      ...(tickerInfo.moatScore != null ? { moatScore: tickerInfo.moatScore } : {}),
       ...(tickerInfo.piotroskiScore != null ? { piotroskiScore: tickerInfo.piotroskiScore } : {}),
       ...(tickerInfo.altmanZ != null ? { altmanZ: tickerInfo.altmanZ } : {}),
       ...(tickerInfo.beneishScore != null ? { beneishScore: tickerInfo.beneishScore } : {}),
@@ -513,7 +515,7 @@ export function transformToHeatmap(
 const METRIC_ROW_FIELDS: ReadonlyArray<readonly [keyof HeatmapPayloadRow, string]> = [
   ['weekChange', 'w'], ['monthChange', 'm1'], ['ytdChange', 'ytd'], ['yearChange', 'y1'],
   ['healthScore', 'hs'], ['valuationScore', 'vs'], ['growthScore', 'gs'], ['profitabilityScore', 'ps'],
-  ['qualityScore', 'qs'], ['piotroskiScore', 'pi'],
+  ['qualityScore', 'qs'], ['moatScore', 'ms'], ['piotroskiScore', 'pi'],
   ['altmanZ', 'az'], ['beneishScore', 'be'], ['fcfMargin', 'fcfm'], ['zScore', 'z'], ['rvol', 'rv'],
   ['peRatio', 'pe'], ['forwardPe', 'fpe'], ['psRatio', 'psr'], ['pbRatio', 'pb'], ['pegRatio', 'peg'],
   ['evEbitda', 'eve'], ['roe', 'roe'], ['netMargin', 'nm'], ['revenueGrowth', 'rg'],
