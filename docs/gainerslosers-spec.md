@@ -121,9 +121,15 @@ earnings only (44% rev, n=43), confounded by higher σ (3.1–3.6 vs 2.6)
 and smaller caps (median $21–24B vs $47B), and unstable week-over-week
 (−14pp..+8pp). Winsorized next-day means ≈ 0 both groups.
 
-Decision: NO ranking change. σ/rvol = unusualness, catalyst = narrative
-context. Conclusion is "not proven", not "disproven" — revisit if a
-larger window shows a stable earnings-reversal effect.
+Product decision: keep σ/rvol as the unusualness measure and catalyst
+as the explanation layer — no ranking change.
+Statistical conclusion: no additional predictive value of the catalyst
+was demonstrated in this sample ("not proven", not "disproven").
+Reopen condition: a larger window, better-balanced groups (σ/mcap
+matched), and a stable effect outside the earnings subgroup.
+Primary usage metric going forward: share of GL sessions that lead to
+a qualified PMP visit (engaged, not just a referral hit) — track
+absolute counts and multi-week trend, not single days.
 Secondary observation: uncategorized σ≥2 events have avgRvol ≈ 6.7×
 (vs 1.8–3.0× for catalyst events) — pure volume explosions without a
 story; worth knowing for catalyst-coverage estimates.
