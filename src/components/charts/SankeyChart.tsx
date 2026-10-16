@@ -54,7 +54,7 @@ const PAD_R = 10;
 const COL_GAP = 145;
 // Narrow viewports: tighter gaps keep labels legible — a 560px viewBox
 // squeezed into ~350px rendered width shrinks text to ~7px.
-const COL_GAP_COMPACT = 100;
+const COL_GAP_COMPACT = 130;
 const PAD_T = 10;
 const PAD_B = 10;
 // Minimum node heights for label rows to fit without crowding
@@ -67,7 +67,7 @@ const LABEL_BLOCK_1 = 16; // label only
  *  need it to back-compute a viewBox height that fills a measured box. */
 export function sankeyViewBoxWidth(colCount: number, compact = false) {
     const gap = compact ? COL_GAP_COMPACT : COL_GAP;
-    return Math.max(compact ? 360 : 560, PAD_L + PAD_R + NODE_W + (colCount - 1) * gap);
+    return Math.max(compact ? 430 : 560, PAD_L + PAD_R + NODE_W + (colCount - 1) * gap);
 }
 
 interface Laid {

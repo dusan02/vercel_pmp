@@ -366,8 +366,8 @@ export function SankeyCell({ kind, annual, quarterly }: { kind: FlowKind; annual
                     <SankeyChart columns={spec.columns} links={spec.links} total={spec.total} formatValue={fmt$} height={chartH} compact={compact} />
                 </div>
                 {overflows && (
-                    <div className="absolute inset-y-0 right-0 w-14 pointer-events-none bg-gradient-to-l from-white dark:from-gray-800 to-transparent flex items-center justify-end pr-1.5">
-                        <span className="text-gray-400 text-sm leading-none">→</span>
+                    <div aria-hidden="true" className="absolute inset-y-0 right-0 w-10 pointer-events-none bg-gradient-to-l from-white dark:from-gray-800 to-transparent flex items-end justify-end pr-1.5 pb-1">
+                        <span className="text-gray-400 text-xs leading-none">→</span>
                     </div>
                 )}
             </ChartPlot>
