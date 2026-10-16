@@ -134,7 +134,7 @@ export function quarterlyDiffCorr(
     const dImplied: number[] = [];
     for (let i = 1; i < rows.length; i++) {
         const prev = rows[i - 1]!, curr = rows[i]!;
-        if (prev.price > 0 && prev.implied > 0) {
+        if (prev.price > 0 && prev.implied > 0 && curr.price > 0 && curr.implied > 0) {
             dPrice.push(curr.price / prev.price - 1);
             dImplied.push(curr.implied / prev.implied - 1);
         }
