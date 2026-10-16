@@ -135,4 +135,7 @@ async function main() {
     }
 }
 
-main().catch(e => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());
+main()
+    .then(() => process.exit(0)) // redis client keeps the event loop alive otherwise
+    .catch(e => { console.error(e); process.exit(1); })
+    .finally(() => prisma.$disconnect());
