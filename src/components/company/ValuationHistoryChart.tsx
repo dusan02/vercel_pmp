@@ -56,6 +56,12 @@ interface ValuationHistoryChartProps {
     intrinsicCagr: number | null;
   } | null;
   stats?: { pe: RatioStats | null; ps: RatioStats | null } | null;
+  trendSignal?: {
+    qualified: boolean;
+    revG1y: number | null;
+    epsG1y: number | null;
+    pctOfHigh: number | null;
+  } | null;
   ticker?: string;
 }
 
@@ -229,11 +235,13 @@ function Badge({
   value,
   color,
   compact,
+  title,
 }: {
   label: string;
   value: string;
   color: 'green' | 'blue' | 'amber' | 'red' | 'gray';
   compact?: boolean;
+  title?: string;
 }) {
   const cls = {
     green: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
@@ -244,7 +252,7 @@ function Badge({
   }[color];
 
   return (
-    <div className={`flex items-center gap-1.5 rounded-full border font-medium ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1.5 text-xs'} ${cls}`}>
+    <div title={title} className={`flex items-center gap-1.5 rounded-full border font-medium ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1.5 text-xs'} ${cls}`}>
       <span className="text-gray-500 dark:text-gray-400">{label}</span>
       <span className="font-bold tabular-nums">{value}</span>
     </div>
@@ -297,6 +305,7 @@ export function ValuationHistoryChart({
   summaryPE,
   summaryPS,
   stats,
+  trendSignal,
   ticker,
 }: ValuationHistoryChartProps) {
   const [metricMode, setMetricMode] = useState<MetricMode>('auto');
@@ -679,6 +688,14 @@ export function ValuationHistoryChart({
               label="Intrinsic CAGR"
               value={`${cagr >= 0 ? '+' : ''}${cagr.toFixed(1)}%`}
               color={cagr >= 0 ? 'green' : 'amber'}
+            />
+          )}
+          {trendSignal?.qualified && (
+            <Badge compact
+              label="Trend×Fund"
+              value="Confirmed"
+              color="green"
+              title={`Backtested combo signal: Rev/sh ${trendSignal.revG1y != null ? (trendSignal.revG1y * 100).toFixed(0) + '%' : 'n/a'} 1Y · EPS ${trendSignal.epsG1y != null ? (trendSignal.epsG1y * 100).toFixed(0) + '%' : 'n/a'} · ${trendSignal.pctOfHigh != null ? (trendSignal.pctOfHigh * 100).toFixed(0) + '%' : 'n/a'} of 52w high`}
             />
           )}
         </div>

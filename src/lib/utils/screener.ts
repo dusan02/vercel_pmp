@@ -67,6 +67,13 @@ export interface ScreenerResult {
     insiderLargestSellValue90d: number | null;
     insiderUniqueBuyers14d: number | null;
     insiderUniqueSellers14d: number | null;
+    /** "Fundamentals confirm trend" combo signal (rev/sh +30% 1Y, EPS up, ≥80% of 52w high). */
+    trendSignal?: {
+        qualified: boolean;
+        revG1y: number | null;
+        epsG1y: number | null;
+        pctOfHigh: number | null;
+    } | null;
     ticker: {
         name: string | null;
         sector: string | null;

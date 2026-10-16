@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db/prisma';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { downsampleSeries, RANGE_FILTERS, SCORE_FILTERS, ADVANCED_FILTERS, ANALYSIS_SORT_FIELDS } from '@/lib/utils/screener';
+import { computeTrendSignal, type TrendSignal } from '@/lib/analysis/trendSignal';
 
 const SCREENER_CACHE_TTL = 600; // 10 minutes
 
@@ -376,26 +377,39 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
         // payload stays small (25 rows × ~52 points ≈ 1.3K numbers).
         const symbolList = tickers.map((t) => t.symbol);
         const sparkBySymbol = new Map<string, number[]>();
+        const trendBySymbol = new Map<string, TrendSignal | null>();
         if (symbolList.length > 0) {
             try {
-                const oneYearAgo = new Date(Date.now() - 366 * 24 * 60 * 60 * 1000);
+                // 410d covers the trend signal's 1Y lookback (±45d base window);
+                // the sparkline itself keeps only the last ~366d.
+                const historyFrom = new Date(Date.now() - 410 * 24 * 60 * 60 * 1000);
+                const sparkFrom = new Date(Date.now() - 366 * 24 * 60 * 60 * 1000);
                 const hist = await prisma.dailyValuationHistory.findMany({
                     where: {
                         symbol: { in: symbolList },
-                        date: { gte: oneYearAgo },
+                        date: { gte: historyFrom },
                         closePrice: { not: null, gt: 0 },
                     },
-                    select: { symbol: true, date: true, closePrice: true },
+                    select: { symbol: true, date: true, closePrice: true, psRatio: true, peRatio: true, marketCap: true },
                     orderBy: { date: 'asc' },
                 });
                 const grouped = new Map<string, number[]>();
+                const rowsBySymbol = new Map<string, typeof hist>();
                 for (const r of hist) {
-                    const arr = grouped.get(r.symbol);
-                    if (arr) arr.push(r.closePrice!);
-                    else grouped.set(r.symbol, [r.closePrice!]);
+                    const arr = rowsBySymbol.get(r.symbol);
+                    if (arr) arr.push(r);
+                    else rowsBySymbol.set(r.symbol, [r]);
+                    if (r.date >= sparkFrom) {
+                        const cl = grouped.get(r.symbol);
+                        if (cl) cl.push(r.closePrice!);
+                        else grouped.set(r.symbol, [r.closePrice!]);
+                    }
                 }
                 for (const [sym, closes] of grouped) {
                     sparkBySymbol.set(sym, downsampleSeries(closes, 52));
+                }
+                for (const [sym, srows] of rowsBySymbol) {
+                    trendBySymbol.set(sym, computeTrendSignal(srows));
                 }
             } catch (e) {
                 console.warn('⚠️ sparkline fetch failed (non-fatal):', e);
@@ -407,6 +421,7 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
         const results = tickers.map((t) => ({
             symbol: t.symbol,
             sparkline: sparkBySymbol.get(t.symbol) ?? null,
+            trendSignal: trendBySymbol.get(t.symbol) ?? null,
             metrics: t.finnhubMetrics ?? null,
             healthScore: t.analysisCache?.healthScore ?? null,
             profitabilityScore: t.analysisCache?.profitabilityScore ?? null,

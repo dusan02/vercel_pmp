@@ -34,6 +34,7 @@ function mergeAnalysisPayload(json: any, histJson: any = {}): AnalysisData | nul
         valuationStats: h.stats ?? null,
         epsCagr3y: h.epsCagr3y ?? null,
         epsCagr5y: h.epsCagr5y ?? null,
+        trendSignal: h.trendSignal ?? null,
     };
     if (json.primary) {
         return { ...json.primary, ...historyExtras, peers: json.peers || [], finnhub: json.primary.finnhub ?? null } as AnalysisData;

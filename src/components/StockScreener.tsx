@@ -27,7 +27,7 @@ import { useState, useEffect } from 'react';
 const COLUMN_VIEWS = [
   { id: 'overview', label: 'Overview', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'overallScore', 'valuationScore', 'growthScore', 'profitabilityScore', 'healthScore', 'qualityScore', 'moatScore', 'screens'] },
   { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'ticker.sector', 'ticker.employees', 'ticker.lastMarketCapDiff', 'analyst.buy'] },
-  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'revenueCagr', 'netIncomeCagr', 'metrics.peRatio', 'pePercentile', 'peVsMedian3yPct', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position'] },
+  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'revenueCagr', 'netIncomeCagr', 'metrics.peRatio', 'pePercentile', 'peVsMedian3yPct', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position', 'trendSignal'] },
   { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'fcfConversion', 'debtRepaymentYears', 'healthScore', 'qualityScore', 'overallScore'] },
   { id: 'insiders', label: 'Insiders', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'insider.netBuyValue90d', 'insider.largestBuyValue90d', 'insider.largestSellValue90d', 'insider.uniqueSellers14d', 'overallScore'] },
   { id: 'all', label: 'All columns', keys: null }, // null = every defined column
@@ -70,6 +70,7 @@ const COLUMN_LABELS: Record<string, string> = {
   'insider.largestSellValue90d': 'Top Insider Sell',
   'insider.uniqueSellers14d': 'Insider Cluster 14D',
   'screens': 'Matched Screens',
+  'trendSignal': 'Fund. Trend',
 };
 const columnLabel = (key: string) =>
   COLUMN_LABELS[key]
@@ -405,6 +406,29 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         const v = r.peVsMedian3yPct;
         if (v == null) return <span className="text-gray-400">-</span>;
         return <span className={`text-sm tabular-nums ${v < 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} title="Current P/E vs trailing 3-year median P/E — negative = trading below its own 3Y median">{v > 0 ? '+' : ''}{v.toFixed(0)}%</span>;
+      },
+    },
+    {
+      // Backtested combo: rev/share +30% (1Y) AND EPS growth AND price ≥80%
+      // of 52w high. Server-computed per row from DailyValuationHistory.
+      key: 'trendSignal',
+      header: 'Fund. Trend',
+      align: 'center',
+      sortable: false,
+      render: (r) => {
+        const ts = r.trendSignal;
+        if (!ts || !ts.qualified) return <span className="text-gray-400">-</span>;
+        const tip = [
+          ts.revG1y != null ? `Rev/sh ${(ts.revG1y * 100).toFixed(0)}% (1Y)` : null,
+          ts.epsG1y != null ? `EPS ${(ts.epsG1y * 100).toFixed(0)}%` : null,
+          ts.pctOfHigh != null ? `${(ts.pctOfHigh * 100).toFixed(0)}% of 52w high` : null,
+        ].filter(Boolean).join(' · ');
+        return (
+          <span title={`Fundamentals confirm trend — ${tip}`}
+            className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap font-semibold">
+            ✓ Trend
+          </span>
+        );
       },
     },
     {

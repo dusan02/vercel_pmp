@@ -246,6 +246,15 @@ export interface AnalysisData {
     epsCagr3y?: number | null;
     epsCagr5y?: number | null;
 
+    // "Fundamentals confirm trend" signal (backtested combo:
+    // rev/sh +30% 1Y AND EPS growth AND price ≥80% of 52w high)
+    trendSignal?: {
+        qualified: boolean;
+        revG1y: number | null;
+        epsG1y: number | null;
+        pctOfHigh: number | null;
+    } | null;
+
     // Finnhub pre-computed metrics (primary source for ratios)
     finnhub?: FinnhubMetrics | null;
 }

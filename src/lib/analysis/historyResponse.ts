@@ -4,6 +4,7 @@ import { computeTTMAtDate } from '@/lib/utils/ttm';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { applySplitAdjustments, applyPostSplitAdjustment, buildShareBoundaries, makeShareNormalizer, findNearestSplit } from '@/lib/utils/splitAdjustment';
 import { isPeDistorted } from '@/lib/analysis/peDistortion';
+import { computeTrendSignal } from '@/lib/analysis/trendSignal';
 
 const HISTORY_CACHE_TTL = 3600; // 1 hour (valuation history changes slowly)
 
@@ -27,7 +28,7 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
         // Fetch 10Y daily valuation history
         const rows = await prisma.dailyValuationHistory.findMany({
             where: { symbol, date: { gte: tenYearsAgo } },
-            select: { date: true, peRatio: true, psRatio: true, closePrice: true },
+            select: { date: true, peRatio: true, psRatio: true, closePrice: true, marketCap: true },
             orderBy: { date: 'asc' },
         });
 
@@ -475,6 +476,7 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
                 pe: latestPE !== null ? parseFloat((latestPE as number).toFixed(2)) : null,
                 ps: latestPS !== null ? parseFloat((latestPS as number).toFixed(2)) : null,
             },
+            trendSignal: computeTrendSignal(rows),
             stats: { pe: peStats, ps: psStats },
             epsCagr3y,
             epsCagr5y,
