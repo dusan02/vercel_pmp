@@ -19,12 +19,12 @@ export function ChartBody({ children }: { children: React.ReactNode }) {
     return <div className="w-full h-full flex flex-col">{children}</div>;
 }
 
-/** Single-row controls band under the section title. `flex-nowrap` +
- *  horizontal scroll prevents wrapping — a wrapped second row would push
- *  the plot down and break alignment with the paired card. */
+/** Controls band under the section title. Uses `min-h-9 flex-wrap` so
+ *  single-row cards stay 36px-aligned on desktop while multi-group controls
+ *  wrap cleanly on narrow mobile viewports without clipping buttons. */
 export function ChartControls({ children, className = '' }: { children: React.ReactNode; className?: string }) {
     return (
-        <div className={`flex h-9 items-center gap-2 flex-nowrap overflow-x-auto mb-3 ${className}`}>
+        <div className={`flex flex-wrap min-h-9 items-center gap-x-2 gap-y-1.5 mb-3 ${className}`}>
             {children}
         </div>
     );

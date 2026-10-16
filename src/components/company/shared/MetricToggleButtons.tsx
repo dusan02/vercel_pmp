@@ -27,7 +27,7 @@ export function MetricToggleButtons({ metrics, selected, onToggle }: MetricToggl
                 <button
                     key={metric.key}
                     onClick={() => onToggle(metric.key)}
-                    className={`text-[10px] px-2 py-1 rounded font-medium transition-all ${
+                    className={`text-[10px] px-2 py-1 rounded font-medium whitespace-nowrap transition-all ${
                         selected.includes(metric.key)
                             ? 'text-white shadow-sm'
                             : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 bg-gray-200 dark:bg-gray-700'
