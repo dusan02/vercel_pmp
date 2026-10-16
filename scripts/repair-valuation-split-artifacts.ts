@@ -101,8 +101,12 @@ async function main() {
             let changed = false;
             for (const f of RATIO_FIELDS) {
                 const nv = ratios[f];
-                data[f] = nv;
-                if (differs(row[f] as number | null, nv)) changed = true;
+                // Never erase a stored value — a null recompute usually means
+                // the statement set changed since the row was written, not that
+                // the stored number was wrong. null→value backfills, value→new
+                // value repairs corruption; value→null is skipped.
+                if (nv == null) continue;
+                if (differs(row[f] as number | null, nv)) { data[f] = nv; changed = true; }
             }
             if (changed) updates.push({ symbol, date: row.date, data });
         }
