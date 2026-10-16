@@ -201,15 +201,15 @@ export default async function StocksHubPage({ searchParams }: StocksPageProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-                  <th className="py-3 px-4 text-left font-semibold text-slate-700 dark:text-slate-300">#</th>
-                  <th className="py-3 px-4 text-left font-semibold text-slate-700 dark:text-slate-300">Ticker</th>
-                  <th className="py-3 px-4 text-left font-semibold text-slate-700 dark:text-slate-300">Company</th>
-                  <th className="py-3 px-4 text-left font-semibold text-slate-700 dark:text-slate-300">Sector</th>
-                  <th className="py-3 px-4 text-right font-semibold text-slate-700 dark:text-slate-300">Price</th>
-                  <th className="py-3 px-4 text-right font-semibold text-slate-700 dark:text-slate-300">Market Cap</th>
-                  <th className="py-3 px-4 text-center font-semibold text-slate-700 dark:text-slate-300">Health</th>
-                  <th className="py-3 px-4 text-center font-semibold text-slate-700 dark:text-slate-300">Valuation</th>
-                  <th className="py-3 px-4 text-center font-semibold text-slate-700 dark:text-slate-300">Links</th>
+                  <th className="py-3 px-2.5 sm:px-4 text-left font-semibold text-slate-700 dark:text-slate-300 hidden sm:table-cell">#</th>
+                  <th className="py-3 px-2.5 sm:px-4 text-left font-semibold text-slate-700 dark:text-slate-300">Ticker</th>
+                  <th className="py-3 px-4 text-left font-semibold text-slate-700 dark:text-slate-300 hidden sm:table-cell">Company</th>
+                  <th className="py-3 px-4 text-left font-semibold text-slate-700 dark:text-slate-300 hidden md:table-cell">Sector</th>
+                  <th className="py-3 px-2.5 sm:px-4 text-right font-semibold text-slate-700 dark:text-slate-300">Price</th>
+                  <th className="py-3 px-2.5 sm:px-4 text-right font-semibold text-slate-700 dark:text-slate-300">Mkt Cap</th>
+                  <th className="py-3 px-2 sm:px-4 text-center font-semibold text-slate-700 dark:text-slate-300">Health</th>
+                  <th className="py-3 px-2 sm:px-4 text-center font-semibold text-slate-700 dark:text-slate-300">Val</th>
+                  <th className="py-3 px-4 text-center font-semibold text-slate-700 dark:text-slate-300 hidden lg:table-cell">Links</th>
                 </tr>
               </thead>
               <tbody>
@@ -218,38 +218,39 @@ export default async function StocksHubPage({ searchParams }: StocksPageProps) {
                     key={s.symbol}
                     className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/30"
                   >
-                    <td className="py-2 px-4 text-slate-400 tabular-nums">{i + 1}</td>
-                    <td className="py-2 px-4">
+                    <td className="py-2 px-2.5 sm:px-4 text-slate-400 tabular-nums hidden sm:table-cell">{i + 1}</td>
+                    <td className="py-2 px-2.5 sm:px-4">
                       <Link
                         href={`/analysis/${s.symbol}`}
                         className="font-semibold text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400"
                       >
                         {s.symbol}
                       </Link>
+                      <div className="sm:hidden text-[11px] text-slate-400 truncate max-w-[115px]">{s.name}</div>
                     </td>
-                    <td className="py-2 px-4 text-slate-700 dark:text-slate-300 max-w-xs truncate">
+                    <td className="py-2 px-4 text-slate-700 dark:text-slate-300 max-w-xs truncate hidden sm:table-cell">
                       {s.name}
                     </td>
-                    <td className="py-2 px-4 text-slate-600 dark:text-slate-400 text-xs">
+                    <td className="py-2 px-4 text-slate-600 dark:text-slate-400 text-xs hidden md:table-cell">
                       {s.sector ? (
                         <Link href={`/sectors/${encodeURIComponent(s.sector)}`} className="hover:underline">
                           {s.sector}
                         </Link>
                       ) : '—'}
                     </td>
-                    <td className="py-2 px-4 text-right tabular-nums text-slate-700 dark:text-slate-300">
+                    <td className="py-2 px-2.5 sm:px-4 text-right tabular-nums text-slate-700 dark:text-slate-300">
                       {s.lastPrice != null ? `$${s.lastPrice.toFixed(2)}` : '—'}
                     </td>
-                    <td className="py-2 px-4 text-right tabular-nums text-slate-700 dark:text-slate-300">
+                    <td className="py-2 px-2.5 sm:px-4 text-right tabular-nums text-slate-700 dark:text-slate-300">
                       {formatMarketCap(s.lastMarketCap)}
                     </td>
-                    <td className={`py-2 px-4 text-center tabular-nums font-semibold ${scoreColor(s.healthScore)}`}>
+                    <td className={`py-2 px-2 sm:px-4 text-center tabular-nums font-semibold ${scoreColor(s.healthScore)}`}>
                       {s.healthScore != null ? `${s.healthScore.toFixed(0)}` : '—'}
                     </td>
-                    <td className={`py-2 px-4 text-center tabular-nums font-semibold ${scoreColor(s.valuationScore)}`}>
+                    <td className={`py-2 px-2 sm:px-4 text-center tabular-nums font-semibold ${scoreColor(s.valuationScore)}`}>
                       {s.valuationScore != null ? `${s.valuationScore.toFixed(0)}` : '—'}
                     </td>
-                    <td className="py-2 px-4 text-center text-xs whitespace-nowrap">
+                    <td className="py-2 px-4 text-center text-xs whitespace-nowrap hidden lg:table-cell">
                       <Link
                         href={`/analysis/${s.symbol}`}
                         className="text-blue-600 dark:text-blue-400 hover:underline"

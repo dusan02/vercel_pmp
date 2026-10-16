@@ -696,8 +696,8 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             idea-driven discovery screens. Active pill highlights while the
             current filter state matches. */}
         {PRESET_GROUPS.map((g) => (
-          <div key={g.id} className="flex flex-wrap items-center gap-1.5 mb-1.5">
-            <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1 w-20 shrink-0">
+          <div key={g.id} className="flex items-center sm:flex-wrap gap-1.5 mb-1.5 overflow-x-auto sm:overflow-visible scrollbar-none pb-0.5">
+            <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1 w-16 sm:w-20 shrink-0">
               {g.label}:
             </span>
             {QUICK_SCREENS.filter((p) => p.group === g.id).map((p) => {
@@ -707,7 +707,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
                   key={p.label}
                   onClick={() => applyPreset(p.preset)}
                   title={p.tip}
-                  className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                  className={`shrink-0 whitespace-nowrap text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
                     active
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-medium'
                       : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400'
@@ -1124,56 +1124,75 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
           onSort={(key) => handleSort(key as string)}
           onRowClick={(r) => handleTickerClick(r.symbol)}
           stickyFirst
-          renderMobileCard={(r) => (
-            <div
-              onClick={() => handleTickerClick(r.symbol)}
-              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <CompanyLogo ticker={r.symbol} size={40} />
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-gray-900 dark:text-white">{r.symbol}</div>
-                  <div className="text-xs text-gray-400 truncate">{r.ticker?.name || r.symbol}</div>
-                </div>
-                <Sparkline data={r.sparkline} width={56} height={20} />
-                <span className="text-xs font-mono text-gray-500">{r.ticker?.lastMarketCap ? formatBillions(r.ticker.lastMarketCap) : '-'}</span>
-              </div>
-              <div className="grid grid-cols-6 gap-1 text-center">
-                {([
-                  ['All', r.overallScore],
-                  ['Val', r.valuationScore],
-                  ['Grw', r.growthScore],
-                  ['Prof', r.profitabilityScore],
-                  ['Hlt', r.healthScore],
-                  ['Qual', r.qualityScore],
-                ] as [string, number | null][]).map(([lbl, v]) => (
-                  <div key={lbl}>
-                    <div className="text-[10px] text-gray-400 uppercase">{lbl}</div>
-                    <div className={`font-bold text-sm ${scoreColor(v)}`}>{v !== null ? v.toFixed(0) : '-'}</div>
+          renderMobileCard={(r) => {
+            const chg = r.ticker?.lastChangePct ?? null;
+            return (
+              <div
+                onClick={() => handleTickerClick(r.symbol)}
+                className="bg-white dark:bg-gray-800 p-3.5 cursor-pointer active:bg-gray-50 dark:active:bg-gray-700/50 transition-colors"
+              >
+                <div className="flex items-center gap-2.5 mb-2.5">
+                  <CompanyLogo ticker={r.symbol} size={36} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-gray-900 dark:text-white">{r.symbol}</span>
+                      {r.trendSignal?.qualified && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap">
+                          ✓ Trend
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-400 truncate">{r.ticker?.name || r.symbol}</div>
                   </div>
-                ))}
+                  <Sparkline data={r.sparkline} width={52} height={20} />
+                  <div className="text-right tabular-nums shrink-0">
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {r.ticker?.lastPrice ? `$${r.ticker.lastPrice.toFixed(2)}` : '-'}
+                    </div>
+                    {chg != null && (
+                      <div className={`text-[11px] font-semibold ${chg >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        {chg >= 0 ? '+' : ''}{chg.toFixed(2)}%
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-7 gap-1 text-center bg-gray-50/70 dark:bg-gray-900/40 rounded-lg py-1.5 px-1">
+                  {([
+                    ['All', r.overallScore],
+                    ['Val', r.valuationScore],
+                    ['Grw', r.growthScore],
+                    ['Prof', r.profitabilityScore],
+                    ['Hlt', r.healthScore],
+                    ['Qual', r.qualityScore],
+                    ['Moat', r.moatScore],
+                  ] as [string, number | null][]).map(([lbl, v]) => (
+                    <div key={lbl}>
+                      <div className="text-[9px] text-gray-400 uppercase">{lbl}</div>
+                      <div className={`font-bold text-xs tabular-nums ${scoreColor(v)}`}>{v !== null ? v.toFixed(0) : '-'}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
+                  <span className="truncate">{r.ticker?.sector || '-'}</span>
+                  <span className="font-mono tabular-nums">{r.ticker?.lastMarketCap ? formatBillions(r.ticker.lastMarketCap) : '-'}</span>
+                </div>
               </div>
-              <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 flex justify-between text-xs text-gray-500">
-                <span>{r.ticker?.sector || '-'}</span>
-                <span>{r.ticker?.lastPrice ? `$${r.ticker.lastPrice.toFixed(2)}` : '-'}</span>
-              </div>
-            </div>
-          )}
+            );
+          }}
         />
 
-        {/* Mobile: the cards are the browse view, but they only surface the
-            six scores — every other column stays reachable behind this
-            disclosure as the real table with horizontal scroll. */}
+        {/* Mobile: the cards are the browse view, while the active column view
+            stays reachable behind this disclosure as a horizontally scrollable table. */}
         <div className="lg:hidden border-t border-gray-100 dark:border-slate-700">
           <details className="group">
             <summary className="flex items-center justify-between px-4 py-3 text-sm font-medium text-blue-600 dark:text-blue-400 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
-              <span>Show full table — all {allColumns.length} columns</span>
+              <span>Show table view ({columns.length} columns)</span>
               <ChevronDown size={16} className="transition-transform group-open:rotate-180" />
             </summary>
             <div className="px-2 pb-3">
               <UniversalTable
                 data={results}
-                columns={allColumns}
+                columns={columns}
                 keyExtractor={(r) => r.symbol}
                 isLoading={loading}
                 emptyMessage="No companies match the selected filters."

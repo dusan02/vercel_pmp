@@ -242,11 +242,11 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
         <table className="w-full text-sm">
           <thead className="bg-slate-50 dark:bg-slate-950">
             <tr className="text-left text-slate-600 dark:text-slate-400">
-              <th className="px-3 py-2">Stock</th>
-              <th className="px-3 py-2 text-right">Move</th>
-              <th className="px-3 py-2 text-center" title="σ (z-score) — how unusual today's move is relative to this stock's own volatility. A +9% move can be 'Normal' for a high-volatility stock.">σ</th>
-              <th className="px-3 py-2">Catalyst</th>
-              <th className="w-8"></th>
+              <th className="px-2.5 sm:px-3 py-2">Stock</th>
+              <th className="px-2.5 sm:px-3 py-2 text-right">Move</th>
+              <th className="px-2 sm:px-3 py-2 text-center" title="σ (z-score) — how unusual today's move is relative to this stock's own volatility. A +9% move can be 'Normal' for a high-volatility stock.">σ</th>
+              <th className="px-3 py-2 hidden sm:table-cell">Catalyst</th>
+              <th className="w-7 sm:w-8"></th>
             </tr>
           </thead>
           <tbody>
@@ -270,8 +270,8 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
                 <tr
                   className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60 align-top"
                 >
-                  {/* Stock: logo + ticker + company + sector stacked */}
-                  <td className="px-3 py-2.5">
+                  {/* Stock: logo + ticker + company + sector stacked (+ mobile catalyst) */}
+                  <td className="px-2.5 sm:px-3 py-2.5 min-w-0">
                     <div className="flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100 leading-tight">
                       <CompanyLogo ticker={r.symbol} size={22} className="rounded" />
                       {eligibleAnalysis.has(r.symbol) ? (
@@ -297,9 +297,12 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
                     >
                       {formatSectorName(sector)}
                     </Link>
+                    <div className="sm:hidden mt-1.5">
+                      <CatalystCell mover={r} />
+                    </div>
                   </td>
                   {/* Move: % change dominant, price + volume/RVOL underneath */}
-                  <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                  <td className="px-2.5 sm:px-3 py-2.5 text-right whitespace-nowrap">
                     <div className={`tabular-nums font-bold text-base leading-tight ${color}`}>
                       {formatPercent(pct)}
                     </div>
@@ -316,7 +319,7 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
                     </div>
                   </td>
                   {/* σ: badge + plain-language tier */}
-                  <td className="px-3 py-2.5 text-center">
+                  <td className="px-2 sm:px-3 py-2.5 text-center">
                     <span
                       className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold border ${SIGMA_BADGE[sigma]}`}
                       title={`σ (z-score) ${z?.toFixed(1) ?? '—'} — today's move is ${Math.abs(z ?? 0).toFixed(1)} standard deviations from this stock's typical daily move. It measures unusualness relative to the stock's own volatility, so a big % move can still be 'Normal' for a volatile stock.`}
@@ -327,8 +330,8 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
                       {SIGMA_LABELS[sigma]}
                     </div>
                   </td>
-                  {/* Catalyst */}
-                  <td className="px-3 py-2.5">
+                  {/* Catalyst (desktop/tablet column) */}
+                  <td className="px-3 py-2.5 hidden sm:table-cell">
                     <CatalystCell mover={r} />
                   </td>
                   {/* Expand quality scores */}

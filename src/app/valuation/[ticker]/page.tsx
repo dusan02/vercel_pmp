@@ -313,10 +313,10 @@ export default async function ValuationPage({ params }: PageProps) {
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Server-rendered SEO summary */}
           <section
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-6"
             aria-label={`${companyName} valuation analysis`}
           >
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
               {companyName} ({tickerUpper}) Valuation
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
@@ -338,12 +338,12 @@ export default async function ValuationPage({ params }: PageProps) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                    <th className="py-2 pr-4 text-left text-gray-600 dark:text-gray-400 font-semibold">Metric</th>
-                    <th className="py-2 pr-4 text-right text-gray-600 dark:text-gray-400 font-semibold">Current</th>
-                    <th className="py-2 pr-4 text-right text-gray-600 dark:text-gray-400 font-semibold">Min</th>
-                    <th className="py-2 pr-4 text-right text-gray-600 dark:text-gray-400 font-semibold">Median</th>
-                    <th className="py-2 pr-4 text-right text-gray-600 dark:text-gray-400 font-semibold">Max</th>
-                    <th className="py-2 pr-4 text-right text-gray-600 dark:text-gray-400 font-semibold">Percentile</th>
+                    <th className="py-2 pr-3 sm:pr-4 text-left text-gray-600 dark:text-gray-400 font-semibold sticky left-0 bg-white dark:bg-gray-800 z-10">Metric</th>
+                    <th className="py-2 pr-3 sm:pr-4 text-right text-gray-600 dark:text-gray-400 font-semibold">Current</th>
+                    <th className="py-2 pr-3 sm:pr-4 text-right text-gray-600 dark:text-gray-400 font-semibold hidden sm:table-cell">Min</th>
+                    <th className="py-2 pr-3 sm:pr-4 text-right text-gray-600 dark:text-gray-400 font-semibold">Median</th>
+                    <th className="py-2 pr-3 sm:pr-4 text-right text-gray-600 dark:text-gray-400 font-semibold hidden sm:table-cell">Max</th>
+                    <th className="py-2 pr-3 sm:pr-4 text-right text-gray-600 dark:text-gray-400 font-semibold">%ile</th>
                     <th className="py-2 text-left text-gray-600 dark:text-gray-400 font-semibold">Assessment</th>
                   </tr>
                 </thead>
@@ -465,13 +465,13 @@ function ValuationRow({
 
   return (
     <tr className="border-b border-gray-100 dark:border-gray-700/50">
-      <td className="py-2 pr-4 text-gray-600 dark:text-gray-400 font-medium">{label}</td>
-      <td className="py-2 pr-4 tabular-nums text-gray-900 dark:text-gray-100 font-semibold text-right">{fmt(stats.current)}</td>
-      <td className="py-2 pr-4 tabular-nums text-gray-500 dark:text-gray-500 text-right">{fmt(stats.min)}</td>
-      <td className="py-2 pr-4 tabular-nums text-gray-700 dark:text-gray-300 text-right">{fmt(stats.median)}</td>
-      <td className="py-2 pr-4 tabular-nums text-gray-500 dark:text-gray-500 text-right">{fmt(stats.max)}</td>
-      <td className="py-2 pr-4 tabular-nums text-gray-900 dark:text-gray-100 font-semibold text-right">{stats.currentPercentile}th</td>
-      <td className="py-2 text-xs text-gray-500 dark:text-gray-500 italic">{assessment}</td>
+      <td className="py-2 pr-3 sm:pr-4 text-gray-600 dark:text-gray-400 font-medium whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10">{label}</td>
+      <td className="py-2 pr-3 sm:pr-4 tabular-nums text-gray-900 dark:text-gray-100 font-semibold text-right whitespace-nowrap">{fmt(stats.current)}</td>
+      <td className="py-2 pr-3 sm:pr-4 tabular-nums text-gray-500 dark:text-gray-500 text-right whitespace-nowrap hidden sm:table-cell">{fmt(stats.min)}</td>
+      <td className="py-2 pr-3 sm:pr-4 tabular-nums text-gray-700 dark:text-gray-300 text-right whitespace-nowrap">{fmt(stats.median)}</td>
+      <td className="py-2 pr-3 sm:pr-4 tabular-nums text-gray-500 dark:text-gray-500 text-right whitespace-nowrap hidden sm:table-cell">{fmt(stats.max)}</td>
+      <td className="py-2 pr-3 sm:pr-4 tabular-nums text-gray-900 dark:text-gray-100 font-semibold text-right whitespace-nowrap">{stats.currentPercentile}th</td>
+      <td className="py-2 text-xs text-gray-500 dark:text-gray-500 italic whitespace-nowrap">{assessment}</td>
     </tr>
   );
 }

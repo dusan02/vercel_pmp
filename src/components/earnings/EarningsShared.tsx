@@ -135,12 +135,28 @@ function EarningsRow({ row, eligible }: { row: EarningsSSRRow; eligible: Set<str
   );
 }
 
+function CardMetric({ label, value, sub, delta, deltaText }: { label: string; value: string; sub?: string | undefined; delta?: number | null; deltaText?: string | undefined }) {
+  const text = deltaText ?? (delta != null ? formatPercent(delta) : '');
+  return (
+    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg px-2.5 py-1.5 flex items-baseline justify-between gap-2 tabular-nums">
+      <div className="min-w-0">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">{label}</div>
+        {sub && <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{sub}</div>}
+      </div>
+      <div className="text-right shrink-0">
+        <div className="text-xs font-bold text-neutral-900 dark:text-white">{value}</div>
+        {text && <div className={`text-[11px] font-semibold ${deltaColor(delta)}`}>{text}</div>}
+      </div>
+    </div>
+  );
+}
+
 /** Shared earnings table (ET-style: Company / Mkt Cap / Price / EPS / Revenue)
- *  used on /earnings and /earnings/date/[date]. */
+ *  used on /earnings and /earnings/date/[date]. Renders mobile cards below md. */
 export function EarningsTable({ rows, eligible }: { rows: EarningsSSRRow[]; eligible: Set<string> }) {
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full min-w-[720px]">
           <thead className="bg-slate-50 dark:bg-slate-950">
             <tr className="text-left text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -155,6 +171,42 @@ export function EarningsTable({ rows, eligible }: { rows: EarningsSSRRow[]; elig
             {rows.map((r) => <EarningsRow key={`${r.ticker}-${r.date}`} row={r} eligible={eligible} />)}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile card list */}
+      <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+        {rows.map((r) => {
+          const badge = capBadge(r.marketCap);
+          const chip = timeChip(r.time);
+          const linked = eligible.has(r.ticker);
+          return (
+            <div key={`${r.ticker}-${r.date}-m`} className="p-3">
+              <div className="flex items-center gap-2.5 mb-2">
+                <CompanyLogo ticker={r.ticker} size={28} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    {linked ? (
+                      <Link href={`/analysis/${r.ticker}`} className="text-sm font-bold text-neutral-900 dark:text-white hover:underline">{r.ticker}</Link>
+                    ) : (
+                      <span className="text-sm font-bold text-neutral-500 dark:text-neutral-400">{r.ticker}</span>
+                    )}
+                    {badge && <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md ${badge.cls}`}>{badge.label}</span>}
+                    <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md ${chip.cls}`}>{chip.label}</span>
+                  </div>
+                  {r.companyName && r.companyName.toUpperCase() !== r.ticker.toUpperCase() && (
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{r.companyName}</div>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                <CardMetric label="Price" value={r.price != null ? `$${r.price.toFixed(2)}` : '-'} delta={r.priceChangePct} />
+                <CardMetric label="Mkt Cap" value={formatMcap(r.marketCap) || '-'} delta={r.marketCapDiff} deltaText={r.marketCapDiff != null ? formatSignedMcap(r.marketCapDiff) : undefined} />
+                <CardMetric label="EPS" value={r.epsActual != null ? formatEps(r.epsActual) : '-'} sub={`Est ${r.epsEstimate != null ? formatEps(r.epsEstimate) : '-'}`} delta={r.epsSurprisePercent} />
+                <CardMetric label="Revenue" value={r.revenueActual != null ? formatRevenue(r.revenueActual) : '-'} sub={`Est ${r.revenueEstimate != null ? formatRevenue(r.revenueEstimate) : '-'}`} delta={r.revenueSurprisePercent} />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

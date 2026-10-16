@@ -104,8 +104,8 @@ export function AnalysisHero({
 
   return (
     <div className="mb-4 lg:mb-0">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-start sm:items-end justify-between gap-2.5">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <img
             src={`/api/logo/${encodeURIComponent(ticker)}?s=64&prefer=icon`}
             alt={`${companyName} (${ticker}) logo`}
@@ -115,17 +115,19 @@ export function AnalysisHero({
             style={{ objectFit: 'contain' }}
             loading="eager"
           />
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-0.5">
               Stock Analysis
             </p>
-            <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+            <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight leading-tight">
               {companyName}
-              <span className="ml-2.5 align-middle inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[0.6em] font-semibold tracking-wide text-gray-500 dark:text-gray-400">
+              <span className="ml-2 align-middle inline-flex items-center rounded-md bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[0.6em] font-semibold tracking-wide text-gray-500 dark:text-gray-400">
                 {ticker}
               </span>
             </h1>
           </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
           <AddToWatchlist ticker={ticker} />
           <MoveAlertButton symbol={ticker} />
         </div>

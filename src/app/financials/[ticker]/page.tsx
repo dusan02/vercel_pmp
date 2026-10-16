@@ -330,10 +330,10 @@ export default async function FinancialsPage({ params }: PageProps) {
         <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Server-rendered SEO summary */}
           <section
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-6"
             aria-label={`${companyName} financial statements`}
           >
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
               {companyName} ({tickerUpper}) Financial Statements
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
@@ -375,9 +375,9 @@ export default async function FinancialsPage({ params }: PageProps) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                    <th className="py-2 pr-3 text-left text-gray-600 dark:text-gray-400 font-semibold">Period</th>
+                    <th className="py-2 pr-3 text-left text-gray-600 dark:text-gray-400 font-semibold sticky left-0 bg-white dark:bg-gray-800 z-10">Period</th>
                     {cols.map((c) => (
-                      <th key={c.label} className="py-2 pr-3 text-right text-gray-600 dark:text-gray-400 font-semibold">{c.label}</th>
+                      <th key={c.label} className="py-2 pr-3 text-right text-gray-600 dark:text-gray-400 font-semibold whitespace-nowrap">{c.label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -388,7 +388,7 @@ export default async function FinancialsPage({ params }: PageProps) {
                     const revYoY = prev && prev.revenue ? yoyChange(s.revenue!, prev.revenue!) : null;
                     return (
                       <tr key={`${s.fiscalYear}-${s.fiscalPeriod}`} className="border-b border-gray-100 dark:border-gray-700/50">
-                        <td className="py-2 pr-3 text-gray-600 dark:text-gray-400 font-medium whitespace-nowrap">
+                        <td className="py-2 pr-3 text-gray-600 dark:text-gray-400 font-medium whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10">
                           {periodLabel(s.fiscalYear, s.fiscalPeriod)}
                         </td>
                         {cols.map((c) => (

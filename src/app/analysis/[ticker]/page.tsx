@@ -262,15 +262,15 @@ export default async function AnalysisPage({ params }: PageProps) {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Breadcrumb */}
         <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700" aria-label="Breadcrumb">
-          <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-4">
-            <ol className="flex items-center space-x-2 text-sm min-w-0">
-              <li><Link href="/" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Home</Link></li>
-              <li className="text-gray-500" aria-hidden="true">/</li>
-              <li><Link href={breadcrumbMid.url.replace(baseUrl, '')} className="text-gray-500 hover:text-blue-600 dark:text-gray-400 truncate max-w-[10rem] sm:max-w-none">{breadcrumbMid.name}</Link></li>
-              <li className="text-gray-500" aria-hidden="true">/</li>
-              <li className="text-gray-900 dark:text-gray-100 font-medium" aria-current="page">{tickerUpper}</li>
+          <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <ol className="flex items-center space-x-2 text-sm min-w-0 overflow-hidden">
+              <li className="shrink-0"><Link href="/" className="text-gray-500 hover:text-blue-600 dark:text-gray-400">Home</Link></li>
+              <li className="text-gray-500 shrink-0" aria-hidden="true">/</li>
+              <li className="min-w-0"><Link href={breadcrumbMid.url.replace(baseUrl, '')} className="block text-gray-500 hover:text-blue-600 dark:text-gray-400 truncate max-w-[12rem] sm:max-w-none">{breadcrumbMid.name}</Link></li>
+              <li className="text-gray-500 shrink-0" aria-hidden="true">/</li>
+              <li className="text-gray-900 dark:text-gray-100 font-medium shrink-0" aria-current="page">{tickerUpper}</li>
             </ol>
-            <div className="ml-auto w-full max-w-xs shrink-0">
+            <div className="w-full sm:max-w-xs sm:ml-auto shrink-0">
               <AnalysisStockSearch placeholder="Analyze another stock…" />
             </div>
           </div>

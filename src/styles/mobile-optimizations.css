@@ -7,50 +7,53 @@
    TOUCH TARGETS & INTERACTIONS
    ============================================ */
 
-/* Minimum touch target size: 44x44px (Apple HIG, Material Design) */
+/* Minimum touch target size: 44x44px for primary standalone buttons
+   (do NOT override padding/min-height on bare <button> or <a> tags — that
+   breaks compact Tailwind pills, chart period toggles, table controls, and
+   .sr-only links across the entire app) */
 @media (max-width: 1024px) {
 
-  /* Buttons */
   button,
+  a,
+  [role="button"],
+  .clickable {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.08);
+  }
+
+  /* Explicit button classes that opt into full 44px touch sizing */
   .btn,
   .header-btn,
   .signin-btn,
   .logout-btn {
     min-height: 44px;
     min-width: 44px;
-    padding: 0.75rem 1rem;
+    padding: 0.625rem 0.875rem;
     font-size: 0.9375rem;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
   }
 
-  /* Links and clickable elements — heatmap tiles excluded: they are D3-sized
-     rects and the 44px touch floor would inflate them over their neighbors */
-  a,
-  [role="button"]:not([data-heatmap-tile]),
-  .clickable {
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    touch-action: manipulation;
+  /* Keep sr-only links strictly 1x1 clipped */
+  .sr-only a,
+  .sr-only button {
+    min-height: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
   }
 
   /* Table rows */
   table tbody tr {
-    min-height: 48px;
     cursor: pointer;
   }
 
-  /* Input fields */
+  /* Input fields — 16px font prevents iOS Safari auto-zoom on focus without
+     overriding component-specific Tailwind padding/height classes */
   input[type="text"],
   input[type="number"],
   input[type="search"],
   textarea,
   select {
-    min-height: 44px;
-    padding: 0.75rem 1rem;
     font-size: 1rem;
-    /* Prevents zoom on iOS */
+    touch-action: manipulation;
   }
 }
 

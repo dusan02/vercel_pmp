@@ -62,40 +62,43 @@ export default async function UnusualVolumePage() {
             <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
               <thead className="bg-slate-50 dark:bg-slate-950">
                 <tr>
-                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Symbol</th>
+                  <th scope="col" className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Symbol</th>
                   <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Company</th>
                   <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">Sector</th>
-                  <th scope="col" className="px-4 py-2 text-right text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">Price</th>
-                  <th scope="col" className="px-4 py-2 text-right text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">Change</th>
-                  <th scope="col" className="px-4 py-2 text-right text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">Rel. Volume</th>
+                  <th scope="col" className="px-3 sm:px-4 py-2 text-right text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">Price</th>
+                  <th scope="col" className="px-3 sm:px-4 py-2 text-right text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">Change</th>
+                  <th scope="col" className="px-3 sm:px-4 py-2 text-right text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider">RVOL</th>
                   <th scope="col" className="px-4 py-2 text-right text-xs font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Z-Score</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {rows.map((r) => (
                   <tr key={r.symbol} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                    <td className="px-4 py-2 whitespace-nowrap">
+                    <td className="px-3 sm:px-4 py-2 whitespace-nowrap">
                       <Link
                         className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                         href={`/analysis/${r.symbol}`}
                       >
                         {r.symbol}
                       </Link>
+                      {r.name && (
+                        <div className="sm:hidden text-[11px] text-slate-400 truncate max-w-[120px]">{r.name}</div>
+                      )}
                     </td>
-                    <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.name ?? ''}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2 text-slate-700 dark:text-slate-300 hidden sm:table-cell">{r.name ?? ''}</td>
+                    <td className="px-4 py-2 hidden md:table-cell">
                       <Link className="text-slate-700 dark:text-slate-300 hover:underline" href={`/sectors/${encodeURIComponent(r.sector ?? '')}`}>
                         {r.sector}
                       </Link>
                     </td>
-                    <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300">{formatPrice(r.price ?? undefined)}</td>
-                    <td className={`px-4 py-2 tabular-nums font-semibold ${(r.changePct ?? 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                    <td className="px-3 sm:px-4 py-2 text-right tabular-nums text-slate-700 dark:text-slate-300">{formatPrice(r.price ?? undefined)}</td>
+                    <td className={`px-3 sm:px-4 py-2 text-right tabular-nums font-semibold ${(r.changePct ?? 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                       {formatPercent(r.changePct ?? 0)}
                     </td>
-                    <td className="px-4 py-2 tabular-nums font-semibold text-slate-900 dark:text-white">
+                    <td className="px-3 sm:px-4 py-2 text-right tabular-nums font-semibold text-slate-900 dark:text-white">
                       {r.rvol != null ? `${r.rvol.toFixed(1)}×` : '—'}
                     </td>
-                    <td className="px-4 py-2 tabular-nums text-slate-600 dark:text-slate-400">{r.zScore != null ? r.zScore.toFixed(2) : '—'}</td>
+                    <td className="px-4 py-2 text-right tabular-nums text-slate-600 dark:text-slate-400 hidden sm:table-cell">{r.zScore != null ? r.zScore.toFixed(2) : '—'}</td>
                   </tr>
                 ))}
                 {rows.length === 0 && (

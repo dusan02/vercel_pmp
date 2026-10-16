@@ -144,13 +144,13 @@ export default async function LosersPage() {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-950">
                 <tr className="text-left text-slate-600 dark:text-slate-400">
-                  <th className="px-4 py-2">Ticker</th>
-                  <th className="px-4 py-2">Company</th>
-                  <th className="px-4 py-2">Sector</th>
-                  <th className="px-4 py-2">Price</th>
-                  <th className="px-4 py-2">% Change</th>
-                  <th className="px-4 py-2">Vol</th>
-                  <th className="px-4 py-2">MCap Δ</th>
+                  <th className="px-3 sm:px-4 py-2">Ticker</th>
+                  <th className="px-4 py-2 hidden sm:table-cell">Company</th>
+                  <th className="px-4 py-2 hidden md:table-cell">Sector</th>
+                  <th className="px-3 sm:px-4 py-2 text-right">Price</th>
+                  <th className="px-3 sm:px-4 py-2 text-right">% Change</th>
+                  <th className="px-3 sm:px-4 py-2 text-right">Vol</th>
+                  <th className="px-4 py-2 text-right hidden sm:table-cell">MCap Δ</th>
                 </tr>
               </thead>
               <tbody>
@@ -162,7 +162,7 @@ export default async function LosersPage() {
                       key={r.symbol}
                       className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60"
                     >
-                      <td className="px-4 py-2 font-semibold">
+                      <td className="px-3 sm:px-4 py-2 font-semibold">
                         {eligibleAnalysis.has(r.symbol) ? (
                           <Link className="hover:underline" href={`/analysis/${r.symbol}`}>
                             {r.symbol}
@@ -170,9 +170,10 @@ export default async function LosersPage() {
                         ) : (
                           <span>{r.symbol}</span>
                         )}
+                        {r.name && <div className="sm:hidden text-[11px] font-normal text-slate-400 truncate max-w-[115px]">{r.name}</div>}
                       </td>
-                      <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.name ?? ''}</td>
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-2 text-slate-700 dark:text-slate-300 hidden sm:table-cell">{r.name ?? ''}</td>
+                      <td className="px-4 py-2 hidden md:table-cell">
                         <Link
                           className="text-slate-700 dark:text-slate-300 hover:underline"
                           href={`/sectors/${encodeURIComponent(sector)}`}
@@ -180,21 +181,21 @@ export default async function LosersPage() {
                           {formatSectorName(sector)}
                         </Link>
                       </td>
-                      <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300">
+                      <td className="px-3 sm:px-4 py-2 text-right tabular-nums text-slate-700 dark:text-slate-300">
                         {formatPrice(r.price)}
                       </td>
-                      <td className="px-4 py-2 tabular-nums font-semibold text-rose-600 dark:text-rose-400">
+                      <td className="px-3 sm:px-4 py-2 text-right tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                         {formatPercent(pct)}
                       </td>
-                      <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                      <td className="px-3 sm:px-4 py-2 text-right tabular-nums text-slate-700 dark:text-slate-300 whitespace-nowrap">
                         {r.volume ? formatCompactNumber(r.volume) : '—'}
                         {r.rvol != null && r.rvol >= 1.5 && (
-                          <span className="ml-1.5 text-[10px] font-semibold text-blue-500 dark:text-blue-400">
+                          <span className="ml-1 text-[10px] font-semibold text-blue-500 dark:text-blue-400">
                             {r.rvol.toFixed(1)}×
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300">
+                      <td className="px-4 py-2 text-right tabular-nums text-slate-700 dark:text-slate-300 hidden sm:table-cell">
                         {formatMarketCapDiff(r.marketCapDiff)}
                       </td>
                     </tr>

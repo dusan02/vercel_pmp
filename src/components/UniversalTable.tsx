@@ -92,11 +92,15 @@ export function UniversalTable<T>({
             {showMobileCards && (
                 <div className="lg:hidden w-full">
                     {/* Sort header for mobile cards */}
-                    {onSort && sortKey !== undefined && (
-                        <MobileSortHeader
-                            columns={columns
-                                .filter(c => (c.sortable !== false || c.showInMobileSort) && (c.showInMobileSort || !c.className?.includes('hidden')))
-                                .map(col => ({
+                    {onSort && sortKey !== undefined && (() => {
+                        const explicitMobileCols = columns.filter(c => c.showInMobileSort);
+                        const mobileCols = explicitMobileCols.length > 0
+                            ? explicitMobileCols
+                            : columns.filter(c => c.sortable && !c.className?.includes('hidden')).slice(0, 5);
+                        if (mobileCols.length === 0) return null;
+                        return (
+                            <MobileSortHeader
+                                columns={mobileCols.map(col => ({
                                     key: col.key,
                                     label: col.header,
                                     sortable: col.sortable !== false,
@@ -104,11 +108,12 @@ export function UniversalTable<T>({
                                     width: col.mobileWidth || col.width,
                                     ariaLabel: typeof col.header === 'string' ? col.header : col.key
                                 }))}
-                            sortKey={sortKey as string}
-                            ascending={ascending ?? false}
-                            onSort={handleSort}
-                        />
-                    )}
+                                sortKey={sortKey as string}
+                                ascending={ascending ?? false}
+                                onSort={handleSort}
+                            />
+                        );
+                    })()}
 
                     {data.length === 0 ? (
                         <div className="p-8 text-center text-[var(--clr-subtext)]">

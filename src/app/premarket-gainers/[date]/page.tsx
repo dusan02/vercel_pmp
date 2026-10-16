@@ -99,7 +99,7 @@ export default async function PremarketGainersDatePage({ params }: PageProps) {
         </div>
 
         {/* Date navigation */}
-        <nav className="mb-6 flex items-center gap-3 text-sm">
+        <nav className="mb-6 flex flex-wrap items-center gap-2 sm:gap-3 text-sm">
           {prev ? (
             <Link
               href={`/premarket-gainers/${prev}`}
@@ -156,12 +156,12 @@ export default async function PremarketGainersDatePage({ params }: PageProps) {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-950">
                 <tr className="text-left text-slate-600 dark:text-slate-400">
-                  <th className="px-4 py-2">Ticker</th>
-                  <th className="px-4 py-2">Company</th>
-                  <th className="px-4 py-2">Sector</th>
-                  <th className="px-4 py-2">Price</th>
-                  <th className="px-4 py-2">% Change</th>
-                  <th className="px-4 py-2" title="Relative volume vs normal for this time of day">RVOL</th>
+                  <th className="px-3 sm:px-4 py-2">Ticker</th>
+                  <th className="px-4 py-2 hidden sm:table-cell">Company</th>
+                  <th className="px-4 py-2 hidden md:table-cell">Sector</th>
+                  <th className="px-3 sm:px-4 py-2 text-right">Price</th>
+                  <th className="px-3 sm:px-4 py-2 text-right">% Change</th>
+                  <th className="px-3 sm:px-4 py-2 text-right" title="Relative volume vs normal for this time of day">RVOL</th>
                 </tr>
               </thead>
               <tbody>
@@ -169,22 +169,23 @@ export default async function PremarketGainersDatePage({ params }: PageProps) {
                   const sector = r.sector || 'Other';
                   return (
                     <tr key={r.symbol} className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60">
-                      <td className="px-4 py-2 font-semibold">
+                      <td className="px-3 sm:px-4 py-2 font-semibold">
                         {eligibleAnalysis.has(r.symbol) ? (
                           <Link className="hover:underline" href={`/analysis/${r.symbol}`}>{r.symbol}</Link>
                         ) : (
                           <span>{r.symbol}</span>
                         )}
+                        {r.name && <div className="sm:hidden text-[11px] font-normal text-slate-400 truncate max-w-[120px]">{r.name}</div>}
                       </td>
-                      <td className="px-4 py-2 text-slate-700 dark:text-slate-300">{r.name ?? ''}</td>
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-2 text-slate-700 dark:text-slate-300 hidden sm:table-cell">{r.name ?? ''}</td>
+                      <td className="px-4 py-2 hidden md:table-cell">
                         <Link className="text-slate-700 dark:text-slate-300 hover:underline" href={`/sectors/${encodeURIComponent(sector)}`}>
                           {formatSectorName(sector)}
                         </Link>
                       </td>
-                      <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300">{formatPrice(r.price ?? undefined)}</td>
-                      <td className="px-4 py-2 tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">{formatPercent(r.changePct ?? 0)}</td>
-                      <td className="px-4 py-2 tabular-nums text-slate-700 dark:text-slate-300">
+                      <td className="px-3 sm:px-4 py-2 text-right tabular-nums text-slate-700 dark:text-slate-300">{formatPrice(r.price ?? undefined)}</td>
+                      <td className="px-3 sm:px-4 py-2 text-right tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">{formatPercent(r.changePct ?? 0)}</td>
+                      <td className="px-3 sm:px-4 py-2 text-right tabular-nums text-slate-700 dark:text-slate-300">
                         {r.rvol != null && r.rvol > 0 ? `${r.rvol.toFixed(1)}×` : '—'}
                       </td>
                     </tr>
