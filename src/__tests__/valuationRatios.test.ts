@@ -211,3 +211,64 @@ describe('applySplitEventsToStatements — post-split-level guard', () => {
         for (const s of stmts) expect(s.sharesOutstanding!).toBeGreaterThan(1e9);
     });
 });
+
+describe('computeDayRatios — Finnhub ×1000/÷1000 unit glitches & corrupt-row fallback', () => {
+    it('rescales ×1000 share-count glitches (WAT Q1-Q2 2026: 82B/90B instead of 82M/90M)', () => {
+        const wat = [
+            stmt({ fiscalPeriod: 'Q2', fiscalYear: 2026, endDate: new Date('2026-07-03T00:00:00Z'), sharesOutstanding: 90.041e9, revenue: 1.5e9 }),
+            stmt({ fiscalPeriod: 'Q1', fiscalYear: 2026, endDate: new Date('2026-04-03T00:00:00Z'), sharesOutstanding: 82.139e9, revenue: 0.7e9 }),
+            stmt({ fiscalPeriod: 'FY', fiscalYear: 2025, endDate: new Date('2025-12-30T00:00:00Z'), sharesOutstanding: 59.706e6, revenue: 3.0e9 }),
+            stmt({ fiscalPeriod: 'Q3', fiscalYear: 2025, endDate: new Date('2025-09-26T00:00:00Z'), sharesOutstanding: 59.656e6, revenue: 2.1e9 }),
+            stmt({ fiscalPeriod: 'Q1', fiscalYear: 2025, endDate: new Date('2025-03-28T00:00:00Z'), sharesOutstanding: 59.711e6, revenue: 0.65e9 }),
+        ];
+        // Between Q1'26 and Q2'26 (before latest stmt endDate), Q1'26 82.139B must rescale to 82.139M
+        const r = computeDayRatios(wat, 304, new Date('2026-04-06T04:00:00Z'), 98.248e6);
+        expect(r.marketCap).toBeCloseTo(304 * 82.139e6, -6); // ~$25.0B, not $25.0T
+        expect(r.psRatio).toBeLessThan(12);
+    });
+
+    it('rescales ÷1000 share-count glitches on both quarterly and FY filings (DLR / SWBI)', () => {
+        const dlr = [
+            stmt({ fiscalPeriod: 'Q2', fiscalYear: 2023, endDate: new Date('2023-06-29T00:00:00Z'), sharesOutstanding: 304.452e6, revenue: 2.7e9 }),
+            stmt({ fiscalPeriod: 'Q1', fiscalYear: 2023, endDate: new Date('2023-03-30T00:00:00Z'), sharesOutstanding: 303_065, revenue: 1.34e9 }),
+            stmt({ fiscalPeriod: 'FY', fiscalYear: 2022, endDate: new Date('2022-12-30T00:00:00Z'), sharesOutstanding: 297_919, revenue: 4.69e9 }),
+            stmt({ fiscalPeriod: 'Q3', fiscalYear: 2022, endDate: new Date('2022-09-29T00:00:00Z'), sharesOutstanding: 294.257e6, revenue: 3.47e9 }),
+            stmt({ fiscalPeriod: 'Q1', fiscalYear: 2022, endDate: new Date('2022-03-30T00:00:00Z'), sharesOutstanding: 285_025, revenue: 1.13e9 }),
+        ];
+        const rFy = computeDayRatios(dlr, 100, new Date('2023-01-15T04:00:00Z'), 370.99e6);
+        expect(rFy.marketCap).toBeCloseTo(100 * 297.919e6, -5);
+        const rQ1 = computeDayRatios(dlr, 100, new Date('2023-04-15T04:00:00Z'), 370.99e6);
+        expect(rQ1.marketCap).toBeCloseTo(100 * 303.065e6, -5);
+    });
+
+    it('falls back to the preceding valid statement when a filing has a non-1000× corrupt count (ERIE / BRK.B)', () => {
+        const erie = [
+            stmt({ fiscalPeriod: 'Q3', fiscalYear: 2021, endDate: new Date('2021-09-29T00:00:00Z'), sharesOutstanding: 52.310e6, revenue: 2.0e9 }),
+            stmt({ fiscalPeriod: 'Q2', fiscalYear: 2021, endDate: new Date('2021-06-29T00:00:00Z'), sharesOutstanding: 2.542e9, revenue: 1.3e9 }),
+            stmt({ fiscalPeriod: 'Q3', fiscalYear: 2020, endDate: new Date('2020-09-29T00:00:00Z'), sharesOutstanding: 52.315e6, revenue: 1.9e9 }),
+        ];
+        const r = computeDayRatios(erie, 178, new Date('2021-07-15T04:00:00Z'), 52.29e6);
+        // Skips corrupt Q2'21 (2.542B) and uses Q3'20 (52.315M) → ~$9.3B, not $452B
+        expect(r.marketCap).toBeCloseTo(178 * 52.315e6, -5);
+
+        const brkB = [
+            stmt({ fiscalPeriod: 'FY', fiscalYear: 2024, endDate: new Date('2024-12-31T00:00:00Z'), sharesOutstanding: 2.15658e9, revenue: 371e9 }),
+            stmt({ fiscalPeriod: 'FY', fiscalYear: 2023, endDate: new Date('2023-12-31T00:00:00Z'), sharesOutstanding: 2.17332e9, revenue: 364e9 }),
+            stmt({ fiscalPeriod: 'FY', fiscalYear: 2022, endDate: new Date('2022-12-31T00:00:00Z'), sharesOutstanding: 1.44192e6, revenue: 302e9 }),
+            stmt({ fiscalPeriod: 'FY', fiscalYear: 2021, endDate: new Date('2021-12-31T00:00:00Z'), sharesOutstanding: 2.26527e9, revenue: 276e9 }),
+        ];
+        const rBrk = computeDayRatios(brkB, 310, new Date('2023-06-15T04:00:00Z'), 2.157e9);
+        expect(rBrk.marketCap).toBeCloseTo(310 * 2.26527e9, -7); // ~$702B, not $0.45B
+    });
+
+    it('normalizes persistent ADR ordinary-share counts into ADR units (BP 6:1)', () => {
+        const bp = [
+            stmt({ fiscalPeriod: 'FY', fiscalYear: 2025, endDate: new Date('2025-12-31T00:00:00Z'), sharesOutstanding: 15.522e9, revenue: 187.6e9 }),
+            stmt({ fiscalPeriod: 'FY', fiscalYear: 2024, endDate: new Date('2024-12-31T00:00:00Z'), sharesOutstanding: 15.377e9, revenue: 187.4e9 }),
+        ];
+        const rBefore = computeDayRatios(bp, 35, new Date('2025-06-15T04:00:00Z'), 2.575e9);
+        const rAfter = computeDayRatios(bp, 35, new Date('2026-06-15T04:00:00Z'), 2.575e9);
+        // No 6× cliff across 2025-12-31
+        expect(rBefore.marketCap! / rAfter.marketCap!).toBeCloseTo(15.377 / 15.522, 2);
+    });
+});

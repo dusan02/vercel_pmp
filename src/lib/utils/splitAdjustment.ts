@@ -71,6 +71,55 @@ export interface ShareBoundary {
 }
 
 /**
+ * Rescale Finnhub ×1000 / ÷1000 unit glitches on statement `sharesOutstanding`
+ * (e.g. WAT Q1–Q2'26 reported 82B/90B instead of 82M/90M; DLR, FRPT, SWBI,
+ * BBCP, TER, RGEN, COP, CYTK, NTNX, TEM reported some periods in thousands).
+ *
+ * Only rescales when `raw * 1000` or `raw / 1000` lands within ±25% of the
+ * ticker's normal in-scale share range (or a common split multiple of it).
+ * Non-1000× outliers (ERIE 2.54B vs 52M, BRK.B 1.44M Class-A vs 2.16B Class-B,
+ * SN 50k placeholder, VG 520k) do not match and stay untouched so
+ * `makeShareNormalizer` rejects them as corrupt (`null`).
+ */
+export function rescaleShareUnitGlitches<T extends { endDate: Date; sharesOutstanding: number | null }>(
+    stmts: T[],
+    trustedShares: number | null = null,
+): T[] {
+    const pos = stmts
+        .map((s) => s.sharesOutstanding)
+        .filter((v): v is number => v != null && v > 0);
+    if (pos.length === 0) return stmts;
+
+    let anchor: number;
+    if (trustedShares != null && trustedShares > 0) {
+        anchor = trustedShares;
+    } else {
+        const millions = pos.filter((v) => v >= 1e6).sort((a, b) => a - b);
+        const sorted = millions.length > 0 ? millions : [...pos].sort((a, b) => a - b);
+        anchor = sorted[Math.floor(sorted.length / 2)]!;
+    }
+
+    const inScale = pos.filter((v) => v >= anchor / 30 && v <= anchor * 30);
+    if (trustedShares != null && trustedShares > 0) inScale.push(trustedShares);
+    if (inScale.length === 0) inScale.push(anchor);
+    const minRef = Math.min(...inScale);
+    const maxRef = Math.max(...inScale);
+
+    const matchesBand = (cand: number): boolean =>
+        cand >= minRef * 0.75 && cand <= maxRef * 1.25;
+
+    return stmts.map((s) => {
+        const raw = s.sharesOutstanding;
+        if (raw == null || raw <= 0) return s;
+        if (raw >= anchor / 30 && raw <= anchor * 30) return s;
+        for (const cand of [raw * 1000, raw / 1000]) {
+            if (matchesBand(cand)) return { ...s, sharesOutstanding: cand };
+        }
+        return s;
+    });
+}
+
+/**
  * Split boundaries detected from consecutive quarterly share-count jumps
  * (>1.5×, snapped to common ratios). `trustedShares` anchors a split newer
  * than the latest statement (Ticker.sharesOutstanding vs latest quarter).
@@ -83,10 +132,11 @@ export function buildShareBoundaries(
     quarterlyAsc: { endDate: Date; sharesOutstanding: number | null }[],
     trustedShares: number | null = null,
 ): ShareBoundary[] {
+    const rows = rescaleShareUnitGlitches(quarterlyAsc, trustedShares);
     const boundaries: ShareBoundary[] = [];
-    for (let i = 1; i < quarterlyAsc.length; i++) {
-        const prev = quarterlyAsc[i - 1]!.sharesOutstanding;
-        const curr = quarterlyAsc[i]!.sharesOutstanding;
+    for (let i = 1; i < rows.length; i++) {
+        const prev = rows[i - 1]!.sharesOutstanding;
+        const curr = rows[i]!.sharesOutstanding;
         if (prev != null && prev > 0 && curr != null && curr > 0) {
             const jump = curr / prev;
             if (jump > 1.5) {
@@ -94,16 +144,16 @@ export function buildShareBoundaries(
                 // quarter is a data glitch, not a split (Finnhub posts a
                 // split-adjusted count a year early: NVDA Q1'24 showed 24.7B
                 // between 2.51B and 2.49B). Real splits hold their level.
-                const next = quarterlyAsc[i + 1]?.sharesOutstanding;
+                const next = rows[i + 1]?.sharesOutstanding;
                 if (next != null && next > 0 && next / prev < 1.5) continue;
                 const nearest = findNearestSplit(jump);
                 if (Math.abs(jump - nearest) / nearest <= 0.15) {
-                    boundaries.push({ after: quarterlyAsc[i - 1]!.endDate.getTime(), ratio: nearest });
+                    boundaries.push({ after: rows[i - 1]!.endDate.getTime(), ratio: nearest });
                 }
             }
         }
     }
-    const latestQ = quarterlyAsc[quarterlyAsc.length - 1];
+    const latestQ = rows[rows.length - 1];
     if (trustedShares != null && trustedShares > 0 && latestQ?.sharesOutstanding != null && latestQ.sharesOutstanding > 0) {
         const jump = trustedShares / latestQ.sharesOutstanding;
         if (jump > 1.5) {
@@ -164,12 +214,53 @@ export function findCorruptShareRows(
 export function makeShareNormalizer(
     quarterlyAsc: { endDate: Date; sharesOutstanding: number | null }[],
     boundaries: ShareBoundary[],
+    trustedShares: number | null = null,
 ): (endMs: number, rawShares: number) => number | null {
-    const corrupt = findCorruptShareRows(quarterlyAsc);
-    const cleanLevels = quarterlyAsc
-        .filter((q) => !corrupt.has(q.endDate.getTime())
-            && q.sharesOutstanding != null && q.sharesOutstanding > 0)
-        .map((q) => q.sharesOutstanding! * shareFactorAt(boundaries, q.endDate.getTime()));
+    const rows = rescaleShareUnitGlitches(quarterlyAsc, trustedShares);
+    const withShares = rows.filter((q) => q.sharesOutstanding != null && q.sharesOutstanding > 0);
+
+    // Persistent ADR / dual-class bundle ratio (BP 6:1, HSBC 5:1, DEO 4:1):
+    // statements report ordinary shares while Ticker.sharesOutstanding and
+    // closePrice are in ADR units. Confirmed when the latest statement and at
+    // least one earlier statement both sit at the same (1.5×..20×) multiple.
+    let bundleRatio = 1;
+    if (trustedShares != null && trustedShares > 0 && withShares.length >= 2) {
+        const latestVal = withShares[withShares.length - 1]!.sharesOutstanding!;
+        const r = latestVal / trustedShares;
+        if (r > 1.5 && r <= 20) {
+            const peersMatch = withShares
+                .slice(0, -1)
+                .some((q) => Math.abs(q.sharesOutstanding! - latestVal) / latestVal <= 0.25);
+            if (peersMatch) bundleRatio = r;
+        }
+    }
+
+    const corrupt = findCorruptShareRows(rows);
+    const rawClean = withShares
+        .filter((q) => !corrupt.has(q.endDate.getTime()))
+        .map((q) => (q.sharesOutstanding! / bundleRatio) * shareFactorAt(boundaries, q.endDate.getTime()));
+
+    let postAnchor: number | null = null;
+    if (trustedShares != null && trustedShares > 0) {
+        postAnchor = trustedShares;
+    } else if (rawClean.length > 0) {
+        const millions = rawClean.filter((v) => v >= 1e6).sort((a, b) => a - b);
+        const sorted = millions.length > 0 ? millions : [...rawClean].sort((a, b) => a - b);
+        postAnchor = sorted[Math.floor(sorted.length / 2)]!;
+    }
+
+    // Exclude multi-quarter non-split outliers (SN 50k placeholder, RKT 138M
+    // Class-A-only filings vs 2.83B total, MDLN 17.5B pre-IPO units vs 842M)
+    // that evade the 1-period V-dip detector in findCorruptShareRows.
+    const cleanLevels = postAnchor != null
+        ? rawClean.filter((v) => v >= postAnchor! / 4 && v <= postAnchor! * 4)
+        : rawClean;
+    if (cleanLevels.length === 0 && postAnchor != null) {
+        cleanLevels.push(postAnchor);
+    }
+
+    const minClean = cleanLevels.length > 0 ? Math.min(...cleanLevels) : null;
+    const maxClean = cleanLevels.length > 0 ? Math.max(...cleanLevels) : null;
     const totalFactor = boundaries.reduce((a, b) => a * b.ratio, 1);
     const nearest = (v: number): number | null => {
         let best: number | null = null;
@@ -178,9 +269,25 @@ export function makeShareNormalizer(
         }
         return best;
     };
-    return (endMs, raw) => {
-        if (raw <= 0) return null;
-        const dated = raw * shareFactorAt(boundaries, endMs);
+    return (endMs, rawInput) => {
+        if (rawInput <= 0) return null;
+        let raw = rawInput / bundleRatio;
+        const factor = shareFactorAt(boundaries, endMs);
+        // Rescue ×1000 / ÷1000 unit glitches on FY statements not in quarterlyAsc
+        // (e.g. SWBI FY25/FY26 44.9k, DLR FY22 297.9k, FRPT FY21 42.9k, WAT Q1-Q2'26).
+        if (postAnchor != null && minClean != null && maxClean != null
+            && (raw < postAnchor / 30 || raw > postAnchor * 30)) {
+            for (const scale of [1000, 0.001]) {
+                const cand = raw * scale;
+                const candDated = cand * factor;
+                if ((candDated >= minClean * 0.75 && candDated <= maxClean * 1.25)
+                    || (cand >= minClean * 0.75 && cand <= maxClean * 1.25)) {
+                    raw = cand;
+                    break;
+                }
+            }
+        }
+        const dated = raw * factor;
         if (!cleanLevels.length) return dated;
         const nd = nearest(dated);
         if (nd != null && Math.abs(dated - nd) / nd <= 0.35) return dated;
@@ -282,7 +389,14 @@ export function applyPostSplitAdjustment(
     stmts: { endDate: Date; sharesOutstanding: number | null }[],
     tickerSharesOutstanding: number | null
 ): void {
-    if (!tickerSharesOutstanding || tickerSharesOutstanding <= 0 || stmts.length === 0) return;
+    if (stmts.length === 0) return;
+
+    const rescaled = rescaleShareUnitGlitches(stmts, tickerSharesOutstanding);
+    for (let i = 0; i < stmts.length; i++) {
+        stmts[i]!.sharesOutstanding = rescaled[i]!.sharesOutstanding;
+    }
+
+    if (!tickerSharesOutstanding || tickerSharesOutstanding <= 0) return;
 
     // Find the latest statement (most recent endDate)
     let latestStmt: { endDate: Date; sharesOutstanding: number | null } | null = null;

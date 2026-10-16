@@ -127,13 +127,27 @@ export function computeDayRatios(statements: FinancialStatement[], closePrice: n
     const quarterlyAsc = statements
         .filter((s) => s.fiscalPeriod && s.fiscalPeriod !== 'FY')
         .sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
-    const boundaries = buildShareBoundaries(quarterlyAsc, trustedShares);
-    const normalizeShares = makeShareNormalizer(quarterlyAsc, boundaries);
+    const seriesAsc = quarterlyAsc.length > 0
+        ? quarterlyAsc
+        : [...statements].sort((a, b) => a.endDate.getTime() - b.endDate.getTime());
+    const boundaries = buildShareBoundaries(seriesAsc, trustedShares);
+    const normalizeShares = makeShareNormalizer(seriesAsc, boundaries, trustedShares);
 
-    const sharesStmt = latestWith((s) => s.sharesOutstanding != null && s.sharesOutstanding > 0);
-    const stmtShares = sharesStmt?.sharesOutstanding != null
-        ? normalizeShares(sharesStmt.endDate.getTime(), sharesStmt.sharesOutstanding)
-        : null;
+    // Pick the most recent statement whose share count normalizes cleanly —
+    // when a filing carries an unrecoverable outlier (ERIE Q2'21 2.54B vs
+    // 52.3M, BRK.B FY'22 1.44M Class-A count, SN 50k placeholder, VG 520k),
+    // normalizeShares returns null and we fall back to the preceding valid
+    // filing rather than emitting null/corrupt multiples for the whole period.
+    const resolveValidShares = (pool: FinancialStatement[]): number | null => {
+        for (const s of pool) {
+            if (s.sharesOutstanding != null && s.sharesOutstanding > 0) {
+                const norm = normalizeShares(s.endDate.getTime(), s.sharesOutstanding);
+                if (norm != null) return norm;
+            }
+        }
+        return null;
+    };
+    const stmtShares = resolveValidShares(stmtsBeforeDate) ?? resolveValidShares(statements);
     const shares = trustedShares != null && trustedShares > 0
         && statements.length > 0 && asOf.getTime() >= statements[0]!.endDate.getTime()
         ? trustedShares
