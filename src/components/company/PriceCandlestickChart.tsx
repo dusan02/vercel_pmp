@@ -1012,7 +1012,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
           may wrap internally (last-candle note drops under the number) and
           the toolbar anchors right with internal wrap — so switching modes
           never moves the toolbar between lines. */}
-      <div className="flex items-start justify-between mb-3 gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-2">
         {mode === 'pe' && peHeadline ? (
           <div key={metric} className="flex items-baseline gap-2 flex-wrap flex-1 min-w-0 pmp-fade-up">
             <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
@@ -1056,7 +1056,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             )}
           </div>
         )}
-        <div className="flex items-center gap-2 flex-wrap justify-end ml-auto">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:justify-end sm:ml-auto">
           {/* View mode — Price chart vs P/E-multiple chart */}
           <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
             <button

@@ -94,9 +94,9 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite, allStocks }: A
     };
 
     return (
-        <div ref={wrapperRef} className="relative w-full max-w-sm">
+        <div ref={wrapperRef} className="relative w-full sm:max-w-sm">
             <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
                 <input
                     type="text"
                     placeholder="Search stocks to add..."
@@ -109,7 +109,7 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite, allStocks }: A
                     onFocus={() => {
                         if (query.trim().length > 0) setIsOpen(true);
                     }}
-                    className="pmp-input pl-9 pr-10"
+                    className="pmp-input !pl-9 !pr-9"
                 />
             </div>
 

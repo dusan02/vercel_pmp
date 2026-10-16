@@ -45,14 +45,19 @@
     cursor: pointer;
   }
 
-  /* Input fields — 16px font prevents iOS Safari auto-zoom on focus without
-     overriding component-specific Tailwind padding/height classes */
+  /* Input fields — 16px font prevents iOS Safari auto-zoom on focus for
+     full-width search/text boxes without overriding compact inline inputs
+     (like DualRangeSlider w-11 text-[11px] boxes) */
+  input[type="search"],
+  input.pmp-input:not(.font-mono),
+  textarea {
+    font-size: 1rem;
+    touch-action: manipulation;
+  }
+
   input[type="text"],
   input[type="number"],
-  input[type="search"],
-  textarea,
   select {
-    font-size: 1rem;
     touch-action: manipulation;
   }
 }

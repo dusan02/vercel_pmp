@@ -241,14 +241,14 @@ export function FavoritesSection({
 
   return (
     <section className="favorites">
-      <div className="flex items-center justify-between mb-4 px-4 relative z-50">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 px-4 relative z-50">
         <div className="flex items-center">
           <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
             <SectionIcon type="star" size={28} className="text-gray-900 dark:text-white shrink-0" />
             <span>Favorites</span>
           </h2>
         </div>
-        <div className="flex-1 max-w-sm ml-auto relative">
+        <div className="w-full sm:flex-1 sm:max-w-sm sm:ml-auto relative">
           <AddFavoriteSearch
             onToggleFavorite={onToggleFavorite}
             isFavorite={isFavorite}

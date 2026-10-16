@@ -611,18 +611,28 @@ export function PortfolioSection({
       {/* 3. Search Bar - Above Table */}
       <div className="px-4 mb-4 relative mt-2">
         <div className="relative group">
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </div>
           <input
-            type="search"
+            type="text"
             placeholder="Search stocks to add..."
             value={portfolioSearchTerm}
             onChange={(e) => setPortfolioSearchTerm(e.target.value)}
             onFocus={() => setShowPortfolioSearch(true)}
             onBlur={() => setTimeout(() => setShowPortfolioSearch(false), 200)}
-            className="pmp-input pmp-input-lg pl-5 pr-12"
+            className="pmp-input h-11 sm:h-12 text-base !pl-10 !pr-9"
           />
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          </div>
+          {portfolioSearchTerm && (
+            <button
+              type="button"
+              onClick={() => setPortfolioSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              aria-label="Clear search"
+            >
+              <X size={16} />
+            </button>
+          )}
 
           {showPortfolioSearch && portfolioSearchResults.length > 0 && (
             <div className="absolute top-full left-0 right-0 pmp-dropdown-menu mt-2">
@@ -635,10 +645,10 @@ export function PortfolioSection({
                     setPortfolioSearchTerm('');
                   }}
                 >
-                  <span className="font-bold text-blue-600 dark:text-blue-400 w-16">{stock.ticker}</span>
-                  <span className="text-gray-300 mx-2">|</span>
-                  <span className="text-sm font-medium truncate flex-1">{stock.companyName || getCompanyName(stock.ticker)}</span>
-                  <Plus size={18} className="text-gray-400 ml-2" />
+                  <span className="font-bold text-blue-600 dark:text-blue-400 w-16 shrink-0">{stock.ticker}</span>
+                  <span className="text-gray-300 mx-2 shrink-0">|</span>
+                  <span className="text-sm font-medium truncate flex-1 min-w-0">{stock.companyName || getCompanyName(stock.ticker)}</span>
+                  <Plus size={18} className="text-gray-400 ml-2 shrink-0" />
                 </button>
               ))}
             </div>

@@ -160,7 +160,9 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       className="flex flex-col w-full overflow-hidden"
       style={{ position: 'relative', height: '100%', minHeight: '100%', zIndex: 1, background: '#0a0a0a' }}
     >
-      <MobileHeatmapHeader metric={metric} onMetricChange={onMetricChange} />
+      {height === undefined && (
+        <MobileHeatmapHeader metric={metric} onMetricChange={onMetricChange} />
+      )}
 
       {/* Treemap scroll container */}
       <div
@@ -182,8 +184,8 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
             position: 'relative',
             width: '100%',
             height: layoutHeight > 0 ? `${layoutHeight}px` : '100%',
-            // Clear the fixed BottomNavigation so the last row isn't hidden behind it.
-            paddingBottom: 'calc(var(--tabbar-real-h, var(--tabbar-h, 72px)) + env(safe-area-inset-bottom, 0px) + 8px)',
+            // Clear the fixed BottomNavigation on full-screen heatmap only.
+            paddingBottom: height !== undefined ? 0 : 'calc(var(--tabbar-real-h, var(--tabbar-h, 72px)) + env(safe-area-inset-bottom, 0px) + 8px)',
           }}
         >
           {sectors.length > 0 && containerWidth > 0 ? (

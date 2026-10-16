@@ -340,22 +340,22 @@ export const AllStocksSection = React.memo(function AllStocksSection({
       )}
 
       {/* Mobile Header: Title + Search Row */}
-      <div className="lg:hidden px-4 mb-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 whitespace-nowrap">
+      <div className="lg:hidden px-4 mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="flex items-center justify-between sm:justify-start gap-2 whitespace-nowrap">
           <h2 className="flex items-center gap-3 text-xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-0.5 whitespace-nowrap">
             <SectionIcon type="globe" size={28} className="text-gray-900 dark:text-white shrink-0" />
             <span>All Stocks</span>
           </h2>
-          <Link href="/screener" className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+          <Link href="/screener" className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
             <Filter size={12} />
             Screener
           </Link>
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="w-full sm:flex-1 min-w-0">
           <StockSearchBar
             searchTerm={searchTerm}
             onSearchChange={onSearchChange}
-            placeholder="Search..."
+            placeholder="Search ticker or company..."
           />
         </div>
       </div>

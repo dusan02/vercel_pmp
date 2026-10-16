@@ -104,7 +104,7 @@ export default function PillarsRadar({ pillars }: { pillars: PillarScores }) {
                 Profile
             </h2>
             <svg
-                viewBox="0 0 260 200"
+                viewBox="0 0 260 218"
                 className="mt-1 w-full"
                 role="img"
                 aria-label={`Radar profile: ${axes.map((p, i) => `${p?.label ?? SHORT_LABEL[AXIS_ORDER[i]!]} ${p?.score ?? 0}`).join(', ')}`}

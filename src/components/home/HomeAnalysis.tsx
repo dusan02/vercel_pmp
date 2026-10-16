@@ -119,7 +119,7 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
     return (
         <div className="flex flex-col gap-6 animate-fade-in pb-20 lg:pb-0">
             {/* Compact Header Row: Icon + Title + Search bar inline */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 px-6 py-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 px-4 sm:px-6 py-4">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     {/* Title */}
                     <div className="flex items-center shrink-0">
@@ -132,7 +132,7 @@ export function HomeAnalysis({ activeTicker: propTicker, onTickerChange }: HomeA
                     {/* Inline Search — autocomplete over symbol + company name */}
                     <AnalysisStockSearch
                         onSelect={setTicker}
-                        placeholder="Search ticker or company (e.g. MSFT)"
+                        placeholder="Search ticker or company…"
                         className="flex-1 min-w-0"
                     />
                 </div>

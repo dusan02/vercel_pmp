@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 
 interface Suggestion {
   symbol: string;
@@ -90,8 +90,18 @@ export function AnalysisStockSearch({ onSelect, placeholder = 'Search ticker or 
         autoComplete="off"
         spellCheck={false}
         aria-label="Search stock ticker or company"
-        className="w-full h-10 pl-9 pr-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-medium text-gray-900 dark:text-white"
+        className="w-full h-10 pl-9 pr-8 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-medium text-gray-900 dark:text-white"
       />
+      {query && (
+        <button
+          type="button"
+          onClick={() => { setQuery(''); setResults([]); setOpen(false); }}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          aria-label="Clear search"
+        >
+          <X size={15} />
+        </button>
+      )}
       {open && results.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl overflow-hidden">
           {results.map((s, i) => (

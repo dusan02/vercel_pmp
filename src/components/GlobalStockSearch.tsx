@@ -105,7 +105,7 @@ export function GlobalStockSearch({
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="pmp-input pl-9 pr-8 w-full"
+          className="pmp-input !pl-9 !pr-8 w-full"
           aria-label="Search and navigate to stock analysis"
           autoComplete="off"
           spellCheck={false}
