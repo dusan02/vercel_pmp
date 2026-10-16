@@ -27,9 +27,18 @@ export interface TrendSignal {
     pctOfHigh: number | null;
 }
 
+/**
+ * Sectors excluded from the signal — same universe the backtest used.
+ * Bank "revenue" is net interest income (rate-driven, valued via P/E·P/B not
+ * P/S) and REIT revenue is rent/interest with a structurally different
+ * capital structure, so rev/share growth there measures something else.
+ */
+export const TREND_EXCLUDED_SECTORS = new Set(['Financial Services', 'Real Estate', 'ETF']);
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export function computeTrendSignal(rows: TrendSignalPoint[]): TrendSignal | null {
+export function computeTrendSignal(rows: TrendSignalPoint[], opts?: { sector?: string | null | undefined }): TrendSignal | null {
+    if (opts?.sector && TREND_EXCLUDED_SECTORS.has(opts.sector)) return null;
     const pts = rows
         .filter(r => r.closePrice != null && r.closePrice > 0)
         .map(r => ({ ...r, t: r.date instanceof Date ? r.date.getTime() : (r.date as number) }))

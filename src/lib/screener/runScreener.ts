@@ -418,8 +418,9 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
                 for (const [sym, closes] of grouped) {
                     sparkBySymbol.set(sym, downsampleSeries(closes, 52));
                 }
+                const sectorBySymbol = new Map(tickers.map((t) => [t.symbol, t.sector]));
                 for (const [sym, srows] of rowsBySymbol) {
-                    trendBySymbol.set(sym, computeTrendSignal(srows));
+                    trendBySymbol.set(sym, computeTrendSignal(srows, { sector: sectorBySymbol.get(sym) }));
                 }
             } catch (e) {
                 console.warn('⚠️ sparkline fetch failed (non-fatal):', e);

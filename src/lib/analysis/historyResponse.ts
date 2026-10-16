@@ -131,7 +131,7 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
         // Post-split shares adjustment for Finnhub statements not updated after recent split
         const tickerInfo = await prisma.ticker.findUnique({
             where: { symbol },
-            select: { sharesOutstanding: true },
+            select: { sharesOutstanding: true, sector: true },
         });
 
         const trustedShares = tickerInfo?.sharesOutstanding ?? null;
@@ -476,7 +476,7 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
                 pe: latestPE !== null ? parseFloat((latestPE as number).toFixed(2)) : null,
                 ps: latestPS !== null ? parseFloat((latestPS as number).toFixed(2)) : null,
             },
-            trendSignal: computeTrendSignal(rows),
+            trendSignal: computeTrendSignal(rows, { sector: tickerInfo?.sector }),
             stats: { pe: peStats, ps: psStats },
             epsCagr3y,
             epsCagr5y,

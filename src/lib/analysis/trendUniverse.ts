@@ -30,9 +30,15 @@ export async function getTrendQualifiedSymbols(): Promise<Set<string>> {
             if (arr) arr.push(r);
             else bySymbol.set(r.symbol, [r]);
         }
+        // Sector map for the same exclusion the backtest used (Fin/RE/ETF)
+        const sectorRows = await prisma.ticker.findMany({
+            where: { symbol: { in: [...bySymbol.keys()] } },
+            select: { symbol: true, sector: true },
+        });
+        const sectorBySymbol = new Map(sectorRows.map(t => [t.symbol, t.sector]));
         const qualified: string[] = [];
         for (const [symbol, srows] of bySymbol) {
-            if (computeTrendSignal(srows)?.qualified) qualified.push(symbol);
+            if (computeTrendSignal(srows, { sector: sectorBySymbol.get(symbol) })?.qualified) qualified.push(symbol);
         }
         try { await setCachedData(UNIVERSE_CACHE_KEY, qualified, UNIVERSE_CACHE_TTL); } catch {}
         return new Set(qualified);
