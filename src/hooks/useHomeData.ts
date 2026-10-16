@@ -42,6 +42,8 @@ export function useHomeData({ initialData, activeSection }: UseHomeDataOptions) 
 
   const {
     portfolioHoldings,
+    costBasis,
+    updateCostBasis,
     updateQuantity,
     removeStock,
     addStock,
@@ -118,6 +120,8 @@ export function useHomeData({ initialData, activeSection }: UseHomeDataOptions) 
     loadData,
     // Portfolio
     portfolioHoldings,
+    costBasis,
+    updateCostBasis,
     updateQuantity,
     removeStock,
     addStock,

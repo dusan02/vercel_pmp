@@ -32,17 +32,19 @@ export function FavoritesStandalone() {
 
 export function PortfolioStandalone() {
   const {
-    portfolioStocks, portfolioHoldings, stockData, loadingStates,
-    updateQuantity, removeStock, addStock, calculateDailyChange,
+    portfolioStocks, portfolioHoldings, costBasis, stockData, loadingStates,
+    updateQuantity, updateCostBasis, removeStock, addStock, calculateDailyChange,
     calculateTotalStockValue, totalPortfolioValue,
   } = useHomeData({ initialData: [], activeSection: 'portfolio' });
   return (
     <HomePortfolio
       portfolioStocks={portfolioStocks}
       portfolioHoldings={portfolioHoldings}
+      costBasis={costBasis}
       allStocks={stockData}
       loading={loadingStates.top50Stocks}
       onUpdateQuantity={updateQuantity}
+      onUpdateCostBasis={updateCostBasis}
       onRemoveStock={removeStock}
       onAddStock={addStock}
       calculatePortfolioValue={calculateDailyChange}

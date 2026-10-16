@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
 
         try {
             const body = await req.json();
-            const { action, ticker, quantity, holdings } = body;
+            const { action, ticker, quantity, holdings, avgPrice, costBasis } = body;
 
             // Bulk sync
             if (action === 'sync' && holdings) {
@@ -83,11 +83,13 @@ export async function POST(req: NextRequest) {
                             console.warn(`⚠️ Quantity adjusted in sync for ${t}: ${q} -> ${safeQuantity}`);
                         }
                         
+                        const cb = costBasis && typeof costBasis === 'object' ? costBasis[t] : undefined;
+                        const safeAvg = (typeof cb === 'number' && isFinite(cb) && cb > 0) ? Math.min(cb, MAX_QUANTITY) : null;
                         try {
                             await prisma.portfolioItem.upsert({
                                 where: { userId_ticker: { userId: session.user.id, ticker: t } },
-                                update: { quantity: safeQuantity },
-                                create: { userId: session.user.id, ticker: t, quantity: safeQuantity }
+                                update: { quantity: safeQuantity, ...(safeAvg !== null ? { avgPrice: safeAvg } : {}) },
+                                create: { userId: session.user.id, ticker: t, quantity: safeQuantity, avgPrice: safeAvg }
                             });
                         } catch (itemError) {
                             console.warn(`⚠️ Failed to upsert portfolio item ${t}:`, itemError);
@@ -102,7 +104,17 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: 'Ticker required' }, { status: 400 });
             }
 
-            if (action === 'update' || action === 'add') {
+            if (action === 'setCost') {
+                const MAX_QUANTITY = 1_000_000;
+                const safeAvg = (typeof avgPrice === 'number' && isFinite(avgPrice) && avgPrice > 0)
+                    ? Math.min(avgPrice, MAX_QUANTITY)
+                    : null;
+                await prisma.portfolioItem.upsert({
+                    where: { userId_ticker: { userId: session.user.id, ticker } },
+                    update: { avgPrice: safeAvg },
+                    create: { userId: session.user.id, ticker, quantity: 0, avgPrice: safeAvg }
+                });
+            } else if (action === 'update' || action === 'add') {
                 if (typeof quantity !== 'number') {
                     return NextResponse.json({ error: 'Quantity required' }, { status: 400 });
                 }
@@ -116,10 +128,14 @@ export async function POST(req: NextRequest) {
                     console.warn(`⚠️ Quantity adjusted for ${ticker}: ${quantity} -> ${safeQuantity}`);
                 }
 
+                const safeAvg = (typeof avgPrice === 'number' && isFinite(avgPrice) && avgPrice > 0)
+                    ? Math.min(avgPrice, MAX_QUANTITY)
+                    : null;
+
                 await prisma.portfolioItem.upsert({
                     where: { userId_ticker: { userId: session.user.id, ticker } },
-                    update: { quantity: safeQuantity },
-                    create: { userId: session.user.id, ticker, quantity: safeQuantity }
+                    update: { quantity: safeQuantity, ...(safeAvg !== null ? { avgPrice: safeAvg } : {}) },
+                    create: { userId: session.user.id, ticker, quantity: safeQuantity, avgPrice: safeAvg }
                 });
             } else if (action === 'remove') {
                 await prisma.portfolioItem.deleteMany({

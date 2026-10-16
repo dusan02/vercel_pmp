@@ -8,11 +8,15 @@ interface PortfolioQuantityInputProps {
   className?: string;
   /** If set (>0), we enforce minimum on blur (allows empty while typing). */
   minValue?: number;
+  placeholder?: string;
+  title?: string;
+  /** Max fraction digits shown in formatted display (default 2). */
+  decimals?: number;
 }
 
 const MAX_QUANTITY = 1000000; // 1,000,000 limit
 
-export function PortfolioQuantityInput({ value, onChange, className = '', minValue = 0 }: PortfolioQuantityInputProps) {
+export function PortfolioQuantityInput({ value, onChange, className = '', minValue = 0, placeholder = '0', title, decimals = 2 }: PortfolioQuantityInputProps) {
   const min = Math.max(0, minValue);
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let inputValue = e.target.value.trim();
@@ -91,7 +95,7 @@ export function PortfolioQuantityInput({ value, onChange, className = '', minVal
         // Format with commas for display - prevent scientific notation
         const formatted = committed % 1 === 0
           ? committed.toLocaleString('en-US', { notation: 'standard' })
-          : committed.toLocaleString('en-US', { maximumFractionDigits: 2, notation: 'standard' });
+          : committed.toLocaleString('en-US', { maximumFractionDigits: decimals, notation: 'standard' });
         e.target.value = formatted;
         onChange(committed);
       } else if (parsed > MAX_QUANTITY || !isFinite(parsed)) {
@@ -143,7 +147,7 @@ export function PortfolioQuantityInput({ value, onChange, className = '', minVal
       ? MAX_QUANTITY.toLocaleString('en-US') // Cap display at max
       : safeValue % 1 === 0
         ? safeValue.toLocaleString('en-US', { maximumFractionDigits: 0, notation: 'standard' })
-        : safeValue.toLocaleString('en-US', { maximumFractionDigits: 2, notation: 'standard' });
+        : safeValue.toLocaleString('en-US', { maximumFractionDigits: decimals, notation: 'standard' });
 
   return (
     <input
@@ -157,9 +161,9 @@ export function PortfolioQuantityInput({ value, onChange, className = '', minVal
       onMouseDown={(e) => e.stopPropagation()}
       // Default sizing: allow up to 4 digits (9999) comfortably on mobile
       className={`pmp-input min-w-[56px] w-16 px-2 py-1 text-center font-medium tabular-nums font-mono ${className}`}
-      placeholder="0"
+      placeholder={placeholder}
       maxLength={9} // "1,000,000" = 9 characters
-      title={`Maximum: ${MAX_QUANTITY.toLocaleString('en-US')}`}
+      title={title ?? `Maximum: ${MAX_QUANTITY.toLocaleString('en-US')}`}
     />
   );
 }

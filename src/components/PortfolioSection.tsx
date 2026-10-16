@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Download, Link2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useSession, signIn } from 'next-auth/react';
 import { SectionIcon } from './SectionIcon';
 import { SectionLoader } from './SectionLoader';
 import CompanyLogo from './CompanyLogo';
@@ -10,6 +11,7 @@ import { getCompanyName } from '@/lib/companyNames';
 import { StockData } from '@/lib/types';
 import { PortfolioQuantityInput } from './PortfolioQuantityInput';
 import { PortfolioCardMobile } from './PortfolioCardMobile';
+import { PortfolioPerformanceChart } from './PortfolioPerformanceChart';
 import { UniversalTable, ColumnDef } from './UniversalTable';
 import { PortfolioSectorDistributionChart } from './PortfolioSectorDistributionChart';
 import { PortfolioStockDistributionChart } from './PortfolioStockDistributionChart';
@@ -29,9 +31,11 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 interface PortfolioSectionProps {
   portfolioStocks: StockData[];
   portfolioHoldings: Record<string, number>;
+  costBasis?: Record<string, number> | undefined;
   allStocks: StockData[];
   loading: boolean;
   onUpdateQuantity: (ticker: string, quantity: number) => void;
+  onUpdateCostBasis?: ((ticker: string, avgPrice: number) => void) | undefined;
   onRemoveStock: (ticker: string) => void;
   onAddStock: (ticker: string, quantity?: number) => void;
   calculatePortfolioValue: (stock: StockData) => number; // Daily change
@@ -42,9 +46,11 @@ interface PortfolioSectionProps {
 export function PortfolioSection({
   portfolioStocks,
   portfolioHoldings,
+  costBasis = {},
   allStocks,
   loading,
   onUpdateQuantity,
+  onUpdateCostBasis,
   onRemoveStock,
   onAddStock,
   calculatePortfolioValue,
@@ -55,24 +61,48 @@ export function PortfolioSection({
   const [portfolioSearchTerm, setPortfolioSearchTerm] = useState('');
   const [portfolioSearchResults, setPortfolioSearchResults] = useState<StockData[]>([]);
   const [showPortfolioSearch, setShowPortfolioSearch] = useState(false);
+  const [trendUniverse, setTrendUniverse] = useState<Set<string>>(new Set());
+  const [copied, setCopied] = useState(false);
+  const { data: session } = useSession();
   const router = useRouter();
 
   const handleRowClick = useCallback((stock: StockData) => {
     router.push(`/analysis/${stock.ticker.toUpperCase()}`);
   }, [router]);
 
+  // Trend-qualified universe (badge) — same cached list as ?trendConfirmed=1
+  useEffect(() => {
+    fetch('/api/analysis/trend-universe')
+      .then(r => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then(d => { if (Array.isArray(d.symbols)) setTrendUniverse(new Set(d.symbols)); })
+      .catch(() => {});
+  }, []);
+
   // Pre-calculate value (Daily P&L) and quantity for sorting
   const enhancedPortfolioStocks = useMemo(() => {
     return portfolioStocks.map(stock => {
       const pnl = calculatePortfolioValue(stock) || 0;
+      const qty = portfolioHoldings[stock.ticker] || 0;
+      const price = stock.currentPrice || stock.closePrice || 0;
+      const positionValue = qty * price;
+      const cost = costBasis[stock.ticker] || 0;
+      const invested = cost > 0 ? qty * cost : 0;
+      const totalPnl = invested > 0 ? positionValue - invested : null;
+      const totalRetPct = invested > 0 ? (positionValue / invested - 1) * 100 : null;
       return {
         ...stock,
         value: pnl,
         dailyPnl: pnl,
-        quantity: portfolioHoldings[stock.ticker] || 0,
+        quantity: qty,
+        positionValue,
+        weight: totalPortfolioValue > 0 ? (positionValue / totalPortfolioValue) * 100 : 0,
+        totalPnl,
+        totalRetPct,
       };
     });
-  }, [portfolioStocks, portfolioHoldings, calculatePortfolioValue]);
+  }, [portfolioStocks, portfolioHoldings, calculatePortfolioValue, costBasis, totalPortfolioValue]);
+
+  type EnhancedStock = (typeof enhancedPortfolioStocks)[number];
 
   // Sorting Logic
   const {
@@ -100,6 +130,77 @@ export function PortfolioSection({
     return (totalDailyChange / previousValue) * 100;
   }, [totalDailyChange, totalPortfolioValue]);
 
+  // Total P&L across positions that have a cost basis set
+  const { totalPnl, totalInvested, totalReturnPct, hasCostBasis } = useMemo(() => {
+    let pnl = 0, invested = 0;
+    for (const s of enhancedPortfolioStocks) {
+      if (s.totalPnl !== null) { pnl += s.totalPnl; invested += s.positionValue - s.totalPnl; }
+    }
+    return {
+      totalPnl: pnl,
+      totalInvested: invested,
+      totalReturnPct: invested > 0 ? (pnl / invested) * 100 : 0,
+      hasCostBasis: invested > 0,
+    };
+  }, [enhancedPortfolioStocks]);
+
+  // Insights strip: concentration, sector mix, earnings, avg score, trend count
+  const insights = useMemo(() => {
+    const withValue = enhancedPortfolioStocks.filter(s => s.positionValue > 0);
+    if (withValue.length === 0) return null;
+    const top = [...withValue].sort((a, b) => b.positionValue - a.positionValue)[0];
+    if (!top) return null;
+    const bySector = new Map<string, number>();
+    for (const s of withValue) {
+      const sec = s.sector || 'Unknown';
+      bySector.set(sec, (bySector.get(sec) || 0) + s.positionValue);
+    }
+    const topSector = [...bySector.entries()].sort((a, b) => b[1] - a[1])[0];
+    const earningSoon = withValue.filter(s => s.earningsDays != null && s.earningsDays <= 7);
+    const scored = withValue.filter(s => s.overallScore != null);
+    const avgScore = scored.length ? Math.round(scored.reduce((a, s) => a + (s.overallScore || 0), 0) / scored.length) : null;
+    const trendCount = withValue.filter(s => trendUniverse.has(s.ticker)).length;
+    return { top, topSector, earningSoon, avgScore, trendCount, n: withValue.length };
+  }, [enhancedPortfolioStocks, trendUniverse]);
+
+  const exportCsv = useCallback(() => {
+    const rows = [
+      ['ticker', 'quantity', 'avg_cost', 'price', 'value', 'weight_pct', 'daily_change_pct', 'daily_pnl', 'total_pnl', 'total_return_pct'],
+      ...enhancedPortfolioStocks.map(s => [
+        s.ticker,
+        s.quantity,
+        costBasis[s.ticker] ?? '',
+        (s.currentPrice || s.closePrice || 0).toFixed(2),
+        s.positionValue.toFixed(2),
+        s.weight.toFixed(2),
+        (s.percentChange ?? 0).toFixed(2),
+        s.dailyPnl.toFixed(2),
+        s.totalPnl !== null ? s.totalPnl.toFixed(2) : '',
+        s.totalRetPct !== null ? s.totalRetPct.toFixed(2) : '',
+      ]),
+    ];
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'pmp-portfolio.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    event('portfolio_export_csv', { click_source: 'portfolio' });
+  }, [enhancedPortfolioStocks, costBasis]);
+
+  const copyShareLink = useCallback(() => {
+    const p = enhancedPortfolioStocks
+      .filter(s => s.quantity > 0)
+      .map(s => `${s.ticker}:${s.quantity}${costBasis[s.ticker] ? `@${costBasis[s.ticker]}` : ''}`)
+      .join(',');
+    const url = `${window.location.origin}/portfolio?p=${encodeURIComponent(p)}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+    event('portfolio_share_link', { click_source: 'portfolio' });
+  }, [enhancedPortfolioStocks, costBasis]);
+
   // Search Logic
   useEffect(() => {
     if (portfolioSearchTerm.trim() === '') {
@@ -117,7 +218,7 @@ export function PortfolioSection({
   }, [portfolioSearchTerm, allStocks]);
 
   // Column Definitions
-  const columns: ColumnDef<StockData>[] = useMemo(() => [
+  const columns: ColumnDef<EnhancedStock>[] = useMemo(() => [
     {
       key: 'logo',
       header: 'Logo',
@@ -144,6 +245,14 @@ export function PortfolioSection({
       render: (stock) => (
         <div className="flex items-center gap-1.5">
           <strong>{stock.ticker}</strong>
+          {trendUniverse.has(stock.ticker) && (
+            <span
+              className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap"
+              title="Trend × Fundamentals: rev/share +30% (1Y), EPS growing, ≥80% of 52w high"
+            >
+              T×F
+            </span>
+          )}
           {stock.earningsDays != null && stock.earningsDays <= 14 && (
             <span
               className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 whitespace-nowrap"
@@ -182,6 +291,38 @@ export function PortfolioSection({
           onChange={(newQuantity) => onUpdateQuantity(stock.ticker, newQuantity)}
           className="min-w-[80px] w-20 mx-auto"
         />
+      )
+    },
+    {
+      key: 'avgCost',
+      header: 'Avg Cost',
+      align: 'center',
+      className: 'hidden lg:table-cell',
+      disableRowClick: true,
+      render: (stock) => (
+        <PortfolioQuantityInput
+          value={costBasis[stock.ticker] || 0}
+          onChange={(v) => onUpdateCostBasis?.(stock.ticker, v)}
+          className="min-w-[72px] w-[72px] mx-auto"
+          placeholder="—"
+          title="Average buy price — enables total P&L"
+          decimals={4}
+        />
+      )
+    },
+    {
+      key: 'positionValue',
+      header: 'Value',
+      sortable: isDesktop,
+      align: 'right',
+      className: 'text-right hidden md:table-cell',
+      showInMobileSort: false,
+      disableRowClick: true,
+      render: (stock) => (
+        <div className="tabular-nums text-right">
+          <span className="block font-medium">{formatCurrencyCompact(stock.positionValue, true)}</span>
+          <span className="block text-[10px] text-[var(--clr-subtext)]">{stock.weight.toFixed(1)}%</span>
+        </div>
       )
     },
     {
@@ -251,6 +392,25 @@ export function PortfolioSection({
       }
     },
     {
+      key: 'totalPnl',
+      header: 'Total P&L',
+      sortable: isDesktop,
+      align: 'right',
+      className: 'hidden lg:table-cell text-right',
+      disableRowClick: true,
+      render: (stock) => {
+        if (stock.totalPnl === null) return <span className="text-gray-300 dark:text-gray-600">—</span>;
+        return (
+          <div className={`tabular-nums text-right ${stock.totalPnl >= 0 ? 'positive' : 'negative'}`}>
+            <span className="block font-medium">{formatCurrencyCompact(stock.totalPnl, true)}</span>
+            <span className="block text-[10px] opacity-80">
+              {(stock.totalRetPct ?? 0) >= 0 ? '+' : ''}{(stock.totalRetPct ?? 0).toFixed(1)}%
+            </span>
+          </div>
+        );
+      }
+    },
+    {
       key: 'actions',
       header: '',
       align: 'center',
@@ -268,7 +428,7 @@ export function PortfolioSection({
         </button>
       )
     }
-  ], [portfolioHoldings, onUpdateQuantity, onRemoveStock, calculatePortfolioValue, isDesktop]);
+  ], [portfolioHoldings, onUpdateQuantity, onUpdateCostBasis, onRemoveStock, calculatePortfolioValue, isDesktop, costBasis, trendUniverse]);
 
   // Transform data for charts
   const chartData = useMemo(() => {
@@ -277,17 +437,20 @@ export function PortfolioSection({
       const currentPrice = stock.currentPrice || 0;
       const value = quantity * currentPrice; // Total Position Value
       const dailyChangeValue = calculatePortfolioValue(stock); // Daily P&L
+      const cost = costBasis[stock.ticker] || 0;
 
       return {
         ticker: stock.ticker,
         value: value,
         dailyChangePercent: stock.percentChange || 0,
         dailyChangeValue: dailyChangeValue,
+        totalReturnPercent: cost > 0 && quantity > 0 ? (value / (quantity * cost) - 1) * 100 : null,
+        totalPnl: cost > 0 && quantity > 0 ? value - quantity * cost : null,
         sector: stock.sector || 'Unknown',
         industry: stock.industry || 'Unknown'
       };
     });
-  }, [portfolioStocks, portfolioHoldings, calculatePortfolioValue]);
+  }, [portfolioStocks, portfolioHoldings, calculatePortfolioValue, costBasis]);
 
   if (loading) {
     return (
@@ -308,7 +471,7 @@ export function PortfolioSection({
   // Footer Row for UniversalTable
   const footerRow = portfolioStocks.length > 0 ? (
     <tr className="portfolio-total-row hidden md:table-row" style={{ backgroundColor: 'var(--clr-bg-yellow-light, #fffbeb)', borderTop: '3px double #3b82f6' }}>
-      <td colSpan={8} className="text-right font-semibold py-4 px-2 align-middle">
+      <td colSpan={10} className="text-right font-semibold py-4 px-2 align-middle">
         Total:
       </td>
       <td className={`${weightedDailyChangePercent >= 0 ? 'positive' : 'negative'} text-right tabular-nums font-semibold py-4 px-2 whitespace-nowrap align-middle`}>
@@ -316,6 +479,9 @@ export function PortfolioSection({
       </td>
       <td className={`${totalDailyChange >= 0 ? 'positive' : 'negative'} text-right tabular-nums font-semibold py-4 px-2 whitespace-nowrap align-middle min-w-[120px]`}>
         {formatCurrencyCompact(totalDailyChange, true)}
+      </td>
+      <td className={`${hasCostBasis && totalPnl >= 0 ? 'positive' : 'negative'} text-right tabular-nums font-semibold py-4 px-2 whitespace-nowrap align-middle`}>
+        {hasCostBasis ? formatCurrencyCompact(totalPnl, true) : ''}
       </td>
       <td></td>
     </tr>
@@ -344,9 +510,83 @@ export function PortfolioSection({
                 {formatCurrencyCompact(totalDailyChange, true)} <span className="text-lg font-medium text-opacity-80">({formatPercent(weightedDailyChangePercent)})</span>
               </span>
             </div>
+            {hasCostBasis && (
+              <div className="flex gap-2 items-baseline">
+                <span className="text-[var(--clr-subtext)] text-base">Total P&L:</span>
+                <span className={`text-2xl font-bold ${totalPnl >= 0 ? 'positive' : 'negative'}`}>
+                  {formatCurrencyCompact(totalPnl, true)} <span className="text-lg font-medium text-opacity-80">({formatPercent(totalReturnPct)})</span>
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Export / share actions */}
+        {portfolioStocks.length > 0 && (
+          <div className="flex gap-1.5">
+            <button
+              onClick={exportCsv}
+              className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              title="Export portfolio to CSV"
+              aria-label="Export CSV"
+            >
+              <Download size={18} />
+            </button>
+            <button
+              onClick={copyShareLink}
+              className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              title={copied ? 'Copied!' : 'Copy share link'}
+              aria-label="Copy share link"
+            >
+              {copied ? <span className="text-xs font-bold text-emerald-500">✓</span> : <Link2 size={18} />}
+            </button>
           </div>
         )}
       </div>
+
+      {/* Sign-in sync nudge for anonymous users */}
+      {!session?.user && portfolioStocks.length >= 3 && (
+        <div className="mx-4 mb-4 px-4 py-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-sm text-blue-800 dark:text-blue-300">
+            Your portfolio is saved only in this browser — sign in to sync it across devices.
+          </p>
+          <button
+            onClick={() => signIn('google')}
+            className="text-xs font-bold px-3 py-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors shrink-0"
+          >
+            Sign in
+          </button>
+        </div>
+      )}
+
+      {/* Insights strip */}
+      {insights && (
+        <div className="mx-4 mb-4 flex flex-wrap gap-2">
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${insights.top.weight > 30 ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`} title="Largest position weight">
+            Top: {insights.top.ticker} {insights.top.weight.toFixed(0)}%
+          </span>
+          {insights.topSector && (
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${(insights.topSector[1] / Math.max(1, totalPortfolioValue)) * 100 > 50 ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`} title="Largest sector weight">
+              {formatSectorName(insights.topSector[0])} {((insights.topSector[1] / Math.max(1, totalPortfolioValue)) * 100).toFixed(0)}%
+            </span>
+          )}
+          {insights.earningSoon.length > 0 && (
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400" title={insights.earningSoon.map(s => `${s.ticker} (${s.earningsDays}d)`).join(', ')}>
+              Earnings ≤7d: {insights.earningSoon.length}
+            </span>
+          )}
+          {insights.avgScore !== null && (
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400" title="Average PMP Composite Score">
+              Avg score: {insights.avgScore}
+            </span>
+          )}
+          {trendUniverse.size > 0 && (
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400" title="Holdings passing the Trend × Fundamentals signal">
+              T×F: {insights.trendCount}/{insights.n}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Mobile Stats Card (since table footer logic is desktop only) */}
       {portfolioStocks.length > 0 && (
@@ -437,7 +677,9 @@ export function PortfolioSection({
           <PortfolioCardMobile
             stock={stock}
             quantity={portfolioHoldings[stock.ticker] || 0}
+            avgCost={costBasis[stock.ticker] || 0}
             onUpdateQuantity={onUpdateQuantity}
+            onUpdateCostBasis={onUpdateCostBasis}
             onRemove={onRemoveStock}
             calculateValue={calculatePortfolioValue}
           />
@@ -449,6 +691,7 @@ export function PortfolioSection({
       {/* Visualizations: Heatmap first, then 2x pie charts at the bottom */}
       {portfolioStocks.length > 0 && (
         <div className="mb-8 space-y-8 px-4 mt-8">
+          <PortfolioPerformanceChart holdings={portfolioHoldings} />
           <PortfolioPerformanceTreemap data={chartData} />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <PortfolioSectorDistributionChart data={chartData} />

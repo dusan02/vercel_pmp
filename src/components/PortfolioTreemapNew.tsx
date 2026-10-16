@@ -26,6 +26,8 @@ interface PortfolioPerformanceTreemapProps {
         value: number; // Position Value
         dailyChangePercent: number; // Daily % Change
         dailyChangeValue: number; // Daily $ Change (P&L)
+        totalReturnPercent?: number | null; // Total % return vs cost basis
+        totalPnl?: number | null; // Total $ P&L vs cost basis
         sector?: string;
         industry?: string;
     }>;
@@ -36,38 +38,46 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
     const { ref, size } = useElementResize();
     const width = size.width;
     const isMobile = useMediaQuery('(max-width: 767px)');
+    const hasCost = data.some(d => d.totalReturnPercent != null);
+    const [mode, setMode] = React.useState<'daily' | 'total'>('daily');
+    const effectiveMode = mode === 'total' && hasCost ? 'total' : 'daily';
 
     // Transform portfolio data to CompanyNode format
     // UX:
     // - Tile AREA should represent absolute daily P&L (big gain/loss = big tile)
     // - Tile COLOR should represent % move magnitude (saturated for big moves, pale/gray for small moves)
     const heatmapData: CompanyNode[] = useMemo(() => {
-        return data.map(item => ({
-            symbol: item.ticker,
-            name: item.ticker,
-            // CRITICAL (mobile UX):
-            // MarketHeatmap uses a multi-sector vertical layout on mobile.
-            // For a portfolio treemap we want a single compact treemap, not stacked sector blocks.
-            // Group all holdings into one pseudo-sector to avoid "only 1-2 tiles visible" clipping.
-            sector: 'Portfolio',
-            industry: 'Portfolio',
+        return data.map(item => {
+            const useTotal = effectiveMode === 'total' && item.totalReturnPercent != null;
+            const pct = useTotal ? (item.totalReturnPercent ?? 0) : (item.dailyChangePercent || 0);
+            const pnl = useTotal ? (item.totalPnl ?? 0) : item.dailyChangeValue;
+            return {
+                symbol: item.ticker,
+                name: item.ticker,
+                // CRITICAL (mobile UX):
+                // MarketHeatmap uses a multi-sector vertical layout on mobile.
+                // For a portfolio treemap we want a single compact treemap, not stacked sector blocks.
+                // Group all holdings into one pseudo-sector to avoid "only 1-2 tiles visible" clipping.
+                sector: 'Portfolio',
+                industry: 'Portfolio',
 
-            // Keep position value around for tooltip/context (even though area is driven by P&L).
-            marketCap: Math.max(1, item.value || 0),
+                // Keep position value around for tooltip/context (even though area is driven by P&L).
+                marketCap: Math.max(1, item.value || 0),
 
-            // Color/Change (sign + intensity): % move
-            changePercent: item.dailyChangePercent || 0,
+                // Color/Change (sign + intensity): % move
+                changePercent: pct,
 
-            // Layout sizing (area): absolute daily $ P&L (D3 requires > 0)
-            marketCapDiff: item.dailyChangeValue, // Tooltip value ($ P&L)
-            marketCapDiffAbs: Math.max(0.01, Math.abs(item.dailyChangeValue || 0)),
-            // Provide formatted display value for custom rendering
-            // User Request: Show both % change AND dollar value in the square
-            displayValue: `${formatPercent(item.dailyChangePercent)}\n${formatCurrencyCompact(item.dailyChangeValue, true)}`,
-            currentPrice: 0,
-            isStale: false
-        }));
-    }, [data, metric]);
+                // Layout sizing (area): absolute daily $ P&L (D3 requires > 0)
+                marketCapDiff: pnl, // Tooltip value ($ P&L)
+                marketCapDiffAbs: Math.max(0.01, Math.abs(pnl || 0)),
+                // Provide formatted display value for custom rendering
+                // User Request: Show both % change AND dollar value in the square
+                displayValue: `${formatPercent(pct)}\n${formatCurrencyCompact(pnl, true)}`,
+                currentPrice: 0,
+                isStale: false
+            };
+        });
+    }, [data, metric, effectiveMode]);
 
     // UX sizing: keep this treemap roughly the size of donut cards (not "infinite height").
     // - Clamp height so desktop doesn't become gigantic
@@ -82,9 +92,28 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
 
     return (
         <div className="w-full p-4 md:p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-            <h3 className="text-base font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider">
-                Performance Map (Daily P&L)
-            </h3>
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h3 className="text-base font-semibold text-[var(--clr-subtext)] uppercase tracking-wider">
+                    Performance Map ({effectiveMode === 'total' ? 'Total Return' : 'Daily P&L'})
+                </h3>
+                {hasCost && (
+                    <div className="flex gap-1">
+                        {(['daily', 'total'] as const).map(m => (
+                            <button
+                                key={m}
+                                onClick={() => setMode(m)}
+                                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors capitalize ${
+                                    effectiveMode === m
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                }`}
+                            >
+                                {m}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
 
             <div
                 className="relative w-full overflow-hidden select-none"

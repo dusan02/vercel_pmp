@@ -202,7 +202,7 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
   const {
     toggleFavorite, isFavorite,
     stockData, loadingStates, error, loadData, liveConnected,
-    portfolioHoldings, updateQuantity, removeStock, addStock,
+    portfolioHoldings, costBasis, updateQuantity, updateCostBasis, removeStock, addStock,
     calculateTotalStockValue, calculateDailyChange, totalPortfolioValue, portfolioStocks,
     searchTerm, setSearchTerm,
     favoriteStocksSorted, favSortKey, favAscending, requestFavSort,
@@ -330,9 +330,11 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                   <HomePortfolio
                     portfolioStocks={portfolioStocks}
                     portfolioHoldings={portfolioHoldings}
+                    costBasis={costBasis}
                     allStocks={stockData}
                     loading={loadingStates.top50Stocks}
                     onUpdateQuantity={updateQuantity}
+                    onUpdateCostBasis={updateCostBasis}
                     onRemoveStock={removeStock}
                     onAddStock={addStock}
                     calculatePortfolioValue={calculateDailyChange}
@@ -536,9 +538,11 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                           <HomePortfolio
                             portfolioStocks={portfolioStocks}
                             portfolioHoldings={portfolioHoldings}
+                            costBasis={costBasis}
                             allStocks={stockData}
                             loading={loadingStates.top50Stocks}
                             onUpdateQuantity={updateQuantity}
+                            onUpdateCostBasis={updateCostBasis}
                             onRemoveStock={removeStock}
                             onAddStock={addStock}
                             calculatePortfolioValue={calculateDailyChange}

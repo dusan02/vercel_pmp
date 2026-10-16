@@ -6,9 +6,11 @@ import { StockData } from '@/lib/types';
 interface HomePortfolioProps {
     portfolioStocks: StockData[];
     portfolioHoldings: Record<string, number>;
+    costBasis?: Record<string, number>;
     allStocks: StockData[];
     loading: boolean;
     onUpdateQuantity: (ticker: string, quantity: number) => void;
+    onUpdateCostBasis?: (ticker: string, avgPrice: number) => void;
     onRemoveStock: (ticker: string) => void;
     onAddStock: (ticker: string, quantity?: number) => void;
     calculatePortfolioValue: (stock: StockData) => number;
@@ -19,9 +21,11 @@ interface HomePortfolioProps {
 export function HomePortfolio({
     portfolioStocks,
     portfolioHoldings,
+    costBasis,
     allStocks,
     loading,
     onUpdateQuantity,
+    onUpdateCostBasis,
     onRemoveStock,
     onAddStock,
     calculatePortfolioValue,
@@ -33,9 +37,11 @@ export function HomePortfolio({
             <PortfolioSection
                 portfolioStocks={portfolioStocks}
                 portfolioHoldings={portfolioHoldings}
+                costBasis={costBasis}
                 allStocks={allStocks}
                 loading={loading}
                 onUpdateQuantity={onUpdateQuantity}
+                onUpdateCostBasis={onUpdateCostBasis}
                 onRemoveStock={onRemoveStock}
                 onAddStock={onAddStock}
                 calculatePortfolioValue={calculatePortfolioValue}

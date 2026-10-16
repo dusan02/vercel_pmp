@@ -11,7 +11,9 @@ import { PortfolioQuantityInput } from './PortfolioQuantityInput';
 interface PortfolioCardMobileProps {
   stock: StockData;
   quantity: number;
+  avgCost?: number;
   onUpdateQuantity: (ticker: string, quantity: number) => void;
+  onUpdateCostBasis?: ((ticker: string, avgPrice: number) => void) | undefined;
   onRemove: (ticker: string) => void;
   calculateValue: (stock: StockData) => number;
   onOpenDetails?: (ticker: string) => void;
@@ -21,7 +23,9 @@ interface PortfolioCardMobileProps {
 export const PortfolioCardMobile = memo(({
   stock,
   quantity,
+  avgCost = 0,
   onUpdateQuantity,
+  onUpdateCostBasis,
   onRemove,
   calculateValue,
   onOpenDetails,
@@ -35,6 +39,11 @@ export const PortfolioCardMobile = memo(({
   const value = calculateValue(stock);
   const valueIsPositive = value >= 0;
   const formattedValue = formatCurrencyCompact(value, true);
+
+  // Total P&L when cost basis is set
+  const positionValue = quantity * (stock.currentPrice || stock.closePrice || 0);
+  const totalPnl = avgCost > 0 && quantity > 0 ? positionValue - quantity * avgCost : null;
+  const totalRetPct = totalPnl !== null ? (positionValue / (quantity * avgCost) - 1) * 100 : null;
 
   return (
     <div
@@ -100,6 +109,26 @@ export const PortfolioCardMobile = memo(({
           <X size={20} />
         </button>
       </div>
+
+      {/* Cost basis row */}
+      {onUpdateCostBasis && (
+        <div className="flex items-center gap-2 mt-2 pl-[52px]" onClick={(e) => e.stopPropagation()}>
+          <span className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide">Avg</span>
+          <PortfolioQuantityInput
+            value={avgCost}
+            onChange={(v) => onUpdateCostBasis(stock.ticker, v)}
+            className="w-20 text-center h-7 text-xs"
+            placeholder="cost"
+            decimals={4}
+            title="Average buy price — enables total P&L"
+          />
+          {totalPnl !== null && (
+            <span className={`ml-auto text-[11px] font-bold tabular-nums ${totalPnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {formatCurrencyCompact(totalPnl, true)} ({(totalRetPct ?? 0) >= 0 ? '+' : ''}{(totalRetPct ?? 0).toFixed(1)}%)
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 });

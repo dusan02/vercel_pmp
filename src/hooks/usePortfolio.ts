@@ -6,6 +6,19 @@ import { safeGetItem, safeSetItem, safeRemoveItem } from '@/lib/utils/safeStorag
 import { useSession } from 'next-auth/react';
 
 const PORTFOLIO_STORAGE_KEY = 'pmp_portfolio_holdings';
+const COST_BASIS_STORAGE_KEY = 'pmp_portfolio_cost_basis';
+const MAX_QUANTITY = 1_000_000;
+
+function sanitizeNumberMap(raw: unknown): Record<string, number> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const validated: Record<string, number> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value === 'number' && isFinite(value) && value >= 0 && !isNaN(value)) {
+      validated[key] = Math.min(value, MAX_QUANTITY);
+    }
+  }
+  return validated;
+}
 
 interface UsePortfolioProps {
   stockData?: StockData[];
@@ -14,39 +27,64 @@ interface UsePortfolioProps {
 export function usePortfolio(props?: UsePortfolioProps) {
   const stockData = props?.stockData || [];
   const [portfolioHoldings, setPortfolioHoldingsState] = useState<Record<string, number>>({});
+  const [costBasis, setCostBasisState] = useState<Record<string, number>>({});
   const [isLoaded, setIsLoaded] = useState(false);
   const { data: session } = useSession();
 
-  // Load portfolio from localStorage on mount
+  // Load portfolio from localStorage on mount (or import from ?p= share link)
   useEffect(() => {
-    const stored = safeGetItem(PORTFOLIO_STORAGE_KEY);
-    if (stored) {
+    // Share-link import: /portfolio?p=NVDA:10@142.5,AAPL:5
+    // Takes precedence over stored data when present, then strips itself.
+    let imported = false;
+    try {
+      const p = new URLSearchParams(window.location.search).get('p');
+      if (p) {
+        const h: Record<string, number> = {};
+        const c: Record<string, number> = {};
+        for (const part of p.split(',')) {
+          const m = part.trim().match(/^([A-Za-z.]{1,10})(?::([0-9.]+)(?:@([0-9.]+))?)?$/);
+          if (!m || !m[1]) continue;
+          const t = m[1].toUpperCase();
+          h[t] = m[2] ? Math.min(parseFloat(m[2]) || 0, MAX_QUANTITY) : 1;
+          if (m[3]) c[t] = Math.min(parseFloat(m[3]) || 0, MAX_QUANTITY);
+        }
+        if (Object.keys(h).length > 0) {
+          setPortfolioHoldingsState(h);
+          setCostBasisState(c);
+          safeSetItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(h));
+          safeSetItem(COST_BASIS_STORAGE_KEY, JSON.stringify(c));
+          imported = true;
+        }
+        const url = new URL(window.location.href);
+        url.searchParams.delete('p');
+        window.history.replaceState(null, '', url.toString());
+      }
+    } catch { /* malformed share link — fall through to stored data */ }
+
+    if (!imported) {
       try {
-        const parsed = JSON.parse(stored);
-        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          const MAX_QUANTITY = 1_000_000;
-          const validated: Record<string, number> = {};
-          for (const [key, value] of Object.entries(parsed)) {
-            if (typeof value === 'number' && isFinite(value) && value >= 0 && !isNaN(value)) {
-              // Enforce maximum limit when loading from storage
-              // Also handle very large numbers that might be in scientific notation
-              const safeValue = value > MAX_QUANTITY ? MAX_QUANTITY : value;
-              validated[key] = Math.max(0, Math.min(safeValue, MAX_QUANTITY));
-            }
-          }
+        const stored = safeGetItem(PORTFOLIO_STORAGE_KEY);
+        const validated = stored ? sanitizeNumberMap(JSON.parse(stored)) : null;
+        if (validated) {
           setPortfolioHoldingsState(validated);
-          // Save back if any values were capped
-          const needsUpdate = Object.entries(parsed).some(([key, value]) =>
-            typeof value === 'number' && value > MAX_QUANTITY
-          );
-          if (needsUpdate) {
-            safeSetItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(validated));
-          }
+          safeSetItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(validated));
         } else {
           safeRemoveItem(PORTFOLIO_STORAGE_KEY);
         }
-      } catch (parseError) {
+      } catch {
         safeRemoveItem(PORTFOLIO_STORAGE_KEY);
+      }
+      try {
+        const storedCost = safeGetItem(COST_BASIS_STORAGE_KEY);
+        const validatedCost = storedCost ? sanitizeNumberMap(JSON.parse(storedCost)) : null;
+        if (validatedCost) {
+          setCostBasisState(validatedCost);
+          safeSetItem(COST_BASIS_STORAGE_KEY, JSON.stringify(validatedCost));
+        } else {
+          safeRemoveItem(COST_BASIS_STORAGE_KEY);
+        }
+      } catch {
+        safeRemoveItem(COST_BASIS_STORAGE_KEY);
       }
     }
     setIsLoaded(true);
@@ -63,7 +101,7 @@ export function usePortfolio(props?: UsePortfolioProps) {
             await fetch('/api/user/portfolio', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'sync', holdings: portfolioHoldings })
+              body: JSON.stringify({ action: 'sync', holdings: portfolioHoldings, costBasis })
             });
           }
 
@@ -79,6 +117,18 @@ export function usePortfolio(props?: UsePortfolioProps) {
                 setPortfolioHoldingsState(data.holdings);
                 safeSetItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(data.holdings));
               }
+            }
+            if (data.details) {
+              const cloudCost: Record<string, number> = {};
+              for (const [t, d] of Object.entries(data.details as Record<string, { avgPrice?: number | null }>)) {
+                if (typeof d?.avgPrice === 'number' && isFinite(d.avgPrice) && d.avgPrice > 0) {
+                  cloudCost[t] = Math.min(d.avgPrice, MAX_QUANTITY);
+                }
+              }
+              // Merge: local cost wins (it was just uploaded), cloud fills gaps
+              const merged = { ...cloudCost, ...costBasis };
+              setCostBasisState(merged);
+              safeSetItem(COST_BASIS_STORAGE_KEY, JSON.stringify(merged));
             }
           }
         } catch (e) {
@@ -108,9 +158,36 @@ export function usePortfolio(props?: UsePortfolioProps) {
     });
   }, []);
 
+  const setCostBasis = useCallback((updater: Record<string, number> | ((prev: Record<string, number>) => Record<string, number>)) => {
+    setCostBasisState(prev => {
+      const updated = typeof updater === 'function' ? updater(prev) : updater;
+      safeSetItem(COST_BASIS_STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const updateCostBasis = useCallback(async (ticker: string, avgPrice: number) => {
+    const p = (typeof avgPrice === 'number' && isFinite(avgPrice) && avgPrice > 0)
+      ? Math.min(avgPrice, MAX_QUANTITY)
+      : 0;
+    setCostBasis(prev => {
+      const updated = { ...prev };
+      if (p > 0) updated[ticker] = p;
+      else delete updated[ticker];
+      return updated;
+    });
+    if (session?.user?.id) {
+      try {
+        await fetch('/api/user/portfolio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'setCost', ticker, avgPrice: p })
+        });
+      } catch (e) { console.error('Cloud cost update failed', e); }
+    }
+  }, [setCostBasis, session?.user?.id]);
+
   const updateQuantity = useCallback(async (ticker: string, quantity: number) => {
-    // Enforce maximum limit of 1,000,000
-    const MAX_QUANTITY = 1_000_000;
     const q = (typeof quantity === 'number' && isFinite(quantity) && quantity >= 0)
       ? Math.min(quantity, MAX_QUANTITY)
       : 0;
@@ -135,6 +212,11 @@ export function usePortfolio(props?: UsePortfolioProps) {
 
   const removeStock = useCallback(async (ticker: string) => {
     setPortfolioHoldings(prev => {
+      const updated = { ...prev };
+      delete updated[ticker];
+      return updated;
+    });
+    setCostBasis(prev => {
       const updated = { ...prev };
       delete updated[ticker];
       return updated;
@@ -237,6 +319,8 @@ export function usePortfolio(props?: UsePortfolioProps) {
   return {
     portfolioHoldings,
     setPortfolioHoldings,
+    costBasis,
+    updateCostBasis,
     updateQuantity,
     removeStock,
     addStock,
