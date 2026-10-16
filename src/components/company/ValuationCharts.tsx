@@ -275,7 +275,7 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
                             tick={{ fontSize: CHART_FONT.axis, fill: '#9ca3af' }}
                             axisLine={false} tickLine={false}
                             tickFormatter={v => v.slice(0, 7)}
-                            interval={Math.max(Math.floor(filteredHistory.length / 8) - 1, 0)}
+                            minTickGap={42}
                         />
                         <YAxis
                             tick={{ fontSize: CHART_FONT.axis, fill: '#9ca3af' }}

@@ -67,7 +67,7 @@ const LABEL_BLOCK_1 = 16; // label only
  *  need it to back-compute a viewBox height that fills a measured box. */
 export function sankeyViewBoxWidth(colCount: number, compact = false) {
     const gap = compact ? COL_GAP_COMPACT : COL_GAP;
-    return Math.max(compact ? 430 : 560, PAD_L + PAD_R + NODE_W + (colCount - 1) * gap);
+    return Math.max(compact ? 455 : 560, PAD_L + PAD_R + NODE_W + (colCount - 1) * gap);
 }
 
 interface Laid {
