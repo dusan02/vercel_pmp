@@ -13,6 +13,7 @@ import {
 import { useState, useMemo, useEffect } from 'react';
 import { CHART_FONT } from '@/components/charts/chartTheme';
 import { ChartBody, ChartControls, ChartPlot, ChartFootnote } from './shared/ChartFrame';
+import { pct } from '@/lib/utils/analysisMath';
 import type { RatioStats } from './analysis/types';
 
 interface HistoryPoint { date: string; value: number; }
@@ -46,14 +47,39 @@ const METRICS = [
 ] as const;
 type MetricId = 'pe' | 'ps';
 
-function RatioTooltip({ active, payload, label }: any) {
+function RatioTooltip({ active, payload, label, stats }: any) {
     if (!active || !payload?.length) return null;
+    const valItem = payload.find((p: any) => p.dataKey === 'value') ?? payload[0];
+    const v = typeof valItem?.value === 'number' ? valItem.value : null;
+    const vsMedian = v != null && stats?.median && stats.median > 0
+        ? ((v - stats.median) / stats.median) * 100
+        : null;
+    const zone = v != null && stats
+        ? v >= stats.p90 ? { text: 'Above P90 · Expensive', cls: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' }
+        : v >= stats.p75 ? { text: 'P75–P90 · Elevated', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' }
+        : v <= stats.p10 ? { text: 'Below P10 · Cheap', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' }
+        : v <= stats.p25 ? { text: 'P10–P25 · Attractive', cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' }
+        : { text: 'P25–P75 · Fair Zone', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300' }
+        : null;
+
     return (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 shadow-lg text-xs">
-            <p className="text-gray-500 dark:text-gray-400 mb-1">{label}</p>
-            <p className="font-bold text-gray-900 dark:text-white">
-                {typeof payload[0]?.value === 'number' ? `${payload[0].value.toFixed(2)}×` : '—'}
-            </p>
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 shadow-lg text-xs min-w-[150px]">
+            <p className="text-gray-500 dark:text-gray-400 mb-1 font-medium">{label}</p>
+            <div className="flex items-baseline justify-between gap-3">
+                <span className="font-bold text-sm text-gray-900 dark:text-white tabular-nums">
+                    {v !== null ? `${v.toFixed(2)}×` : '—'}
+                </span>
+                {vsMedian !== null && (
+                    <span className={`text-[10px] font-semibold tabular-nums ${vsMedian > 0 ? 'text-red-500 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                        {vsMedian >= 0 ? '+' : ''}{vsMedian.toFixed(1)}% vs Med
+                    </span>
+                )}
+            </div>
+            {zone && (
+                <div className={`mt-1.5 text-center text-[10px] font-bold rounded px-2 py-0.5 ${zone.cls}`}>
+                    {zone.text}
+                </div>
+            )}
         </div>
     );
 }
@@ -112,24 +138,35 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
         return raw.filter(d => d.date >= cutoffStr);
     }, [data, metric, period]);
 
-    // Recompute stats for the selected period from filtered data
-    const stats   = useMemo(() => {
+    // Use canonical backend daily stats on the default 5Y period so Median /
+    // P10–P90 match KeyMetricsTable & AnalysisHero to the tenth; for sub-periods
+    // (1Y, 3Y) recompute with the same linear-interpolation `pct()` helper.
+    const stats = useMemo(() => {
+        if (period === '5y' && data?.stats?.[metric]) {
+            return data.stats[metric];
+        }
         if (filteredHistory.length < 5) return null;
         const values = filteredHistory.map(d => d.value).sort((a, b) => a - b);
         const n = values.length;
-        const percentile = (p: number) => values[Math.max(0, Math.min(Math.ceil((p / 100) * n) - 1, n - 1))];
         return {
-            avg: values.reduce((s, v) => s + v, 0) / n,
-            p10: percentile(10),
-            p25: percentile(25),
-            median: percentile(50),
-            p75: percentile(75),
-            p90: percentile(90),
+            avg: parseFloat((values.reduce((s, v) => s + v, 0) / n).toFixed(2)),
+            p10: parseFloat(pct(values, 10).toFixed(2)),
+            p25: parseFloat(pct(values, 25).toFixed(2)),
+            median: parseFloat(pct(values, 50).toFixed(2)),
+            p75: parseFloat(pct(values, 75).toFixed(2)),
+            p90: parseFloat(pct(values, 90).toFixed(2)),
             min: values[0]!,
             max: values[n - 1]!,
             count: n,
         } as RatioStats;
-    }, [filteredHistory]);
+    }, [filteredHistory, period, data, metric]);
+
+    const chartData = useMemo(() => {
+        const band = stats && stats.p25 > 0 && stats.p75 > stats.p25
+            ? [stats.p25, stats.p75] as [number, number]
+            : null;
+        return filteredHistory.map(d => ({ ...d, fairBand: band }));
+    }, [filteredHistory, stats]);
 
     const current = metric === 'pe' ? (data?.current?.pe ?? null) : (data?.current?.ps ?? null);
     const cfg     = METRICS.find(m => m.id === metric)!;
@@ -221,7 +258,7 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
             ) : (
                 <ChartPlot>
                     <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={filteredHistory} margin={{ top: 8, right: 56, left: 8, bottom: 24 }}>
+                    <ComposedChart data={chartData} margin={{ top: 8, right: 58, left: 8, bottom: 24 }}>
                         <defs>
                             <linearGradient id="peGrad" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="0%" stopColor="#6366f1" stopOpacity={0.25} />
@@ -245,43 +282,44 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
                             axisLine={false} tickLine={false}
                             width={38}
                             scale={useLog ? 'log' : 'auto'}
-                            tickFormatter={v => `${v}×`}
+                            tickFormatter={(v: number) => v >= 10 ? `${Math.round(v)}×` : `${Number(v.toFixed(1))}×`}
                             domain={yDomain}
                             {...(logTicks ? { ticks: logTicks } : {})}
                         />
-                        <Tooltip content={<RatioTooltip />} cursor={{ stroke: '#9ca3af', strokeWidth: 1 }} />
+                        <Tooltip content={<RatioTooltip stats={stats} />} cursor={{ stroke: '#9ca3af', strokeWidth: 1 }} />
+
+                        {/* Shaded P25–P75 Fair Value Zone */}
+                        <Area
+                            type="monotone"
+                            dataKey="fairBand"
+                            stroke="none"
+                            fill="#9ca3af"
+                            fillOpacity={0.12}
+                            connectNulls
+                            isAnimationActive={false}
+                            legendType="none"
+                        />
 
                         {/* P90 — Expensive zone upper boundary */}
                         {stats?.p90 && (
                             <ReferenceLine y={stats.p90} stroke="#ef4444" strokeWidth={1} strokeDasharray="4 2"
                                 label={{ value: `P90 ${stats.p90.toFixed(1)}×`, position: 'right', fontSize: CHART_FONT.annotation, fill: '#ef4444' }} />
                         )}
-                        {/* P75 — subtle */}
-                        {stats?.p75 && (
-                            <ReferenceLine y={stats.p75} stroke="#f97316" strokeWidth={1} strokeDasharray="2 4"
-                                label={{ value: `P75`, position: 'right', fontSize: CHART_FONT.annotation, fill: '#f97316' }} />
-                        )}
                         {/* Median */}
                         {stats?.median && (
                             <ReferenceLine y={stats.median} stroke="#9ca3af" strokeWidth={1} strokeDasharray="4 2"
-                                label={{ value: `Median ${stats.median.toFixed(1)}×`, position: 'right', fontSize: CHART_FONT.annotation, fill: '#9ca3af' }} />
-                        )}
-                        {/* P25 — subtle */}
-                        {stats?.p25 && (
-                            <ReferenceLine y={stats.p25} stroke="#34d399" strokeWidth={1} strokeDasharray="2 4"
-                                label={{ value: `P25`, position: 'right', fontSize: CHART_FONT.annotation, fill: '#34d399' }} />
+                                label={{ value: `Med ${stats.median.toFixed(1)}×`, position: 'right', fontSize: CHART_FONT.annotation, fill: '#9ca3af' }} />
                         )}
                         {/* P10 — Cheap zone lower boundary */}
                         {stats?.p10 && (
                             <ReferenceLine y={stats.p10} stroke="#10b981" strokeWidth={1} strokeDasharray="4 2"
                                 label={{ value: `P10 ${stats.p10.toFixed(1)}×`, position: 'right', fontSize: CHART_FONT.annotation, fill: '#10b981' }} />
                         )}
-                        {/* Current — where the multiple sits vs its own percentile
-                            bands. The headline "where are we now" the band chart
-                            was missing (previously only in the footnote). */}
+                        {/* Current — placed insideTopLeft so the label never collides with
+                            the right-edge curve peak or the right-margin P10/Med/P90 labels */}
                         {current != null && current > 0 && (
-                            <ReferenceLine y={current} stroke={cfg.color} strokeWidth={2} strokeDasharray="1 0"
-                                label={{ value: `Now ${current.toFixed(1)}×`, position: 'insideTopRight', fontSize: CHART_FONT.annotation, fill: cfg.color, fontWeight: 700 }} />
+                            <ReferenceLine y={current} stroke={cfg.color} strokeWidth={1.5} strokeDasharray="3 2"
+                                label={{ value: `Now ${current.toFixed(1)}×`, position: 'insideTopLeft', fontSize: CHART_FONT.annotation, fill: cfg.color, fontWeight: 700 }} />
                         )}
 
                         {/* Filled area + line */}
@@ -319,10 +357,11 @@ export default function ValuationCharts({ ticker, peHistory, psHistory, current:
 
                 {/* Legend */}
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-gray-500 dark:text-gray-500">
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-emerald-500 inline-block" /> Cheap</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-emerald-500 inline-block" /> P10 Cheap</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-2 bg-gray-400/20 rounded-sm inline-block" /> P25–P75 Fair Zone</span>
                     <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-gray-400 inline-block" /> Median</span>
-                    <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-red-500 inline-block" /> Expensive</span>
-                    <span className="flex items-center gap-1.5 sm:ml-auto text-gray-400 dark:text-gray-600">P10–P90 bands · {filteredHistory.length} weekly points{useLog ? ' · Log scale' : ''}</span>
+                    <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-red-500 inline-block" /> P90 Expensive</span>
+                    <span className="flex items-center gap-1.5 sm:ml-auto text-gray-400 dark:text-gray-600">{filteredHistory.length} weekly points{useLog ? ' · Log scale' : ''}</span>
                 </div>
             </ChartFootnote>
         </ChartBody>

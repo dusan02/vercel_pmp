@@ -103,9 +103,13 @@ function CustomTooltip({ active, payload, label }: any) {
         <div className={`mt-1.5 text-center text-[10px] font-bold rounded px-2 py-0.5 ${undervalued > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'}`}>
           {undervalued > 0 ? `${undervalued.toFixed(0)}% UNDERVALUED` : `${Math.abs(undervalued).toFixed(0)}% OVERVALUED`}
         </div>
+      ) : point?.isForecast ? (
+        <div className="mt-1.5 text-center text-[10px] font-bold rounded px-2 py-0.5 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+          PROJECTED INTRINSIC
+        </div>
       ) : (
         <div className="mt-1.5 text-center text-[10px] font-bold rounded px-2 py-0.5 bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-          N/A (negative earnings)
+          N/A (insufficient data)
         </div>
       )}
     </div>
@@ -156,17 +160,18 @@ function splitPriceByRelation(data: ValuationPoint[]) {
 }
 
 // ── Build band data for GuruFocus-style valuation zones ─────────────────────
-// For each point, compute upper/lower bands around the intrinsic value.
-// sigOver = intrinsic * 1.30, modestOver = intrinsic * 1.10
-// sigUnder = intrinsic * 0.70, modestUnder = intrinsic * 0.90
+// Each zone is a [low, high] range tuple so Recharts shades only that slice
+// between 0.70× and 1.30× intrinsic instead of filling every Area down to y=0.
 function buildBands(data: ValuationPoint[]) {
   return data.map(d => {
     const iv = d.intrinsic > 0 ? d.intrinsic : 0;
     return {
       sigOver: iv > 0 ? iv * 1.30 : null,
-      modestOver: iv > 0 ? iv * 1.10 : null,
-      modestUnder: iv > 0 ? iv * 0.90 : null,
       sigUnder: iv > 0 ? iv * 0.70 : null,
+      sigOverBand: iv > 0 ? [iv * 1.10, iv * 1.30] as [number, number] : null,
+      modestOverBand: iv > 0 ? [iv, iv * 1.10] as [number, number] : null,
+      modestUnderBand: iv > 0 ? [iv * 0.90, iv] as [number, number] : null,
+      sigUnderBand: iv > 0 ? [iv * 0.70, iv * 0.90] as [number, number] : null,
     };
   });
 }
@@ -289,10 +294,10 @@ export function ValuationHistoryChart({
       ...d,
       priceGreen: green[i],
       priceRed: red[i],
-      sigOver: bands[i]!.sigOver,
-      modestOver: bands[i]!.modestOver,
-      modestUnder: bands[i]!.modestUnder,
-      sigUnder: bands[i]!.sigUnder,
+      sigOver: bands[i]!.sigOverBand,
+      modestOver: bands[i]!.modestOverBand,
+      modestUnder: bands[i]!.modestUnderBand,
+      sigUnder: bands[i]!.sigUnderBand,
     })),
     [allData, green, red, bands]
   );
@@ -496,12 +501,12 @@ export function ValuationHistoryChart({
           {ticker && <strong>{ticker}</strong>} {currentUv == null
             ? `has insufficient earnings data for P/E-based valuation. Try P/S mode.`
             : isFairValue
-            ? `is trading close to its intrinsic value (within ±5%).`
+            ? `is trading close to its intrinsic value (${fmtDollar(last?.intrinsic)}, within ±5%).`
             : isUndervalued
-            ? `is cheaper now than it has been on average over the past 5 years.`
+            ? `is trading ${Math.abs(currentUv).toFixed(0)}% below its historical-multiple intrinsic value (${fmtDollar(last?.intrinsic)}).`
             : isSignificantlyOvervalued
-            ? `is significantly overvalued — price far exceeds intrinsic value (50%+ deviation).`
-            : `is more expensive now than it has been on average over the past 5 years.`}
+            ? `is significantly overvalued — price exceeds intrinsic value (${fmtDollar(last?.intrinsic)}) by ${Math.abs(currentUv).toFixed(0)}%.`
+            : `is trading ${Math.abs(currentUv).toFixed(0)}% above its historical-multiple intrinsic value (${fmtDollar(last?.intrinsic)}).`}
         </p>
 
         {/* Summary badges — compact single row */}

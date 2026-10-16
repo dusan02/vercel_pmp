@@ -54,6 +54,7 @@ jest.mock('@/lib/db/prisma', () => ({
 }));
 
 jest.mock('@/lib/utils/splitAdjustment', () => ({
+    ...jest.requireActual('@/lib/utils/splitAdjustment'),
     applySplitAdjustments: jest.fn().mockResolvedValue([]),
     applyPostSplitAdjustment: jest.fn(),
 }));

@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { projectForward, buildStats, quarterlyDiffCorr, type PerSharePoint } from '@/lib/utils/analysisMath';
 import { computeTTMAtDate } from '@/lib/utils/ttm';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
-import { applySplitAdjustments, applyPostSplitAdjustment, findNearestSplit, COMMON_SPLIT_RATIOS } from '@/lib/utils/splitAdjustment';
+import { applySplitAdjustments, applyPostSplitAdjustment, buildShareBoundaries, makeShareNormalizer, findNearestSplit } from '@/lib/utils/splitAdjustment';
 import { isPeDistorted } from '@/lib/analysis/peDistortion';
 
 const HISTORY_CACHE_TTL = 3600; // 1 hour (valuation history changes slowly)
@@ -133,8 +133,9 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
             select: { sharesOutstanding: true },
         });
 
-        if (tickerInfo?.sharesOutstanding && statements.length > 0) {
-            applyPostSplitAdjustment(statements, tickerInfo.sharesOutstanding);
+        const trustedShares = tickerInfo?.sharesOutstanding ?? null;
+        if (statements.length > 0) {
+            applyPostSplitAdjustment(statements, trustedShares);
         }
 
         // Per-share timelines record ANY sign of TTM — a non-positive quarter
@@ -142,29 +143,30 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
         // meaningful, and the forward-fill must gap instead of carrying a
         // stale positive EPS across the loss window (DAL sat at a frozen
         // $50.53 implied through COVID losses).
+        // Include FY statements as well: Finnhub stores the 4th quarter as 'FY'
+        // (there is no separate Q4 row), and computeTTMAtDate at the FY endDate
+        // returns full-year TTM revenue & net income. Skipping 'FY' previously
+        // dropped every Q4 report (e.g. AAPL's September FY close) and skewed
+        // the 12-quarter forecast window.
         const revPerShareTimeline: PerSharePoint[] = [];
         const epsPerShareTimeline: PerSharePoint[] = [];
         let lastTtmNI: number | null = null;
         let lastTtmRev: number | null = null;
 
+        const quarterlyForNorm = statements.filter(s => s.fiscalPeriod && s.fiscalPeriod !== 'FY');
+        const seriesForNorm = quarterlyForNorm.length > 0 ? quarterlyForNorm : statements;
+        const normBoundaries = buildShareBoundaries(seriesForNorm, trustedShares);
+        const normalizeStmtShares = makeShareNormalizer(seriesForNorm, normBoundaries, trustedShares);
+
         let prevShares: number | null = null;
         for (const s of statements) {
-            if (!s.fiscalPeriod || s.fiscalPeriod === 'FY') continue;
+            if (!s.fiscalPeriod || !s.endDate) continue;
             const { netIncome: ttmNI, revenue: ttmRev } = computeTTMAtDate(statements, s.endDate);
-            let shares = s.sharesOutstanding;
-            // After split adjustment, shares should be consistent.
-            // If there's still a >2x jump that doesn't match a split ratio, it's a data error.
-            if (shares && shares > 0 && prevShares && prevShares > 0 && shares > prevShares * 2) {
-                const sharesRatio = shares / prevShares;
-                const commonRatios = [2, 3, 4, 5, 7, 8, 10, 15, 20, 25];
-                const nearest = commonRatios.reduce((best, r) =>
-                    Math.abs(sharesRatio - r) < Math.abs(sharesRatio - best) ? r : best
-                );
-                if (Math.abs(sharesRatio - nearest) / nearest > 0.15) {
-                    shares = prevShares; // Data error, not a real split
-                }
-            }
-            if (shares && shares > 0 && s.endDate) {
+            const normShares = s.sharesOutstanding && s.sharesOutstanding > 0
+                ? normalizeStmtShares(s.endDate.getTime(), s.sharesOutstanding)
+                : null;
+            const shares: number | null = normShares ?? prevShares;
+            if (shares && shares > 0) {
                 prevShares = shares;
                 // Use the calendar date of the statement end (add 1 day to compensate
                 // for UTC offset — Finnhub reports endDate as midnight UTC which is
@@ -174,10 +176,14 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
                 lastTtmNI = ttmNI;
                 lastTtmRev = ttmRev;
                 if (ttmRev != null) {
-                    revPerShareTimeline.push({ date: dateStr, value: parseFloat((ttmRev / shares).toFixed(4)) });
+                    const pt = { date: dateStr, value: parseFloat((ttmRev / shares).toFixed(4)) };
+                    if (revPerShareTimeline.at(-1)?.date === dateStr) revPerShareTimeline[revPerShareTimeline.length - 1] = pt;
+                    else revPerShareTimeline.push(pt);
                 }
                 if (ttmNI != null) {
-                    epsPerShareTimeline.push({ date: dateStr, value: parseFloat((ttmNI / shares).toFixed(4)) });
+                    const pt = { date: dateStr, value: parseFloat((ttmNI / shares).toFixed(4)) };
+                    if (epsPerShareTimeline.at(-1)?.date === dateStr) epsPerShareTimeline[epsPerShareTimeline.length - 1] = pt;
+                    else epsPerShareTimeline.push(pt);
                 }
             }
         }
@@ -188,7 +194,6 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
         // analysis page reports. Guarded — a >50% divergence means the ticker
         // share count is likely stale (unsynced split), so keep the statement
         // basis rather than corrupt the endpoint.
-        const trustedShares = tickerInfo?.sharesOutstanding ?? null;
         if (trustedShares != null && trustedShares > 0) {
             const lastEpsPt = epsPerShareTimeline[epsPerShareTimeline.length - 1];
             if (lastEpsPt && lastTtmNI != null && lastTtmNI > 0 && lastEpsPt.value > 0) {
