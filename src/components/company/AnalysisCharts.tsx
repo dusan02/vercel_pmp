@@ -159,6 +159,7 @@ export function AnalysisCharts({ ticker, data, flowPeriods }: AnalysisChartsProp
                         summary={data.valuationSummary ?? null}
                         summaryPE={data.valuationSummaryPE ?? null}
                         summaryPS={data.valuationSummaryPS ?? null}
+                        stats={data.valuationStats ?? null}
                         ticker={ticker}
                     />
                 </ChartSection>

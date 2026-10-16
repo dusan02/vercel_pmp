@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { CHART_FONT } from '@/components/charts/chartTheme';
 import { ChartBody, ChartControls, ChartPlot, ChartFootnote } from './shared/ChartFrame';
+import type { RatioStats } from './analysis/types';
 
 type ValuationPoint = {
   date: string;
@@ -24,6 +25,13 @@ type ValuationPoint = {
 };
 
 type MetricMode = 'auto' | 'pe' | 'ps';
+
+const PERIODS = [
+  { id: '1y', label: '1Y', years: 1 },
+  { id: '3y', label: '3Y', years: 3 },
+  { id: '5y', label: '5Y', years: 5 },
+] as const;
+type PeriodId = typeof PERIODS[number]['id'];
 
 interface ValuationHistoryChartProps {
   valuationHistory: ValuationPoint[];
@@ -47,6 +55,7 @@ interface ValuationHistoryChartProps {
     avg5yUndervaluation: number | null;
     intrinsicCagr: number | null;
   } | null;
+  stats?: { pe: RatioStats | null; ps: RatioStats | null } | null;
   ticker?: string;
 }
 
@@ -117,9 +126,6 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 // ── Log-scale helpers ───────────────────────────────────────────────────────
-// Band geometry is multiplicative (intrinsic × 0.70–1.30), so a log scale
-// preserves the zone shapes while compressing extreme intrinsic spikes
-// (near-zero EPS → astronomical implied intrinsic, e.g. $1000 vs $350 price).
 function logTicks(lo: number, hi: number): number[] {
   const ticks: number[] = [];
   for (let e = Math.floor(Math.log10(lo)); e <= Math.ceil(Math.log10(hi)); e++) {
@@ -176,32 +182,92 @@ function buildBands(data: ValuationPoint[]) {
   });
 }
 
+// Subdivide quarterly forecast points into monthly steps (~3 per quarter = 18
+// points over 1.5 years) so the Forecast zone has readable width on Recharts'
+// categorical X-axis instead of compressing 6 quarters into 6 weekly slots.
+function expandForecastMonthly(
+  lastHist: ValuationPoint | undefined,
+  forecast: { date: string; intrinsic: number }[],
+): ValuationPoint[] {
+  if (!forecast.length) return [];
+  const out: ValuationPoint[] = [];
+  let prevDateMs = lastHist ? new Date(lastHist.date).getTime() : null;
+  let prevIv = lastHist && lastHist.intrinsic > 0 ? lastHist.intrinsic : null;
+
+  for (const f of forecast) {
+    const targetMs = new Date(f.date).getTime();
+    if (prevDateMs != null && prevIv != null && targetMs > prevDateMs) {
+      for (const step of [1, 2]) {
+        const t = step / 3;
+        const ms = prevDateMs + (targetMs - prevDateMs) * t;
+        const iv = parseFloat((prevIv + (f.intrinsic - prevIv) * t).toFixed(2));
+        out.push({
+          date: new Date(ms).toISOString().slice(0, 10),
+          price: null as unknown as number,
+          intrinsic: iv,
+          undervaluationPct: null,
+          isForecast: true,
+        });
+      }
+    }
+    out.push({
+      date: f.date,
+      price: null as unknown as number,
+      intrinsic: f.intrinsic,
+      undervaluationPct: null,
+      isForecast: true,
+    });
+    prevDateMs = targetMs;
+    prevIv = f.intrinsic;
+  }
+  return out;
+}
+
 // ── Badge ──────────────────────────────────────────────────────────────────
-function Badge({ label, value, color, compact }: { label: string; value: string; color: 'green' | 'blue' | 'amber' | 'gray'; compact?: boolean }) {
+function Badge({
+  label,
+  value,
+  color,
+  compact,
+}: {
+  label: string;
+  value: string;
+  color: 'green' | 'blue' | 'amber' | 'red' | 'gray';
+  compact?: boolean;
+}) {
   const cls = {
     green: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
     blue: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
     amber: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+    red: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800',
     gray: 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700',
   }[color];
 
   return (
     <div className={`flex items-center gap-1.5 rounded-full border font-medium ${compact ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1.5 text-xs'} ${cls}`}>
       <span className="text-gray-500 dark:text-gray-400">{label}</span>
-      <span className="font-bold">{value}</span>
+      <span className="font-bold tabular-nums">{value}</span>
     </div>
   );
 }
 
 // ── Metric Toggle Button ───────────────────────────────────────────────────
-function MetricToggle({ mode, onChange }: { mode: MetricMode; onChange: (m: MetricMode) => void }) {
+function MetricToggle({
+  mode,
+  autoBasis,
+  onChange,
+}: {
+  mode: MetricMode;
+  autoBasis: 'pe' | 'ps';
+  onChange: (m: MetricMode) => void;
+}) {
   const options: { key: MetricMode; label: string }[] = [
-    { key: 'auto', label: 'Auto' },
+    { key: 'auto', label: `Auto (${autoBasis.toUpperCase()})` },
     { key: 'pe', label: 'P/E' },
     { key: 'ps', label: 'P/S' },
   ];
   return (
-    <div className="inline-flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+    <div className="inline-flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5 shrink-0">
       {options.map(opt => (
         <button
           key={opt.key}
@@ -230,40 +296,95 @@ export function ValuationHistoryChart({
   summary,
   summaryPE,
   summaryPS,
+  stats,
   ticker,
 }: ValuationHistoryChartProps) {
   const [metricMode, setMetricMode] = useState<MetricMode>('auto');
+  const [period, setPeriod] = useState<PeriodId>('5y');
 
-  // Select data based on metric mode
+  // Identify which single model Auto selected (matches historyResponse.ts)
+  const autoBasis: 'pe' | 'ps' = useMemo(() => {
+    const peLast = valuationHistoryPE?.[valuationHistoryPE.length - 1];
+    const psLen = valuationHistoryPS?.length ?? 0;
+    const peLen = valuationHistoryPE?.length ?? 0;
+    if (peLast?.undervaluationPct != null && peLen >= Math.min(26, Math.ceil(psLen * 0.4))) {
+      return 'pe';
+    }
+    return psLen > 0 ? 'ps' : 'pe';
+  }, [valuationHistoryPE, valuationHistoryPS]);
+
+  const effectiveBasis: 'pe' | 'ps' = metricMode === 'auto' ? autoBasis : metricMode;
+
+  // Select full history based on metric mode
+  const rawActiveHistory = useMemo(() => {
+    if (effectiveBasis === 'pe') return valuationHistoryPE ?? valuationHistory;
+    return valuationHistoryPS ?? valuationHistory;
+  }, [effectiveBasis, valuationHistory, valuationHistoryPE, valuationHistoryPS]);
+
+  const availablePeriods = useMemo(() => {
+    if (!rawActiveHistory?.length) return PERIODS;
+    const oldest = new Date(rawActiveHistory[0]!.date);
+    const newest = new Date(rawActiveHistory[rawActiveHistory.length - 1]!.date);
+    const yearsAvailable = (newest.getTime() - oldest.getTime()) / (365 * 24 * 60 * 60 * 1000);
+    const filtered = PERIODS.filter(p => p.years <= yearsAvailable + 0.5);
+    return filtered.length > 0 ? filtered : PERIODS;
+  }, [rawActiveHistory]);
+
+  useEffect(() => {
+    if (availablePeriods.length > 0 && !availablePeriods.find(p => p.id === period)) {
+      setPeriod(availablePeriods[availablePeriods.length - 1]!.id);
+    }
+  }, [availablePeriods, period]);
+
   const activeHistory = useMemo(() => {
-    if (metricMode === 'pe') return valuationHistoryPE ?? valuationHistory;
-    if (metricMode === 'ps') return valuationHistoryPS ?? valuationHistory;
-    return valuationHistory; // auto = smart fallback (PE preferred, PS when negative)
-  }, [metricMode, valuationHistory, valuationHistoryPE, valuationHistoryPS]);
+    if (!rawActiveHistory?.length) return [];
+    const periodYears = PERIODS.find(p => p.id === period)?.years ?? 5;
+    const latestDateStr = rawActiveHistory[rawActiveHistory.length - 1]!.date;
+    const cutoff = new Date(latestDateStr);
+    cutoff.setFullYear(cutoff.getFullYear() - periodYears);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    return rawActiveHistory.filter(d => d.date >= cutoffStr);
+  }, [rawActiveHistory, period]);
 
   const activeForecast = useMemo(() => {
-    if (metricMode === 'pe') return valuationForecastPE ?? valuationForecast;
-    if (metricMode === 'ps') return valuationForecastPS ?? valuationForecast;
-    return valuationForecast;
-  }, [metricMode, valuationForecast, valuationForecastPE, valuationForecastPS]);
+    if (effectiveBasis === 'pe') return valuationForecastPE ?? valuationForecast;
+    return valuationForecastPS ?? valuationForecast;
+  }, [effectiveBasis, valuationForecast, valuationForecastPE, valuationForecastPS]);
 
   const activeSummary = useMemo(() => {
-    if (metricMode === 'pe') return summaryPE ?? summary;
-    if (metricMode === 'ps') return summaryPS ?? summary;
-    return summary;
-  }, [metricMode, summary, summaryPE, summaryPS]);
+    const baseSummary = effectiveBasis === 'pe' ? (summaryPE ?? summary) : (summaryPS ?? summary);
+    if (period === '5y' && baseSummary) return baseSummary;
+    const valid = activeHistory.filter(v => v.undervaluationPct !== null);
+    const lastPt = activeHistory[activeHistory.length - 1];
+    const currentUndervaluation = lastPt?.undervaluationPct ?? null;
+    const avg5yUndervaluation = valid.length
+      ? parseFloat((valid.reduce((a, b) => a + (b.undervaluationPct ?? 0), 0) / valid.length).toFixed(2))
+      : null;
+    const intrinsicCagr = valid.length >= 2
+      ? (() => {
+          const start = valid[0]!.intrinsic;
+          const end = valid[valid.length - 1]!.intrinsic;
+          const years = Math.max(
+            0.5,
+            (new Date(valid[valid.length - 1]!.date).getTime() - new Date(valid[0]!.date).getTime()) /
+              (365 * 24 * 60 * 60 * 1000)
+          );
+          if (start <= 0 || end <= 0) return null;
+          return parseFloat(((Math.pow(end / start, 1 / years) - 1) * 100).toFixed(2));
+        })()
+      : null;
+    return { currentUndervaluation, avg5yUndervaluation, intrinsicCagr };
+  }, [effectiveBasis, period, activeHistory, summary, summaryPE, summaryPS]);
 
-  const allData = useMemo(() => {
-    const hist = activeHistory ?? [];
-    const fore = (activeForecast ?? []).map(f => ({
-      date: f.date,
-      price: null as unknown as number,
-      intrinsic: f.intrinsic,
-      undervaluationPct: null as number | null,
-      isForecast: true,
-    }));
-    return [...hist, ...fore];
-  }, [activeHistory, activeForecast]);
+  const expandedForecast = useMemo(
+    () => expandForecastMonthly(activeHistory[activeHistory.length - 1], activeForecast ?? []),
+    [activeHistory, activeForecast]
+  );
+
+  const allData = useMemo(
+    () => [...activeHistory, ...expandedForecast],
+    [activeHistory, expandedForecast]
+  );
 
   const { green, red } = useMemo(() => splitPriceByRelation(allData), [allData]);
   const bands = useMemo(() => buildBands(allData), [allData]);
@@ -281,8 +402,6 @@ export function ValuationHistoryChart({
     if (values.length < 2) return { yDomain: ['auto', 'auto'] as const, yTicks: undefined, useLog: false };
     const lo = Math.min(...values) * 0.85;
     const hi = Math.max(...values) * 1.05;
-    // Log scale only when the range is wide enough to justify it; a narrow
-    // range (< 3×) reads better linear.
     const wide = hi / lo > 3;
     if (!wide) return { yDomain: [Math.max(0, lo), hi] as const, yTicks: undefined, useLog: false };
     const ticks = logTicks(lo, hi);
@@ -306,29 +425,26 @@ export function ValuationHistoryChart({
     return <div className="text-center text-gray-500 text-sm py-10">No valuation data available.</div>;
   }
 
-  // Guard: activeHistory may be empty when user switches to PE/PS mode but that
-  // specific series has no data (e.g. negative EPS → empty PE history).
   if (!activeHistory?.length) {
     return (
       <div className="text-center text-gray-500 text-sm py-10">
-        No {metricMode === 'pe' ? 'P/E' : 'P/S'} valuation data available. Try switching to {metricMode === 'pe' ? 'P/S' : 'P/E'} or Auto mode.
+        No {effectiveBasis === 'pe' ? 'P/E' : 'P/S'} valuation data available. Try switching to {effectiveBasis === 'pe' ? 'P/S' : 'P/E'} or Auto mode.
       </div>
     );
   }
 
   const last = activeHistory[activeHistory.length - 1]!;
   const currentUv = activeSummary?.currentUndervaluation ?? last?.undervaluationPct ?? null;
-  const avg5y = activeSummary?.avg5yUndervaluation ?? null;
+  const avgUv = activeSummary?.avg5yUndervaluation ?? null;
   const cagr = activeSummary?.intrinsicCagr ?? null;
+  const medianMult = effectiveBasis === 'pe' ? stats?.pe?.median : stats?.ps?.median;
+  const periodLabel = PERIODS.find(p => p.id === period)?.label ?? '5Y';
 
   // Determine verdict
-  // Fair Value zone: |undervaluation| < 5% — price is within 5% of intrinsic
-  // Significantly Overvalued: |undervaluation| >= 50% (clamped values included)
   const isUndervalued = currentUv != null && currentUv > 5;
-  const isOvervalued = currentUv != null && currentUv < -5;
   const isSignificantlyOvervalued = currentUv != null && currentUv <= -50;
   const isFairValue = currentUv != null && Math.abs(currentUv) <= 5;
-  const isCheaperThanAvg = avg5y != null && currentUv != null && currentUv > avg5y;
+  const isCheaperThanAvg = avgUv != null && currentUv != null && currentUv > avgUv;
 
   const verdict = currentUv == null
     ? 'N/A'
@@ -342,26 +458,50 @@ export function ValuationHistoryChart({
     ? 'Significantly Overvalued'
     : 'Overvalued';
 
-  const verdictColor = verdict === 'Very Attractive'
-    ? 'text-emerald-600 dark:text-emerald-400 font-bold'
-    : verdict === 'Attractive'
-    ? 'text-blue-600 dark:text-blue-400 font-bold'
-    : verdict === 'Fair Value'
-    ? 'text-gray-600 dark:text-gray-300 font-bold'
-    : verdict === 'N/A'
-    ? 'text-gray-500 font-bold'
-    : verdict === 'Significantly Overvalued'
-    ? 'text-red-600 dark:text-red-500 font-bold'
-    : 'text-red-500 dark:text-red-400 font-bold';
+  const headlineColor = isUndervalued
+    ? 'bg-emerald-500'
+    : isFairValue
+    ? 'bg-gray-400'
+    : isSignificantlyOvervalued
+    ? 'bg-red-600'
+    : 'bg-amber-500';
 
-  const headlineColor = isUndervalued ? 'bg-gray-800 dark:bg-gray-200' : isFairValue ? 'bg-gray-400' : isSignificantlyOvervalued ? 'bg-red-700' : 'bg-red-500';
+  const statusBadgeColor: 'green' | 'blue' | 'amber' | 'red' | 'gray' =
+    currentUv == null
+      ? 'gray'
+      : isUndervalued
+      ? 'green'
+      : isFairValue
+      ? 'gray'
+      : isSignificantlyOvervalued
+      ? 'red'
+      : 'amber';
 
   return (
     <ChartBody>
-      {/* Controls — single fixed-height band */}
-      <ChartControls className="justify-end">
-        <span className="text-[10px] text-gray-500 dark:text-gray-500 mr-auto truncate">Auto = PE preferred, PS fallback</span>
-        <MetricToggle mode={metricMode} onChange={setMetricMode} />
+      {/* Controls — metric mode + period + active formula */}
+      <ChartControls>
+        <MetricToggle mode={metricMode} autoBasis={autoBasis} onChange={setMetricMode} />
+        <div className="flex gap-1 shrink-0">
+          {availablePeriods.map(p => (
+            <button
+              key={p.id}
+              onClick={() => setPeriod(p.id)}
+              className={`text-[10px] px-2.5 py-1 rounded font-medium transition-colors ${
+                period === p.id
+                  ? 'bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <span className="text-[10px] text-gray-500 dark:text-gray-400 ml-auto truncate">
+          {effectiveBasis === 'pe'
+            ? `Intrinsic = TTM EPS × ${medianMult != null ? `${medianMult.toFixed(1)}×` : 'Med'} P/E`
+            : `Intrinsic = TTM Rev/sh × ${medianMult != null ? `${medianMult.toFixed(1)}×` : 'Med'} P/S`}
+        </span>
       </ChartControls>
 
       {/* Chart */}
@@ -370,12 +510,12 @@ export function ValuationHistoryChart({
           <ComposedChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
             <defs>
               <linearGradient id="overGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ef4444" stopOpacity={0.12} />
-                <stop offset="100%" stopColor="#ef4444" stopOpacity={0.03} />
+                <stop offset="0%" stopColor="#ef4444" stopOpacity={0.14} />
+                <stop offset="100%" stopColor="#ef4444" stopOpacity={0.04} />
               </linearGradient>
               <linearGradient id="underGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10b981" stopOpacity={0.03} />
-                <stop offset="100%" stopColor="#10b981" stopOpacity={0.12} />
+                <stop offset="0%" stopColor="#10b981" stopOpacity={0.04} />
+                <stop offset="100%" stopColor="#10b981" stopOpacity={0.14} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" className="dark:stroke-gray-700/60" />
@@ -403,17 +543,16 @@ export function ValuationHistoryChart({
             <Tooltip content={<CustomTooltip />} />
 
             {/* Forecast zone reference */}
-            {activeForecast.length > 0 && (
+            {expandedForecast.length > 0 && (
               <ReferenceLine
-                x={activeForecast[0]!.date}
-                stroke="#d1d5db"
+                x={expandedForecast[0]!.date}
+                stroke="#9ca3af"
                 strokeDasharray="4 2"
-                label={{ value: 'Forecast', position: 'insideTopLeft', fontSize: CHART_FONT.annotation, fill: '#9ca3af' }}
+                label={{ value: 'Forecast →', position: 'insideTopRight', fontSize: CHART_FONT.annotation, fill: '#9ca3af' }}
               />
             )}
 
-            {/* GuruFocus-style valuation bands */}
-            {/* Significant overvalued zone (intrinsic * 1.30+) — red */}
+            {/* GuruFocus-style valuation bands ([low, high] slices) */}
             <Area
               type="monotone"
               dataKey="sigOver"
@@ -422,7 +561,6 @@ export function ValuationHistoryChart({
               connectNulls
               isAnimationActive={false}
             />
-            {/* Modest overvalued zone (intrinsic * 1.10 to 1.30) — light red */}
             <Area
               type="monotone"
               dataKey="modestOver"
@@ -432,17 +570,15 @@ export function ValuationHistoryChart({
               connectNulls
               isAnimationActive={false}
             />
-            {/* Modest undervalued zone (intrinsic * 0.90 to 1.10) — neutral */}
             <Area
               type="monotone"
               dataKey="modestUnder"
               stroke="none"
               fill="#10b981"
-              fillOpacity={0.04}
+              fillOpacity={0.05}
               connectNulls
               isAnimationActive={false}
             />
-            {/* Significant undervalued zone (intrinsic * 0.70 to 0.90) — green */}
             <Area
               type="monotone"
               dataKey="sigUnder"
@@ -499,14 +635,14 @@ export function ValuationHistoryChart({
         <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 leading-snug">
           <span className={`inline-block w-2.5 h-2.5 rounded-sm mr-1.5 align-middle ${currentUv == null ? 'bg-gray-300' : headlineColor}`} />
           {ticker && <strong>{ticker}</strong>} {currentUv == null
-            ? `has insufficient earnings data for P/E-based valuation. Try P/S mode.`
+            ? `has insufficient ${effectiveBasis === 'pe' ? 'earnings' : 'revenue'} data for ${effectiveBasis.toUpperCase()}-based valuation.`
             : isFairValue
-            ? `is trading close to its intrinsic value (${fmtDollar(last?.intrinsic)}, within ±5%).`
+            ? `is trading close to its ${effectiveBasis.toUpperCase()}-implied intrinsic value (${fmtDollar(last?.intrinsic)}, within ±5%).`
             : isUndervalued
-            ? `is trading ${Math.abs(currentUv).toFixed(0)}% below its historical-multiple intrinsic value (${fmtDollar(last?.intrinsic)}).`
+            ? `is trading ${Math.abs(currentUv).toFixed(0)}% below its ${effectiveBasis.toUpperCase()}-implied intrinsic value (${fmtDollar(last?.intrinsic)}).`
             : isSignificantlyOvervalued
-            ? `is significantly overvalued — price exceeds intrinsic value (${fmtDollar(last?.intrinsic)}) by ${Math.abs(currentUv).toFixed(0)}%.`
-            : `is trading ${Math.abs(currentUv).toFixed(0)}% above its historical-multiple intrinsic value (${fmtDollar(last?.intrinsic)}).`}
+            ? `is significantly overvalued — price exceeds ${effectiveBasis.toUpperCase()}-implied intrinsic value (${fmtDollar(last?.intrinsic)}) by ${Math.abs(currentUv).toFixed(0)}%.`
+            : `is trading ${Math.abs(currentUv).toFixed(0)}% above its ${effectiveBasis.toUpperCase()}-implied intrinsic value (${fmtDollar(last?.intrinsic)}).`}
         </p>
 
         {/* Summary badges — compact single row */}
@@ -519,40 +655,45 @@ export function ValuationHistoryChart({
           <Badge compact
             label="Price"
             value={fmtDollar(last?.price)}
-            color={isUndervalued ? 'green' : isFairValue ? 'gray' : 'amber'}
+            color={statusBadgeColor}
           />
           <Badge compact
-            label="History"
+            label="Verdict"
             value={verdict}
-            color={verdict === 'Very Attractive' ? 'green' : verdict === 'Attractive' ? 'blue' : verdict === 'Fair Value' ? 'gray' : verdict === 'Significantly Overvalued' ? 'amber' : 'gray'}
+            color={verdict === 'Very Attractive' ? 'green' : verdict === 'Attractive' ? 'blue' : statusBadgeColor}
           />
           <Badge compact
             label="Current"
             value={currentUv != null ? `${Math.abs(currentUv).toFixed(0)}% ${isUndervalued ? 'undervalued' : isFairValue ? 'fair' : 'overvalued'}` : 'n/a'}
-            color={isUndervalued ? 'green' : isFairValue ? 'gray' : isSignificantlyOvervalued ? 'amber' : 'gray'}
+            color={statusBadgeColor}
           />
-          {avg5y != null && (
+          {avgUv != null && (
             <Badge compact
-              label="5Y Avg"
-              value={`${Math.abs(avg5y).toFixed(0)}% ${avg5y > 0 ? 'underval.' : 'overval.'}`}
+              label={`${periodLabel} Avg`}
+              value={`${Math.abs(avgUv).toFixed(0)}% ${avgUv > 0 ? 'underval.' : 'overval.'}`}
               color="blue"
             />
           )}
           {cagr != null && (
             <Badge compact
-              label="Value Growth"
-              value={`${cagr.toFixed(0)}%`}
-              color="amber"
+              label="Intrinsic CAGR"
+              value={`${cagr >= 0 ? '+' : ''}${cagr.toFixed(1)}%`}
+              color={cagr >= 0 ? 'green' : 'amber'}
             />
           )}
         </div>
 
-        {/* Forecast explanation */}
-        {activeForecast.length > 0 && (
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-snug">
-            Forecast: forward intrinsic from per-share trend (±10%/quarter clamp) — dashed line = projected range.
-          </p>
-        )}
+        {/* Legend + Forecast explanation */}
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-gray-500 dark:text-gray-500">
+          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-emerald-500 inline-block" /> Price &lt; Intrinsic</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-0.5 bg-red-500 inline-block" /> Price &gt; Intrinsic</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-px border-t border-dashed border-gray-400 inline-block" /> Intrinsic (±10% / ±30% bands)</span>
+          {expandedForecast.length > 0 && (
+            <span className="sm:ml-auto text-gray-400 dark:text-gray-600">
+              Forecast: 6Q forward trend (±10%/Q clamp)
+            </span>
+          )}
+        </div>
       </ChartFootnote>
     </ChartBody>
   );

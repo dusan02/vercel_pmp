@@ -332,22 +332,13 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
         const valuationHistoryPE = buildValuationHistory(impliedPricePE, impliedPeDates, distortedPeDates);
         const valuationHistoryPS = buildValuationHistory(impliedPricePS, impliedPsDates);
 
-        // Default: per-point PE/PS smart fallback — use PE when > 0 and not
-        // depressed-EPS distorted, else PS
-        const valuationHistory = priceHistory.map((p, idx) => {
-            const pePoint = valuationHistoryPE[idx];
-            const psPoint = valuationHistoryPS[idx];
-            // Prefer PE when it has a valid positive intrinsic — but skip it
-            // on distorted dates where P/S carries the real signal
-            if (pePoint && pePoint.intrinsic > 0 && !distortedPeDates.has(pePoint.date)) return pePoint;
-            if (psPoint && psPoint.intrinsic > 0) return psPoint;
-            // Both invalid — return PE point with null undervaluation
-            return pePoint ?? psPoint ?? null;
-        }).filter(Boolean) as { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[];
-
         function computeSummary(vh: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[]) {
             const valid = vh.filter(v => v.undervaluationPct !== null);
-            const currentUnderval = valid.length ? valid[valid.length - 1]!.undervaluationPct : null;
+            // Must use the ACTUAL latest point's undervaluationPct — falling back
+            // to `valid[valid.length - 1]` when today's point is null reported a
+            // stale percentage from years ago alongside today's price/intrinsic.
+            const lastPt = vh[vh.length - 1];
+            const currentUnderval = lastPt?.undervaluationPct ?? null;
 
             const cutoff5y = new Date(); cutoff5y.setFullYear(cutoff5y.getFullYear() - 5);
             const avg5yVals = valid.filter(v => new Date(v.date) >= cutoff5y);
@@ -371,9 +362,27 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
             return { currentUndervaluation: currentUnderval, avg5yUndervaluation: avg5yUnderval, intrinsicCagr };
         }
 
-        const valuationSummary = computeSummary(valuationHistory);
         const valuationSummaryPE = computeSummary(valuationHistoryPE);
         const valuationSummaryPS = computeSummary(valuationHistoryPS);
+
+        // Auto mode selects ONE consistent valuation basis for the whole series:
+        // prefer P/E when the latest point has a valid non-distorted P/E
+        // intrinsic and at least ~6 months of history; otherwise use P/S.
+        // Never splice P/E and P/S point-by-point (which mixed incompatible $
+        // levels into intrinsicCagr/avg5y) and never index PE/PS arrays by
+        // `priceHistory` index `idx` (which caused time-travel when PE started
+        // later than PS, e.g. UBER/PLTR).
+        const latestPeDistorted = isPeDistorted(latestPE, medianPE);
+        const peUsableForAuto = !latestPeDistorted
+            && valuationSummaryPE.currentUndervaluation !== null
+            && valuationHistoryPE.length >= Math.min(26, Math.ceil(valuationHistoryPS.length * 0.4));
+
+        const valuationHistory = peUsableForAuto
+            ? valuationHistoryPE
+            : (valuationHistoryPS.length > 0 ? valuationHistoryPS : valuationHistoryPE);
+        const valuationSummary = peUsableForAuto
+            ? valuationSummaryPE
+            : (valuationHistoryPS.length > 0 ? valuationSummaryPS : valuationSummaryPE);
 
         // --- Simple forward estimates (projection) ---
         // Pass lastPriceDate so forecast starts AFTER the latest price point,
@@ -391,11 +400,7 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
             ? epsForecast.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPE).toFixed(2)), isForecast: true }))
             : [];
 
-        // Default forecast: PE-preferred with PS fallback. When today's P/E is
-        // distorted by depressed EPS, the PE projection starts from a trough
-        // base — P/S projects from revenue, which doesn't have that problem.
-        const latestPeDistorted = isPeDistorted(latestPE, medianPE);
-        const intrinsicForecastSeries = (!latestPeDistorted && impliedPEForecast.length > 0)
+        const intrinsicForecastSeries = (peUsableForAuto && impliedPEForecast.length > 0)
             ? impliedPEForecast
             : (impliedPSForecast.length > 0 ? impliedPSForecast : impliedPEForecast);
         const intrinsicForecastPE = impliedPEForecast;
