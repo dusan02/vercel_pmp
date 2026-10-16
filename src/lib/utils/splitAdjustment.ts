@@ -197,6 +197,46 @@ export function makeShareNormalizer(
 }
 
 /**
+ * Multiply pre-split-date statement share counts by each split ratio.
+ *
+ * A statement whose period END precedes the split execution but was filed
+ * afterwards already reports post-split shares (LRCX Q1'25: period ended
+ * 2024-09-28, 10:1 split executed 2024-10-02, filing shows 1.30B post-split
+ * shares — blindly multiplying gives 13B and a ~10× market-cap artifact for
+ * the whole quarter the row is the latest statement). For each split we take
+ * the earliest post-split statement as the reference level and multiply a
+ * statement only when the multiplied count lands nearer that level than the
+ * raw count does. With no post-split reference (fresh split, no filing yet)
+ * all pre-date statements are multiplied as before.
+ */
+export function applySplitEventsToStatements(
+    stmts: { endDate: Date; sharesOutstanding: number | null }[],
+    splitEvents: { date: Date; ratio: number }[],
+): void {
+    for (const split of splitEvents) {
+        let postLevel: number | null = null;
+        let postLevelMs = Infinity;
+        for (const s of stmts) {
+            const ms = s.endDate.getTime();
+            if (ms >= split.date.getTime() && s.sharesOutstanding && s.sharesOutstanding > 0 && ms < postLevelMs) {
+                postLevel = s.sharesOutstanding;
+                postLevelMs = ms;
+            }
+        }
+        for (const s of stmts) {
+            if (s.endDate.getTime() >= split.date.getTime() ||
+                !s.sharesOutstanding || s.sharesOutstanding <= 0) continue;
+            if (postLevel != null) {
+                const rawDist = Math.abs(s.sharesOutstanding - postLevel) / postLevel;
+                const adjDist = Math.abs(s.sharesOutstanding * split.ratio - postLevel) / postLevel;
+                if (rawDist <= adjDist) continue; // already reports post-split count
+            }
+            s.sharesOutstanding = s.sharesOutstanding * split.ratio;
+        }
+    }
+}
+
+/**
  * Adjust sharesOutstanding in financial statements for stock splits.
  * Multiplies shares for statements before each split date by the split ratio.
  *
@@ -226,18 +266,7 @@ export async function applySplitAdjustments(
         // Fall through to statement-based detection
     }
 
-    if (splitEvents.length > 0) {
-        // Use Polygon split dates: multiply shares for statements before each split date
-        for (const split of splitEvents) {
-            for (const s of stmts) {
-                if (s.endDate.getTime() < split.date.getTime() &&
-                    s.sharesOutstanding && s.sharesOutstanding > 0) {
-                    s.sharesOutstanding = s.sharesOutstanding * split.ratio;
-                }
-            }
-        }
-    }
-
+    applySplitEventsToStatements(stmts, splitEvents);
     return splitEvents;
 }
 

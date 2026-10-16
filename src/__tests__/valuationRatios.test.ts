@@ -1,5 +1,6 @@
 import type { FinancialStatement } from '@prisma/client';
 import { computeDayRatios } from '@/services/analysis/fillValuationDay';
+import { applySplitEventsToStatements } from '@/lib/utils/splitAdjustment';
 
 function stmt(partial: Partial<FinancialStatement>): FinancialStatement {
     return {
@@ -174,5 +175,39 @@ describe('computeDayRatios — split-normalized shares', () => {
         // units, so the dated ×10 boundary must NOT double-apply.
         const r = computeDayRatios(nvda, 29, new Date('2023-05-15T04:00:00Z'));
         expect(r.marketCap).toBeCloseTo(29 * 24.73e9, -9); // ~$717B, not $7.2T
+    });
+});
+
+// LRCX-shaped regression (2026-10): 10:1 split executed 2024-10-02, but the
+// Q1'25 statement (period ended 2024-09-28, filed post-split) already reports
+// the post-split 1.30B count. A blind "multiply every endDate < splitDate"
+// rule produces 13B shares → 10× marketCap/P·S for the whole quarter where
+// that row is the latest statement (prod DVH showed P/S ~68× Sep30–Dec27).
+const lrcxStatements = [
+    stmt({ fiscalPeriod: 'Q2', fiscalYear: 2025, endDate: new Date('2024-12-28T00:00:00Z'), sharesOutstanding: 1.297767e9 }),
+    stmt({ fiscalPeriod: 'Q1', fiscalYear: 2025, endDate: new Date('2024-09-28T00:00:00Z'), sharesOutstanding: 1.304066e9 }),
+    stmt({ fiscalPeriod: 'FY', fiscalYear: 2024, endDate: new Date('2024-06-29T00:00:00Z'), sharesOutstanding: 0.131995e9 }),
+    stmt({ fiscalPeriod: 'Q3', fiscalYear: 2024, endDate: new Date('2024-03-30T00:00:00Z'), sharesOutstanding: 0.132282e9 }),
+    stmt({ fiscalPeriod: 'Q2', fiscalYear: 2024, endDate: new Date('2023-12-23T00:00:00Z'), sharesOutstanding: 0.132693e9 }),
+];
+
+describe('applySplitEventsToStatements — post-split-level guard', () => {
+    it('multiplies true pre-split statements but skips an already-adjusted one (LRCX 10:1)', () => {
+        const stmts = lrcxStatements.map(s => ({ ...s }));
+        applySplitEventsToStatements(stmts, [{ date: new Date('2024-10-02T00:00:00Z'), ratio: 10 }]);
+        // Q1'25 ends before the split but already reports post-split shares → untouched
+        expect(stmts[1]!.sharesOutstanding).toBeCloseTo(1.304066e9, 0);
+        // FY'24 + earlier quarters are genuine pre-split counts → ×10
+        expect(stmts[2]!.sharesOutstanding).toBeCloseTo(1.31995e9, -2);
+        expect(stmts[3]!.sharesOutstanding).toBeCloseTo(1.32282e9, -2);
+        expect(stmts[4]!.sharesOutstanding).toBeCloseTo(1.32693e9, -2);
+        // Post-split statement untouched
+        expect(stmts[0]!.sharesOutstanding).toBeCloseTo(1.297767e9, 0);
+    });
+
+    it('multiplies everything pre-date when no post-split statement exists', () => {
+        const stmts = lrcxStatements.slice(2).map(s => ({ ...s })); // only pre-split statements
+        applySplitEventsToStatements(stmts, [{ date: new Date('2024-10-02T00:00:00Z'), ratio: 10 }]);
+        for (const s of stmts) expect(s.sharesOutstanding!).toBeGreaterThan(1e9);
     });
 });

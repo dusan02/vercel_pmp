@@ -24,7 +24,7 @@ loadEnvFromFiles();
 
 import { prisma } from '../src/lib/db/prisma';
 import { computeTTMAtDate } from '../src/lib/utils/ttm';
-import { applySplitAdjustments, applyPostSplitAdjustment, findNearestSplit } from '../src/lib/utils/splitAdjustment';
+import { applySplitAdjustments, applySplitEventsToStatements, applyPostSplitAdjustment, findNearestSplit } from '../src/lib/utils/splitAdjustment';
 import { dbWriteRetry as dbWrite } from '../src/lib/db/writeRetry';
 
 const dryRun = process.argv.includes('--dry-run');
@@ -91,14 +91,10 @@ async function main() {
                     }
                 }
             }
-            for (const split of splitEvents) {
-                for (const s of stmts) {
-                    if (s.endDate.getTime() < split.date.getTime() &&
-                        s.sharesOutstanding && s.sharesOutstanding > 0) {
-                        s.sharesOutstanding = s.sharesOutstanding * split.ratio;
-                    }
-                }
-            }
+            // Same post-split-level guard as applySplitEventsToStatements —
+            // a statement filed after the split but ending before it may
+            // already report post-split shares (LRCX Sep-2024).
+            applySplitEventsToStatements(stmts, splitEvents);
         }
         const tickerInfo = await prisma.ticker.findUnique({
             where: { symbol },
