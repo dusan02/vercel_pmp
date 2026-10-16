@@ -329,6 +329,8 @@ export interface ScreenerPreset {
     minAltman?: number; minFcfMargin?: number;
     marketCapPreset?: string;
     sort?: string;
+    /** Backtested "fundamentals confirm trend" combo (server-side symbol filter). */
+    trendConfirmed?: boolean;
     ranges?: Partial<Record<RangeFilterKey, { min?: number; max?: number }>>;
 }
 
@@ -390,6 +392,7 @@ export const QUICK_SCREENS: {
     { label: 'Momentum + Fundamentals', tip: 'Day change ≥+5% · Overall ≥70 · Quality ≥70 — abnormal move on strong fundamentals', group: 'discovery', icon: 'Zap', preset: { minOverall: 70, minQuality: 70, ranges: { changePct: { min: 5 } }, sort: 'ticker.lastChangePct:desc' } },
     { label: 'P/E Below 3Y Median', tip: 'Current P/E below its own trailing-3Y median — sorted by deepest discount vs that median', group: 'discovery', icon: 'History', preset: { ranges: { peVsMedian3yPct: { max: 0 } }, sort: 'peVsMedian3yPct:asc' } },
     { label: 'P/E at Historical Low', tip: 'Current P/E in the bottom decile of its own valuation history (≤10ᵗʰ percentile)', group: 'discovery', icon: 'History', preset: { ranges: { pePercentile: { max: 10 } }, sort: 'pePercentile:asc' } },
+    { label: 'Trend × Fundamentals', tip: 'Rev/share +30% (1Y) · EPS growing · price ≥80% of 52w high — backtested combo, ~2× fwd-return edge vs universe', group: 'discovery', icon: ['TrendingUp', 'Check'], preset: { trendConfirmed: true } },
 ];
 
 /** Render order + labels for the preset pill groups (screener UI only). */
@@ -425,6 +428,7 @@ export interface PresetMatchContext {
     metrics?: Partial<Record<MetricFilterKey, number | null>> | null;
     market?: { price?: number | null; changePct?: number | null; marketCapB?: number | null } | null;
     insider?: Partial<Record<'netBuyValue90d' | 'netBuyPct90d', number | null>> | null;
+    trendSignal?: { qualified?: boolean | null } | null;
 }
 
 export function matchesPreset(p: ScreenerPreset, ctx: PresetMatchContext): boolean {
@@ -443,6 +447,7 @@ export function matchesPreset(p: ScreenerPreset, ctx: PresetMatchContext): boole
     if (p.minOverall !== undefined && !inRange(s?.overallScore, { min: p.minOverall })) return false;
     if (p.minAltman !== undefined && !inRange(s?.altmanZ, { min: p.minAltman })) return false;
     if (p.minFcfMargin !== undefined && !inRange(s?.fcfMargin, { min: p.minFcfMargin })) return false;
+    if (p.trendConfirmed && ctx.trendSignal?.qualified !== true) return false;
     if (p.marketCapPreset && p.marketCapPreset !== 'all') {
         const mc = MARKET_CAP_PRESETS.find((x) => x.id === p.marketCapPreset);
         const capRange: { min?: number; max?: number } = {};
@@ -477,7 +482,7 @@ const RANGE_PARAMS = new Set(
         return [`min${cap}`, `max${cap}`];
     })
 );
-const STRING_PARAMS = new Set(['sector', 'industry', 'q', 'mcap', 'sort']);
+const STRING_PARAMS = new Set(['sector', 'industry', 'q', 'mcap', 'sort', 'trendConfirmed']);
 const SORT_RE = /^[a-zA-Z0-9.]+:(asc|desc)$/;
 
 /**
@@ -525,6 +530,7 @@ export function presetToQueryString(p: ScreenerPreset): string {
         if (r?.max !== undefined) sp.set(`max${cap}`, String(r.max));
     }
     if (p.sort && p.sort !== 'ticker.lastMarketCap:desc') sp.set('sort', p.sort);
+    if (p.trendConfirmed) sp.set('trendConfirmed', '1');
     return sp.toString();
 }
 

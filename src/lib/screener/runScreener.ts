@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { downsampleSeries, RANGE_FILTERS, SCORE_FILTERS, ADVANCED_FILTERS, ANALYSIS_SORT_FIELDS } from '@/lib/utils/screener';
 import { computeTrendSignal, type TrendSignal } from '@/lib/analysis/trendSignal';
+import { getTrendQualifiedSymbols } from '@/lib/analysis/trendUniverse';
 
 const SCREENER_CACHE_TTL = 600; // 10 minutes
 
@@ -51,6 +52,8 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
     }
     const sector = searchParams.get('sector') || undefined;
     const industry = searchParams.get('industry') || undefined;
+    // Backtested "fundamentals confirm trend" combo — server-side symbol filter
+    const trendConfirmed = searchParams.get('trendConfirmed') === '1';
     // Search: symbol or company name (case-insensitive contains)
     const q = searchParams.get('q')?.trim() || undefined;
     // Market Cap filter (in billions)
@@ -106,7 +109,7 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
     const scoresKey = scoreRanges
         .map((r) => `ac.${r.field}=${r.min ?? ''}-${r.max ?? ''}`)
         .join('|');
-    const cacheKey = `screener:${scoresKey}:${sector || ''}:${industry || ''}:${q || ''}:${minMarketCap ?? ''}:${maxMarketCap ?? ''}:${metricsKey}:${page}:${limit}:${sortParams}`;
+    const cacheKey = `screener:${scoresKey}:${sector || ''}:${industry || ''}:${q || ''}:${minMarketCap ?? ''}:${maxMarketCap ?? ''}:${metricsKey}:${trendConfirmed ? 'tc1' : ''}:${page}:${limit}:${sortParams}`;
     try {
         const cached = await getCachedData(cacheKey);
         if (cached) return cached as Record<string, any>;
@@ -194,6 +197,13 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
                 if (r.max !== undefined) ac[r.field].lte = r.max;
             }
             tickerWhere.analysisCache = { is: ac };
+        }
+
+        // Trend-confirmed preset — restrict to symbols passing the backtested
+        // combo signal (universe computed once/hour for all users).
+        if (trendConfirmed) {
+            const qualified = await getTrendQualifiedSymbols();
+            tickerWhere.symbol = { in: [...qualified] };
         }
 
         const where: any = tickerWhere;

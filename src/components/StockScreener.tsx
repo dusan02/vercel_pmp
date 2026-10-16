@@ -591,6 +591,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       metrics: r.metrics,
       market: { price: r.ticker?.lastPrice ?? null, changePct: r.ticker?.lastChangePct ?? null, marketCapB: r.ticker?.lastMarketCap ?? null },
       insider: { netBuyValue90d: r.insiderNetBuyValue90d, netBuyPct90d: r.insiderNetBuyPct90d },
+      trendSignal: r.trendSignal ?? null,
     }));
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);

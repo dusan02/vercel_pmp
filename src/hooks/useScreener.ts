@@ -120,6 +120,7 @@ export function useScreener({
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [industries, setIndustries] = useState<string[]>([]);
     const [marketCapPreset, setMarketCapPreset] = useState<string>('all');
+    const [trendConfirmed, setTrendConfirmed] = useState<boolean>(false);
     const [sortField, setSortField] = useState<string>('ticker.lastMarketCap');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     // Range filters — only entries the user touched are kept;
@@ -141,6 +142,7 @@ export function useScreener({
         selectedIndustry: '',
         searchQuery: '',
         marketCapPreset: 'all',
+        trendConfirmed: false,
         sortField: 'ticker.lastMarketCap', sortOrder: 'desc' as 'asc' | 'desc',
         metricRanges: {} as typeof metricRanges,
     });
@@ -150,11 +152,11 @@ export function useScreener({
             setDebouncedFilters({
                 scoreRanges, advanced,
                 selectedSector, selectedIndustry, searchQuery,
-                marketCapPreset, sortField, sortOrder, metricRanges,
+                marketCapPreset, trendConfirmed, sortField, sortOrder, metricRanges,
             });
         }, 400);
         return () => clearTimeout(timer);
-    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder, metricRanges]);
+    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, trendConfirmed, sortField, sortOrder, metricRanges]);
 
     // Stale-response guard — rapid typing/slider drags fire several fetches;
     // only the latest request may commit results, otherwise a slow earlier
@@ -184,6 +186,7 @@ export function useScreener({
                 const v = debouncedFilters.advanced[def.key];
                 if (def.active(v)) params.append(def.param, v.toString());
             }
+            if (debouncedFilters.trendConfirmed) params.append('trendConfirmed', '1');
             if (debouncedFilters.selectedSector) params.append('sector', debouncedFilters.selectedSector);
             if (debouncedFilters.selectedIndustry) params.append('industry', debouncedFilters.selectedIndustry);
             if (debouncedFilters.searchQuery) params.append('q', debouncedFilters.searchQuery);
@@ -227,7 +230,7 @@ export function useScreener({
     // Reset page on filter change (immediate, not debounced)
     useEffect(() => {
         setPage(1);
-    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder, metricRanges]);
+    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, trendConfirmed, sortField, sortOrder, metricRanges]);
 
     /**
      * Restore all filter state from a query param set — used for the initial
@@ -267,10 +270,12 @@ export function useScreener({
             if (f) nextSortField = f;
             nextSortOrder = o === 'asc' || o === 'desc' ? o : 'desc';
         }
+        const tcVal = sp.get('trendConfirmed') === '1';
         setSelectedSector(sectorVal);
         setSelectedIndustry(industryVal);
         setSearchQuery(qVal);
         setMarketCapPreset(mcapVal);
+        setTrendConfirmed(tcVal);
         setSortField(nextSortField);
         setSortOrder(nextSortOrder);
         // Range filters: minRoe/maxRoe/... (camelCase key names, registry-driven)
@@ -298,6 +303,7 @@ export function useScreener({
             selectedIndustry: industryVal,
             searchQuery: qVal,
             marketCapPreset: mcapVal,
+            trendConfirmed: tcVal,
             sortField: nextSortField,
             sortOrder: nextSortOrder,
             metricRanges: restored,
@@ -336,6 +342,7 @@ export function useScreener({
         if (selectedIndustry) sp.set('industry', selectedIndustry);
         if (searchQuery) sp.set('q', searchQuery);
         if (marketCapPreset !== 'all') sp.set('mcap', marketCapPreset);
+        if (trendConfirmed) sp.set('trendConfirmed', '1');
         for (const [key, range] of Object.entries(metricRanges)) {
             if (!range) continue;
             const cap = key[0]!.toUpperCase() + key.slice(1);
@@ -344,7 +351,7 @@ export function useScreener({
         }
         if (sortField !== 'ticker.lastMarketCap' || sortOrder !== 'desc') sp.set('sort', `${sortField}:${sortOrder}`);
         return sp.toString();
-    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, sortField, sortOrder, metricRanges]);
+    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, trendConfirmed, sortField, sortOrder, metricRanges]);
 
     /**
      * Is the current filter state exactly what this preset would produce?
@@ -366,6 +373,7 @@ export function useScreener({
         }
         if (selectedSector !== '' || selectedIndustry !== '' || searchQuery !== '') return false;
         if (marketCapPreset !== (p.marketCapPreset ?? 'all')) return false;
+        if ((p.trendConfirmed ?? false) !== trendConfirmed) return false;
         // Sort is user-controlled presentation, not part of preset identity —
         // a preset pill stays active while the user re-sorts the same screen.
         const expected = p.ranges ?? {};
@@ -376,7 +384,7 @@ export function useScreener({
             if (a?.min !== b?.min || a?.max !== b?.max) return false;
         }
         return true;
-    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, metricRanges]);
+    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, trendConfirmed, metricRanges]);
 
     // Sync filters → URL (replaceState: shareable, no history pollution).
     // Standalone /screener page only — the homepage embed lives under
@@ -416,6 +424,7 @@ export function useScreener({
         setSelectedIndustry('');
         setSearchQuery('');
         setMarketCapPreset('all');
+        setTrendConfirmed(false);
         setMetricRanges({});
         setSortField('ticker.lastMarketCap');
         setSortOrder('desc');
@@ -425,7 +434,7 @@ export function useScreener({
         Object.keys(scoreRanges).length > 0 ||
         ADVANCED_FILTERS.some((d) => d.active(advanced[d.key])) ||
         selectedSector !== '' || selectedIndustry !== '' || searchQuery !== '' ||
-        marketCapPreset !== 'all' ||
+        marketCapPreset !== 'all' || trendConfirmed ||
         Object.keys(metricRanges).length > 0;
 
     /** Apply a named quick-screen preset (sets multiple filters atomically). */
@@ -438,6 +447,7 @@ export function useScreener({
         if (preset.minAltman !== undefined) setAdvancedValue('minAltman', preset.minAltman);
         if (preset.minFcfMargin !== undefined) setAdvancedValue('minFcfMargin', preset.minFcfMargin);
         if (preset.marketCapPreset !== undefined) setMarketCapPreset(preset.marketCapPreset);
+        if (preset.trendConfirmed) setTrendConfirmed(true);
         if (preset.ranges) {
             for (const [key, range] of Object.entries(preset.ranges)) {
                 if (range) setMetricRange(key as RangeFilterKey, range);
@@ -460,6 +470,7 @@ export function useScreener({
         searchQuery, setSearchQuery,
         industries,
         marketCapPreset, setMarketCapPreset,
+        trendConfirmed, setTrendConfirmed,
         metricRanges, setMetricRange,
         // sort
         sortField, sortOrder, handleSort, setSort,
