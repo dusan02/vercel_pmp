@@ -90,8 +90,8 @@ const YourTickersToday = dynamic(
   { ssr: false, loading: () => null }
 );
 
-const GlobalStockSearch = dynamic(
-  () => import('@/components/GlobalStockSearch').then((mod) => mod.GlobalStockSearch),
+const AnalysisStockSearch = dynamic(
+  () => import('@/components/AnalysisStockSearch').then((mod) => mod.AnalysisStockSearch),
   { ssr: true, loading: () => null }
 );
 const HeatmapMetricChips = dynamic(
@@ -376,9 +376,11 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                           toolbar={
                             <div className="hidden lg:flex items-center gap-2">
                               <div className="w-72">
-                                <GlobalStockSearch
-                                  stockData={stockData}
-                                  onSelectTicker={(ticker) => handleMobileNavChange('analysis', ticker)}
+                                {/* API-backed autocomplete — the same component
+                                    as /analysis, so the header search covers the
+                                    full ticker universe, not just stockData. */}
+                                <AnalysisStockSearch
+                                  onSelect={(ticker) => handleMobileNavChange('analysis', ticker)}
                                   placeholder="Search stocks..."
                                 />
                               </div>

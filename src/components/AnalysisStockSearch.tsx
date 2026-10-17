@@ -16,10 +16,12 @@ interface AnalysisStockSearchProps {
   onSelect?: (ticker: string) => void;
   placeholder?: string;
   className?: string;
+  /** Dark styling for dark surfaces (e.g. the /heatmap fullscreen header). */
+  variant?: 'light' | 'dark';
 }
 
 /** Ticker search with live autocomplete (symbol prefix + company name). */
-export function AnalysisStockSearch({ onSelect, placeholder = 'Search ticker or company…', className = '' }: AnalysisStockSearchProps) {
+export function AnalysisStockSearch({ onSelect, placeholder = 'Search ticker or company…', className = '', variant = 'light' }: AnalysisStockSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Suggestion[]>([]);
@@ -77,6 +79,7 @@ export function AnalysisStockSearch({ onSelect, placeholder = 'Search ticker or 
     }
   };
 
+  const dark = variant === 'dark';
   return (
     <div ref={boxRef} className={`relative ${className}`}>
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
@@ -90,7 +93,11 @@ export function AnalysisStockSearch({ onSelect, placeholder = 'Search ticker or 
         autoComplete="off"
         spellCheck={false}
         aria-label="Search stock ticker or company"
-        className="w-full h-10 pl-9 pr-8 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-medium text-gray-900 dark:text-white"
+        className={`w-full h-10 pl-9 pr-8 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm font-medium ${
+          dark
+            ? 'bg-gray-800/80 border-gray-700 text-white placeholder:text-gray-500'
+            : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
+        }`}
       />
       {query && (
         <button
@@ -103,19 +110,21 @@ export function AnalysisStockSearch({ onSelect, placeholder = 'Search ticker or 
         </button>
       )}
       {open && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl overflow-hidden">
+        <div className={`absolute top-full left-0 right-0 mt-1 z-[200] border rounded-lg shadow-xl overflow-hidden ${
+          dark ? 'bg-gray-900 border-gray-700' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+        }`}>
           {results.map((s, i) => (
             <button
               key={s.symbol}
               type="button"
               className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${
-                i === highlight ? 'bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-gray-50 dark:hover:bg-white/5'
+                i === highlight ? 'bg-blue-50 dark:bg-blue-900/30' : dark ? 'hover:bg-white/10' : 'hover:bg-gray-50 dark:hover:bg-white/5'
               }`}
               onMouseDown={e => { e.preventDefault(); pick(s.symbol); }}
               onMouseEnter={() => setHighlight(i)}
             >
-              <span className="font-bold text-sm text-gray-900 dark:text-white w-16 shrink-0 font-mono">{s.symbol}</span>
-              <span className="text-sm text-gray-500 dark:text-gray-400 truncate flex-1">{s.name ?? ''}</span>
+              <span className={`font-bold text-sm w-16 shrink-0 font-mono ${dark ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{s.symbol}</span>
+              <span className={`text-sm truncate flex-1 ${dark ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>{s.name ?? ''}</span>
               {s.lastChangePct != null && (
                 <span className={`text-xs font-semibold tabular-nums shrink-0 ${
                   s.lastChangePct > 0 ? 'text-emerald-600 dark:text-emerald-400'

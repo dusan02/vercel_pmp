@@ -10,6 +10,7 @@ import { HeatmapMetricChips } from '@/components/HeatmapMetricChips';
 import { HEATMAP_METRICS, isHeatmapMetric } from '@/lib/heatmap/metricValue';
 import { METRIC_PAGES } from '@/lib/heatmap/metricPages';
 import { HeatmapMethodology } from '@/components/HeatmapMethodology';
+import { AnalysisStockSearch } from '@/components/AnalysisStockSearch';
 import { logger } from '@/lib/utils/logger';
 import { event } from '@/lib/ga';
 
@@ -179,6 +180,12 @@ export default function HeatmapPage() {
         </div>
         
         <div className="flex items-center gap-4">
+          {/* Global ticker search — same API-backed autocomplete as the rest
+              of the app, navigates to /analysis/[ticker] */}
+          <div className="w-44 sm:w-64">
+            <AnalysisStockSearch variant="dark" placeholder="Search stocks…" />
+          </div>
+
           {/* Legenda je teraz overlay priamo v heatmap (MarketHeatmap) — vždy
               zodpovedá adaptívnej farebnej škále tileov */}
           
