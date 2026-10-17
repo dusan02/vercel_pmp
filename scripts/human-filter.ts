@@ -58,7 +58,7 @@ const PMP_PROPERTY = process.env.GA4_PROPERTY_ID ?? '517675266';
 const SELF_IPS = new Set(['89.185.250.213', '95.102.193.78']);
 const CACHE_FILE = path.join(os.homedir(), '.cache', 'pmp-ipinfo.json');
 const CACHE_TTL = 30 * 86400_000;
-const SITES = ['PMP', 'ET', 'VERIFA'] as const;
+const SITES = ['PMP', 'ET', 'VERIFA', 'STOCKCV', 'GL'] as const;
 type Site = (typeof SITES)[number];
 
 const DC_ASN = /amazon|aws|google|microsoft|azure|hetzner|ovh|digitalocean|alibaba|tencent|oracle|vultr|linode|akamai|cloudflare|m247|datacamp|kamatera|scalaxy|worldhoster|leaseweb|contabo|servers?\.com|ionos|scaleway|upcloud|cogent|zayo|gtt|choopa|constant|hosting|datacenter|servermania|nucleus|kyivstar data|ip-?only networks/i;
@@ -106,17 +106,19 @@ emit() {
     }'
 }
 for d in ${list}; do
-  echo "===PMP|$d===";    emit access.log                 premarketprice $d
-  echo "===ET|$d===";     emit earnings-table.access.log  earningstable  $d
-  echo "===VERIFA|$d==="; emit verifa_perf.log            verifa         $d
+  echo "===PMP|$d===";     emit access.log                 premarketprice $d
+  echo "===ET|$d===";      emit earnings-table.access.log  earningstable  $d
+  echo "===VERIFA|$d===";  emit verifa_perf.log            verifa         $d
+  echo "===STOCKCV|$d==="; emit stockcv.access.log         stockcv        $d
+  echo "===GL|$d===";      emit gainerslosers.access.log   gainerslosers  $d
 done
 `;
   const out = execSync(`ssh ${SSH} 'bash -s'`, { input: sh, encoding: 'utf8', timeout: 300000, maxBuffer: 256 * 1024 * 1024 });
-  const res: Record<Site, Map<number, IpRow[]>> = { PMP: new Map(), ET: new Map(), VERIFA: new Map() };
+  const res = Object.fromEntries(SITES.map((s) => [s, new Map<number, IpRow[]>()])) as Record<Site, Map<number, IpRow[]>>;
   let curSite: Site | null = null;
   let curDay = 0;
   for (const line of out.split('\n')) {
-    const m = line.match(/^===(PMP|ET|VERIFA)\|(\d+)===$/);
+    const m = line.match(/^===(PMP|ET|VERIFA|STOCKCV|GL)\|(\d+)===$/);
     if (m) { curSite = m[1] as Site; curDay = +m[2]; res[curSite].set(curDay, []); continue; }
     if (!curSite || !line) continue;
     const [ip, n, pages, assets, jsref, span, bot] = line.split('\t');
@@ -222,7 +224,7 @@ async function ga4Tiers(days: number): Promise<Record<string, { eng: number; hum
 }
 
 // ---------------- HTML chart ----------------
-const SITE_COLOR: Record<Site, string> = { PMP: '#3b82f6', VERIFA: '#f59e0b', ET: '#9ca3af' };
+const SITE_COLOR: Record<Site, string> = { PMP: '#3b82f6', VERIFA: '#f59e0b', ET: '#9ca3af', STOCKCV: '#8b5cf6', GL: '#10b981' };
 
 type DaySeries = { date: string; label: string; humans: Record<Site, number>; requests: Record<Site, number>; ga4Eng: number | null; ga4Human: number | null; partial: boolean };
 
@@ -342,8 +344,8 @@ async function main() {
     const d = new Date(Date.now() - back * 86400_000);
     const ymd = d.toISOString().slice(0, 10).replace(/-/g, '');
     const label = `${String(d.getUTCDate()).padStart(2, '0')}.${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
-    const humans: Record<Site, number> = { PMP: 0, ET: 0, VERIFA: 0 };
-    const requests: Record<Site, number> = { PMP: 0, ET: 0, VERIFA: 0 };
+    const humans = Object.fromEntries(SITES.map((s) => [s, 0])) as Record<Site, number>;
+    const requests = Object.fromEntries(SITES.map((s) => [s, 0])) as Record<Site, number>;
     if (back < nDays) {
       for (const s of SITES) {
         const rows = sections[s].get(back) ?? [];
@@ -361,9 +363,9 @@ async function main() {
   if (!NO_OPEN && process.platform === 'darwin') execSync(`open "${out}"`);
 
   // compact per-day summary for the swept window
-  console.log('\nday        PMP  ET  VERIFA  (PMP GA4 eng)');
+  console.log(`\nday        ${SITES.map((s) => s.padStart(6)).join('')}   (PMP GA4 eng)`);
   for (const d of series.slice(-nDays)) {
-    console.log(`${d.label}  ${String(d.humans.PMP).padStart(4)} ${String(d.humans.ET).padStart(4)} ${String(d.humans.VERIFA).padStart(7)}   ${d.ga4Eng ?? '-'}`);
+    console.log(`${d.label}  ${SITES.map((s) => String(d.humans[s]).padStart(6)).join('')}   ${d.ga4Eng ?? '-'}`);
   }
   console.log('');
 }

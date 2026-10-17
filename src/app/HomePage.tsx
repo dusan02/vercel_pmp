@@ -296,102 +296,11 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                   />
                 )}
               </MobileScreen>
-              <MobileScreen
-                active={activeSection === 'analysis'}
-                className="screen-analysis"
-                prefetch={false}
-                screenName="Analysis"
-                skeleton={<MobileSkeleton type="list" count={1} />}
-              >
-                <HomeAnalysis
-                  activeTicker={analysisTicker}
-                  onTickerChange={setAnalysisTicker}
-                />
-              </MobileScreen>
-              <MobileScreen
-                active={activeSection === 'movers'}
-                className="screen-movers"
-                prefetch={false}
-                screenName="Movers"
-                skeleton={<MobileSkeleton type="list" count={1} />}
-              >
-                {(preferences.showMoversSection ?? true) && (
-                  <HomeMovers onTileClick={(ticker) => handleMobileNavChange('analysis', ticker)} initialData={initialMoversData} />
-                )}
-              </MobileScreen>
-              <MobileScreen
-                active={activeSection === 'portfolio'}
-                className="screen-portfolio"
-                prefetch={activeSection === 'heatmap'} // Prefetch keď je heatmap aktívny (najpravdepodobnejší ďalší tab)
-                screenName="Portfolio"
-                skeleton={<MobileSkeleton type="cards" count={2} />}
-              >
-                {(preferences.showPortfolioSection ?? true) && (
-                  <HomePortfolio
-                    portfolioStocks={portfolioStocks}
-                    portfolioHoldings={portfolioHoldings}
-                    costBasis={costBasis}
-                    allStocks={stockData}
-                    loading={loadingStates.top50Stocks}
-                    onUpdateQuantity={updateQuantity}
-                    onUpdateCostBasis={updateCostBasis}
-                    onRemoveStock={removeStock}
-                    onAddStock={addStock}
-                    calculatePortfolioValue={calculateDailyChange}
-                    calculateTotalValue={calculateTotalStockValue}
-                    totalPortfolioValue={totalPortfolioValue}
-                  />
-                )}
-              </MobileScreen>
-              <MobileScreen
-                active={activeSection === 'favorites'}
-                className="screen-favorites"
-                prefetch={false}
-                screenName="Favorites"
-                skeleton={<MobileSkeleton type="cards" count={2} />}
-              >
-                {(preferences.showFavoritesSection ?? true) && (
-                  <HomeFavorites
-                    favoriteStocks={favoriteStocksSorted}
-                    loading={loadingStates.favorites}
-                    sortKey={favSortKey}
-                    ascending={favAscending}
-                    onSort={requestFavSort}
-                    onToggleFavorite={toggleFavorite}
-                    isFavorite={isFavorite}
-                    allStocks={stockData}
-                  />
-                )}
-              </MobileScreen>
-              <MobileScreen
-                active={activeSection === 'earnings'}
-                className="screen-earnings"
-                prefetch={false}
-                screenName="Earnings"
-                skeleton={<MobileSkeleton type="earnings" count={1} />}
-              >
-                {(preferences.showEarningsSection ?? true) && (
-                  <HomeEarnings weeklyEarningsData={weeklyEarningsData} todayStr={earningsTodayStr} weekStartStr={earningsWeekStartStr} eligibleTickers={eligibleTickers} />
-                )}
-              </MobileScreen>
-              <MobileScreen
-                active={activeSection === 'screener'}
-                className="screen-screener"
-                prefetch={false}
-                screenName="Screener"
-                skeleton={<MobileSkeleton type="list" count={1} />}
-              >
-                <StockScreener />
-              </MobileScreen>
-              <MobileScreen
-                active={activeSection === 'pricing'}
-                className="screen-pricing"
-                prefetch={false}
-                screenName="Pricing"
-                skeleton={<MobileSkeleton type="list" count={1} />}
-              >
-                <HomePricing />
-              </MobileScreen>
+              {/* The other mobile sections (analysis/movers/portfolio/favorites/
+                  earnings/screener/pricing) intentionally have no MobileScreen —
+                  useHomeNavigation.SECTION_ROUTES pushes them to standalone
+                  pages (/analysis, /portfolio, …), so they can never activate
+                  inside this app shell. */}
             </div>
           </PullToRefresh>
           {/* Floating Search Button Removed */}

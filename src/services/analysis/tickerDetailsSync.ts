@@ -27,7 +27,26 @@ export async function syncTickerDetails(symbol: string): Promise<void> {
             select: { sector: true, lastPrice: true, lastMarketCap: true, sharesOutstanding: true }
         });
 
-        const sharesOutstanding = res.weighted_shares_outstanding || res.share_class_shares_outstanding || null;
+        // weighted_shares_outstanding is a trailing average that can sit at a
+        // stale ~2x level after splits/buybacks (APH 2466M vs 1233M actual,
+        // MNST 1959M vs 980M, IESC 42M vs 20M) while share_class can omit
+        // sibling classes (DELL Class A, RKT Class D, COKE Class B). When the
+        // two diverge, the latest SEC-derived statement share count arbiters.
+        const weighted = res.weighted_shares_outstanding || null;
+        const shareClass = res.share_class_shares_outstanding || null;
+        let sharesOutstanding = weighted || shareClass || null;
+        if (weighted && shareClass && Math.abs(weighted - shareClass) / Math.max(weighted, shareClass) > 0.15) {
+            const stmt = await prisma.financialStatement.findFirst({
+                where: { symbol, sharesOutstanding: { not: null } },
+                orderBy: { endDate: 'desc' },
+                select: { sharesOutstanding: true },
+            });
+            if (stmt?.sharesOutstanding && stmt.sharesOutstanding > 0) {
+                const dW = Math.abs(weighted - stmt.sharesOutstanding) / stmt.sharesOutstanding;
+                const dS = Math.abs(shareClass - stmt.sharesOutstanding) / stmt.sharesOutstanding;
+                sharesOutstanding = dS <= dW ? shareClass : weighted;
+            }
+        }
 
         const hqParts = [res.address?.city, res.address?.state].filter(Boolean);
         const headquarters = hqParts.length > 0 ? hqParts.join(', ') : null;
@@ -90,12 +109,10 @@ export async function syncTickerDetails(symbol: string): Promise<void> {
                     const prevClose: number | null = aggsData?.results?.[0]?.c ?? null;
 
                     if (prevClose && prevClose > 0) {
-                        const sharesOutstanding: number | null =
-                            existing?.sharesOutstanding ??
-                            (res.weighted_shares_outstanding || res.share_class_shares_outstanding || null);
+                        const sharesForMcap = sharesOutstanding ?? existing?.sharesOutstanding ?? null;
 
-                        const computedMarketCap = sharesOutstanding && sharesOutstanding > 0
-            ? (prevClose * sharesOutstanding) / 1_000_000_000
+                        const computedMarketCap = sharesForMcap && sharesForMcap > 0
+            ? (prevClose * sharesForMcap) / 1_000_000_000
             : null;
 
                         const priceUpdate: Record<string, any> = {};

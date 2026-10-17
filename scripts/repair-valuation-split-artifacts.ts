@@ -58,8 +58,8 @@ async function findSuspectSymbols(): Promise<string[]> {
         )
         SELECT DISTINCT symbol FROM x
         WHERE symbol != 'B'
-          AND ((psRatio > 0 AND pPs > 0 AND (psRatio/pPs > 4 OR psRatio/pPs < 0.25) AND closePrice/pPx BETWEEN 0.6 AND 1.6)
-            OR (marketCap > 0 AND pMc > 0 AND (marketCap/pMc > 4 OR marketCap/pMc < 0.25) AND closePrice/pPx BETWEEN 0.6 AND 1.6))
+          AND ((psRatio > 0 AND pPs > 0 AND (psRatio/pPs > 1.8 OR psRatio/pPs < 0.55) AND closePrice/pPx BETWEEN 0.90 AND 1.10)
+            OR (marketCap > 0 AND pMc > 0 AND (marketCap/pMc > 1.45 OR marketCap/pMc < 0.68) AND closePrice/pPx BETWEEN 0.90 AND 1.10))
         ORDER BY symbol`;
     return rows.map(r => r.symbol);
 }
