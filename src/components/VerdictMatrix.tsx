@@ -4,27 +4,25 @@ import React, { useEffect, useState } from 'react';
 import { VERDICT_LABELS } from '@/lib/analysis/verdict';
 import type { VerdictFilterKey } from '@/lib/utils/screener';
 
-// Rows are persisted fundLevel values; 'none' = tickers whose pillar scores
-// are all missing (verdict falls back to a valuation-only headline). Columns
-// are valLevel values; 'unknown' = no usable valuation history.
+// Rows are persisted fundLevel values, columns are valLevel values. The
+// degenerate cells (no pillar scores / no valuation history) are omitted —
+// the matrix only covers the 9 real verdict cells; 'insufficient' sits
+// below it.
 const FUNDS = [
     { id: 'strong', label: 'Strong' },
     { id: 'mixed', label: 'Mixed' },
     { id: 'weak', label: 'Weak' },
-    { id: 'none', label: 'No fund.' },
 ] as const;
 const VALS = [
     { id: 'cheap', label: 'Cheap', cls: 'text-emerald-600 dark:text-emerald-400' },
     { id: 'fair', label: 'Fair', cls: 'text-gray-500 dark:text-gray-400' },
     { id: 'expensive', label: 'Expensive', cls: 'text-rose-500 dark:text-rose-400' },
-    { id: 'unknown', label: 'n/a', cls: 'text-gray-400 dark:text-gray-500' },
 ] as const;
 
 type FundId = (typeof FUNDS)[number]['id'];
 type ValId = (typeof VALS)[number]['id'];
 
-const cellKey = (f: FundId, v: ValId): string | null =>
-    v === 'unknown' ? (f === 'none' ? null : `${f}_unknown`) : `${f}_${v}`;
+const cellKey = (f: FundId, v: ValId): string => `${f}_${v}`;
 
 export default function VerdictMatrix({
     verdictFilters,
@@ -80,7 +78,7 @@ export default function VerdictMatrix({
             </div>
             <div className="max-w-md">
                 {/* Column headers — click selects the valLevel axis. */}
-                <div className="grid grid-cols-[64px_repeat(4,1fr)] gap-1 mb-1">
+                <div className="grid grid-cols-[64px_repeat(3,1fr)] gap-1 mb-1">
                     <span />
                     {VALS.map((v) => {
                         const active = val === v.id;
@@ -97,22 +95,18 @@ export default function VerdictMatrix({
                     })}
                 </div>
                 {FUNDS.map((f) => {
-                    const fundFilterable = f.id !== 'none';
                     const rowActive = fund === f.id;
                     return (
-                        <div key={f.id} className="grid grid-cols-[64px_repeat(4,1fr)] gap-1 mb-1">
+                        <div key={f.id} className="grid grid-cols-[64px_repeat(3,1fr)] gap-1 mb-1">
                             <button
-                                onClick={fundFilterable ? () => pickAxis('fund', f.id) : undefined}
-                                title={fundFilterable ? `All verdicts with ${f.label.toLowerCase()} fundamentals (${rowTotal(f.id)} tickers)` : 'Pillar scores missing — valuation-only verdicts'}
-                                className={`text-[10px] font-semibold uppercase tracking-wide text-left rounded px-1 py-0.5 transition-colors ${
-                                    fundFilterable ? 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800' : 'text-gray-400 dark:text-gray-600 cursor-default'
-                                } ${rowActive ? 'bg-blue-50 dark:bg-blue-950/50 ring-1 ring-blue-400' : ''}`}
+                                onClick={() => pickAxis('fund', f.id)}
+                                title={`All verdicts with ${f.label.toLowerCase()} fundamentals (${rowTotal(f.id)} tickers)`}
+                                className={`text-[10px] font-semibold uppercase tracking-wide text-left rounded px-1 py-0.5 transition-colors text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 ${rowActive ? 'bg-blue-50 dark:bg-blue-950/50 ring-1 ring-blue-400' : ''}`}
                             >
                                 {f.label}
                             </button>
                             {VALS.map((v) => {
                                 const key = cellKey(f.id, v.id);
-                                if (!key) return <span key={v.id} className="h-9 rounded-md border border-dashed border-gray-100 dark:border-gray-800" />;
                                 const n = counts[key];
                                 return (
                                     <button
@@ -122,7 +116,7 @@ export default function VerdictMatrix({
                                         className={cellCls(cellActive(key))}
                                     >
                                         <span className="tabular-nums font-semibold">{n ?? '–'}</span>
-                                        <span className="text-[8px] opacity-60 hidden sm:block">{f.id === 'none' ? v.id : `${f.id} · ${v.id}`}</span>
+                                        <span className="text-[8px] opacity-60 hidden sm:block">{f.id} · {v.id}</span>
                                     </button>
                                 );
                             })}
