@@ -18,6 +18,8 @@ import {
 } from 'recharts';
 import { CHART_FONT } from '@/components/charts/chartTheme';
 import { event as gaEvent } from '@/lib/ga';
+import { Ruler, TrendingUp, Eraser } from 'lucide-react';
+import { ChartDrawLayer, loadDrawings, saveDrawings, type Drawing, type DrawTool } from './chart/ChartDrawTools';
 
 interface Candle {
   t: number; // timestamp (ms)
@@ -431,7 +433,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   const [inds, setInds] = useState<Set<IndKey>>(new Set());
   // Compact toolbar menus — the secondary controls (metric select, overlay
   // toggles, benchmark compare) collapsed into dropdowns; exactly one open.
-  const [openMenu, setOpenMenu] = useState<'metric' | 'overlays' | 'compare' | null>(null);
+  const [openMenu, setOpenMenu] = useState<'metric' | 'overlays' | 'compare' | 'draw' | null>(null);
   const menuWrapRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!openMenu) return;
@@ -741,6 +743,26 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   const [peBrush, setPeBrush] = useState<{ startIndex: number; endIndex: number } | null>(null);
   const [peEpoch, setPeEpoch] = useState(0);
   useEffect(() => setPeBrush(null), [activePeriod, ticker]);
+
+  // Drawing tools (XTB-style): measure boxes + trendlines pinned to
+  // (date, price) coordinates, persisted per ticker in localStorage.
+  const [drawTool, setDrawTool] = useState<DrawTool>(null);
+  const [drawings, setDrawings] = useState<Drawing[]>([]);
+  useEffect(() => { setDrawings(loadDrawings(ticker)); setDrawTool(null); }, [ticker]);
+  const addDrawing = (d: Drawing) =>
+    setDrawings((prev) => { const next = [...prev, d]; saveDrawings(ticker, next); return next; });
+  const clearDrawings = () => { setDrawings([]); saveDrawings(ticker, []); };
+  // Esc disarms the active tool (and any in-progress draft is discarded by
+  // the layer on pointer-up).
+  useEffect(() => {
+    if (!drawTool) return;
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') setDrawTool(null); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [drawTool]);
+  // Tools measure price — meaningless on the %-axis compare view and on the
+  // valuation chart, so they stay armed only in plain price mode.
+  const drawActive = mode === 'price' && !bmActive && drawTool != null;
 
   // Two-phase view swap (mode / metric / period): the chart wrapper fades
   // out for ~120ms, the change commits while invisible, then it fades back
@@ -1276,6 +1298,67 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                   </div>
                 </>
               )}
+              <span className="w-px h-5 bg-gray-300 dark:bg-gray-500 mx-1.5" />
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setOpenMenu((m) => (m === 'draw' ? null : 'draw'))}
+                  aria-haspopup="true"
+                  aria-expanded={openMenu === 'draw'}
+                  disabled={bmActive}
+                  title={
+                    bmActive
+                      ? 'Drawing tools work on the price chart (exit Compare first)'
+                      : 'Drawing tools — drag on the chart to measure moves or draw trendlines'
+                  }
+                  className={`min-w-[72px] px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 justify-between disabled:opacity-40 disabled:cursor-not-allowed ${
+                    openMenu === 'draw' || drawTool
+                      ? 'bg-white dark:bg-gray-900 shadow-sm'
+                      : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+                  }`}
+                  style={drawTool ? { color: '#8b5cf6' } : undefined}
+                >
+                  <span>{drawTool === 'measure' ? '📐 Measure' : drawTool === 'trend' ? '╱ Trend' : 'Draw'}</span>
+                  <span className="text-[9px] opacity-60">{openMenu === 'draw' ? '▴' : '▾'}</span>
+                </button>
+                {openMenu === 'draw' && !bmActive && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full mt-1 z-50 min-w-[190px] rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl py-1"
+                  >
+                    {([
+                      ['measure', 'Measure move', 'Drag between two points — shows Δ%, Δ$ and bar count', <Ruler key="r" size={13} />],
+                      ['trend', 'Trendline', 'Drag to draw — line extends to chart edges', <TrendingUp key="t" size={13} />],
+                    ] as [DrawTool & string, string, string, React.ReactNode][]).map(([k, label, hint, icon]) => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => { setOpenMenu(null); setDrawTool(drawTool === k ? null : k); gaEvent('chart_draw', { tool: k, ticker }); }}
+                        className={`flex items-start gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                          drawTool === k ? 'text-gray-900 dark:text-white font-semibold' : 'text-gray-500 dark:text-gray-400'
+                        }`}
+                      >
+                        <span className="mt-0.5 shrink-0">{icon}</span>
+                        <span>
+                          {label}
+                          <span className="block text-[10px] opacity-70 font-normal">{hint}</span>
+                        </span>
+                        {drawTool === k && <span className="ml-auto text-[10px]">✓</span>}
+                      </button>
+                    ))}
+                    <div className="my-1 h-px bg-gray-100 dark:bg-gray-700" />
+                    <button
+                      type="button"
+                      onClick={() => { setOpenMenu(null); setDrawTool(null); clearDrawings(); }}
+                      disabled={!drawings.length}
+                      className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <Eraser size={13} className="shrink-0" />
+                      Clear drawings{drawings.length ? ` (${drawings.length})` : ''}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
@@ -1297,7 +1380,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         </div>
       </div>
 
-      <div className={`pmp-chart-swap${fading ? ' pmp-fading' : ''}`}>
+      <div className={`pmp-chart-swap relative${fading ? ' pmp-fading' : ''}`}>
       {mode === 'pe' && metricStats ? (
         <>
         <ResponsiveContainer width="100%" height={narrow ? 400 : 470}>
@@ -1656,8 +1739,25 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               />
             </>
           )}
+          {/* Drawing tools — measure boxes + trendlines. Renders inside the
+              chart SVG with the real axis scales (recharts 3 hooks); pointer
+              capture is armed only while a tool is selected. */}
+          {(drawActive || drawings.length > 0) && !bmActive && (
+            <ChartDrawLayer
+              tool={drawActive ? drawTool : null}
+              drawings={drawings}
+              onAdd={addDrawing}
+              dates={data.map((p) => p.date)}
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
+      )}
+      {/* Tool hint — sits over the chart while a drawing tool is armed */}
+      {drawActive && (
+        <div className="absolute left-2 top-2 z-10 pointer-events-none rounded-md bg-violet-600/90 text-white text-[10px] font-semibold px-2 py-0.5 shadow">
+          {drawTool === 'measure' ? 'Drag to measure a move' : 'Drag to draw a trendline'} · Esc to exit
+        </div>
       )}
       </div>
 
