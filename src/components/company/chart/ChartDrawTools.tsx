@@ -76,6 +76,7 @@ export function ChartDrawLayer({ tool, drawings, onAdd, dates }: ChartDrawLayerP
   };
   const move = (e: React.PointerEvent) => {
     if (!draft) return;
+    e.stopPropagation(); // keep the chart tooltip out of the way while dragging
     const p = toPoint(e);
     if (p) setDraft({ ...draft, b: p });
   };
