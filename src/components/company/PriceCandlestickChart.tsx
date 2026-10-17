@@ -749,8 +749,14 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   const [drawTool, setDrawTool] = useState<DrawTool>(null);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   useEffect(() => { setDrawings(loadDrawings(ticker)); setDrawTool(null); }, [ticker]);
-  const addDrawing = (d: Drawing) =>
+  const addDrawing = (d: Drawing) => {
     setDrawings((prev) => { const next = [...prev, d]; saveDrawings(ticker, next); return next; });
+    setDrawTool(null); // single-shot: after drawing, handles appear for editing
+  };
+  const updateDrawing = (idx: number, d: Drawing) =>
+    setDrawings((prev) => { const next = prev.map((x, j) => (j === idx ? d : x)); saveDrawings(ticker, next); return next; });
+  const removeDrawing = (idx: number) =>
+    setDrawings((prev) => { const next = prev.filter((_, j) => j !== idx); saveDrawings(ticker, next); return next; });
   const clearDrawings = () => { setDrawings([]); saveDrawings(ticker, []); };
   // Esc disarms the active tool (and any in-progress draft is discarded by
   // the layer on pointer-up).
@@ -1747,19 +1753,21 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
               tool={drawActive ? drawTool : null}
               drawings={drawings}
               onAdd={addDrawing}
+              onUpdate={updateDrawing}
+              onDelete={removeDrawing}
               dates={data.map((p) => p.date)}
             />
           )}
         </ComposedChart>
       </ResponsiveContainer>
       )}
-      {/* Tool hint — sits over the chart while a drawing tool is armed */}
+      </div>
+      {/* Tool hint — below the chart so it never covers the drawings */}
       {drawActive && (
-        <div className="absolute left-2 top-2 z-10 pointer-events-none rounded-md bg-violet-600/90 text-white text-[10px] font-semibold px-2 py-0.5 shadow">
-          {drawTool === 'measure' ? 'Drag to measure a move' : 'Drag to draw a trendline'} · Esc to exit
+        <div className="mt-1 text-[10px] font-semibold text-violet-600 dark:text-violet-400">
+          {drawTool === 'measure' ? 'Drag to measure a move' : 'Drag to draw a trendline'} · Esc to cancel
         </div>
       )}
-      </div>
 
       {/* Benchmark legend — only while a compare overlay is active; the
           solid swatch matches the line, delta text shows the window-end gap */}
