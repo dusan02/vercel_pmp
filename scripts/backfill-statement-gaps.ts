@@ -51,8 +51,22 @@ async function main() {
     });
     const stale = grouped
         .filter(g => g._max.endDate && g._max.endDate.getTime() < BEFORE.getTime())
-        .map(g => ({ symbol: g.symbol, latest: g._max.endDate! }))
-        .sort((a, b) => a.symbol.localeCompare(b.symbol));
+        .map(g => ({ symbol: g.symbol, latest: g._max.endDate! }));
+
+    // Tickers with FY rows but ZERO quarterly rows are invisible to the
+    // grouped query (GOOG: Finnhub carries only pre-Alphabet 2011-12
+    // quarterlies → the sync's year<2016 cutoff drops them, leaving the
+    // ticker on FY-only TTM). They need the same refresh drive-through.
+    const hasQuarterly = new Set(grouped.map((g) => g.symbol));
+    const fySymbols = await prisma.financialStatement.findMany({
+        where: { fiscalPeriod: 'FY' },
+        select: { symbol: true },
+        distinct: ['symbol'],
+    });
+    for (const { symbol } of fySymbols) {
+        if (!hasQuarterly.has(symbol)) stale.push({ symbol, latest: new Date(0) });
+    }
+    stale.sort((a, b) => a.symbol.localeCompare(b.symbol));
 
     const batch = stale.slice(OFFSET, LIMIT ? OFFSET + LIMIT : undefined);
     console.log(`[backfill] ${stale.length} stale tickers (latestQ < ${BEFORE.toISOString().slice(0, 10)}), processing ${batch.length}${dryRun ? ' (DRY RUN)' : ''}`);
