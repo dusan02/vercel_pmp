@@ -95,6 +95,7 @@ jobs:
             "cd /var/www/premarketprice && git fetch origin main -q && git show '$DEPLOY_SHA:scripts/vps-activate.sh' > /tmp/vps-activate.sh && echo \"=== activate $DEPLOY_SHA \$(date -u) ===\" > /var/log/pmp-deploy.log && setsid nohup bash /tmp/vps-activate.sh '$DEPLOY_SHA' /tmp/next-build.tar.gz >> /var/log/pmp-deploy.log 2>&1 < /dev/null & echo ACTIVATION_LAUNCHED"
 
       - name: Poll activation result
+        if: steps.gate.outputs.skip == 'false'
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
