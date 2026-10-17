@@ -130,6 +130,36 @@ const TONE: Record<FundLevel, Record<ValLevel, VerdictTone>> = {
     weak: { cheap: 'warn', fair: 'neg', expensive: 'neg', unknown: 'neg' },
 };
 
+const NONE_VALUATION_HEADLINE: Record<'cheap' | 'fair' | 'expensive', string> = {
+    cheap: 'Cheap vs its own history',
+    fair: 'Fairly valued vs history',
+    expensive: 'Expensive vs its own history',
+};
+
+/**
+ * Every persisted verdictKey → the exact headline the verdict card renders.
+ * Single source for the screener's Verdict select + result labels, so a
+ * filter row always names the same text the page shows.
+ */
+export const VERDICT_LABELS: Record<VerdictKey, string> = {
+    strong_cheap: HEADLINE.strong.cheap,
+    strong_fair: HEADLINE.strong.fair,
+    strong_expensive: HEADLINE.strong.expensive,
+    strong_unknown: HEADLINE.strong.unknown,
+    mixed_cheap: HEADLINE.mixed.cheap,
+    mixed_fair: HEADLINE.mixed.fair,
+    mixed_expensive: HEADLINE.mixed.expensive,
+    mixed_unknown: HEADLINE.mixed.unknown,
+    weak_cheap: HEADLINE.weak.cheap,
+    weak_fair: HEADLINE.weak.fair,
+    weak_expensive: HEADLINE.weak.expensive,
+    weak_unknown: HEADLINE.weak.unknown,
+    none_cheap: NONE_VALUATION_HEADLINE.cheap,
+    none_fair: NONE_VALUATION_HEADLINE.fair,
+    none_expensive: NONE_VALUATION_HEADLINE.expensive,
+    insufficient: 'Insufficient financial data',
+};
+
 function fundLevel(pillars: PillarScores | null): FundLevel | null {
     if (!pillars) return null;
     const scores = FUND_KEYS.map((k) => pillars[k]?.score).filter((s): s is number => s != null);
@@ -293,9 +323,7 @@ export function buildVerdict(input: VerdictInput): Verdict | null {
     if (fundamentals == null) {
         // No pillars — market context alone isn't a verdict
         if (!marketContext && evidence.length === 0) return null;
-        const h = valuation !== 'unknown'
-            ? { cheap: 'Cheap vs its own history', fair: 'Fairly valued vs history', expensive: 'Expensive vs its own history' }[valuation]
-            : null;
+        const h = valuation !== 'unknown' ? NONE_VALUATION_HEADLINE[valuation] : null;
         return {
             tone: valuation === 'cheap' ? 'pos' : valuation === 'expensive' ? 'warn' : 'neutral',
             headline: h ?? 'Insufficient data for a fundamental verdict',

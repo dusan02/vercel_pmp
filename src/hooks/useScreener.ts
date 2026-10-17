@@ -407,7 +407,7 @@ export function useScreener({
         if ((p.trendConfirmed ?? false) !== trendConfirmed) return false;
         // Verdict enum axes — absent preset key = no constraint expected.
         for (const d of VERDICT_FILTERS) {
-            if ((verdictFilters[d.key] ?? undefined) !== (p[d.key as 'fund' | 'val'] ?? undefined)) return false;
+            if ((verdictFilters[d.key] ?? undefined) !== (p[d.key as 'fund' | 'val' | 'verdict'] ?? undefined)) return false;
         }
         // Sort is user-controlled presentation, not part of preset identity —
         // a preset pill stays active while the user re-sorts the same screen.
@@ -486,7 +486,7 @@ export function useScreener({
         if (preset.marketCapPreset !== undefined) setMarketCapPreset(preset.marketCapPreset);
         if (preset.trendConfirmed) setTrendConfirmed(true);
         for (const d of VERDICT_FILTERS) {
-            const v = preset[d.key as 'fund' | 'val'];
+            const v = preset[d.key as 'fund' | 'val' | 'verdict'];
             if (v !== undefined) setVerdictFilter(d.key, v);
         }
         if (preset.ranges) {

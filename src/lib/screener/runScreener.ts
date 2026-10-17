@@ -62,10 +62,6 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
         const v = searchParams.get(d.param);
         if (v && VERDICT_PARAM_VALUES[d.key].includes(v)) enumFilters.push({ field: d.field, value: v });
     }
-    const verdictParam = searchParams.get('verdict');
-    if (verdictParam && /^[a-z]+_[a-z]+$/.test(verdictParam) && verdictParam !== 'none_unknown') {
-        enumFilters.push({ field: 'verdictKey', value: verdictParam });
-    }
     const enumKey = enumFilters.map((r) => `ac.${r.field}=${r.value}`).join('|');
     // Backtested "fundamentals confirm trend" combo — server-side symbol filter
     const trendConfirmed = searchParams.get('trendConfirmed') === '1';

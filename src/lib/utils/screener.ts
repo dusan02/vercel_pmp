@@ -1,3 +1,5 @@
+import { VERDICT_LABELS } from '@/lib/analysis/verdict';
+
 export interface ScreenerResult {
     symbol: string;
     /** 1Y closes downsampled to ~52 weekly points (null = no history). */
@@ -158,12 +160,16 @@ export const VERDICT_FILTERS = [
             { value: 'unknown', label: 'Unknown' },
         ],
     },
+    {
+        key: 'verdict', param: 'verdict', field: 'verdictKey', label: 'Verdict',
+        hint: 'Exact PMP verdict — the same headline the analysis page shows',
+        options: Object.keys(VERDICT_LABELS).map((v) => ({ value: v, label: VERDICT_LABELS[v as keyof typeof VERDICT_LABELS] })),
+    },
 ] as const;
 export type VerdictFilterKey = (typeof VERDICT_FILTERS)[number]['key'];
-export const VERDICT_PARAM_VALUES: Record<VerdictFilterKey, readonly string[]> = {
-    fund: VERDICT_FILTERS[0].options.map(o => o.value),
-    val: VERDICT_FILTERS[1].options.map(o => o.value),
-};
+export const VERDICT_PARAM_VALUES: Record<VerdictFilterKey, string[]> = Object.fromEntries(
+    VERDICT_FILTERS.map((d) => [d.key, d.options.map((o) => o.value as string)])
+) as Record<VerdictFilterKey, string[]>;
 
 /**
  * Single-bound advanced filters (AnalysisCache columns). `param` is shared by
@@ -370,7 +376,7 @@ export interface ScreenerPreset {
     /** Backtested "fundamentals confirm trend" combo (server-side symbol filter). */
     trendConfirmed?: boolean;
     /** Verdict enum axes — persisted AnalysisCache levels (exact verdict match). */
-    fund?: string; val?: string;
+    fund?: string; val?: string; verdict?: string;
     ranges?: Partial<Record<RangeFilterKey, { min?: number; max?: number }>>;
 }
 
@@ -394,7 +400,7 @@ export interface ScreenerPreset {
  *   large steady compounders, not explosive.
  */
 export const QUICK_SCREENS: {
-    label: string; tip?: string; group: 'score' | 'classic' | 'lynch' | 'discovery';
+    label: string; tip?: string; group: 'score' | 'classic' | 'lynch' | 'discovery' | 'verdict';
     /** Lucide icon name(s) — rendered left of the label in the preset pill
         and the /analysis "In screens" badges (mapped in screenerIcons.tsx). */
     icon?: string | string[];
@@ -432,9 +438,26 @@ export const QUICK_SCREENS: {
     { label: 'Momentum + Fundamentals', tip: 'Day change ≥+5% · Overall ≥70 · Quality ≥70 — abnormal move on strong fundamentals', group: 'discovery', icon: 'Zap', preset: { minOverall: 70, minQuality: 70, ranges: { changePct: { min: 5 } }, sort: 'ticker.lastChangePct:desc' } },
     { label: 'P/E Below 3Y Median', tip: 'Current P/E below its own trailing-3Y median — sorted by deepest discount vs that median', group: 'discovery', icon: 'History', preset: { ranges: { peVsMedian3yPct: { max: 0 } }, sort: 'peVsMedian3yPct:asc' } },
     { label: 'P/E at Historical Low', tip: 'Current P/E in the bottom decile of its own valuation history (≤10ᵗʰ percentile)', group: 'discovery', icon: 'History', preset: { ranges: { pePercentile: { max: 10 } }, sort: 'pePercentile:asc' } },
-    { label: 'Strong & Cheap', tip: 'Verdict fundamentals Strong · valuation Cheap vs own history — exact verdict "Strong business, attractive price"', group: 'discovery', icon: 'Gem', preset: { fund: 'strong', val: 'cheap', sort: 'pePercentile:asc' } },
-    { label: 'Quality but Expensive', tip: 'Verdict fundamentals Strong · valuation Expensive vs own history — exact verdict "High quality, but expensive" (great business, rich entry price)', group: 'discovery', icon: 'Gem', preset: { fund: 'strong', val: 'expensive', sort: 'pePercentile:desc' } },
     { label: 'Trend × Fundamentals', tip: 'Rev/share +30% (1Y) · EPS growing · price ≥80% of 52w high — backtested combo, ~2× fwd-return edge vs universe', group: 'discovery', icon: ['TrendingUp', 'Check'], preset: { trendConfirmed: true } },
+    // PMP Verdict — every cell of the persisted fundLevel × valLevel grid
+    // (the exact headline the analysis page shows). Atomized: the same
+    // verdicts are composable from the Fundamentals + Valuation selects.
+    { label: 'Strong · Cheap', tip: 'Verdict: "Strong business, attractive price"', group: 'verdict', icon: 'Gem', preset: { verdict: 'strong_cheap', sort: 'pePercentile:asc' } },
+    { label: 'Strong · Fair', tip: 'Verdict: "High quality, fairly valued"', group: 'verdict', icon: 'Gem', preset: { verdict: 'strong_fair' } },
+    { label: 'Strong · Expensive', tip: 'Verdict: "High quality, but expensive"', group: 'verdict', icon: 'Gem', preset: { verdict: 'strong_expensive', sort: 'pePercentile:desc' } },
+    { label: 'Strong · No Val.', tip: 'Verdict: "High quality" — strong pillars, no valuation history', group: 'verdict', icon: 'Gem', preset: { verdict: 'strong_unknown' } },
+    { label: 'Mixed · Cheap', tip: 'Verdict: "Mixed fundamentals, cheap valuation"', group: 'verdict', icon: 'Scale', preset: { verdict: 'mixed_cheap', sort: 'pePercentile:asc' } },
+    { label: 'Mixed · Fair', tip: 'Verdict: "Mixed fundamentals, fairly valued"', group: 'verdict', icon: 'Scale', preset: { verdict: 'mixed_fair' } },
+    { label: 'Mixed · Expensive', tip: 'Verdict: "Mixed fundamentals, expensive valuation"', group: 'verdict', icon: 'Scale', preset: { verdict: 'mixed_expensive' } },
+    { label: 'Mixed · No Val.', tip: 'Verdict: "Mixed fundamentals" — no valuation history', group: 'verdict', icon: 'Scale', preset: { verdict: 'mixed_unknown' } },
+    { label: 'Weak · Cheap', tip: 'Verdict: "Cheap for a reason — weak fundamentals"', group: 'verdict', icon: 'TrendingDown', preset: { verdict: 'weak_cheap', sort: 'pePercentile:asc' } },
+    { label: 'Weak · Fair', tip: 'Verdict: "Weak fundamentals"', group: 'verdict', icon: 'TrendingDown', preset: { verdict: 'weak_fair' } },
+    { label: 'Weak · Expensive', tip: 'Verdict: "Weak fundamentals, expensive"', group: 'verdict', icon: 'TrendingDown', preset: { verdict: 'weak_expensive' } },
+    { label: 'Weak · No Val.', tip: 'Verdict: "Weak fundamentals" — no valuation history', group: 'verdict', icon: 'TrendingDown', preset: { verdict: 'weak_unknown' } },
+    { label: 'Cheap (no fund.)', tip: 'Verdict: "Cheap vs its own history" — valuation-only, pillar scores missing', group: 'verdict', icon: 'Tag', preset: { verdict: 'none_cheap' } },
+    { label: 'Fair (no fund.)', tip: 'Verdict: "Fairly valued vs history" — valuation-only, pillar scores missing', group: 'verdict', icon: 'Tag', preset: { verdict: 'none_fair' } },
+    { label: 'Expensive (no fund.)', tip: 'Verdict: "Expensive vs its own history" — valuation-only, pillar scores missing', group: 'verdict', icon: 'Tag', preset: { verdict: 'none_expensive' } },
+    { label: 'Insufficient Data', tip: 'Verdict: "Insufficient financial data" — no statements on file', group: 'verdict', icon: 'History', preset: { verdict: 'insufficient' } },
 ];
 
 /** Render order + labels for the preset pill groups (screener UI only). */
@@ -443,6 +466,7 @@ export const PRESET_GROUPS: { id: (typeof QUICK_SCREENS)[number]['group']; label
     { id: 'classic', label: 'Classic' },
     { id: 'lynch', label: 'Lynch' },
     { id: 'discovery', label: 'Discovery' },
+    { id: 'verdict', label: 'PMP Verdict' },
 ];
 
 /**
@@ -495,6 +519,7 @@ export function matchesPreset(p: ScreenerPreset, ctx: PresetMatchContext): boole
     // Verdict enum axes — same "null never passes" rule as range bounds.
     if (p.fund !== undefined && s?.fundLevel !== p.fund) return false;
     if (p.val !== undefined && s?.valLevel !== p.val) return false;
+    if (p.verdict !== undefined && s?.verdictKey !== p.verdict) return false;
     if (p.marketCapPreset && p.marketCapPreset !== 'all') {
         const mc = MARKET_CAP_PRESETS.find((x) => x.id === p.marketCapPreset);
         const capRange: { min?: number; max?: number } = {};
@@ -531,10 +556,9 @@ const RANGE_PARAMS = new Set(
 );
 const STRING_PARAMS = new Set(['sector', 'industry', 'q', 'mcap', 'sort', 'trendConfirmed']);
 // Verdict enum params — value must be one of the persisted level values.
-const ENUM_PARAMS = new Map<string, readonly string[]>([
-    ['fund', VERDICT_PARAM_VALUES.fund],
-    ['val', VERDICT_PARAM_VALUES.val],
-]);
+const ENUM_PARAMS = new Map<string, readonly string[]>(
+    VERDICT_FILTERS.map((d) => [d.key, d.options.map((o) => o.value) as string[]])
+);
 const SORT_RE = /^[a-zA-Z0-9.]+:(asc|desc)$/;
 
 /**
@@ -580,6 +604,7 @@ export function presetToQueryString(p: ScreenerPreset): string {
     if (p.marketCapPreset && p.marketCapPreset !== 'all') sp.set('mcap', p.marketCapPreset);
     if (p.fund) sp.set('fund', p.fund);
     if (p.val) sp.set('val', p.val);
+    if (p.verdict) sp.set('verdict', p.verdict);
     for (const [key, r] of Object.entries(p.ranges ?? {})) {
         const cap = key[0]!.toUpperCase() + key.slice(1);
         if (r?.min !== undefined) sp.set(`min${cap}`, String(r.min));
