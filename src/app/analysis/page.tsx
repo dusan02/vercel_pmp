@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { AnalysisStandalone } from '@/components/home/StandaloneTools';
+import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 export const metadata: Metadata = generatePageMetadata({
   title: 'Stock Analysis — Search Any US Stock | PreMarketPrice',
@@ -12,6 +13,7 @@ export const metadata: Metadata = generatePageMetadata({
 export default function AnalysisSearchPage() {
   return (
     <main className="min-h-screen">
+      <StandaloneHeader />
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 py-4 lg:py-6">
         <AnalysisStandalone />
       </div>

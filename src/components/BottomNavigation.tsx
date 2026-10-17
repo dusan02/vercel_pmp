@@ -102,10 +102,10 @@ export function BottomNavigation({ activeSection, onSectionChange }: BottomNavig
                 }`}
               aria-label={item.label}
               aria-current={active ? 'page' : undefined}
-              style={{ minWidth: '44px', minHeight: '44px' }}
+              style={{ minWidth: 0, minHeight: '44px' }}
             >
-              <Icon size={22} strokeWidth={active ? 2.5 : 2} />
-              <span className={`text-xs leading-none ${active ? 'font-semibold' : 'font-normal'}`}>
+              <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+              <span className={`text-[10px] sm:text-xs leading-none truncate max-w-full px-0.5 ${active ? 'font-semibold' : 'font-normal'}`}>
                 {item.label}
               </span>
             </button>

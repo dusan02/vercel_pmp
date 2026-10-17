@@ -11,27 +11,39 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, LayoutGrid, Zap, Calendar, Globe } from 'lucide-react';
+import { LayoutGrid, BarChart3, PieChart, Star, Calendar, Zap, Globe } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { label: 'Home', icon: Home, path: '/', match: (p: string) => p === '/' },
-  { label: 'Heatmap', icon: LayoutGrid, path: '/heatmap', match: (p: string) => p.startsWith('/heatmap') },
+  { label: 'Heatmap', icon: LayoutGrid, path: '/', match: (p: string) => p === '/' || p.startsWith('/heatmap') },
+  {
+    label: 'Analysis',
+    icon: BarChart3,
+    path: '/analysis',
+    match: (p: string) => p.startsWith('/analysis') || p.startsWith('/valuation') || p.startsWith('/financials'),
+  },
+  { label: 'Portfolio', icon: PieChart, path: '/portfolio', match: (p: string) => p.startsWith('/portfolio') },
+  { label: 'Favorites', icon: Star, path: '/favorites', match: (p: string) => p.startsWith('/favorites') },
+  { label: 'Earnings', icon: Calendar, path: '/earnings', match: (p: string) => p.startsWith('/earnings') },
   {
     label: 'Movers',
     icon: Zap,
     path: '/premarket-movers',
     match: (p: string) =>
       p.startsWith('/premarket-movers') ||
+      p.startsWith('/premarket-gainers') ||
+      p.startsWith('/premarket-losers') ||
+      p.startsWith('/premarket/') ||
       p.startsWith('/gainers') ||
       p.startsWith('/losers') ||
+      p.startsWith('/biggest-movers') ||
+      p.startsWith('/unusual-volume') ||
       p.startsWith('/movers'),
   },
-  { label: 'Earnings', icon: Calendar, path: '/earnings', match: (p: string) => p.startsWith('/earnings') },
   {
     label: 'Screener',
     icon: Globe,
     path: '/screener',
-    match: (p: string) => p.startsWith('/stocks') || p.startsWith('/screener') || p.startsWith('/sectors'),
+    match: (p: string) => p.startsWith('/stocks') || p.startsWith('/screener') || p.startsWith('/sectors') || p.startsWith('/sector/'),
   },
 ];
 
@@ -70,10 +82,10 @@ export function GlobalBottomNav() {
                   ? 'text-blue-600 bg-blue-600/10'
                   : 'text-gray-500 dark:text-gray-400 active:bg-gray-100 dark:active:bg-gray-800'
                 }`}
-              style={{ minWidth: '44px', minHeight: '44px' }}
+              style={{ minWidth: 0, minHeight: '44px' }}
             >
-              <Icon size={22} strokeWidth={active ? 2.5 : 2} />
-              <span className={`text-xs leading-none ${active ? 'font-semibold' : 'font-normal'}`}>
+              <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+              <span className={`text-[10px] sm:text-xs leading-none truncate max-w-full px-0.5 ${active ? 'font-semibold' : 'font-normal'}`}>
                 {item.label}
               </span>
             </Link>

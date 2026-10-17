@@ -19,7 +19,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 function formatDateDisplay(dateStr: string): string {
   return new Date(dateStr + 'T12:00:00Z').toLocaleDateString('en-US', {
-    weekday: 'short',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -47,39 +46,39 @@ export default async function PremarketGainersIndexPage() {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-950">
                 <tr className="text-left text-slate-600 dark:text-slate-400">
-                  <th className="px-3 sm:px-4 py-2">Date</th>
+                  <th className="px-2.5 sm:px-4 py-2">Date</th>
                   <th className="px-4 py-2 hidden sm:table-cell">Stocks Tracked</th>
-                  <th className="px-3 sm:px-4 py-2">Top Gainer</th>
-                  <th className="px-3 sm:px-4 py-2">Links</th>
+                  <th className="px-2.5 sm:px-4 py-2">Top Gainer</th>
+                  <th className="px-2.5 sm:px-4 py-2 text-right sm:text-left">Links</th>
                 </tr>
               </thead>
               <tbody>
                 {summaries.map((d) => (
                   <tr key={d.date} className="border-t border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-950/60">
-                    <td className="px-3 sm:px-4 py-2 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                    <td className="px-2.5 sm:px-4 py-2 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap text-xs sm:text-sm">
                       {formatDateDisplay(d.date)}
                     </td>
                     <td className="px-4 py-2 tabular-nums text-slate-600 dark:text-slate-400 hidden sm:table-cell">
                       {d.totalTickers}
                     </td>
-                    <td className="px-3 sm:px-4 py-2 whitespace-nowrap">
+                    <td className="px-2.5 sm:px-4 py-2 whitespace-nowrap text-xs sm:text-sm">
                       {d.topGainer ? (
                         <span className="tabular-nums">
                           <Link href={`/analysis/${d.topGainer.symbol}`} className="font-semibold text-slate-700 dark:text-slate-300 hover:underline">
                             {d.topGainer.symbol}
                           </Link>
-                          <span className="ml-1.5 sm:ml-2 text-emerald-600 dark:text-emerald-400">
+                          <span className="ml-1 sm:ml-2 text-emerald-600 dark:text-emerald-400">
                             {formatPercent(d.topGainer.changePct)}
                           </span>
                         </span>
                       ) : '—'}
                     </td>
-                    <td className="px-3 sm:px-4 py-2 whitespace-nowrap">
+                    <td className="px-2.5 sm:px-4 py-2 whitespace-nowrap text-right sm:text-left text-xs sm:text-sm">
                       <Link href={`/premarket-gainers/${d.date}`} className="text-emerald-600 dark:text-emerald-400 hover:underline mr-2 sm:mr-3">
-                        Gainers →
+                        Gainers
                       </Link>
                       <Link href={`/premarket-losers/${d.date}`} className="text-rose-600 dark:text-rose-400 hover:underline">
-                        Losers →
+                        Losers
                       </Link>
                     </td>
                   </tr>

@@ -1044,8 +1044,8 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       {/* Results Table */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
         {/* Column view tabs — switch metric columns without touching filters.
-            Custom = user's own ordered column set (persisted + shareable). */}
-        <div className="flex items-center gap-1 px-3 pt-3 pb-0 overflow-x-auto" role="tablist" aria-label="Column views">
+            flex-wrap so all view tabs and ⚙ Columns stay visible without clipping on 360px mobile. */}
+        <div className="flex flex-wrap items-center gap-1 px-3 pt-2.5 pb-1 border-b border-gray-100 dark:border-slate-700" role="tablist" aria-label="Column views">
           {COLUMN_VIEWS.map(v => (
             <button
               key={v.id}

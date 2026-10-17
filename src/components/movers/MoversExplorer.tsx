@@ -287,7 +287,7 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
                       )}
                     </div>
                     {r.name && (
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 max-w-[130px] truncate" title={r.name}>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 max-w-[110px] sm:max-w-[140px] truncate" title={r.name}>
                         {r.name}
                       </div>
                     )}
