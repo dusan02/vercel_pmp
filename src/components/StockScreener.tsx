@@ -3,7 +3,6 @@
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import { renderPresetIcon } from '@/lib/utils/screenerIcons';
 import CompanyLogo from './CompanyLogo';
 import { UniversalTable, ColumnDef } from './UniversalTable';
 import { DualRangeSlider } from './analysis/DualRangeSlider';
@@ -16,6 +15,7 @@ import {
   SCORE_FILTERS, ADVANCED_FILTERS, VERDICT_FILTERS, matchesPreset,
 } from '@/lib/utils/screener';
 import { Sparkline } from './Sparkline';
+import VerdictMatrix from './VerdictMatrix';
 import { formatBillions, formatMarketCapDiff, formatCurrencyCompact } from '@/lib/utils/format';
 import { useState, useEffect } from 'react';
 
@@ -80,10 +80,14 @@ const columnLabel = (key: string) =>
 /** All slider-rendered range defs (Finnhub metrics + our analysis metrics) —
     grouped by `group` so each registry adds its section automatically. */
 const SLIDER_DEFS: { key: RangeFilterKey; label: string; min: number; max: number; step: number; group: string; hint?: string }[] = [
+  ...MARKET_RANGE_FILTERS,
   ...METRIC_FILTERS,
   ...ANALYSIS_RANGE_FILTERS,
 ];
 const SLIDER_GROUPS = [...new Set(SLIDER_DEFS.map((d) => d.group))];
+// Quick-screen presets rendered in the dropdown — the verdict group renders
+// as the VerdictMatrix grid instead (cell = exact verdict, axes = atomics).
+const PRESET_OPTIONS = QUICK_SCREENS.filter((s) => s.group !== 'verdict');
 // Company is the row identifier — always first, never removable.
 const PINNED_COLUMN = 'ticker.name';
 
@@ -543,14 +547,18 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
   const [showAdvanced, setShowAdvanced] = useState(false);
   const advancedActive = ADVANCED_FILTERS.some((d) => d.active(advanced[d.key]));
   const advancedVisible = showAdvanced || advancedActive;
-  // Metric filters use DualRangeSlider (min+max) — active when any Finnhub
-  // or insider key has a range (price/changePct live in the main grid and
-  // don't count; insider keys are preset-only but still count as active).
-  const METRIC_KEY_SET = new Set<string>([...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS, ...ANALYSIS_RANGE_FILTERS].map(d => d.key));
+  // Metric filters use DualRangeSlider (min+max) — active when any Finnhub,
+  // insider, market or analysis key has a range.
+  const METRIC_KEY_SET = new Set<string>([...MARKET_RANGE_FILTERS, ...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS, ...ANALYSIS_RANGE_FILTERS].map(d => d.key));
   const [showMetrics, setShowMetrics] = useState(false);
   const metricsActiveCount = Object.keys(metricRanges).filter(k => METRIC_KEY_SET.has(k)).length;
   const metricsActive = metricsActiveCount > 0;
   const metricsVisible = showMetrics || metricsActive;
+  // Score sliders collapse behind an accordion too — the panel opens at two
+  // control rows instead of a wall of sliders.
+  const [showScores, setShowScores] = useState(false);
+  const scoreActiveCount = Object.keys(scoreRanges).length;
+  const scoresVisible = showScores || scoreActiveCount > 0;
   // Shared wiring for registry-driven range sliders — a handle returned to
   // the bound's default deletes that side of the range (default = no filter).
   const rangeSliderProps = (def: { key: RangeFilterKey; min: number; max: number }) => {
@@ -671,6 +679,8 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
 
   const totalPages = pagination?.totalPages || 1;
   const total = pagination?.total || 0;
+  // The dropdown mirrors active preset state (first exact preset match wins).
+  const activePresetIdx = PRESET_OPTIONS.findIndex((s) => isPresetActive(s.preset));
 
   return (
     <div className="space-y-4">
@@ -692,34 +702,29 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
           )}
         </div>
 
-        {/* Quick screens — one-tap preset combinations, grouped by style:
-            PMP-score screens, classic strategies, Lynch categories, and
-            idea-driven discovery screens. Active pill highlights while the
-            current filter state matches. */}
-        {PRESET_GROUPS.map((g) => (
-          <div key={g.id} className="flex items-center sm:flex-wrap gap-1.5 mb-1.5 overflow-x-auto sm:overflow-visible scrollbar-none pb-0.5">
-            <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1 w-16 sm:w-20 shrink-0">
-              {g.label}:
-            </span>
-            {QUICK_SCREENS.filter((p) => p.group === g.id).map((p) => {
-              const active = isPresetActive(p.preset);
-              return (
-                <button
-                  key={p.label}
-                  onClick={() => applyPreset(p.preset)}
-                  title={p.tip}
-                  className={`shrink-0 whitespace-nowrap text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
-                    active
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-medium'
-                      : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400'
-                  }`}
-                >
-                  <span className="inline-flex items-center gap-1">{renderPresetIcon(p.icon)}{p.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        ))}
+        {/* Quick screens — all one-tap preset combinations in a single
+            grouped dropdown (previously 30+ pills across five rows). The
+            active preset stays selected while the filter state matches;
+            verdict presets live in the VerdictMatrix grid instead. */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider w-16 sm:w-20 shrink-0">Screens:</span>
+          <select
+            value={activePresetIdx >= 0 ? String(activePresetIdx) : ''}
+            onChange={(e) => {
+              if (e.target.value === '') return;
+              const s = PRESET_OPTIONS[Number(e.target.value)];
+              if (s) applyPreset(s.preset);
+            }}
+            className="h-8 max-w-64 w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+          >
+            <option value="">Quick screens…</option>
+            {PRESET_GROUPS.filter((g) => g.id !== 'verdict').map((g) => (
+              <optgroup key={g.id} label={g.label}>
+                {PRESET_OPTIONS.map((s, i) => (s.group === g.id ? <option key={s.label} value={i}>{s.label}</option> : null))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
 
         {/* Saved screens — authenticated users persist up to 3 filter sets.
             Params serialize identically to the share URL. */}
@@ -790,29 +795,14 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
           </div>
         )}
 
-        {/* One dense grid — Finviz-style: all filters always visible,
-            tight label+control pairs, no dead space between rows. Two
-            labelled groups: PMP Scores (our composite model) first, then
-            the universe/market controls. */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-3 gap-y-3">
-          <div className="col-span-full -mb-1 flex items-center gap-2">
-            <span className="text-[9px] font-semibold uppercase tracking-widest text-blue-500/80">PMP Scores</span>
-            <span className="text-[9px] text-gray-400 dark:text-gray-500">our composite ratings, 0–100</span>
-            <span className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
-          </div>
-          {SCORE_FILTERS.map((d) => (
-            <DualRangeSlider
-              key={d.key}
-              label={d.label}
-              min={0} max={100}
-              {...scoreSliderProps(d)}
-              accentColor={d.accent}
-            />
-          ))}
-          <div className="col-span-full mt-1 -mb-1 flex items-center gap-2">
-            <span className="text-[9px] font-semibold uppercase tracking-widest text-gray-400">Universe & Market</span>
-            <span className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
-          </div>
+        {/* PMP Verdict matrix — 4×4 fund×val grid; cell = exact verdictKey
+            (with live ticker counts), row/col headers = the atomic
+            fund/val axes, plus the out-of-grid 'insufficient' state. */}
+        <VerdictMatrix verdictFilters={verdictFilters} setVerdictFilter={setVerdictFilter} />
+
+        {/* Universe & market controls — a single compact row; everything
+            heavier lives behind the accordions below. */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-3">
           <div className="col-span-2 sm:col-span-1 flex flex-col gap-1">
             <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">Search</label>
             <div className="relative">
@@ -881,35 +871,21 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               ))}
             </select>
           </div>
-          {VERDICT_FILTERS.map((d) => (
-            <div key={d.key} className="flex flex-col gap-1">
-              <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide" title={d.hint}>{d.label}</label>
-              <select
-                value={verdictFilters[d.key] ?? ''}
-                onChange={(e) => setVerdictFilter(d.key, e.target.value || undefined)}
-                className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
-              >
-                <option value="">Any</option>
-                {d.options.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            </div>
-          ))}
-          {MARKET_RANGE_FILTERS.map((def) => (
-            <DualRangeSlider
-              key={def.key}
-              label={def.label}
-              min={def.min} max={def.max} step={def.step}
-              {...rangeSliderProps(def)}
-              accentColor="indigo"
-            />
-          ))}
         </div>
 
-        {/* Advanced filters — collapsed by default so the results table starts
-            higher. Auto-opens when any advanced filter is active. */}
+        {/* Collapsible filter groups — the panel opens at two compact rows;
+            each group auto-opens while any of its filters is active. */}
         <div className="mt-3 flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setShowScores(v => !v)}
+            className="flex items-center gap-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+            aria-expanded={scoresVisible}
+          >
+            {scoresVisible ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+            Score filters
+            {scoreActiveCount > 0 && <span className="text-blue-500 font-semibold">({scoreActiveCount} active)</span>}
+          </button>
           <button
             type="button"
             onClick={() => setShowMetrics(v => !v)}
@@ -931,6 +907,26 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             {advancedActive && <span className="text-blue-500 font-semibold">(active)</span>}
           </button>
         </div>
+        {scoresVisible && (
+          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">PMP Scores</span>
+              <span className="text-[10px] text-gray-400 dark:text-gray-500">our composite ratings, 0–100</span>
+              <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-3 gap-y-2">
+              {SCORE_FILTERS.map((d) => (
+                <DualRangeSlider
+                  key={d.key}
+                  label={d.label}
+                  min={0} max={100}
+                  {...scoreSliderProps(d)}
+                  accentColor={d.accent}
+                />
+              ))}
+            </div>
+          </div>
+        )}
         {metricsVisible && (
           <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
             {/* Grouped by category — 20 sliders flat was unscannable. */}

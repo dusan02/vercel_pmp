@@ -270,9 +270,9 @@ export const INSIDER_RANGE_FILTERS = [
  * matches the metric params (minPrice/maxPrice/minChangePct/maxChangePct).
  */
 export const MARKET_RANGE_FILTERS = [
-    { key: 'price', label: 'Price $', min: 0, max: 1000, step: 10, field: 'lastPrice' },
-    { key: 'changePct', label: 'Day Change %', min: -20, max: 20, step: 0.5, field: 'lastChangePct' },
-    { key: 'employees', label: 'Employees', min: 0, max: 3_000_000, step: 1000, field: 'employees' },
+    { key: 'price', label: 'Price $', min: 0, max: 1000, step: 10, field: 'lastPrice', group: 'Market' },
+    { key: 'changePct', label: 'Day Change %', min: -20, max: 20, step: 0.5, field: 'lastChangePct', group: 'Market' },
+    { key: 'employees', label: 'Employees', min: 0, max: 3_000_000, step: 1000, field: 'employees', group: 'Market' },
 ] as const;
 
 /**
