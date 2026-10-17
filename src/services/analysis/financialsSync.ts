@@ -719,7 +719,11 @@ export async function syncFinancials(symbol: string): Promise<void> {
         select: { endDate: true },
     });
     const STALE_MS = 100 * 24 * 60 * 60 * 1000; // ~1 quarter + reporting lag
-    const staleQuarterly = !!(latestQuarterly && Date.now() - latestQuarterly.endDate.getTime() > STALE_MS);
+    // Missing quarterly rows also count as stale — Finnhub can carry annuals
+    // but only pre-history quarterlies (GOOG: 2011-12 filings, pre-Alphabet),
+    // leaving TTM on stale FY data while a sibling class (GOOGL) computes a
+    // real TTM. Without this, zero-quarter tickers never reach SA gapfill.
+    const staleQuarterly = !latestQuarterly || Date.now() - latestQuarterly.endDate.getTime() > STALE_MS;
     if (staleQuarterly || ebitNeedsSaVerify) {
         const saCount = await syncFromStockAnalysis(symbol, 'gapfill');
         if (saCount > 0) {
