@@ -356,6 +356,9 @@ model AnalysisCache {
   negativeNiYears     Int?
   pePercentile        Float?
   peVsMedian3yPct     Float?
+  fundLevel           String?
+  valLevel            String?
+  verdictKey          String?
   ticker              Ticker    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@index([healthScore])

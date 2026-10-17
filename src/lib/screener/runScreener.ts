@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
-import { downsampleSeries, RANGE_FILTERS, SCORE_FILTERS, ADVANCED_FILTERS, ANALYSIS_SORT_FIELDS } from '@/lib/utils/screener';
+import { downsampleSeries, RANGE_FILTERS, SCORE_FILTERS, ADVANCED_FILTERS, ANALYSIS_SORT_FIELDS, VERDICT_FILTERS, VERDICT_PARAM_VALUES } from '@/lib/utils/screener';
 import { computeTrendSignal, type TrendSignal } from '@/lib/analysis/trendSignal';
 import { getTrendQualifiedSymbols } from '@/lib/analysis/trendUniverse';
 
@@ -52,6 +52,21 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
     }
     const sector = searchParams.get('sector') || undefined;
     const industry = searchParams.get('industry') || undefined;
+
+    // Verdict enum filters — atomic axes of the persisted PMP verdict
+    // (fund=strong|mixed|weak, val=cheap|fair|expensive|unknown on
+    // AnalysisCache.fundLevel/valLevel). `verdict=<fund>_<val>` pins the exact
+    // verdictKey for headline-level deep links; invalid values are ignored.
+    const enumFilters: { field: string; value: string }[] = [];
+    for (const d of VERDICT_FILTERS) {
+        const v = searchParams.get(d.param);
+        if (v && VERDICT_PARAM_VALUES[d.key].includes(v)) enumFilters.push({ field: d.field, value: v });
+    }
+    const verdictParam = searchParams.get('verdict');
+    if (verdictParam && /^[a-z]+_[a-z]+$/.test(verdictParam) && verdictParam !== 'none_unknown') {
+        enumFilters.push({ field: 'verdictKey', value: verdictParam });
+    }
+    const enumKey = enumFilters.map((r) => `ac.${r.field}=${r.value}`).join('|');
     // Backtested "fundamentals confirm trend" combo — server-side symbol filter
     const trendConfirmed = searchParams.get('trendConfirmed') === '1';
     // Search: symbol or company name (case-insensitive contains)
@@ -109,7 +124,7 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
     const scoresKey = scoreRanges
         .map((r) => `ac.${r.field}=${r.min ?? ''}-${r.max ?? ''}`)
         .join('|');
-    const cacheKey = `screener:${scoresKey}:${sector || ''}:${industry || ''}:${q || ''}:${minMarketCap ?? ''}:${maxMarketCap ?? ''}:${metricsKey}:${trendConfirmed ? 'tc1' : ''}:${page}:${limit}:${sortParams}`;
+    const cacheKey = `screener:${scoresKey}:${sector || ''}:${industry || ''}:${q || ''}:${minMarketCap ?? ''}:${maxMarketCap ?? ''}:${metricsKey}:${enumKey}:${trendConfirmed ? 'tc1' : ''}:${page}:${limit}:${sortParams}`;
     try {
         const cached = await getCachedData(cacheKey);
         if (cached) return cached as Record<string, any>;
@@ -189,13 +204,14 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
         // Score ranges + analysis-derived ranges merge into ONE `is` clause —
         // an active filter requires the relation row, so tickers without
         // analysis are excluded automatically (they cannot match a bound).
-        if (scoreRanges.length > 0 || analysisRanges.length > 0) {
+        if (scoreRanges.length > 0 || analysisRanges.length > 0 || enumFilters.length > 0) {
             const ac: any = {};
             for (const r of [...scoreRanges, ...analysisRanges]) {
                 ac[r.field] = {};
                 if (r.min !== undefined) ac[r.field].gte = r.min;
                 if (r.max !== undefined) ac[r.field].lte = r.max;
             }
+            for (const r of enumFilters) ac[r.field] = r.value;
             tickerWhere.analysisCache = { is: ac };
         }
 
@@ -281,6 +297,9 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
                     marginStability: true,
                     pePercentile: true,
                     peVsMedian3yPct: true,
+                    fundLevel: true,
+                    valLevel: true,
+                    verdictKey: true,
                 },
             },
             finnhubRecommendation: {
@@ -452,6 +471,9 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
             marginStability: t.analysisCache?.marginStability ?? null,
             pePercentile: t.analysisCache?.pePercentile ?? null,
             peVsMedian3yPct: t.analysisCache?.peVsMedian3yPct ?? null,
+            fundLevel: t.analysisCache?.fundLevel ?? null,
+            valLevel: t.analysisCache?.valLevel ?? null,
+            verdictKey: t.analysisCache?.verdictKey ?? null,
             analysts: t.finnhubRecommendation
                 ? {
                       strongBuy: t.finnhubRecommendation.strongBuy,

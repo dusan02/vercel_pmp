@@ -51,6 +51,11 @@ export interface ScreenerResult {
     pePercentile: number | null;
     /** Signed % vs trailing-3Y P/E median (negative = below median). */
     peVsMedian3yPct: number | null;
+    /** Persisted PMP-verdict axes — fundLevel strong|mixed|weak, valLevel
+        cheap|fair|expensive|unknown, verdictKey '<fund>_<val>'|'insufficient'. */
+    fundLevel: string | null;
+    valLevel: string | null;
+    verdictKey: string | null;
     lastQualitySignalAt: string | null;
     /** Analyst consensus counts (FinnhubRecommendation, latest period). */
     analysts: {
@@ -126,6 +131,39 @@ export type ScoreRange = { min?: number; max?: number };
 /** Absent entry = full 0–100 range (no constraint). */
 export const SCORE_RANGE_MIN = 0;
 export const SCORE_RANGE_MAX = 100;
+
+/**
+ * Verdict enum filters — the two atomic axes of the PMP verdict persisted on
+ * AnalysisCache (fundLevel/valLevel). `param` is shared by the URL and the API.
+ * fund=strong + val=expensive reproduces "High quality, but expensive" exactly —
+ * the persisted verdictKey is written by the same classifyVerdict the page uses.
+ */
+export const VERDICT_FILTERS = [
+    {
+        key: 'fund', param: 'fund', field: 'fundLevel', label: 'Fundamentals',
+        hint: 'Avg of Growth/Profit/Health/Quality pillars: Strong ≥68, Weak ≤45',
+        options: [
+            { value: 'strong', label: 'Strong' },
+            { value: 'mixed', label: 'Mixed' },
+            { value: 'weak', label: 'Weak' },
+        ],
+    },
+    {
+        key: 'val', param: 'val', field: 'valLevel', label: 'Valuation',
+        hint: 'vs own valuation history: Cheap ≤25th pctl, Expensive ≥75th',
+        options: [
+            { value: 'cheap', label: 'Cheap' },
+            { value: 'fair', label: 'Fair' },
+            { value: 'expensive', label: 'Expensive' },
+            { value: 'unknown', label: 'Unknown' },
+        ],
+    },
+] as const;
+export type VerdictFilterKey = (typeof VERDICT_FILTERS)[number]['key'];
+export const VERDICT_PARAM_VALUES: Record<VerdictFilterKey, readonly string[]> = {
+    fund: VERDICT_FILTERS[0].options.map(o => o.value),
+    val: VERDICT_FILTERS[1].options.map(o => o.value),
+};
 
 /**
  * Single-bound advanced filters (AnalysisCache columns). `param` is shared by
@@ -331,6 +369,8 @@ export interface ScreenerPreset {
     sort?: string;
     /** Backtested "fundamentals confirm trend" combo (server-side symbol filter). */
     trendConfirmed?: boolean;
+    /** Verdict enum axes — persisted AnalysisCache levels (exact verdict match). */
+    fund?: string; val?: string;
     ranges?: Partial<Record<RangeFilterKey, { min?: number; max?: number }>>;
 }
 
@@ -392,8 +432,8 @@ export const QUICK_SCREENS: {
     { label: 'Momentum + Fundamentals', tip: 'Day change ≥+5% · Overall ≥70 · Quality ≥70 — abnormal move on strong fundamentals', group: 'discovery', icon: 'Zap', preset: { minOverall: 70, minQuality: 70, ranges: { changePct: { min: 5 } }, sort: 'ticker.lastChangePct:desc' } },
     { label: 'P/E Below 3Y Median', tip: 'Current P/E below its own trailing-3Y median — sorted by deepest discount vs that median', group: 'discovery', icon: 'History', preset: { ranges: { peVsMedian3yPct: { max: 0 } }, sort: 'peVsMedian3yPct:asc' } },
     { label: 'P/E at Historical Low', tip: 'Current P/E in the bottom decile of its own valuation history (≤10ᵗʰ percentile)', group: 'discovery', icon: 'History', preset: { ranges: { pePercentile: { max: 10 } }, sort: 'pePercentile:asc' } },
-    { label: 'Strong & Cheap', tip: 'Fund pillars ≥60 (Growth/Profit/Health/Quality ≈ verdict "strong") · P/E in bottom 25% of own history — matches verdict "Strong business, attractive price"', group: 'discovery', icon: 'Gem', preset: { minGrowth: 60, minProfit: 60, minHealth: 60, minQuality: 60, ranges: { pePercentile: { max: 25 } }, sort: 'pePercentile:asc' } },
-    { label: 'Quality but Expensive', tip: 'Fund pillars ≥60 · P/E in top 25% of own history — matches verdict "High quality, but expensive" (great business, rich entry price)', group: 'discovery', icon: 'Gem', preset: { minGrowth: 60, minProfit: 60, minHealth: 60, minQuality: 60, ranges: { pePercentile: { min: 75 } }, sort: 'pePercentile:desc' } },
+    { label: 'Strong & Cheap', tip: 'Verdict fundamentals Strong · valuation Cheap vs own history — exact verdict "Strong business, attractive price"', group: 'discovery', icon: 'Gem', preset: { fund: 'strong', val: 'cheap', sort: 'pePercentile:asc' } },
+    { label: 'Quality but Expensive', tip: 'Verdict fundamentals Strong · valuation Expensive vs own history — exact verdict "High quality, but expensive" (great business, rich entry price)', group: 'discovery', icon: 'Gem', preset: { fund: 'strong', val: 'expensive', sort: 'pePercentile:desc' } },
     { label: 'Trend × Fundamentals', tip: 'Rev/share +30% (1Y) · EPS growing · price ≥80% of 52w high — backtested combo, ~2× fwd-return edge vs universe', group: 'discovery', icon: ['TrendingUp', 'Check'], preset: { trendConfirmed: true } },
 ];
 
@@ -426,6 +466,8 @@ export interface PresetMatchContext {
         pePercentile?: number | null; peVsMedian3yPct?: number | null;
         revenueCagr?: number | null; netIncomeCagr?: number | null;
         fcfConversion?: number | null; marginStability?: number | null;
+        // Persisted verdict axes (AnalysisCache columns).
+        fundLevel?: string | null; valLevel?: string | null; verdictKey?: string | null;
     } | null;
     metrics?: Partial<Record<MetricFilterKey, number | null>> | null;
     market?: { price?: number | null; changePct?: number | null; marketCapB?: number | null } | null;
@@ -450,6 +492,9 @@ export function matchesPreset(p: ScreenerPreset, ctx: PresetMatchContext): boole
     if (p.minAltman !== undefined && !inRange(s?.altmanZ, { min: p.minAltman })) return false;
     if (p.minFcfMargin !== undefined && !inRange(s?.fcfMargin, { min: p.minFcfMargin })) return false;
     if (p.trendConfirmed && ctx.trendSignal?.qualified !== true) return false;
+    // Verdict enum axes — same "null never passes" rule as range bounds.
+    if (p.fund !== undefined && s?.fundLevel !== p.fund) return false;
+    if (p.val !== undefined && s?.valLevel !== p.val) return false;
     if (p.marketCapPreset && p.marketCapPreset !== 'all') {
         const mc = MARKET_CAP_PRESETS.find((x) => x.id === p.marketCapPreset);
         const capRange: { min?: number; max?: number } = {};
@@ -485,6 +530,11 @@ const RANGE_PARAMS = new Set(
     })
 );
 const STRING_PARAMS = new Set(['sector', 'industry', 'q', 'mcap', 'sort', 'trendConfirmed']);
+// Verdict enum params — value must be one of the persisted level values.
+const ENUM_PARAMS = new Map<string, readonly string[]>([
+    ['fund', VERDICT_PARAM_VALUES.fund],
+    ['val', VERDICT_PARAM_VALUES.val],
+]);
 const SORT_RE = /^[a-zA-Z0-9.]+:(asc|desc)$/;
 
 /**
@@ -503,6 +553,8 @@ export function isValidScreenParams(qs: string): boolean {
     for (const [key, value] of sp) {
         if (SCORE_PARAMS.has(key) || RANGE_PARAMS.has(key)) {
             if (value === '' || !Number.isFinite(Number(value))) return false;
+        } else if (ENUM_PARAMS.has(key)) {
+            if (!ENUM_PARAMS.get(key)!.includes(value)) return false;
         } else if (key === 'sort') {
             if (!SORT_RE.test(value)) return false;
         } else if (STRING_PARAMS.has(key)) {
@@ -526,6 +578,8 @@ export function presetToQueryString(p: ScreenerPreset): string {
     if (p.minAltman != null && p.minAltman > 0) sp.set('minAltman', String(p.minAltman));
     if (p.minFcfMargin != null && p.minFcfMargin > -100) sp.set('minFcfMargin', String(p.minFcfMargin));
     if (p.marketCapPreset && p.marketCapPreset !== 'all') sp.set('mcap', p.marketCapPreset);
+    if (p.fund) sp.set('fund', p.fund);
+    if (p.val) sp.set('val', p.val);
     for (const [key, r] of Object.entries(p.ranges ?? {})) {
         const cap = key[0]!.toUpperCase() + key.slice(1);
         if (r?.min !== undefined) sp.set(`min${cap}`, String(r.min));

@@ -380,6 +380,13 @@ model AnalysisCache {
   negativeNiYears     Int?
   pePercentile        Float?
   peVsMedian3yPct     Float?
+  // Normalized PMP-verdict classification persisted at compute time —
+  // fundLevel: strong|mixed|weak (null = no usable pillars),
+  // valLevel: cheap|fair|expensive|unknown,
+  // verdictKey: '<fund>_<val>'|'none_<val>'|'insufficient' — screener enum filters.
+  fundLevel           String?
+  valLevel            String?
+  verdictKey          String?
   ticker              Ticker    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@index([healthScore])

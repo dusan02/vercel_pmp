@@ -7,6 +7,7 @@ import {
     SCORE_FILTERS, ADVANCED_FILTERS, PRESET_SCORE_KEYS,
     ScoreFilterKey, AdvancedFilterKey, ScoreRange,
     SCORE_RANGE_MIN, SCORE_RANGE_MAX,
+    VERDICT_FILTERS, VERDICT_PARAM_VALUES, VerdictFilterKey,
 } from '@/lib/utils/screener';
 
 interface UseScreenerOptions {
@@ -63,6 +64,9 @@ export function useScreener({
             marginStability: r.marginStability ?? null,
             pePercentile: r.pePercentile ?? null,
             peVsMedian3yPct: r.peVsMedian3yPct ?? null,
+            fundLevel: r.fundLevel ?? null,
+            valLevel: r.valLevel ?? null,
+            verdictKey: r.verdictKey ?? null,
             lastQualitySignalAt: r.lastQualitySignalAt ?? null,
             insiderNetBuyPct90d: r.insiderNetBuyPct90d ?? null,
             insiderNetBuyValue90d: r.insiderNetBuyValue90d ?? null,
@@ -121,6 +125,17 @@ export function useScreener({
     const [industries, setIndustries] = useState<string[]>([]);
     const [marketCapPreset, setMarketCapPreset] = useState<string>('all');
     const [trendConfirmed, setTrendConfirmed] = useState<boolean>(false);
+    // Verdict enum filters — absent key = no constraint. Values are the
+    // persisted AnalysisCache levels (strong|mixed|weak, cheap|fair|…).
+    const [verdictFilters, setVerdictFilters] = useState<Partial<Record<VerdictFilterKey, string>>>({});
+    const setVerdictFilter = useCallback((key: VerdictFilterKey, value: string | undefined) => {
+        setVerdictFilters(prev => {
+            const next = { ...prev };
+            if (value === undefined || value === '') delete next[key];
+            else next[key] = value;
+            return next;
+        });
+    }, []);
     const [sortField, setSortField] = useState<string>('ticker.lastMarketCap');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     // Range filters — only entries the user touched are kept;
@@ -143,6 +158,7 @@ export function useScreener({
         searchQuery: '',
         marketCapPreset: 'all',
         trendConfirmed: false,
+        verdictFilters: {} as typeof verdictFilters,
         sortField: 'ticker.lastMarketCap', sortOrder: 'desc' as 'asc' | 'desc',
         metricRanges: {} as typeof metricRanges,
     });
@@ -152,11 +168,11 @@ export function useScreener({
             setDebouncedFilters({
                 scoreRanges, advanced,
                 selectedSector, selectedIndustry, searchQuery,
-                marketCapPreset, trendConfirmed, sortField, sortOrder, metricRanges,
+                marketCapPreset, trendConfirmed, verdictFilters, sortField, sortOrder, metricRanges,
             });
         }, 400);
         return () => clearTimeout(timer);
-    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, trendConfirmed, sortField, sortOrder, metricRanges]);
+    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, trendConfirmed, verdictFilters, sortField, sortOrder, metricRanges]);
 
     // Stale-response guard — rapid typing/slider drags fire several fetches;
     // only the latest request may commit results, otherwise a slow earlier
@@ -187,6 +203,10 @@ export function useScreener({
                 if (def.active(v)) params.append(def.param, v.toString());
             }
             if (debouncedFilters.trendConfirmed) params.append('trendConfirmed', '1');
+            for (const d of VERDICT_FILTERS) {
+                const v = debouncedFilters.verdictFilters[d.key];
+                if (v) params.append(d.param, v);
+            }
             if (debouncedFilters.selectedSector) params.append('sector', debouncedFilters.selectedSector);
             if (debouncedFilters.selectedIndustry) params.append('industry', debouncedFilters.selectedIndustry);
             if (debouncedFilters.searchQuery) params.append('q', debouncedFilters.searchQuery);
@@ -230,7 +250,7 @@ export function useScreener({
     // Reset page on filter change (immediate, not debounced)
     useEffect(() => {
         setPage(1);
-    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, trendConfirmed, sortField, sortOrder, metricRanges]);
+    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, trendConfirmed, verdictFilters, sortField, sortOrder, metricRanges]);
 
     /**
      * Restore all filter state from a query param set — used for the initial
@@ -271,6 +291,12 @@ export function useScreener({
             nextSortOrder = o === 'asc' || o === 'desc' ? o : 'desc';
         }
         const tcVal = sp.get('trendConfirmed') === '1';
+        const vf: Partial<Record<VerdictFilterKey, string>> = {};
+        for (const d of VERDICT_FILTERS) {
+            const v = sp.get(d.param);
+            if (v && VERDICT_PARAM_VALUES[d.key].includes(v)) vf[d.key] = v;
+        }
+        setVerdictFilters(vf);
         setSelectedSector(sectorVal);
         setSelectedIndustry(industryVal);
         setSearchQuery(qVal);
@@ -304,6 +330,7 @@ export function useScreener({
             searchQuery: qVal,
             marketCapPreset: mcapVal,
             trendConfirmed: tcVal,
+            verdictFilters: vf,
             sortField: nextSortField,
             sortOrder: nextSortOrder,
             metricRanges: restored,
@@ -343,6 +370,10 @@ export function useScreener({
         if (searchQuery) sp.set('q', searchQuery);
         if (marketCapPreset !== 'all') sp.set('mcap', marketCapPreset);
         if (trendConfirmed) sp.set('trendConfirmed', '1');
+        for (const d of VERDICT_FILTERS) {
+            const v = verdictFilters[d.key];
+            if (v) sp.set(d.param, v);
+        }
         for (const [key, range] of Object.entries(metricRanges)) {
             if (!range) continue;
             const cap = key[0]!.toUpperCase() + key.slice(1);
@@ -351,7 +382,7 @@ export function useScreener({
         }
         if (sortField !== 'ticker.lastMarketCap' || sortOrder !== 'desc') sp.set('sort', `${sortField}:${sortOrder}`);
         return sp.toString();
-    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, trendConfirmed, sortField, sortOrder, metricRanges]);
+    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, trendConfirmed, verdictFilters, sortField, sortOrder, metricRanges]);
 
     /**
      * Is the current filter state exactly what this preset would produce?
@@ -374,6 +405,10 @@ export function useScreener({
         if (selectedSector !== '' || selectedIndustry !== '' || searchQuery !== '') return false;
         if (marketCapPreset !== (p.marketCapPreset ?? 'all')) return false;
         if ((p.trendConfirmed ?? false) !== trendConfirmed) return false;
+        // Verdict enum axes — absent preset key = no constraint expected.
+        for (const d of VERDICT_FILTERS) {
+            if ((verdictFilters[d.key] ?? undefined) !== (p[d.key as 'fund' | 'val'] ?? undefined)) return false;
+        }
         // Sort is user-controlled presentation, not part of preset identity —
         // a preset pill stays active while the user re-sorts the same screen.
         const expected = p.ranges ?? {};
@@ -384,7 +419,7 @@ export function useScreener({
             if (a?.min !== b?.min || a?.max !== b?.max) return false;
         }
         return true;
-    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, trendConfirmed, metricRanges]);
+    }, [scoreRanges, advanced, selectedSector, selectedIndustry, searchQuery, marketCapPreset, trendConfirmed, verdictFilters, metricRanges]);
 
     // Sync filters → URL (replaceState: shareable, no history pollution).
     // Standalone /screener page only — the homepage embed lives under
@@ -425,6 +460,7 @@ export function useScreener({
         setSearchQuery('');
         setMarketCapPreset('all');
         setTrendConfirmed(false);
+        setVerdictFilters({});
         setMetricRanges({});
         setSortField('ticker.lastMarketCap');
         setSortOrder('desc');
@@ -435,6 +471,7 @@ export function useScreener({
         ADVANCED_FILTERS.some((d) => d.active(advanced[d.key])) ||
         selectedSector !== '' || selectedIndustry !== '' || searchQuery !== '' ||
         marketCapPreset !== 'all' || trendConfirmed ||
+        Object.keys(verdictFilters).length > 0 ||
         Object.keys(metricRanges).length > 0;
 
     /** Apply a named quick-screen preset (sets multiple filters atomically). */
@@ -448,6 +485,10 @@ export function useScreener({
         if (preset.minFcfMargin !== undefined) setAdvancedValue('minFcfMargin', preset.minFcfMargin);
         if (preset.marketCapPreset !== undefined) setMarketCapPreset(preset.marketCapPreset);
         if (preset.trendConfirmed) setTrendConfirmed(true);
+        for (const d of VERDICT_FILTERS) {
+            const v = preset[d.key as 'fund' | 'val'];
+            if (v !== undefined) setVerdictFilter(d.key, v);
+        }
         if (preset.ranges) {
             for (const [key, range] of Object.entries(preset.ranges)) {
                 if (range) setMetricRange(key as RangeFilterKey, range);
@@ -471,6 +512,7 @@ export function useScreener({
         industries,
         marketCapPreset, setMarketCapPreset,
         trendConfirmed, setTrendConfirmed,
+        verdictFilters, setVerdictFilter,
         metricRanges, setMetricRange,
         // sort
         sortField, sortOrder, handleSort, setSort,

@@ -6,6 +6,7 @@ import { computePillars, deriveMoatInputs } from './pillars';
 import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
 import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
 import { medianOf, percentileBelow } from './valuationHistory';
+import { classifyVerdict } from '@/lib/analysis/verdict';
 
 export interface CalculateScoresOptions {
     /** No-op — AI verdict generation was removed (cost vs. value). */
@@ -68,6 +69,7 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
                 fcfMargin: null, humanDebtInfo: null, humanPeInfo: null,
                 marginStability: null, negativeNiYears: null,
                 pePercentile: null, peVsMedian3yPct: null,
+                fundLevel: null, valLevel: null, verdictKey: 'insufficient',
             },
             create: { symbol },
         });
@@ -290,6 +292,23 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         humanPeInfo = formatPePercentile(peForPct, pePercentile);
     }
 
+    // P/S percentile on the same close basis — the verdict's valuation
+    // fallback when P/E is distorted/missing (earnings-distortion guard).
+    const allPsValuations = await prisma.dailyValuationHistory.findMany({
+        where: { symbol, psRatio: { not: null, gt: 0 } },
+        select: { psRatio: true },
+        orderBy: { psRatio: 'asc' },
+    });
+    const latestPsRow = await prisma.dailyValuationHistory.findFirst({
+        where: { symbol, psRatio: { not: null, gt: 0 } },
+        orderBy: { date: 'desc' },
+        select: { psRatio: true },
+    });
+    const psPercentile = (allPsValuations.length > 0 && latestPsRow?.psRatio != null && latestPsRow.psRatio > 0)
+        ? percentileBelow(allPsValuations.map(v => v.psRatio!), latestPsRow.psRatio)
+        : null;
+    const peMedian = allValuations.length > 0 ? medianOf(allValuations.map(v => v.peRatio!)) : null;
+
     // 3Y-window median vs current — the screener "PE below its 3Y median"
     // signal. Window anchors at the latest DVH row (not wall-clock today) so
     // a lagging history doesn't silently shrink it. Sparse windows stay null
@@ -501,6 +520,22 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     // the Early Winners EW score (quant engine, different scale/coverage).
     const overallScore = (healthScore + profitabilityScore + valuationScore + growthScore + qualityScore) / 5;
 
+    // Persisted verdict classification — same shared classifyVerdict the page
+    // renders, so screener fund/val/verdict filters match the verdict card
+    // exactly (no proxy approximation of the avg-of-4 rule or P/S fallback).
+    const vc = classifyVerdict({
+        pillars,
+        // Read path (analysisCompute) marks tickers whose statements carry no
+        // revenue/NI rows as insufficient — same condition so the persisted
+        // key can't claim a verdict the page refuses to render.
+        insufficientData: !stmts.some(s => s.revenue != null || s.netIncome != null),
+        pePercentile,
+        peCurrent: peForPct,
+        peMedian,
+        psPercentile,
+        forwardPe: fhForwardPe !== null && fhForwardPe >= 1 ? fhForwardPe : null,
+    });
+
     // ─── Signal Detection & Notification ───────────────────────────
     let lastQualitySignalAt: Date | undefined;
     if (!opts.skipNotify && altmanZ !== null && altmanZ > 3.0 && healthScore > 80) {
@@ -529,6 +564,7 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
             altmanZ, debtRepaymentYears, fcfMargin, fcfConversion,
             humanDebtInfo, humanPeInfo, marginStability, negativeNiYears, pePercentile,
             peVsMedian3yPct,
+            fundLevel: vc.fundLevel, valLevel: vc.valLevel, verdictKey: vc.verdictKey,
             ...(lastQualitySignalAt ? { lastQualitySignalAt } : {})
         },
         create: {
@@ -537,7 +573,8 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
             piotroskiScore, beneishScore, interestCoverage, revenueCagr, netIncomeCagr,
             altmanZ, debtRepaymentYears, fcfMargin, fcfConversion,
             humanDebtInfo, humanPeInfo, marginStability, negativeNiYears, pePercentile,
-            peVsMedian3yPct, lastQualitySignalAt
+            peVsMedian3yPct, lastQualitySignalAt,
+            fundLevel: vc.fundLevel, valLevel: vc.valLevel, verdictKey: vc.verdictKey,
         }
     });
 }

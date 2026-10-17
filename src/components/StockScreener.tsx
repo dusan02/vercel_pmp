@@ -13,7 +13,7 @@ import { LivePrice } from './LivePrice';
 import {
   ScreenerResult, scoreColor, altmanZLabel, piotroskiLabel, beneishLabel, fcfMarginLabel, debtRepayLabel,
   SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, ANALYSIS_RANGE_FILTERS, RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS, PRESET_GROUPS,
-  SCORE_FILTERS, ADVANCED_FILTERS, matchesPreset,
+  SCORE_FILTERS, ADVANCED_FILTERS, VERDICT_FILTERS, matchesPreset,
 } from '@/lib/utils/screener';
 import { Sparkline } from './Sparkline';
 import { formatBillions, formatMarketCapDiff, formatCurrencyCompact } from '@/lib/utils/format';
@@ -114,6 +114,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
     searchQuery, setSearchQuery,
     industries,
     marketCapPreset, setMarketCapPreset,
+    verdictFilters, setVerdictFilter,
     metricRanges, setMetricRange,
     sortField, sortOrder, handleSort, setSort,
     resetFilters, hasActiveFilters, applyPreset,
@@ -880,6 +881,21 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               ))}
             </select>
           </div>
+          {VERDICT_FILTERS.map((d) => (
+            <div key={d.key} className="flex flex-col gap-1">
+              <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide" title={d.hint}>{d.label}</label>
+              <select
+                value={verdictFilters[d.key] ?? ''}
+                onChange={(e) => setVerdictFilter(d.key, e.target.value || undefined)}
+                className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+              >
+                <option value="">Any</option>
+                {d.options.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+          ))}
           {MARKET_RANGE_FILTERS.map((def) => (
             <DualRangeSlider
               key={def.key}
@@ -1019,6 +1035,13 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         if (marketCapPreset !== 'all') {
           const p = MARKET_CAP_PRESETS.find((x) => x.id === marketCapPreset);
           if (p) chips.push({ id: 'mcap', label: `Cap: ${p.label}`, clear: () => setMarketCapPreset('all') });
+        }
+        for (const d of VERDICT_FILTERS) {
+          const v = verdictFilters[d.key];
+          if (v) {
+            const o = d.options.find((x) => x.value === v);
+            chips.push({ id: `v:${d.key}`, label: `${d.label}: ${o?.label ?? v}`, clear: () => setVerdictFilter(d.key, undefined) });
+          }
         }
         if (chips.length === 0) return null;
         return (

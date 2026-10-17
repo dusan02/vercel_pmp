@@ -68,8 +68,19 @@ const WEAK = 40;
 const STRONG_AVG = 68;
 const WEAK_AVG = 45;
 
-type FundLevel = 'strong' | 'mixed' | 'weak';
-type ValLevel = 'cheap' | 'fair' | 'expensive' | 'unknown';
+export type FundLevel = 'strong' | 'mixed' | 'weak';
+export type ValLevel = 'cheap' | 'fair' | 'expensive' | 'unknown';
+
+/**
+ * Normalized verdict identity persisted on AnalysisCache (drives the screener
+ * fund/val/verdict enum filters). `none_<val>` = pillars exist but all four
+ * fundamental scores are null — the page falls back to a valuation-only
+ * headline; those tickers ARE filterable by valLevel.
+ */
+export type VerdictKey =
+    | 'insufficient'
+    | `none_${'cheap' | 'fair' | 'expensive'}`
+    | `${FundLevel}_${ValLevel}`;
 
 const HEADLINE: Record<FundLevel, Record<ValLevel, string>> = {
     strong: {
@@ -158,25 +169,33 @@ function ordinal(n: number): string {
     return `${v}${s[(mod100 - 20) % 10] || s[mod100] || s[0]}`;
 }
 
-export function buildVerdict(input: VerdictInput): Verdict | null {
+export interface VerdictClass {
+    /** null = no usable pillar scores (valuation-only headline on the page). */
+    fundLevel: FundLevel | null;
+    valLevel: ValLevel;
+    /** Persisted filter key — null when no verdict is renderable. */
+    verdictKey: VerdictKey | null;
+    /** Internal signals, exposed so evidence chips can explain the class. */
+    distorted: boolean;
+    cyclicalRecovery: boolean;
+}
+
+/**
+ * Deterministic fundamental × valuation classification — the exact same grid
+ * the headline table renders. Shared by buildVerdict (read path) and
+ * scoreCalculator (write path persists it as fundLevel/valLevel/verdictKey so
+ * the screener filters on the identical classification, not a re-derived proxy).
+ */
+export function classifyVerdict(input: VerdictInput): VerdictClass {
     const p = input.pillars ?? null;
     const distorted = isPeDistorted(input.peCurrent, input.peMedian ?? null);
-
-    // Valuation source: PE percentile unless distorted/missing → PS percentile
-    // → valuation pillar score.
     const effectivePercentile =
         !distorted && input.pePercentile != null
             ? input.pePercentile
             : input.psPercentile ?? null;
     const rawValuation = valLevel(effectivePercentile, p?.valuation?.score ?? null);
-    const fundamentals = fundLevel(p);
+    const fundamentals = input.insufficientData ? null : fundLevel(p);
 
-    // Cyclical-recovery guard (#31): when the market prices a forward P/E at
-    // less than half the TTM P/E, the TTM basis is cyclically depressed —
-    // calling the stock "expensive" on that multiple alone is misleading
-    // (PSX: TTM P/E 26× vs fwd 9.9× → recovery already priced in). Only when
-    // the P/E itself drove the valuation call — a distorted P/E already fell
-    // back to P/S, which prices a different question entirely.
     const peDroveValuation = !distorted && input.pePercentile != null;
     const cyclicalRecovery =
         peDroveValuation &&
@@ -184,6 +203,20 @@ export function buildVerdict(input: VerdictInput): Verdict | null {
         input.peCurrent != null && input.peCurrent > 0 &&
         input.peCurrent / input.forwardPe >= 2;
     const valuation: ValLevel = cyclicalRecovery && rawValuation === 'expensive' ? 'fair' : rawValuation;
+
+    const verdictKey: VerdictKey | null = input.insufficientData
+        ? 'insufficient'
+        : fundamentals != null
+            ? `${fundamentals}_${valuation}`
+            : valuation !== 'unknown'
+                ? `none_${valuation}`
+                : null;
+    return { fundLevel: fundamentals, valLevel: valuation, verdictKey, distorted, cyclicalRecovery };
+}
+
+export function buildVerdict(input: VerdictInput): Verdict | null {
+    const p = input.pillars ?? null;
+    const { fundLevel: fundamentals, valLevel: valuation, distorted, cyclicalRecovery } = classifyVerdict(input);
 
     // ── Strengths / Risks (max 2 each) ────────────────────────────────────
     const fundPillars = p
