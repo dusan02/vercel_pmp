@@ -87,6 +87,13 @@ const V_MISSING = 10;
 const fmtPct = (v: number | null, d = 1) => v == null ? 'n/a' : `${(v * 100).toFixed(d)}%`;
 const fmtX = (v: number | null) => v == null ? 'n/a' : `${v.toFixed(1)}x`;
 const fmtNum = (v: number | null, d = 2) => v == null ? 'n/a' : v.toFixed(d);
+function fmtOrdPct(v: number | null): string {
+    if (v == null) return 'n/a';
+    const n = Math.round(v);
+    const s = ['th', 'st', 'nd', 'rd'];
+    const mod100 = n % 100;
+    return `${n}${s[(mod100 - 20) % 10] ?? s[mod100] ?? s[0] ?? 'th'} pct`;
+}
 
 function leg(key: string, label: string, value: number | null, points: number, display: string): PillarLeg {
     return { key, label, value, points, max: LEG_MAX, display };
@@ -314,7 +321,7 @@ export function computePillars(i: PillarInputs): PillarScores {
     return {
         valuation: assemble('valuation', 'Valuation', [
             leg('pePercentile', 'P/E vs own history', i.pePercentile, pePercentilePoints(i.pePercentile),
-                i.pePercentile == null ? 'n/a' : `${Math.round(i.pePercentile)}th pct`),
+                fmtOrdPct(i.pePercentile)),
             leg('fcfYield', 'FCF yield', i.fcfYield, fcfYieldPoints(i.fcfYield), fmtPct(i.fcfYield)),
             leg('psRatio', 'P/S', i.psRatio, psPoints(i.psRatio), fmtX(i.psRatio)),
             leg('evEbit', 'EV/EBIT', i.evEbit, evEbitPoints(i.evEbit), fmtX(i.evEbit)),

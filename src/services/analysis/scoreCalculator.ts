@@ -135,11 +135,16 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
             : marketCap;
         const A = ((bsStmt.currentAssets || 0) - (bsStmt.currentLiabilities || 0)) / bsStmt.totalAssets;
         const B = (bsStmt.retainedEarnings || 0) / bsStmt.totalAssets;
-        const C = (bsStmt.ebit || 0) / bsStmt.totalAssets;
+        // Altman Z requires annualized (TTM) EBIT and Sales over Total Assets —
+        // reading bsStmt.ebit/revenue directly plugged 3M/6M/9M partial-year
+        // flows whenever the newest balance-sheet row was Q1/Q2/Q3.
+        const annualEbit = ttmEbit ?? bsStmt.ebit ?? 0;
+        const annualRev = ttmRevenue ?? bsStmt.revenue ?? 0;
+        const C = annualEbit / bsStmt.totalAssets;
         const D = bsStmt.totalLiabilities && bsStmt.totalLiabilities > 0 && marketValueOfEquity > 0
             ? marketValueOfEquity / bsStmt.totalLiabilities
             : 0;
-        const E = (bsStmt.revenue || 0) / bsStmt.totalAssets;
+        const E = annualRev / bsStmt.totalAssets;
         altmanZ = 1.2 * A + 1.4 * B + 3.3 * C + 0.6 * D + 1.0 * E;
     }
 
@@ -179,18 +184,26 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     }
 
     let fcfConversion: number | null = null;
-    if (fcf !== null && latestStmt.netIncome && latestStmt.netIncome > 0) {
-        fcfConversion = fcf / (ttmNetIncome ?? latestStmt.netIncome);
+    const fcfDenomNi = ttmNetIncome ?? latestStmt.netIncome;
+    if (fcf !== null && fcfDenomNi && fcfDenomNi > 0) {
+        fcfConversion = fcf / fcfDenomNi;
     }
 
     // --- Quality Stats ---
     const negativeNiYears = summarizeLossYears(stmts).lossYears;
-    const margins: number[] = [];
-    stmts.forEach(s => {
-        if (s.revenue && s.revenue > 0 && s.ebit !== null) {
-            margins.push(s.ebit / s.revenue);
-        }
-    });
+    // Compute margin stability over recent annual (FY) operating margins (up to
+    // 5 years, matching the CAGR window) so quarterly seasonality and 10-year
+    // secular margin expansion don't penalize stable compounders or diverge
+    // between sibling classes with different quarterly history depth (GOOGL vs GOOG).
+    const fyMargins = annualStmts
+        .slice(0, 5)
+        .filter(s => s.revenue && s.revenue > 0 && s.ebit !== null)
+        .map(s => s.ebit! / s.revenue!);
+    const margins: number[] = fyMargins.length >= 3
+        ? fyMargins
+        : stmts
+            .filter(s => s.revenue && s.revenue > 0 && s.ebit !== null)
+            .map(s => s.ebit! / s.revenue!);
 
     let marginStability: number | null = null;
     if (margins.length > 2) {
@@ -256,21 +269,24 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     const stmtShares = isSuspiciousShareCount(rawStmtShares, latestStmt.netIncome, tickerData?.sharesOutstanding)
         ? (tickerData?.sharesOutstanding ?? null)
         : rawStmtShares;
+    const currentShareCount = (tickerData?.sharesOutstanding && tickerData.sharesOutstanding > 0)
+        ? tickerData.sharesOutstanding
+        : stmtShares;
     // mcapNow mirrors the read path exactly (lastMarketCap → price×guarded
     // shares) — pillar legs rank like-for-like with /analysis/[ticker].
     const mcapNow = (tickerData?.lastMarketCap && tickerData.lastMarketCap > 0)
         ? tickerData.lastMarketCap * 1e9
-        : (currentPrice > 0 && stmtShares && stmtShares > 0 ? currentPrice * stmtShares : null);
+        : (currentPrice > 0 && currentShareCount && currentShareCount > 0 ? currentPrice * currentShareCount : null);
     // EPS on the same NI/share basis as P/E; Finnhub EPS is the read path's
     // fallback when own shares are unusable.
-    const currentEps = (effectiveNetIncome !== null && effectiveNetIncome > 0 && stmtShares !== null && stmtShares > 0)
-        ? effectiveNetIncome / stmtShares
+    const currentEps = (effectiveNetIncome !== null && effectiveNetIncome > 0 && currentShareCount !== null && currentShareCount > 0)
+        ? effectiveNetIncome / currentShareCount
         : (finnhubMetrics?.netIncomePerShare ?? null);
     // P/E source must match the UI (price / own TTM EPS). Finnhub's peRatio can
     // sit on a stale EPS basis — using it here once produced percentile=100 and
     // a "top 0%" label while our own valuation history showed ~21x.
-    let currentPE = (currentPrice > 0 && stmtShares && stmtShares > 0 && effectiveNetIncome && effectiveNetIncome > 0)
-        ? (currentPrice * stmtShares) / effectiveNetIncome
+    let currentPE = (currentPrice > 0 && currentShareCount && currentShareCount > 0 && effectiveNetIncome && effectiveNetIncome > 0)
+        ? (currentPrice * currentShareCount) / effectiveNetIncome
         : (latestValuation?.peRatio || null);
     // Same loss-maker guard as the read path: no positive P/E next to a
     // negative TTM EPS.
@@ -454,28 +470,51 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     // ─── PILLAR SCORES (shared definitions — services/analysis/pillars.ts) ─
     // Growth inputs: EPS CAGR 5Y from annual statements + forward implied
     // growth from Finnhub forward P/E (same sanity rules as computeMetrics).
+    const saneAnnualShares = (s: { sharesOutstanding: number | null; netIncome: number | null } | null | undefined) =>
+        s && !isSuspiciousShareCount(s.sharesOutstanding, s.netIncome, tickerData?.sharesOutstanding)
+            ? s.sharesOutstanding : null;
     let epsCagr5y: number | null = null;
-    if (latestAnnual && stmt5yAgoAnnual && yearsBack > 0) {
-        // Same guard as the read path: corrupt EPS-derived counts are treated
-        // as missing (leg skipped) — never substituted, never trusted.
-        const sharesNow = !isSuspiciousShareCount(latestAnnual.sharesOutstanding, latestAnnual.netIncome, tickerData?.sharesOutstanding)
-            ? latestAnnual.sharesOutstanding : null;
-        const sharesThen = !isSuspiciousShareCount(stmt5yAgoAnnual.sharesOutstanding, stmt5yAgoAnnual.netIncome, tickerData?.sharesOutstanding)
-            ? stmt5yAgoAnnual.sharesOutstanding : null;
-        if (latestAnnual.netIncome && latestAnnual.netIncome > 0 && sharesNow && sharesNow > 0
-            && stmt5yAgoAnnual.netIncome && stmt5yAgoAnnual.netIncome > 0 && sharesThen && sharesThen > 0) {
+    if (latestAnnual) {
+        const sharesNow = saneAnnualShares(latestAnnual);
+        // Prefer the 5Y-ago FY row (fiscalYear - 4); if its shares are missing/corrupt,
+        // fall back to the annual row (>=2Y back) closest to 4Y back with valid shares.
+        const candidates = annualStmts.filter(s =>
+            s !== latestAnnual
+            && (s.netIncome ?? 0) > 0
+            && (saneAnnualShares(s) ?? 0) > 0
+            && (latestAnnual.fiscalYear != null && s.fiscalYear != null ? latestAnnual.fiscalYear - s.fiscalYear >= 2 : true)
+        );
+        const epsBaseAnnual = (saneAnnualShares(stmt5yAgoAnnual) && (stmt5yAgoAnnual?.netIncome ?? 0) > 0)
+            ? stmt5yAgoAnnual
+            : candidates.sort((a, b) =>
+                Math.abs((latestAnnual.fiscalYear! - a.fiscalYear!) - 4) - Math.abs((latestAnnual.fiscalYear! - b.fiscalYear!) - 4)
+            )[0] ?? null;
+        const epsYearsBack = (latestAnnual.fiscalYear != null && epsBaseAnnual?.fiscalYear != null && latestAnnual.fiscalYear > epsBaseAnnual.fiscalYear)
+            ? latestAnnual.fiscalYear - epsBaseAnnual.fiscalYear
+            : yearsBack;
+        const sharesThen = saneAnnualShares(epsBaseAnnual);
+        if (epsBaseAnnual && epsYearsBack > 0
+            && latestAnnual.netIncome && latestAnnual.netIncome > 0 && sharesNow && sharesNow > 0
+            && epsBaseAnnual.netIncome && epsBaseAnnual.netIncome > 0 && sharesThen && sharesThen > 0) {
             const epsNow = latestAnnual.netIncome / sharesNow;
-            const epsThen = stmt5yAgoAnnual.netIncome / sharesThen;
+            const epsThen = epsBaseAnnual.netIncome / sharesThen;
             if (epsNow > 0 && epsThen > 0) {
-                epsCagr5y = (Math.pow(epsNow / epsThen, 1 / yearsBack) - 1) * 100;
+                epsCagr5y = (Math.pow(epsNow / epsThen, 1 / epsYearsBack) - 1) * 100;
             }
         }
     }
     const fhForwardPe = finnhubMetrics?.forwardPe ?? null;
-    // Forward implied 1Y growth = (price/forwardP E) / currentEps − 1, where
-    // currentEps carries the Finnhub fallback — identical to the read path.
-    const forwardImpliedGrowth = (fhForwardPe !== null && fhForwardPe >= 1 && currentPrice > 0 && currentEps !== null && currentEps > 0)
-        ? ((currentPrice / fhForwardPe) / currentEps - 1) * 100
+    // When GAAP TTM Net Income exceeds TTM Operating Income (EBIT) by >5%, a
+    // non-operating windfall (e.g. GOOGL +$135.7B unrealized investment gain,
+    // AMZN Rivian/Anthropic gains) is inflating GAAP currentEps, whereas
+    // analyst consensus forwardPe models recurring operating earnings. Strip
+    // the non-operating excess above EBIT so forwardImpliedGrowth doesn't
+    // invert into a fake negative growth rate (-20.6%).
+    const recurringEpsForFwd = (ttmEbit !== null && ttmEbit > 0 && effectiveNetIncome !== null && effectiveNetIncome > ttmEbit * 1.05 && currentShareCount && currentShareCount > 0)
+        ? ttmEbit / currentShareCount
+        : currentEps;
+    const forwardImpliedGrowth = (fhForwardPe !== null && fhForwardPe >= 1 && currentPrice > 0 && recurringEpsForFwd !== null && recurringEpsForFwd > 0)
+        ? ((currentPrice / fhForwardPe) / recurringEpsForFwd - 1) * 100
         : null;
 
     const pillarsInput = {

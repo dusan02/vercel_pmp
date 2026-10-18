@@ -6,9 +6,13 @@ import { isSuspiciousShareCount } from '../lib/utils/shareCount';
 describe('isSuspiciousShareCount', () => {
     const trusted = 1_559_000_000; // PM real share count
 
-    it('flags ni/shares ≈ small integer with >30% deviation (PM Q1 2026)', () => {
-        // stored 2.438B = netIncome/1 — real count 1.559B
+    it('flags ni/shares ≈ small integer with >15% deviation (PM Q1 2026 & GOOGL FY22/23)', () => {
+        // PM stored 2.438B = netIncome/1 — real count 1.559B
         expect(isSuspiciousShareCount(2_438_000_000, 2_438_000_000, trusted)).toBe(true);
+        // GOOGL FY23 stored 14.759B = 73.795B/5 — real count 12.23B (+20.7%)
+        expect(isSuspiciousShareCount(14_759_000_000, 73_795_000_000, 12_229_934_831)).toBe(true);
+        // GOOGL FY22 stored 14.993B = 59.972B/4 — real count 12.23B (+22.6%)
+        expect(isSuspiciousShareCount(14_993_000_000, 59_972_000_000, 12_229_934_831)).toBe(true);
     });
 
     it('does NOT flag ni/7 when the derived count is ~correct (4% off)', () => {

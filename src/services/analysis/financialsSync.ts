@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
+import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
 
 // ─── stockanalysis.com fallback for ADR/foreign tickers ──────────────
 const SA_BASE = 'https://stockanalysis.com/stocks';
@@ -35,7 +36,10 @@ function extractSAArray(html: string, key: string): any[] | null {
     const m = html.match(re);
     if (!m) return null;
     try {
-        const parsed = JSON.parse(`[${m[1]}]`);
+        // SvelteKit serializes decimals in (-1, 1) without a leading zero
+        // (e.g. `.81993` or `-.25` in epsdil), which is invalid JSON.
+        const normalized = m[1]!.replace(/(?<=^|,|-)\.(?=\d)/g, '0.');
+        const parsed = JSON.parse(`[${normalized}]`);
         return Array.isArray(parsed) ? parsed : null;
     } catch {
         return null;
@@ -168,7 +172,7 @@ async function mergeSAPage(
     income: SAData,
     balance: SAData | null,
     cashflow: SAData | null,
-    opts: { quarterly: boolean; gapfill: boolean },
+    opts: { quarterly: boolean; gapfill: boolean; trustedShares?: number | null },
 ): Promise<{ inserted: number; updated: number }> {
     const balIdx = saIndexByDate(balance);
     const cfIdx = saIndexByDate(cashflow);
@@ -193,6 +197,7 @@ async function mergeSAPage(
         const niDiscrete = saNumArr(income, 'netinccmn', i);
         const epsdil = saNumArr(income, 'epsdil', i);
         const sharesFromEps = niDiscrete !== null && epsdil !== null && epsdil > 0 ? niDiscrete / epsdil : null;
+        const sharesDirect = saNumArr(income, 'sharesDiluted', i) ?? saNumArr(income, 'sharesBasic', i);
 
         const qd = opts.quarterly;
         const stmtData: SaStmtData = {
@@ -220,7 +225,7 @@ async function mergeSAPage(
             currentLiabilities: bi != null ? saNumArr(balance, 'currentLiabilities', bi) ?? saNumArr(balance, 'liabilitiesc', bi) : null,
             retainedEarnings: bi != null ? saNumArr(balance, 'retearn', bi) ?? saNumArr(balance, 'balance_sheet_retained_earnings', bi) : null,
             totalEquity: bi != null ? saNumArr(balance, 'equity', bi) : null,
-            sharesOutstanding: sharesFromEps ?? (bi != null ? saNumArr(balance, 'sharesOutTotalCommon', bi) : null),
+            sharesOutstanding: sharesDirect ?? sharesFromEps ?? (bi != null ? saNumArr(balance, 'sharesOutTotalCommon', bi) : null),
             totalDebt: bi != null ? saNumArr(balance, 'debt', bi) : null,
             cashAndEquivalents: bi != null ? saNumArr(balance, 'totalcash', bi) ?? saNumArr(balance, 'cashneq', bi) : null,
             netPPE: bi != null ? saNumArr(balance, 'netPPE', bi) ?? saNumArr(balance, 'balance_sheet_net_property_plant_and_equipment', bi) : null,
@@ -248,14 +253,23 @@ async function mergeSAPage(
             continue;
         }
 
-        // Existing Finnhub row: fill only null fields; never regress a
-        // non-null value — except `ebit`, where a >50% divergence from SA's
-        // real operating income means the stored value came from the
-        // pretax/GP−SGA fabrication chain (PSX FY25: 13.8B vs opinc ~3.8B).
+        // Existing row: fill null fields; also repair three known corruptions:
+        // 1. ebit >50% off SA's operating income (fabricated GP−SGA chain)
+        // 2. capex < 0 (legacy SA scrape before datekey indexing — shifted
+        //    the "TTM" BS/CF column into FY25 and stored negative capex)
+        // 3. integer-EPS-derived sharesOutstanding (GOOGL FY22=ni/4, FY23=ni/5)
         const patch: Record<string, any> = {};
+        const legacyShiftedRow = existing.capex !== null && existing.capex < 0;
         for (const [k, v] of Object.entries(stmtData)) {
             if (k === 'endDate' || k === 'ebit') continue;
-            if (v !== null && (existing as any)[k] === null) patch[k] = v;
+            if (v !== null && ((existing as any)[k] === null || legacyShiftedRow)) {
+                patch[k] = v;
+            }
+        }
+        if (stmtData.sharesOutstanding !== null
+            && existing.sharesOutstanding !== null
+            && isSuspiciousShareCount(existing.sharesOutstanding, existing.netIncome, opts.trustedShares)) {
+            patch.sharesOutstanding = stmtData.sharesOutstanding;
         }
         const saEbit = stmtData.ebit;
         const curEbit = existing.ebit;
@@ -284,7 +298,7 @@ type SaMode = 'full' | 'gapfill';
  *  - mode 'gapfill': Finnhub lags (latest quarterly stale) → insert only
  *    missing periods, fill null fields, and repair wildly divergent `ebit`.
  */
-async function syncFromStockAnalysis(symbol: string, mode: SaMode = 'full'): Promise<number> {
+async function syncFromStockAnalysis(symbol: string, mode: SaMode = 'full', trustedShares: number | null = null): Promise<number> {
     const gapfill = mode === 'gapfill';
     const [incomeA, balanceA, cashflowA, incomeQ, balanceQ, cashflowQ] = await Promise.all([
         fetchSAData(symbol, ''),
@@ -313,11 +327,11 @@ async function syncFromStockAnalysis(symbol: string, mode: SaMode = 'full'): Pro
 
     let touched = 0;
     if (incomeA) {
-        const r = await mergeSAPage(symbol, incomeA, balanceA, cashflowA, { quarterly: false, gapfill });
+        const r = await mergeSAPage(symbol, incomeA, balanceA, cashflowA, { quarterly: false, gapfill, trustedShares });
         touched += r.inserted + r.updated;
     }
     if (incomeQ) {
-        const r = await mergeSAPage(symbol, incomeQ, balanceQ, cashflowQ, { quarterly: true, gapfill });
+        const r = await mergeSAPage(symbol, incomeQ, balanceQ, cashflowQ, { quarterly: true, gapfill, trustedShares });
         touched += r.inserted + r.updated;
     }
     return touched;
@@ -569,15 +583,21 @@ export async function syncFinancials(symbol: string): Promise<void> {
                         'us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding', 'us-gaap_WeightedAverageNumberOfSharesOutstandingBasic'
                     ]);
 
-                // Fallback: derive shares from NetIncome / EPS (e.g. GOOGL reports EPS but not shares count)
+                // Fallback: derive shares from NetIncome / EPS (e.g. GOOGL reports EPS but not shares count).
+                // Skip integer-truncated EPS values (Finnhub rounds GOOGL FY22 EPS=4, FY23 EPS=5,
+                // which fabricates ~15B shares vs real ~13B) and allow common split multiples so
+                // pre-split filings (e.g. 20:1 split) aren't discarded against today's trustedShares.
                 if (sharesOutstandingRaw === null || sharesOutstandingRaw <= 0) {
                     const eps = extract(report, 'ic', [
                         'us-gaap_EarningsPerShareDiluted', 'us-gaap_EarningsPerShareBasic'
                     ]);
-                    if (eps && eps !== 0 && netIncome !== null && netIncome !== 0) {
+                    const isTruncatedIntEps = eps !== null && Number.isInteger(eps) && Math.abs(eps) <= 20;
+                    if (eps && eps !== 0 && !isTruncatedIntEps && netIncome !== null && netIncome !== 0) {
                         const derived = Math.abs(netIncome / eps);
-                        sharesOutstandingRaw = (trustedShares == null || Math.abs(derived / trustedShares - 1) <= 0.4)
-                            ? derived : null;
+                        const SPLIT_MULTS = [1, 2, 3, 4, 5, 7, 8, 10, 15, 20, 25, 50];
+                        const matchesTrusted = trustedShares == null
+                            || SPLIT_MULTS.some(m => Math.abs((derived * m) / trustedShares - 1) <= 0.4);
+                        sharesOutstandingRaw = matchesTrusted ? derived : null;
                     }
                 }
 
@@ -716,18 +736,37 @@ export async function syncFinancials(symbol: string): Promise<void> {
     const latestQuarterly = await prisma.financialStatement.findFirst({
         where: { symbol, fiscalPeriod: { not: 'FY' } },
         orderBy: { endDate: 'desc' },
-        select: { endDate: true },
+        select: { endDate: true, totalAssets: true, totalEquity: true },
     });
+    const fyRows = await prisma.financialStatement.findMany({
+        where: { symbol, fiscalPeriod: 'FY' },
+        orderBy: { endDate: 'desc' },
+        take: 6,
+        select: { sharesOutstanding: true, netIncome: true, capex: true },
+    });
+    const tickerSharesRow = await prisma.ticker.findUnique({
+        where: { symbol },
+        select: { sharesOutstanding: true },
+    });
+    const trustedForGap = tickerSharesRow?.sharesOutstanding ?? null;
     const STALE_MS = 100 * 24 * 60 * 60 * 1000; // ~1 quarter + reporting lag
     // Missing quarterly rows also count as stale — Finnhub can carry annuals
     // but only pre-history quarterlies (GOOG: 2011-12 filings, pre-Alphabet),
     // leaving TTM on stale FY data while a sibling class (GOOGL) computes a
-    // real TTM. Without this, zero-quarter tickers never reach SA gapfill.
+    // real TTM. Also gapfill when the latest quarter lacks a balance sheet
+    // (GOOGL Q1/Q2'26 in Finnhub) or FY rows have missing/corrupt shares or
+    // legacy negative capex.
     const staleQuarterly = !latestQuarterly || Date.now() - latestQuarterly.endDate.getTime() > STALE_MS;
-    if (staleQuarterly || ebitNeedsSaVerify) {
-        const saCount = await syncFromStockAnalysis(symbol, 'gapfill');
+    const missingQuarterlyBs = !!latestQuarterly && latestQuarterly.totalAssets == null && latestQuarterly.totalEquity == null;
+    const fyNeedsRepair = fyRows.some(r =>
+        r.sharesOutstanding == null
+        || (r.capex !== null && r.capex < 0)
+        || isSuspiciousShareCount(r.sharesOutstanding, r.netIncome, trustedForGap)
+    );
+    if (staleQuarterly || missingQuarterlyBs || fyNeedsRepair || ebitNeedsSaVerify) {
+        const saCount = await syncFromStockAnalysis(symbol, 'gapfill', trustedForGap);
         if (saCount > 0) {
-            console.log(`[syncFinancials] ${symbol}: SA gapfill touched ${saCount} rows (staleQ=${staleQuarterly}, ebitVerify=${ebitNeedsSaVerify})`);
+            console.log(`[syncFinancials] ${symbol}: SA gapfill touched ${saCount} rows (staleQ=${staleQuarterly}, missingBs=${missingQuarterlyBs}, fyRepair=${fyNeedsRepair}, ebitVerify=${ebitNeedsSaVerify})`);
         }
     }
     await recordFundamentalsFreshness(symbol, providerPeriodEnd);

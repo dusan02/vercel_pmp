@@ -234,9 +234,18 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     const forwardEps = (forwardPe !== null && forwardPe > 0 && effectivePrice > 0)
         ? effectivePrice / forwardPe
         : null;
-    // Forward implied 1Y growth = (forwardEps / currentEps - 1) × 100
-    const forwardImpliedGrowth = (forwardEps !== null && forwardEps > 0 && currentEps !== null && currentEps > 0)
-        ? parseFloat(((forwardEps / currentEps - 1) * 100).toFixed(2))
+    // When GAAP TTM Net Income exceeds TTM Operating Income (EBIT) by >5%, a
+    // non-operating windfall (e.g. GOOGL +$135.7B unrealized investment gain,
+    // AMZN Rivian/Anthropic gains) is inflating GAAP currentEps, whereas
+    // analyst consensus forwardPe models recurring operating earnings. Strip
+    // the non-operating excess above EBIT so forwardImpliedGrowth doesn't
+    // invert into a fake negative growth rate (-20.6%).
+    const recurringEpsForFwd = (ttmEbit !== null && ttmEbit > 0 && effectiveNI !== null && effectiveNI > ttmEbit * 1.05 && currentShareCount !== null && currentShareCount > 0)
+        ? ttmEbit / currentShareCount
+        : currentEps;
+    // Forward implied 1Y growth = (forwardEps / recurringEpsForFwd - 1) × 100
+    const forwardImpliedGrowth = (forwardEps !== null && forwardEps > 0 && recurringEpsForFwd !== null && recurringEpsForFwd > 0)
+        ? parseFloat(((forwardEps / recurringEpsForFwd - 1) * 100).toFixed(2))
         : null;
 
     // Prefer Finnhub pre-computed ratios, fallback to our calculations
@@ -297,16 +306,51 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     const yearsBack = fyDiff > 0 ? fyDiff : (annualStmts.length >= 5 ? 4 : (annualStmts.length - 1));
     let epsCagr5y: number | null = null;
     const epsNowShares = saneShares(latestAnnual);
-    const epsThenShares = saneShares(stmt5yAgoAnnual);
-    if (latestAnnual && stmt5yAgoAnnual && yearsBack > 0
-        && latestAnnual.netIncome && latestAnnual.netIncome > 0 && epsNowShares && epsNowShares > 0
-        && stmt5yAgoAnnual.netIncome && stmt5yAgoAnnual.netIncome > 0 && epsThenShares && epsThenShares > 0) {
-        const epsNow = latestAnnual.netIncome / epsNowShares;
-        const epsThen = stmt5yAgoAnnual.netIncome / epsThenShares;
-        if (epsNow > 0 && epsThen > 0) {
-            epsCagr5y = (Math.pow(epsNow / epsThen, 1 / yearsBack) - 1) * 100;
+    if (latestAnnual && epsNowShares && epsNowShares > 0 && latestAnnual.netIncome && latestAnnual.netIncome > 0) {
+        const candidates = annualStmts.filter(s =>
+            s !== latestAnnual
+            && (s.netIncome ?? 0) > 0
+            && (saneShares(s) ?? 0) > 0
+            && (latestAnnual.fiscalYear != null && s.fiscalYear != null ? latestAnnual.fiscalYear - s.fiscalYear >= 2 : true)
+        );
+        const epsBaseAnnual = (saneShares(stmt5yAgoAnnual) && (stmt5yAgoAnnual?.netIncome ?? 0) > 0)
+            ? stmt5yAgoAnnual
+            : candidates.sort((a, b) =>
+                Math.abs((latestAnnual.fiscalYear! - a.fiscalYear!) - 4) - Math.abs((latestAnnual.fiscalYear! - b.fiscalYear!) - 4)
+            )[0] ?? null;
+        const epsYearsBack = (latestAnnual.fiscalYear != null && epsBaseAnnual?.fiscalYear != null && latestAnnual.fiscalYear > epsBaseAnnual.fiscalYear)
+            ? latestAnnual.fiscalYear - epsBaseAnnual.fiscalYear
+            : yearsBack;
+        const epsThenShares = saneShares(epsBaseAnnual);
+        if (epsBaseAnnual && epsYearsBack > 0 && epsBaseAnnual.netIncome && epsBaseAnnual.netIncome > 0 && epsThenShares && epsThenShares > 0) {
+            const epsNow = latestAnnual.netIncome / epsNowShares;
+            const epsThen = epsBaseAnnual.netIncome / epsThenShares;
+            if (epsNow > 0 && epsThen > 0) {
+                epsCagr5y = (Math.pow(epsNow / epsThen, 1 / epsYearsBack) - 1) * 100;
+            }
         }
     }
+
+    // Live marginStability & fcfConversion (same FY-first rule as scoreCalculator)
+    const fyMargins = annualStmts
+        .slice(0, 5)
+        .filter(s => s.revenue && s.revenue > 0 && s.ebit !== null)
+        .map(s => s.ebit! / s.revenue!);
+    const marginSeries = fyMargins.length >= 3
+        ? fyMargins
+        : stmts
+            .filter(s => s.revenue && s.revenue > 0 && s.ebit !== null)
+            .map(s => s.ebit! / s.revenue!);
+    let liveMarginStability: number | null = null;
+    if (marginSeries.length > 2) {
+        const mean = marginSeries.reduce((a, b) => a + b, 0) / marginSeries.length;
+        const variance = marginSeries.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / marginSeries.length;
+        liveMarginStability = Math.sqrt(variance);
+    }
+    const fcfDenomNi = ttmNetIncome ?? latestStmt?.netIncome ?? null;
+    const liveFcfConversion = (ttmFcf !== null && fcfDenomNi !== null && fcfDenomNi > 0)
+        ? ttmFcf / fcfDenomNi
+        : (cached.fcfConversion ?? null);
 
     const investedCapital = (totalEquity || 0) + (totalDebt || 0) - (cash || 0);
     const pillarNetMargin = (ttmNetIncome !== null && ttmRevenue !== null && ttmRevenue > 0)
@@ -355,8 +399,8 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         debtRatio: pillarNetDebtRatio,
         piotroski: cached.piotroskiScore ?? null,
         beneish: cached.beneishScore ?? null,
-        fcfConversion: cached.fcfConversion ?? null,
-        marginStability: cached.marginStability ?? null,
+        fcfConversion: liveFcfConversion,
+        marginStability: liveMarginStability ?? cached.marginStability ?? null,
         // Moat: durability stats over the FY series (not TTM/current values).
         moatRoicDurability: moatDerived.roicDurability,
         moatGmMedian: moatDerived.gmMedian,
@@ -366,8 +410,18 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     if (process.env.DEBUG_PILLARS) console.log(`[pillars-input:${symbol}]`, JSON.stringify(pillarsInput));
     const pillars = computePillars(pillarsInput);
 
+    // Strip integer-EPS-derived garbage share counts from historical rows
+    // before handing statements to UI charts (ShareDilutionChart).
+    for (const s of stmts) {
+        if (isSuspiciousShareCount(s.sharesOutstanding, s.netIncome, trustedShares)) {
+            s.sharesOutstanding = s === latestStmt ? trustedShares : null;
+        }
+    }
+
     return {
         ...analysis,
+        fcfConversion: liveFcfConversion,
+        marginStability: liveMarginStability ?? cached.marginStability ?? null,
         insufficientData,
         negativeNiYears: summarizeLossYears(stmts).lossYears,
         statements: stmts,

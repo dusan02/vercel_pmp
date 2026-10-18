@@ -101,6 +101,14 @@ describe('computePillars — leg metadata for "Why?" breakdowns', () => {
         const p = computePillars({ ...base, roe: 0.25 });
         expect(p.profitability.legs.find(l => l.key === 'roe')!.points).toBe(20);
     });
+
+    it('formats pePercentile with proper English ordinals (1st, 2nd, 3rd, 12th)', () => {
+        expect(computePillars({ ...base, pePercentile: 1 }).valuation.legs[0]!.display).toBe('1st pct');
+        expect(computePillars({ ...base, pePercentile: 2.1 }).valuation.legs[0]!.display).toBe('2nd pct');
+        expect(computePillars({ ...base, pePercentile: 3 }).valuation.legs[0]!.display).toBe('3rd pct');
+        expect(computePillars({ ...base, pePercentile: 12 }).valuation.legs[0]!.display).toBe('12th pct');
+        expect(computePillars({ ...base, pePercentile: 22 }).valuation.legs[0]!.display).toBe('22nd pct');
+    });
 });
 
 describe('pillarSummary', () => {
