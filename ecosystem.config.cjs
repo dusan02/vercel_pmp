@@ -177,6 +177,21 @@ module.exports = {
       autorestart: false,
     },
     {
+      name: "pmp-farm-asn-map",
+      script: "scripts/gen-farm-nginx.mjs",
+      interpreter: "node",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      env: { NODE_ENV: "production" },
+      error_file: path.join(__dirname, "logs", "pm2", "farm-asn-map-error.log"),
+      out_file: path.join(__dirname, "logs", "pm2", "farm-asn-map-out.log"),
+      log_date_format: "YYYY-MM-DD HH:mm:ss Z",
+      // Weekly refresh (Sunday 05:00 UTC) — announced prefixes drift slowly.
+      cron_restart: "0 5 * * 0",
+      autorestart: false,
+    },
+    {
       name: "cron-update-ticker-stats",
       script: "scripts/trigger-update-ticker-stats.ts",
       interpreter: "/var/www/premarketprice/node_modules/.bin/tsx",

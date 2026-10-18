@@ -11,6 +11,7 @@ const config = {
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^next-auth/react$': '<rootDir>/src/__tests__/mocks/next-auth-react.ts',
   },
   transform: {
     '^.+\\.tsx?$': [

@@ -2,7 +2,7 @@
 
 import { useEffect, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { pageview } from '@/lib/ga';
+import { pageview, initHumanSignal } from '@/lib/ga';
 
 /**
  * Internal component that uses useSearchParams (must be in Suspense)
@@ -17,6 +17,10 @@ function GAListenerInner() {
     
     // Track page view
     pageview(url);
+
+    // Bot-vs-human evidence for this page view — cleanup flushes early
+    // on the next navigation so short dwells still report.
+    return initHumanSignal();
   }, [pathname, searchParams]);
 
   return null; // This component doesn't render anything

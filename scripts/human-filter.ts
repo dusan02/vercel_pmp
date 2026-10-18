@@ -38,6 +38,7 @@
  * Env: GOOGLE_APPLICATION_CREDENTIALS, GA4_PROPERTY_ID, PMP_SSH.
  */
 import { getAccessToken } from './lib/googleAuth';
+import { getFarmCidrs, buildFarmRanges, asnOf } from './lib/farm-asn.mjs';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -143,7 +144,8 @@ function saveCache(c: Record<string, IpInfo>) {
 async function enrich(ips: string[]): Promise<Record<string, IpInfo>> {
   const cache = loadCache();
   const now = Date.now();
-  const missing = ips.filter((ip) => !cache[ip] || now - cache[ip].ts > CACHE_TTL);
+  // Farm-CIDR hits are already classified — don't burn ip-api quota on them.
+  const missing = ips.filter((ip) => asnOf(ip, FARM_RANGES) == null && (!cache[ip] || now - cache[ip].ts > CACHE_TTL));
   for (let i = 0; i < missing.length; i += 100) {
     const batch = missing.slice(i, i + 100);
     const res = await fetch('http://ip-api.com/batch?fields=status,query,countryCode,as,isp,mobile,proxy,hosting', {
@@ -163,15 +165,20 @@ async function enrich(ips: string[]): Promise<Record<string, IpInfo>> {
 }
 
 // ---------------- classification ----------------
+// Local farm-ASN CIDR ranges (RIPEstat-backed, cached) — filters the big
+// render-farms even when ip-api rate-limits the enrichment call.
+let FARM_RANGES: [number, number, number][] = [];
+
 const isCandidate = (r: IpRow) => r.jsref >= 1 && r.pages >= 1 && r.bot === 0 && !SELF_IPS.has(r.ip);
 const behaviorOk = (r: IpRow) => r.assets >= 3 || r.span >= 10 || r.pages >= 2;
 const isDc = (info?: IpInfo) => !!info && (info.hosting || info.proxy || DC_ASN.test(`${info.as} ${info.isp}`));
+const isDcIp = (ip: string, info?: IpInfo) => isDc(info) || asnOf(ip, FARM_RANGES) != null;
 
 function funnel(rows: IpRow[], info: Record<string, IpInfo>) {
   const cand = rows.filter(isCandidate);
   const behave = cand.filter(behaviorOk);
-  const humans = behave.filter((r) => !isDc(info[r.ip]));
-  const dc = behave.filter((r) => isDc(info[r.ip]));
+  const humans = behave.filter((r) => !isDcIp(r.ip, info[r.ip]));
+  const dc = behave.filter((r) => isDcIp(r.ip, info[r.ip]));
   return { cand, behave, humans, dc };
 }
 
@@ -179,7 +186,8 @@ function reportSite(label: string, rows: IpRow[], info: Record<string, IpInfo>) 
   const { cand, behave, humans, dc } = funnel(rows, info);
   const dcAsns: Record<string, number> = {};
   for (const r of dc) {
-    const asn = (info[r.ip]?.as ?? info[r.ip]?.isp ?? 'unknown').split(' ').slice(0, 3).join(' ');
+    const farm = asnOf(r.ip, FARM_RANGES);
+    const asn = farm != null ? `AS${farm} farm` : (info[r.ip]?.as ?? info[r.ip]?.isp ?? 'unknown').split(' ').slice(0, 3).join(' ');
     dcAsns[asn] = (dcAsns[asn] ?? 0) + 1;
   }
   const countries: Record<string, number> = {};
@@ -304,6 +312,10 @@ ${svg.join('\n')}
 
 // ---------------- main ----------------
 async function main() {
+  try {
+    FARM_RANGES = buildFarmRanges(await getFarmCidrs());
+    console.log(`farm CIDR ranges loaded: ${FARM_RANGES.length}`);
+  } catch { console.error('farm CIDR fetch failed — continuing without local ASN filter'); }
   if (!CHART) {
     const label = DAYS === 0 ? 'today' : DAYS === 1 ? 'yesterday' : `${DAYS} days ago`;
     console.log(`\n=========== HUMAN FILTER — ${label} ===========\n`);
