@@ -65,7 +65,7 @@ type Site = (typeof SITES)[number];
 const DC_ASN = /amazon|aws|google|microsoft|azure|hetzner|ovh|digitalocean|alibaba|tencent|oracle|vultr|linode|akamai|cloudflare|m247|datacamp|kamatera|scalaxy|worldhoster|leaseweb|contabo|servers?\.com|ionos|scaleway|upcloud|cogent|zayo|gtt|choopa|constant|hosting|datacenter|servermania|nucleus|kyivstar data|ip-?only networks/i;
 
 // ---------------- remote aggregation ----------------
-// One awk pass per (log, day) → TSV: ip, total, pages, assets, jsReferer, spanSec, botLines
+// One awk pass per (log, day) → TSV: ip, total, pages, assets, jsReferer, spanSec, botLines, status403
 function remoteAggregate(dayIdxs: number[]): Record<Site, Map<number, IpRow[]>> {
   const list = dayIdxs.join(' ');
   const sh = `
@@ -86,6 +86,7 @@ emit() {
       split($0, q, "\\"")
       req=q[2]; ref=q[4]; ua=tolower(q[6])
       if (req !~ /^GET /) next
+      st=q[3]; gsub(/^ +/,"",st); sub(/ .*/,"",st)
       gsub(/^GET /,"",req); sub(/ .*/,"",req); path=req
       ip=$1
       ts=0
@@ -94,15 +95,18 @@ emit() {
       }
       n[ip]++
       if (!(ip in first)) first[ip]=ts; last[ip]=ts
+      if (st=="403") bl[ip]++
       if (ua ~ botua) bt[ip]++
-      if (path !~ asset) pg[ip]++
-      if (path ~ jsext && ref ~ dom) jr[ip]++
-      if (path ~ assetext || path ~ /_next|\\/static\\//) as_[ip]++
+      if (st!="403") {
+        if (path !~ asset) pg[ip]++
+        if (path ~ jsext && ref ~ dom) jr[ip]++
+        if (path ~ assetext || path ~ /_next|\\/static\\//) as_[ip]++
+      }
     }
     END{
       for (ip in n) {
         span=last[ip]-first[ip]; if (span<0) span+=86400
-        printf "%s\\t%d\\t%d\\t%d\\t%d\\t%d\\t%d\\n", ip, n[ip], pg[ip]+0, as_[ip]+0, jr[ip]+0, span, bt[ip]+0
+        printf "%s\\t%d\\t%d\\t%d\\t%d\\t%d\\t%d\\t%d\\n", ip, n[ip], pg[ip]+0, as_[ip]+0, jr[ip]+0, span, bt[ip]+0, bl[ip]+0
       }
     }'
 }
@@ -122,13 +126,13 @@ done
     const m = line.match(/^===(PMP|ET|VERIFA|STOCKCV|GL)\|(\d+)===$/);
     if (m) { curSite = m[1] as Site; curDay = +m[2]; res[curSite].set(curDay, []); continue; }
     if (!curSite || !line) continue;
-    const [ip, n, pages, assets, jsref, span, bot] = line.split('\t');
-    res[curSite].get(curDay)!.push({ ip, n: +n, pages: +pages, assets: +assets, jsref: +jsref, span: +span, bot: +bot });
+    const [ip, n, pages, assets, jsref, span, bot, blocked] = line.split('\t');
+    res[curSite].get(curDay)!.push({ ip, n: +n, pages: +pages, assets: +assets, jsref: +jsref, span: +span, bot: +bot, blocked: +blocked });
   }
   return res;
 }
 
-type IpRow = { ip: string; n: number; pages: number; assets: number; jsref: number; span: number; bot: number };
+type IpRow = { ip: string; n: number; pages: number; assets: number; jsref: number; span: number; bot: number; blocked: number };
 
 // ---------------- ip-api enrichment (cached) ----------------
 type IpInfo = { cc?: string; as?: string; isp?: string; mobile?: boolean; proxy?: boolean; hosting?: boolean; ts: number };
@@ -193,7 +197,12 @@ function reportSite(label: string, rows: IpRow[], info: Record<string, IpInfo>) 
   const countries: Record<string, number> = {};
   for (const r of humans) countries[info[r.ip]?.cc ?? '??'] = (countries[info[r.ip]?.cc ?? '??'] ?? 0) + 1;
 
+  // Edge-blocked: IPs inside farm ranges that ate 403s (zz-farm-asn geo map).
+  const edgeBlocked = rows.filter((r) => r.blocked > 0 && asnOf(r.ip, FARM_RANGES) != null);
+  const edgeReqs = edgeBlocked.reduce((a, r) => a + r.blocked, 0);
+
   console.log(`${label}`);
+  console.log(`  edge-blocked farm IPs (403 via geo map): ${edgeBlocked.length} (${edgeReqs.toLocaleString()} req denied)`);
   console.log(`  rendered candidates (page+js+ref, no bot-UA): ${cand.length}`);
   console.log(`  − weak behavior (no asset graph / 0 dwell / single hit): −${cand.length - behave.length}`);
   console.log(`  − datacenter/proxy ASN: −${dc.length}${dc.length ? `   [${Object.entries(dcAsns).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([a, c]) => `${a}×${c}`).join(', ')}]` : ''}`);
