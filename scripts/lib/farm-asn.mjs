@@ -26,6 +26,18 @@ export const FARM_ASNS = [
   30058,   // FDCservers.net
   398781,  // OCULUS NETWORKS
   212238,  // Datacamp Limited (CDN77 ranges abused by bots)
+  // Big cloud DCs — real consumer browsing from these is ~zero; the render
+  // farm runs mostly inside them. Deliberately EXCLUDES AS13335 Cloudflare
+  // (1.1.1.1 WARP users are real humans) and all residential ISPs.
+  45090,   // Tencent (main CN ASN — biggest observed farm source)
+  14618,   // Amazon AWS (US)
+  16509,   // Amazon AWS
+  396982,  // Google Cloud
+  15169,   // Google
+  9009,    // M247 — major VPN/proxy hoster
+  8075,    // Microsoft Azure
+  213230,  // Hetzner
+  20473,   // Vultr / The Constant Company (Oculus-style proxies)
 ];
 
 const CACHE = path.join(os.homedir(), '.cache', 'pmp-farm-cidrs.json');
