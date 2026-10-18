@@ -73,7 +73,10 @@ export async function getFarmCidrs({ refresh = false } = {}) {
       const st = fs.statSync(CACHE);
       if (Date.now() - st.mtimeMs < TTL_MS) {
         const j = JSON.parse(fs.readFileSync(CACHE, 'utf8'));
-        if (Array.isArray(j?.cidrs) && j.cidrs.length) return j.cidrs;
+        // Refetch when the ASN list grew since the cache was written.
+        const cached = new Set(j?.asns ?? []);
+        const complete = FARM_ASNS.every((a) => cached.has(a));
+        if (complete && Array.isArray(j?.cidrs) && j.cidrs.length) return j.cidrs;
       }
     }
   } catch { /* fall through to fetch */ }
@@ -95,9 +98,14 @@ function ipToInt(ip) {
   return n;
 }
 
-/** Build a sorted [start,end,asn] range table for fast lookups. */
+/**
+ * Build a sorted [start,end,asn] range table for fast lookups.
+ * Contained prefixes are dropped — binary search containment requires
+ * that no range nests inside another (a probe inside the outer range but
+ * past the inner one's end would otherwise walk off the wrong side).
+ */
 export function buildFarmRanges(cidrs) {
-  return cidrs
+  const sorted = cidrs
     .map(({ cidr, asn }) => {
       const [ip, bits] = cidr.split('/');
       const start = ipToInt(ip);
@@ -107,7 +115,13 @@ export function buildFarmRanges(cidrs) {
       return [start, start + size - 1, asn];
     })
     .filter(Boolean)
-    .sort((a, b) => a[0] - b[0]);
+    .sort((a, b) => a[0] - b[0] || b[1] - a[1]);
+  const out = [];
+  for (const r of sorted) {
+    if (out.length && r[0] >= out[out.length - 1][0] && r[1] <= out[out.length - 1][1]) continue;
+    out.push(r);
+  }
+  return out;
 }
 
 /** Returns the matching ASN if ip is inside a farm range, else null. */
