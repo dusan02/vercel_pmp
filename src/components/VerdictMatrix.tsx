@@ -71,15 +71,26 @@ export default function VerdictMatrix({
         }`;
 
     return (
-        <div className="mb-3">
-            <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">PMP Verdict</span>
-                <span className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
+        <div className="flex flex-col justify-between h-full">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">PMP Verdict Matrix</span>
+                {/* insufficient = no financial statements at all — compact chip in header */}
+                <button
+                    onClick={() => pickCell('insufficient')}
+                    title={VERDICT_LABELS.insufficient}
+                    className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                        exact === 'insufficient'
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-medium'
+                            : 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:border-blue-400 hover:text-blue-600'
+                    }`}
+                >
+                    Insufficient data{counts['insufficient'] != null ? ` (${counts['insufficient']})` : ''}
+                </button>
             </div>
-            <div className="max-w-md">
+            <div className="w-full">
                 {/* Column headers — click selects the valLevel axis. */}
-                <div className="grid grid-cols-[64px_repeat(3,1fr)] gap-1 mb-1">
-                    <span />
+                <div className="grid grid-cols-[58px_repeat(3,1fr)] gap-1 mb-1">
+                    <span className="text-[9px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500 self-end pb-0.5">Fund \ Val</span>
                     {VALS.map((v) => {
                         const active = val === v.id;
                         return (
@@ -89,7 +100,7 @@ export default function VerdictMatrix({
                                 title={`All verdicts with valuation ${v.label} (${colTotal(v.id)} tickers)`}
                                 className={`text-[10px] font-semibold uppercase tracking-wide text-center rounded px-1 py-0.5 transition-colors ${v.cls} ${active ? 'bg-blue-50 dark:bg-blue-950/50 ring-1 ring-blue-400' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                             >
-                                {v.label}
+                                {v.label} <span className="text-[9px] font-normal opacity-75">({colTotal(v.id)})</span>
                             </button>
                         );
                     })}
@@ -97,13 +108,14 @@ export default function VerdictMatrix({
                 {FUNDS.map((f) => {
                     const rowActive = fund === f.id;
                     return (
-                        <div key={f.id} className="grid grid-cols-[64px_repeat(3,1fr)] gap-1 mb-1">
+                        <div key={f.id} className="grid grid-cols-[58px_repeat(3,1fr)] gap-1 mb-1 last:mb-0">
                             <button
                                 onClick={() => pickAxis('fund', f.id)}
                                 title={`All verdicts with ${f.label.toLowerCase()} fundamentals (${rowTotal(f.id)} tickers)`}
-                                className={`text-[10px] font-semibold uppercase tracking-wide text-left rounded px-1 py-0.5 transition-colors text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 ${rowActive ? 'bg-blue-50 dark:bg-blue-950/50 ring-1 ring-blue-400' : ''}`}
+                                className={`text-[10px] font-semibold uppercase tracking-wide text-left rounded px-1 py-0.5 transition-colors text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 flex flex-col justify-center leading-tight ${rowActive ? 'bg-blue-50 dark:bg-blue-950/50 ring-1 ring-blue-400' : ''}`}
                             >
-                                {f.label}
+                                <span>{f.label}</span>
+                                <span className="text-[9px] font-normal text-gray-400 dark:text-gray-500">{rowTotal(f.id)}</span>
                             </button>
                             {VALS.map((v) => {
                                 const key = cellKey(f.id, v.id);
@@ -115,7 +127,7 @@ export default function VerdictMatrix({
                                         title={VERDICT_LABELS[key as keyof typeof VERDICT_LABELS] ?? key}
                                         className={cellCls(cellActive(key))}
                                     >
-                                        <span className="tabular-nums font-semibold">{n ?? '–'}</span>
+                                        <span className="tabular-nums font-semibold text-xs">{n ?? '–'}</span>
                                         <span className="text-[8px] opacity-60 hidden sm:block">{f.id} · {v.id}</span>
                                     </button>
                                 );
@@ -123,18 +135,6 @@ export default function VerdictMatrix({
                         </div>
                     );
                 })}
-                {/* insufficient = no financial statements at all — outside the grid. */}
-                <button
-                    onClick={() => pickCell('insufficient')}
-                    title={VERDICT_LABELS.insufficient}
-                    className={`mt-0.5 text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
-                        exact === 'insufficient'
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-medium'
-                            : 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:border-blue-400 hover:text-blue-600'
-                    }`}
-                >
-                    Insufficient data{counts['insufficient'] != null ? ` (${counts['insufficient']})` : ''}
-                </button>
             </div>
         </div>
     );

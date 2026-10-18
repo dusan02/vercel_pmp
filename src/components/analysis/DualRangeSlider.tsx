@@ -22,6 +22,8 @@ function NumInput({
   className?: string;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
+  const shownStr = String(draft ?? value);
+  const widthCls = shownStr.length >= 6 ? 'w-14' : shownStr.length >= 4 ? 'w-11' : 'w-9';
   return (
     <input
       type="number"
@@ -38,7 +40,7 @@ function NumInput({
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === 'Escape') (e.target as HTMLInputElement).blur();
       }}
-      className={`w-11 text-right text-[11px] font-semibold tabular-nums bg-transparent border border-transparent rounded px-0.5
+      className={`${widthCls} text-right text-[11px] font-semibold tabular-nums bg-transparent border border-transparent rounded px-0.5
         hover:border-gray-300 dark:hover:border-gray-600 focus:border-blue-400 focus:bg-white dark:focus:bg-gray-800 outline-none transition-colors
         [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none
         ${className ?? ''}`}

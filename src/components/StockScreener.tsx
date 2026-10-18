@@ -26,11 +26,12 @@ import { useState, useEffect } from 'react';
 // changes the dataset. Tab order runs general → specialised.
 const COLUMN_VIEWS = [
   { id: 'overview', label: 'Overview', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'overallScore', 'valuationScore', 'growthScore', 'profitabilityScore', 'healthScore', 'qualityScore', 'moatScore', 'screens'] },
-  { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'ticker.sector', 'ticker.employees', 'ticker.lastMarketCapDiff', 'ticker.latestMoversRVOL', 'ticker.stdDevReturn20d', 'analyst.buy'] },
-  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'metrics.roe', 'roic', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'revenueCagr', 'netIncomeCagr', 'epsCagr5y', 'metrics.peRatio', 'pePercentile', 'peVsMedian3yPct', 'metrics.priceFreeCashFlow', 'priceToCash', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position', 'trendSignal'] },
-  { id: 'technical', label: 'Technical', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'rsi14', 'sma20Pct', 'sma50Pct', 'sma200Pct', 'perf1m', 'perf3m', 'perf6m', 'perfYtd', 'perf1y', 'metrics.week52Position', 'ticker.latestMoversRVOL', 'ticker.stdDevReturn20d'] },
-  { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'fcfConversion', 'marginStability', 'debtRepaymentYears', 'healthScore', 'qualityScore', 'overallScore'] },
-  { id: 'insiders', label: 'Insiders', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'insider.netBuyValue90d', 'insider.largestBuyValue90d', 'insider.largestSellValue90d', 'insider.uniqueSellers14d', 'overallScore'] },
+  { id: 'valuation', label: 'Valuation', keys: ['ticker.name', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'metrics.peRatio', 'metrics.forwardPe', 'metrics.pegRatio', 'metrics.psRatio', 'metrics.pbRatio', 'metrics.priceFreeCashFlow', 'priceToCash', 'metrics.evEbitda', 'pePercentile', 'peVsMedian3yPct'] },
+  { id: 'metrics', label: 'Profit & Growth', keys: ['ticker.name', 'ticker.lastPrice', 'ticker.lastMarketCap', 'metrics.roe', 'roic', 'metrics.operatingMargin', 'metrics.netMargin', 'metrics.revenueGrowth', 'metrics.earningsGrowth', 'revenueCagr', 'netIncomeCagr', 'epsCagr5y', 'fcfMargin', 'fcfConversion'] },
+  { id: 'technical', label: 'Technical', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'rsi14', 'sma20Pct', 'sma50Pct', 'sma200Pct', 'perf1m', 'perf3m', 'perfYtd', 'perf1y', 'metrics.week52Position', 'ticker.latestMoversRVOL', 'ticker.stdDevReturn20d'] },
+  { id: 'risk', label: 'Risk & Balance', keys: ['ticker.name', 'ticker.lastPrice', 'ticker.lastMarketCap', 'altmanZ', 'piotroskiScore', 'beneishScore', 'metrics.currentRatio', 'metrics.quickRatio', 'metrics.debtEquityRatio', 'metrics.interestCoverage', 'debtRepaymentYears', 'marginStability', 'metrics.beta'] },
+  { id: 'market', label: 'Market & Div.', keys: ['ticker.name', 'ticker.sector', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'ticker.lastMarketCapDiff', 'metrics.dividendYield', 'metrics.payoutRatio', 'ticker.employees', 'analyst.buy', 'trendSignal'] },
+  { id: 'insiders', label: 'Insiders', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'analyst.buy', 'insider.netBuyValue90d', 'insider.largestBuyValue90d', 'insider.largestSellValue90d', 'insider.uniqueSellers14d', 'overallScore'] },
   { id: 'all', label: 'All columns', keys: null }, // null = every defined column
   { id: 'custom', label: 'Custom', keys: null },   // user-defined ordered set
 ] as const;
@@ -92,14 +93,53 @@ const columnLabel = (key: string) =>
   ?? METRIC_FILTERS.find((d) => `metrics.${d.key}` === key)?.label
   ?? key;
 
-/** All slider-rendered range defs (Finnhub metrics + our analysis metrics) —
-    grouped by `group` so each registry adds its section automatically. */
+/** All slider-rendered range defs (Finnhub metrics + our analysis metrics). */
 const SLIDER_DEFS: { key: RangeFilterKey; label: string; min: number; max: number; step: number; group: string; hint?: string }[] = [
   ...MARKET_RANGE_FILTERS,
   ...METRIC_FILTERS,
   ...ANALYSIS_RANGE_FILTERS,
 ];
-const SLIDER_GROUPS = [...new Set(SLIDER_DEFS.map((d) => d.group))];
+const SLIDER_BY_KEY = new Map(SLIDER_DEFS.map((d) => [d.key, d]));
+
+/** Finviz-style filter drawer tabs — replaces the 1,000px vertical wall of
+    sliders with focused 2-row drawers per analytical theme. */
+const FILTER_DRAWER_TABS = [
+  {
+    id: 'scores',
+    label: 'Scores & Quality',
+    keys: ['fcfConversion', 'marginStability'] as RangeFilterKey[],
+    includesScores: true,
+    includesAdvanced: true,
+  },
+  {
+    id: 'valuation',
+    label: 'Valuation',
+    keys: ['peRatio', 'forwardPe', 'pegRatio', 'psRatio', 'pbRatio', 'priceFreeCashFlow', 'priceCashFlow', 'priceToCash', 'evEbitda', 'evSales', 'pePercentile', 'peVsMedian3yPct'] as RangeFilterKey[],
+  },
+  {
+    id: 'profitability',
+    label: 'Profit & Growth',
+    keys: ['roe', 'roic', 'roa', 'grossMargin', 'operatingMargin', 'netMargin', 'assetTurnover', 'revenueGrowth', 'earningsGrowth', 'revenueCagr', 'netIncomeCagr', 'epsCagr5y', 'bookValueGrowth'] as RangeFilterKey[],
+  },
+  {
+    id: 'technical',
+    label: 'Technical & Perf.',
+    keys: ['rsi14', 'sma20Pct', 'sma50Pct', 'sma200Pct', 'perf1m', 'perf3m', 'perf6m', 'perfYtd', 'perf1y', 'week52Position', 'rvol', 'volatility20d', 'beta', 'changePct', 'price'] as RangeFilterKey[],
+  },
+  {
+    id: 'dividends',
+    label: 'Dividends & Balance',
+    keys: ['dividendYield', 'payoutRatio', 'currentRatio', 'quickRatio', 'debtEquityRatio', 'interestCoverage', 'employees'] as RangeFilterKey[],
+  },
+  {
+    id: 'all',
+    label: 'All Filters',
+    keys: SLIDER_DEFS.map((d) => d.key),
+    includesScores: true,
+    includesAdvanced: true,
+  },
+] as const;
+type FilterTabId = (typeof FILTER_DRAWER_TABS)[number]['id'];
 // Quick-screen presets rendered in the dropdown — the verdict group renders
 // as the VerdictMatrix grid instead (cell = exact verdict, axes = atomics).
 const PRESET_OPTIONS = QUICK_SCREENS.filter((s) => s.group !== 'verdict');
@@ -641,21 +681,19 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
   const [columnView, setColumnView] = useState<ColumnViewId>('overview');
   const [customCols, setCustomCols] = useState<string[]>([]);
   const [showColPicker, setShowColPicker] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const advancedActive = ADVANCED_FILTERS.some((d) => d.active(advanced[d.key]));
-  const advancedVisible = showAdvanced || advancedActive;
-  // Metric filters use DualRangeSlider (min+max) — active when any Finnhub,
-  // insider, market or analysis key has a range.
+  const [activeFilterTab, setActiveFilterTab] = useState<FilterTabId | null>(null);
+  const advancedActiveCount = ADVANCED_FILTERS.filter((d) => d.active(advanced[d.key])).length;
   const METRIC_KEY_SET = new Set<string>([...MARKET_RANGE_FILTERS, ...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS, ...ANALYSIS_RANGE_FILTERS].map(d => d.key));
-  const [showMetrics, setShowMetrics] = useState(false);
   const metricsActiveCount = Object.keys(metricRanges).filter(k => METRIC_KEY_SET.has(k)).length;
   const metricsActive = metricsActiveCount > 0;
-  const metricsVisible = showMetrics || metricsActive;
-  // Score sliders collapse behind an accordion too — the panel opens at two
-  // control rows instead of a wall of sliders.
-  const [showScores, setShowScores] = useState(false);
   const scoreActiveCount = Object.keys(scoreRanges).length;
-  const scoresVisible = showScores || scoreActiveCount > 0;
+
+  const tabActiveCount = (tab: (typeof FILTER_DRAWER_TABS)[number]): number => {
+    let n = tab.keys.filter((k) => metricRanges[k] !== undefined).length;
+    if ('includesScores' in tab && tab.includesScores) n += scoreActiveCount;
+    if ('includesAdvanced' in tab && tab.includesAdvanced) n += advancedActiveCount;
+    return n;
+  };
   // Shared wiring for registry-driven range sliders — a handle returned to
   // the bound's default deletes that side of the range (default = no filter).
   const rangeSliderProps = (def: { key: RangeFilterKey; min: number; max: number }) => {
@@ -779,266 +817,296 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
   // The dropdown mirrors active preset state (first exact preset match wins).
   const activePresetIdx = PRESET_OPTIONS.findIndex((s) => isPresetActive(s.preset));
 
+  const pageSize = pagination?.limit || 25;
+  const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const rangeEnd = Math.min(total, page * pageSize);
+
   return (
-    <div className="space-y-4">
-      {/* Filter Bar */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4">
-        <div className="flex items-center gap-3 mb-3">
-          <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Filters</span>
-          <div className="flex-1 h-px bg-gray-100 dark:bg-gray-700" />
-          {hasActiveFilters && (
+    <div className="space-y-3">
+      {/* Filter Card — compact 2-column desktop layout (Verdict Matrix left,
+          Universe & Quick Screens right) + Finviz-style category drawer tabs. */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-3.5 sm:p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-stretch">
+          {/* Left: 3×3 PMP Verdict Matrix (5 cols on lg) */}
+          <div className="lg:col-span-5 lg:pr-4 lg:border-r lg:border-gray-100 lg:dark:border-slate-700/80">
+            <VerdictMatrix verdictFilters={verdictFilters} setVerdictFilter={setVerdictFilter} />
+          </div>
+
+          {/* Right: Quick Screens + Universe & Market Controls (7 cols on lg) */}
+          <div className="lg:col-span-7 flex flex-col justify-between gap-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                Universe & Quick Screens
+              </span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {savedScreens.isAuthenticated && (
+                  <>
+                    {savedScreens.screens.map((s) => (
+                      <span key={s.id} className="inline-flex items-center rounded-full border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 overflow-hidden">
+                        <button
+                          onClick={() => restoreFromParams(new URLSearchParams(s.params))}
+                          title={s.params}
+                          className="text-[10px] px-2 py-0.5 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
+                        >
+                          {s.name}
+                        </button>
+                        <button
+                          onClick={() => savedScreens.deleteScreen(s.id)}
+                          title="Delete saved screen"
+                          className="text-[10px] px-1.5 py-0.5 text-emerald-500/70 hover:text-red-500 transition-colors"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                    {showSaveInput ? (
+                      <span className="inline-flex items-center gap-1">
+                        <input
+                          autoFocus
+                          value={screenName}
+                          onChange={(e) => setScreenName(e.target.value)}
+                          onKeyDown={async (e) => {
+                            if (e.key === 'Enter' && screenName.trim()) {
+                              if (await savedScreens.saveScreen(screenName.trim(), buildParamsString())) {
+                                setScreenName(''); setShowSaveInput(false);
+                              }
+                            } else if (e.key === 'Escape') { setShowSaveInput(false); }
+                          }}
+                          placeholder="Screen name…"
+                          maxLength={40}
+                          className="h-6 w-28 px-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-[11px] text-gray-700 dark:text-gray-300 outline-none focus:border-blue-400"
+                        />
+                        <button
+                          onClick={async () => {
+                            if (screenName.trim() && await savedScreens.saveScreen(screenName.trim(), buildParamsString())) {
+                              setScreenName(''); setShowSaveInput(false);
+                            }
+                          }}
+                          disabled={savedScreens.loading || !screenName.trim()}
+                          className="text-[10px] px-2 py-0.5 rounded-md bg-blue-600 text-white disabled:opacity-40"
+                        >
+                          Save
+                        </button>
+                        <button onClick={() => setShowSaveInput(false)} className="text-[11px] text-gray-400 hover:text-gray-600">×</button>
+                      </span>
+                    ) : savedScreens.canSave ? (
+                      <button
+                        onClick={() => setShowSaveInput(true)}
+                        disabled={!hasActiveFilters}
+                        title={hasActiveFilters ? `Save current filters (${savedScreens.screens.length}/${MAX_SAVED_SCREENS})` : 'Set some filters first'}
+                        className="text-[10px] px-2 py-0.5 rounded-full border border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        + Save ({savedScreens.screens.length}/{MAX_SAVED_SCREENS})
+                      </button>
+                    ) : null}
+                  </>
+                )}
+                {hasActiveFilters && (
+                  <button
+                    onClick={resetFilters}
+                    className="text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Reset all
+                  </button>
+                )}
+                {loading && (
+                  <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-gray-200 dark:border-gray-600 border-t-blue-500" />
+                )}
+              </div>
+            </div>
+
+            {/* 2×3 Control Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-2.5">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Preset Screen</label>
+                <select
+                  value={activePresetIdx >= 0 ? String(activePresetIdx) : ''}
+                  onChange={(e) => {
+                    if (e.target.value === '') { resetFilters(); return; }
+                    const s = PRESET_OPTIONS[Number(e.target.value)];
+                    if (s) applyPreset(s.preset);
+                  }}
+                  className="h-8 w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+                >
+                  <option value="">All stocks (no preset)</option>
+                  {PRESET_GROUPS.filter((g) => g.id !== 'verdict').map((g) => (
+                    <optgroup key={g.id} label={g.label}>
+                      {PRESET_OPTIONS.map((s, i) => (s.group === g.id ? <option key={s.label} value={i}>{s.label}</option> : null))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Search</label>
+                <div className="relative">
+                  <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Ticker or company…"
+                    className="w-full h-8 pl-8 pr-6 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600"
+                      title="Clear search"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Sort By</label>
+                <select
+                  value={`${sortField}:${sortOrder}`}
+                  onChange={(e) => {
+                    const parts = e.target.value.split(':');
+                    const f = parts[0] ?? 'healthScore';
+                    const o = (parts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
+                    setSort(f, o);
+                  }}
+                  className="h-8 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+                >
+                  {SORT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Sector</label>
+                <select
+                  value={selectedSector}
+                  onChange={(e) => setSelectedSector(e.target.value)}
+                  className="h-8 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+                >
+                  <option value="">All Sectors</option>
+                  {SECTORS.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Industry</label>
+                <select
+                  value={selectedIndustry}
+                  onChange={(e) => setSelectedIndustry(e.target.value)}
+                  className="h-8 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+                >
+                  <option value="">All Industries</option>
+                  {industries.map((ind) => (
+                    <option key={ind} value={ind}>{ind}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">Market Cap</label>
+                <select
+                  value={marketCapPreset}
+                  onChange={(e) => setMarketCapPreset(e.target.value)}
+                  className="h-8 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
+                >
+                  {MARKET_CAP_PRESETS.map((p) => (
+                    <option key={p.id} value={p.id}>{p.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Finviz-style Filter Category Tab Strip — click any category to open
+            its compact 2-row slider drawer; click again to collapse. */}
+        <div className="mt-3 pt-2.5 border-t border-gray-100 dark:border-slate-700/80 flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mr-1">
+            More filters:
+          </span>
+          {FILTER_DRAWER_TABS.map((t) => {
+            const active = activeFilterTab === t.id;
+            const cnt = tabActiveCount(t);
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveFilterTab(prev => prev === t.id ? null : t.id)}
+                aria-expanded={active}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                  active
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                    : cnt > 0
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 hover:border-blue-400'
+                      : 'bg-gray-50 dark:bg-gray-900/70 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <span>{t.label}</span>
+                {cnt > 0 && (
+                  <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${active ? 'bg-white/20 text-white' : 'bg-blue-100 dark:bg-blue-900/70 text-blue-700 dark:text-blue-200'}`}>
+                    {cnt}
+                  </span>
+                )}
+                {active ? <ChevronUp size={12} /> : <ChevronDown size={12} className="opacity-60" />}
+              </button>
+            );
+          })}
+          {activeFilterTab !== null && (
             <button
-              onClick={resetFilters}
-              className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              type="button"
+              onClick={() => setActiveFilterTab(null)}
+              className="ml-auto text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
             >
-              Reset
+              Hide ▴
             </button>
           )}
-          {loading && (
-            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-200 dark:border-gray-600 border-t-blue-500" />
-          )}
         </div>
 
-        {/* Quick screens — all one-tap preset combinations in a single
-            grouped dropdown (previously 30+ pills across five rows). The
-            active preset stays selected while the filter state matches;
-            verdict presets live in the VerdictMatrix grid instead. */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider w-16 sm:w-20 shrink-0">Screens:</span>
-          <select
-            value={activePresetIdx >= 0 ? String(activePresetIdx) : ''}
-            onChange={(e) => {
-              if (e.target.value === '') return;
-              const s = PRESET_OPTIONS[Number(e.target.value)];
-              if (s) applyPreset(s.preset);
-            }}
-            className="h-8 max-w-64 w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
-          >
-            <option value="">Quick screens…</option>
-            {PRESET_GROUPS.filter((g) => g.id !== 'verdict').map((g) => (
-              <optgroup key={g.id} label={g.label}>
-                {PRESET_OPTIONS.map((s, i) => (s.group === g.id ? <option key={s.label} value={i}>{s.label}</option> : null))}
-              </optgroup>
-            ))}
-          </select>
-        </div>
+        {/* Open Filter Drawer */}
+        {activeFilterTab !== null && (() => {
+          const tab = FILTER_DRAWER_TABS.find((t) => t.id === activeFilterTab)!;
+          const sliderDefs = tab.keys
+            .map((k) => SLIDER_BY_KEY.get(k))
+            .filter((d): d is NonNullable<typeof d> => !!d);
+          const showScoresBlock = 'includesScores' in tab && tab.includesScores;
+          const showAdvancedBlock = 'includesAdvanced' in tab && tab.includesAdvanced;
 
-        {/* Saved screens — authenticated users persist up to 3 filter sets.
-            Params serialize identically to the share URL. */}
-        {savedScreens.isAuthenticated && (
-          <div className="flex flex-wrap items-center gap-1.5 mb-3">
-            <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mr-1 w-20 shrink-0">Saved:</span>
-            {savedScreens.screens.map((s) => (
-              <span key={s.id} className="inline-flex items-center rounded-full border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 overflow-hidden">
-                <button
-                  onClick={() => restoreFromParams(new URLSearchParams(s.params))}
-                  title={s.params}
-                  className="text-[11px] px-2.5 py-1 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
-                >
-                  {s.name}
-                </button>
-                <button
-                  onClick={() => savedScreens.deleteScreen(s.id)}
-                  title="Delete saved screen"
-                  className="text-[11px] px-1.5 py-1 text-emerald-500/70 hover:text-red-500 transition-colors"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-            {showSaveInput ? (
-              <span className="inline-flex items-center gap-1">
-                <input
-                  autoFocus
-                  value={screenName}
-                  onChange={(e) => setScreenName(e.target.value)}
-                  onKeyDown={async (e) => {
-                    if (e.key === 'Enter' && screenName.trim()) {
-                      if (await savedScreens.saveScreen(screenName.trim(), buildParamsString())) {
-                        setScreenName(''); setShowSaveInput(false);
-                      }
-                    } else if (e.key === 'Escape') { setShowSaveInput(false); }
-                  }}
-                  placeholder="Screen name…"
-                  maxLength={40}
-                  className="h-6 w-32 px-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-[11px] text-gray-700 dark:text-gray-300 outline-none focus:border-blue-400"
-                />
-                <button
-                  onClick={async () => {
-                    if (screenName.trim() && await savedScreens.saveScreen(screenName.trim(), buildParamsString())) {
-                      setScreenName(''); setShowSaveInput(false);
-                    }
-                  }}
-                  disabled={savedScreens.loading || !screenName.trim()}
-                  className="text-[11px] px-2 py-1 rounded-md bg-blue-600 text-white disabled:opacity-40"
-                >
-                  Save
-                </button>
-                <button onClick={() => setShowSaveInput(false)} className="text-[11px] text-gray-400 hover:text-gray-600">×</button>
-              </span>
-            ) : savedScreens.canSave ? (
-              <button
-                onClick={() => setShowSaveInput(true)}
-                disabled={!hasActiveFilters}
-                title={hasActiveFilters ? `Save current filters (${savedScreens.screens.length}/${MAX_SAVED_SCREENS})` : 'Set some filters first'}
-                className="text-[11px] px-2.5 py-1 rounded-full border border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                + Save current ({savedScreens.screens.length}/{MAX_SAVED_SCREENS})
-              </button>
-            ) : (
-              <span className="text-[11px] text-gray-400">max {MAX_SAVED_SCREENS} saved</span>
-            )}
-            {savedScreens.error && <span className="text-[11px] text-red-500">{savedScreens.error}</span>}
-          </div>
-        )}
-
-        {/* PMP Verdict matrix — 4×4 fund×val grid; cell = exact verdictKey
-            (with live ticker counts), row/col headers = the atomic
-            fund/val axes, plus the out-of-grid 'insufficient' state. */}
-        <VerdictMatrix verdictFilters={verdictFilters} setVerdictFilter={setVerdictFilter} />
-
-        {/* Universe & market controls — a single compact row; everything
-            heavier lives behind the accordions below. */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-3">
-          <div className="col-span-2 sm:col-span-1 flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">Search</label>
-            <div className="relative">
-              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Ticker or company…"
-                className="w-full h-8 pl-8 pr-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
-              />
-            </div>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">Sort By</label>
-            <select
-              value={`${sortField}:${sortOrder}`}
-              onChange={(e) => {
-                const parts = e.target.value.split(':');
-                const f = parts[0] ?? 'healthScore';
-                const o = (parts[1] === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
-                setSort(f, o);
-              }}
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
-            >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">Sector</label>
-            <select
-              value={selectedSector}
-              onChange={(e) => setSelectedSector(e.target.value)}
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
-            >
-              <option value="">All Sectors</option>
-              {SECTORS.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">Industry</label>
-            <select
-              value={selectedIndustry}
-              onChange={(e) => setSelectedIndustry(e.target.value)}
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
-            >
-              <option value="">All Industries</option>
-              {industries.map((ind) => (
-                <option key={ind} value={ind}>{ind}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">Market Cap</label>
-            <select
-              value={marketCapPreset}
-              onChange={(e) => setMarketCapPreset(e.target.value)}
-              className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all cursor-pointer"
-            >
-              {MARKET_CAP_PRESETS.map((p) => (
-                <option key={p.id} value={p.id}>{p.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Collapsible filter groups — the panel opens at two compact rows;
-            each group auto-opens while any of its filters is active. */}
-        <div className="mt-3 flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => setShowScores(v => !v)}
-            className="flex items-center gap-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-            aria-expanded={scoresVisible}
-          >
-            {scoresVisible ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-            Score filters
-            {scoreActiveCount > 0 && <span className="text-blue-500 font-semibold">({scoreActiveCount} active)</span>}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowMetrics(v => !v)}
-            className="flex items-center gap-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-            aria-expanded={metricsVisible}
-          >
-            {metricsVisible ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-            Metric filters
-            {metricsActive && <span className="text-blue-500 font-semibold">({metricsActiveCount} active)</span>}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowAdvanced(v => !v)}
-            className="flex items-center gap-1 text-[11px] font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-            aria-expanded={advancedVisible}
-          >
-            {advancedVisible ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-            Advanced filters
-            {advancedActive && <span className="text-blue-500 font-semibold">(active)</span>}
-          </button>
-        </div>
-        {scoresVisible && (
-          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">PMP Scores</span>
-              <span className="text-[10px] text-gray-400 dark:text-gray-500">our composite ratings, 0–100</span>
-              <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-3 gap-y-2">
-              {SCORE_FILTERS.map((d) => (
-                <DualRangeSlider
-                  key={d.key}
-                  label={d.label}
-                  min={0} max={100}
-                  {...scoreSliderProps(d)}
-                  accentColor={d.accent}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-        {metricsVisible && (
-          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
-            {/* Grouped by category — 20 sliders flat was unscannable. */}
-            {SLIDER_GROUPS.map((group) => {
-              const defs = SLIDER_DEFS.filter((d) => d.group === group);
-              const activeInGroup = defs.filter((d) => metricRanges[d.key]).length;
-              return (
-                <div key={group}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{group}</span>
-                    {activeInGroup > 0 && <span className="text-[10px] text-blue-500 font-medium">{activeInGroup} active</span>}
+          return (
+            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700/80 space-y-3">
+              {showScoresBlock && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">PMP Pillar Scores (0–100)</span>
                     <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-2">
-                    {defs.map((def) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-x-3 gap-y-2">
+                    {SCORE_FILTERS.map((d) => (
+                      <DualRangeSlider
+                        key={d.key}
+                        label={d.label}
+                        min={0} max={100}
+                        {...scoreSliderProps(d)}
+                        accentColor={d.accent}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {sliderDefs.length > 0 && (
+                <div>
+                  {showScoresBlock && (
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Range Filters</span>
+                      <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3.5 gap-y-2.5">
+                    {sliderDefs.map((def) => (
                       <div key={def.key} className={metricRanges[def.key] ? 'rounded-md ring-1 ring-blue-400/60 bg-blue-50/50 dark:bg-blue-950/20 -m-0.5 p-0.5' : ''}>
                         <DualRangeSlider
                           label={def.label}
@@ -1051,147 +1119,174 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
                     ))}
                   </div>
                 </div>
-              );
-            })}
-            <div className="col-span-full flex items-center justify-between">
-              <span className="text-[10px] text-gray-400">Metrics from Finnhub fundamentals + our own analysis history (coverage ~70–99 % per field; filtered-out tickers without data are excluded).</span>
+              )}
+
+              {showAdvancedBlock && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Quality & Safety Thresholds</span>
+                    <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800" />
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-2">
+                    {ADVANCED_FILTERS.map((d) => {
+                      const raw = advanced[d.key];
+                      const shown = d.active(raw)
+                        ? String(Math.round(raw * d.displayScale * 100) / 100)
+                        : '';
+                      return (
+                        <div key={d.key} className="flex flex-col gap-1">
+                          <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">{d.label}</label>
+                          <input
+                            type="number"
+                            step={d.key === 'minPiotroski' ? 1 : 'any'}
+                            value={shown}
+                            onChange={(e) => {
+                              let v = parseFloat(e.target.value);
+                              if (!Number.isFinite(v)) v = d.def;
+                              else v = v / d.displayScale;
+                              if (d.key === 'minPiotroski') v = Math.min(9, Math.max(0, Math.round(v)));
+                              setAdvancedValue(d.key, v);
+                            }}
+                            placeholder="—"
+                            className="h-7 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
+                          />
+                          <span className="text-[10px] text-gray-400">{d.hint}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {metricsActive && (
-                <button
-                  onClick={() => { for (const def of [...MARKET_RANGE_FILTERS, ...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS, ...ANALYSIS_RANGE_FILTERS]) setMetricRange(def.key as RangeFilterKey, undefined); }}
-                  className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  Clear metric filters
-                </button>
+                <div className="flex items-center justify-end pt-1">
+                  <button
+                    onClick={() => { for (const def of [...MARKET_RANGE_FILTERS, ...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS, ...ANALYSIS_RANGE_FILTERS]) setMetricRange(def.key as RangeFilterKey, undefined); }}
+                    className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Clear metric filters
+                  </button>
+                </div>
               )}
             </div>
-          </div>
-        )}
-        {advancedVisible && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-3 gap-y-2 mt-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-          {ADVANCED_FILTERS.map((d) => {
-            const raw = advanced[d.key];
-            const shown = d.active(raw)
-              ? String(Math.round(raw * d.displayScale * 100) / 100)
-              : '';
-            return (
-              <div key={d.key} className="flex flex-col gap-1">
-                <label className="text-[11px] font-medium text-gray-600 dark:text-gray-400 tracking-wide">{d.label}</label>
-                <input
-                  type="number"
-                  step={d.key === 'minPiotroski' ? 1 : 'any'}
-                  value={shown}
-                  onChange={(e) => {
-                    let v = parseFloat(e.target.value);
-                    if (!Number.isFinite(v)) v = d.def;
-                    else v = v / d.displayScale;
-                    if (d.key === 'minPiotroski') v = Math.min(9, Math.max(0, Math.round(v)));
-                    setAdvancedValue(d.key, v);
-                  }}
-                  placeholder="—"
-                  className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 outline-none transition-all"
-                />
-                <span className="text-[10px] text-gray-400">{d.hint}</span>
-              </div>
-            );
-          })}
-          </div>
-        )}
-      </div>
+          );
+        })()}
 
-      {/* Active filter chips — every constraint as a removable chip, built
-          from the same registries that own the filters (a new filter shows
-          up here automatically). */}
-      {(() => {
-        const chips: { id: string; label: string; clear: () => void }[] = [];
-        const fmtBound = (r: { min?: number; max?: number } | undefined, lo: number, hi: number) => {
-          const a = r?.min !== undefined && r.min !== lo ? `≥${r.min}` : '';
-          const b = r?.max !== undefined && r.max !== hi ? `≤${r.max}` : '';
-          return [a, b].filter(Boolean).join(' ');
-        };
-        for (const d of SCORE_FILTERS) {
-          const bounds = fmtBound(scoreRanges[d.key], 0, 100);
-          if (bounds) chips.push({ id: `s:${d.key}`, label: `${d.label} ${bounds}`, clear: () => setScoreRange(d.key, undefined) });
-        }
-        for (const d of RANGE_FILTERS) {
-          const r = metricRanges[d.key];
-          if (!r) continue;
-          const bounds = fmtBound(r, d.min, d.max);
-          if (bounds) chips.push({ id: `m:${d.key}`, label: `${d.label} ${bounds}`, clear: () => setMetricRange(d.key, undefined) });
-        }
-        for (const d of ADVANCED_FILTERS) {
-          const v = advanced[d.key];
-          if (d.active(v)) chips.push({ id: `a:${d.key}`, label: `${d.label.replace(/ %\)$/, ')')}: ${Math.round(v * d.displayScale * 100) / 100}`, clear: () => setAdvancedValue(d.key, d.def) });
-        }
-        if (selectedSector) chips.push({ id: 'sector', label: `Sector: ${selectedSector}`, clear: () => setSelectedSector('') });
-        if (selectedIndustry) chips.push({ id: 'industry', label: `Industry: ${selectedIndustry}`, clear: () => setSelectedIndustry('') });
-        if (searchQuery) chips.push({ id: 'q', label: `“${searchQuery}”`, clear: () => setSearchQuery('') });
-        if (marketCapPreset !== 'all') {
-          const p = MARKET_CAP_PRESETS.find((x) => x.id === marketCapPreset);
-          if (p) chips.push({ id: 'mcap', label: `Cap: ${p.label}`, clear: () => setMarketCapPreset('all') });
-        }
-        if (trendConfirmed) {
-          chips.push({ id: 'trend', label: 'Trend × Fundamentals', clear: () => setTrendConfirmed(false) });
-        }
-        for (const d of VERDICT_FILTERS) {
-          const v = verdictFilters[d.key];
-          if (v) {
-            const o = d.options.find((x) => x.value === v);
-            chips.push({ id: `v:${d.key}`, label: `${d.label}: ${o?.label ?? v}`, clear: () => setVerdictFilter(d.key, undefined) });
+        {/* Active filter chips — integrated at the bottom of the filter card */}
+        {(() => {
+          const chips: { id: string; label: string; clear: () => void }[] = [];
+          const fmtBound = (r: { min?: number; max?: number } | undefined, lo: number, hi: number) => {
+            const a = r?.min !== undefined && r.min !== lo ? `≥${r.min}` : '';
+            const b = r?.max !== undefined && r.max !== hi ? `≤${r.max}` : '';
+            return [a, b].filter(Boolean).join(' ');
+          };
+          for (const d of SCORE_FILTERS) {
+            const bounds = fmtBound(scoreRanges[d.key], 0, 100);
+            if (bounds) chips.push({ id: `s:${d.key}`, label: `${d.label} ${bounds}`, clear: () => setScoreRange(d.key, undefined) });
           }
-        }
-        if (chips.length === 0) return null;
-        return (
-          <div className="flex flex-wrap items-center gap-1.5 px-1">
-            {chips.map((c) => (
-              <span key={c.id} className="inline-flex items-center rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-[10px] text-blue-700 dark:text-blue-300 overflow-hidden">
-                <span className="pl-2 pr-1 py-0.5">{c.label}</span>
-                <button onClick={c.clear} className="px-1.5 py-0.5 hover:text-red-500" title="Clear filter">×</button>
-              </span>
-            ))}
-            <button onClick={resetFilters} className="text-[10px] text-gray-400 hover:text-red-500 underline underline-offset-2">Clear all</button>
-          </div>
-        );
-      })()}
-
-      {/* Results count */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          {loading ? 'Searching...' : `${total} result${total !== 1 ? 's' : ''}`}
-        </p>
+          for (const d of RANGE_FILTERS) {
+            const r = metricRanges[d.key];
+            if (!r) continue;
+            const bounds = fmtBound(r, d.min, d.max);
+            if (bounds) chips.push({ id: `m:${d.key}`, label: `${d.label} ${bounds}`, clear: () => setMetricRange(d.key, undefined) });
+          }
+          for (const d of ADVANCED_FILTERS) {
+            const v = advanced[d.key];
+            if (d.active(v)) chips.push({ id: `a:${d.key}`, label: `${d.label.replace(/ %\)$/, ')')}: ${Math.round(v * d.displayScale * 100) / 100}`, clear: () => setAdvancedValue(d.key, d.def) });
+          }
+          if (selectedSector) chips.push({ id: 'sector', label: `Sector: ${selectedSector}`, clear: () => setSelectedSector('') });
+          if (selectedIndustry) chips.push({ id: 'industry', label: `Industry: ${selectedIndustry}`, clear: () => setSelectedIndustry('') });
+          if (searchQuery) chips.push({ id: 'q', label: `“${searchQuery}”`, clear: () => setSearchQuery('') });
+          if (marketCapPreset !== 'all') {
+            const p = MARKET_CAP_PRESETS.find((x) => x.id === marketCapPreset);
+            if (p) chips.push({ id: 'mcap', label: `Cap: ${p.label}`, clear: () => setMarketCapPreset('all') });
+          }
+          if (trendConfirmed) {
+            chips.push({ id: 'trend', label: 'Trend × Fundamentals', clear: () => setTrendConfirmed(false) });
+          }
+          for (const d of VERDICT_FILTERS) {
+            const v = verdictFilters[d.key];
+            if (v) {
+              const o = d.options.find((x) => x.value === v);
+              chips.push({ id: `v:${d.key}`, label: `${d.label}: ${o?.label ?? v}`, clear: () => setVerdictFilter(d.key, undefined) });
+            }
+          }
+          if (chips.length === 0) return null;
+          return (
+            <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-slate-700/80 flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mr-0.5">Active:</span>
+              {chips.map((c) => (
+                <span key={c.id} className="inline-flex items-center rounded-full border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-[10px] text-blue-700 dark:text-blue-300 overflow-hidden">
+                  <span className="pl-2 pr-1 py-0.5">{c.label}</span>
+                  <button onClick={c.clear} className="px-1.5 py-0.5 hover:text-red-500" title="Clear filter">×</button>
+                </span>
+              ))}
+              <button onClick={resetFilters} className="text-[10px] text-gray-400 hover:text-red-500 underline underline-offset-2 ml-1">Clear all</button>
+            </div>
+          );
+        })()}
       </div>
 
-      {/* Results Table */}
+      {/* Results Table Card */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
-        {/* Column view tabs — switch metric columns without touching filters.
-            flex-wrap so all view tabs and ⚙ Columns stay visible without clipping on 360px mobile. */}
-        <div className="flex flex-wrap items-center gap-1 px-3 pt-2.5 pb-1 border-b border-gray-100 dark:border-slate-700" role="tablist" aria-label="Column views">
+        {/* Column view tabs + integrated result count & mini pagination */}
+        <div className="flex flex-wrap items-center gap-1 px-3 pt-2 pb-1.5 border-b border-gray-100 dark:border-slate-700 bg-gray-50/40 dark:bg-slate-800/60" role="tablist" aria-label="Column views">
           {COLUMN_VIEWS.map(v => (
             <button
               key={v.id}
               role="tab"
               aria-selected={columnView === v.id}
               onClick={() => setColumnView(v.id)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-t-lg whitespace-nowrap transition-colors border-b-2 ${
+              className={`px-2.5 py-1 text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
                 columnView === v.id
-                  ? 'text-blue-600 dark:text-blue-400 border-blue-500 bg-blue-50/60 dark:bg-blue-900/20'
-                  : 'text-gray-500 dark:text-gray-400 border-transparent hover:text-gray-700 dark:hover:text-gray-200'
+                  ? 'text-blue-700 dark:text-blue-300 bg-blue-100/80 dark:bg-blue-950/70 font-semibold'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700/50'
               }`}
             >
               {v.label}
             </button>
           ))}
-          <button
-            onClick={() => setShowColPicker(v => !v)}
-            title="Customize columns (pick + reorder)"
-            aria-expanded={showColPicker}
-            className={`ml-auto px-2.5 py-1.5 text-xs rounded-t-lg border-b-2 transition-colors whitespace-nowrap ${
-              showColPicker
-                ? 'text-blue-600 dark:text-blue-400 border-blue-500'
-                : 'text-gray-400 dark:text-gray-500 border-transparent hover:text-gray-600 dark:hover:text-gray-300'
-            }`}
-          >
-            ⚙ Columns
-          </button>
+
+          <div className="ml-auto flex items-center gap-2.5 pl-2">
+            <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">
+              {loading ? 'Searching…' : total > 0 ? `${rangeStart}–${rangeEnd} of ${total}` : '0 results'}
+            </span>
+            {totalPages > 1 && (
+              <div className="hidden sm:inline-flex items-center rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1 || loading}
+                  className="p-1 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-30"
+                  title="Previous page"
+                >
+                  <ChevronLeft size={13} />
+                </button>
+                <span className="px-1.5 text-[11px] tabular-nums text-gray-600 dark:text-gray-300">
+                  {page}/{totalPages}
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages || loading}
+                  className="p-1 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 disabled:opacity-30"
+                  title="Next page"
+                >
+                  <ChevronRight size={13} />
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => setShowColPicker(v => !v)}
+              title="Customize columns (pick + reorder)"
+              aria-expanded={showColPicker}
+              className={`px-2 py-1 text-xs rounded-md border transition-colors whitespace-nowrap ${
+                showColPicker
+                  ? 'text-blue-600 dark:text-blue-400 border-blue-400 bg-blue-50/60 dark:bg-blue-950/40'
+                  : 'text-gray-500 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:text-gray-700 dark:hover:text-gray-200 bg-white dark:bg-slate-900'
+              }`}
+            >
+              ⚙ Columns
+            </button>
+          </div>
         </div>
         {showColPicker && (
           <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-900/40">
@@ -1243,6 +1338,8 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
           onSort={(key) => handleSort(key as string)}
           onRowClick={(r) => handleTickerClick(r.symbol)}
           stickyFirst
+          compact
+          hideDefaultSortIcon
           renderMobileCard={(r) => {
             const chg = r.ticker?.lastChangePct ?? null;
             return (
@@ -1321,6 +1418,8 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
                 onRowClick={(r) => handleTickerClick(r.symbol)}
                 forceTable
                 stickyFirst
+                compact
+                hideDefaultSortIcon
               />
             </div>
           </details>

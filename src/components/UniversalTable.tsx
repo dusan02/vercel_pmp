@@ -36,6 +36,10 @@ interface UniversalTableProps<T> {
     onRowClick?: (item: T) => void;
     /** Pin the first column while scrolling horizontally */
     stickyFirst?: boolean;
+    /** Compact cell padding & header font for high-column-count screener tables */
+    compact?: boolean;
+    /** Hide UniversalTable's built-in ▲/▼ when column headers render their own SortIcon */
+    hideDefaultSortIcon?: boolean;
 }
 
 export function UniversalTable<T>({
@@ -52,7 +56,9 @@ export function UniversalTable<T>({
     footer,
     tfootRows,
     onRowClick,
-    stickyFirst = false
+    stickyFirst = false,
+    compact = false,
+    hideDefaultSortIcon = false,
 }: UniversalTableProps<T>) {
 
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -158,21 +164,21 @@ export function UniversalTable<T>({
                                 <th
                                     key={col.key}
                                     className={`
-                                        py-3 px-3 first:pl-4 last:pr-4 font-semibold text-xs md:text-sm whitespace-nowrap
-                                        bg-blue-100 text-slate-900 border-b border-blue-200/80
-                                        dark:bg-blue-900/60 dark:text-white dark:border-white/10
-                                        ${col.sortable ? 'cursor-pointer hover:bg-blue-200/70 dark:hover:bg-white/10 transition-colors select-none' : ''}
+                                        ${compact ? 'py-2.5 px-2.5 first:pl-3.5 last:pr-3.5 text-xs' : 'py-3 px-3 first:pl-4 last:pr-4 text-xs md:text-sm'} font-semibold whitespace-nowrap
+                                        bg-slate-100/90 text-slate-700 border-b border-slate-200/80
+                                        dark:bg-slate-800/90 dark:text-slate-200 dark:border-slate-700
+                                        ${col.sortable ? 'cursor-pointer hover:bg-slate-200/70 dark:hover:bg-slate-700/70 transition-colors select-none' : ''}
                                         ${col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'}
                                         ${col.className || ''}
                                         ${stickyFirst ? 'first:sticky first:left-0 first:z-20' : ''}
-                                        ${col.sortable && sortKey === col.key ? 'active-sort' : ''}
+                                        ${col.sortable && sortKey === col.key ? 'active-sort text-blue-700 dark:text-blue-300 bg-blue-50/90 dark:bg-blue-950/60' : ''}
                                     `.trim()}
                                     onClick={() => col.sortable && handleSort(col.key)}
                                     style={{ width: col.width }}
                                 >
                                     <div className={`flex items-center gap-1 ${col.align === 'center' ? 'justify-center' : col.align === 'right' ? 'justify-end' : 'justify-start'}`}>
                                         {col.header}
-                                        {col.sortable && sortKey === col.key && (
+                                        {!hideDefaultSortIcon && col.sortable && sortKey === col.key && (
                                             <span className="text-[10px] opacity-70">
                                                 {ascending ? '▲' : '▼'}
                                             </span>
@@ -201,7 +207,7 @@ export function UniversalTable<T>({
                                             <td
                                                 key={`${keyExtractor(item)}-${col.key}`}
                                                 className={`
-                                                    py-3 px-3 first:pl-4 last:pr-4 text-sm text-[var(--clr-text)]
+                                                    ${compact ? 'py-2.5 px-2.5 first:pl-3.5 last:pr-3.5 text-xs sm:text-sm' : 'py-3 px-3 first:pl-4 last:pr-4 text-sm'} text-[var(--clr-text)]
                                                     ${col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'}
                                                     ${stickyFirst ? 'first:sticky first:left-0 first:z-10 first:bg-white first:dark:bg-slate-800 first:border-r first:border-gray-100 first:dark:border-gray-700 first:group-hover:bg-gray-50 first:dark:group-hover:bg-white/5' : ''}
                                                     ${col.className || ''}
