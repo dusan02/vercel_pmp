@@ -40,6 +40,74 @@ export function formatPePercentile(currentPE: number, percentile: number): strin
  * and generates an AI investment verdict. Persists results to AnalysisCache.
  */
 export async function calculateScores(symbol: string, opts: CalculateScoresOptions = {}): Promise<void> {
+    // ─── Technical & Price Performance from DailyValuationHistory ─────────
+    // Computed even when statements are absent (TSM/ASML/SPY) so technical
+    // filters (RSI 14, SMA 20/50/200, Perf 1M/3M/6M/YTD/1Y) cover the full universe.
+    const recentPricesDesc = await prisma.dailyValuationHistory.findMany({
+        where: { symbol, closePrice: { not: null, gt: 0 } },
+        orderBy: { date: 'desc' },
+        take: 270,
+        select: { date: true, closePrice: true },
+    });
+    const priceAsc = [...recentPricesDesc].reverse();
+    const closes = priceAsc.map(r => r.closePrice!);
+    const nPx = closes.length;
+    const lastClose = nPx > 0 ? closes[nPx - 1]! : null;
+
+    let rsi14: number | null = null;
+    if (nPx >= 15) {
+        let avgGain = 0, avgLoss = 0;
+        for (let i = 1; i <= 14; i++) {
+            const d = closes[i]! - closes[i - 1]!;
+            if (d > 0) avgGain += d; else avgLoss -= d;
+        }
+        avgGain /= 14;
+        avgLoss /= 14;
+        for (let i = 15; i < nPx; i++) {
+            const d = closes[i]! - closes[i - 1]!;
+            avgGain = (avgGain * 13 + (d > 0 ? d : 0)) / 14;
+            avgLoss = (avgLoss * 13 + (d < 0 ? -d : 0)) / 14;
+        }
+        rsi14 = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
+    }
+    const smaDistPct = (k: number): number | null => {
+        if (nPx < k || lastClose == null) return null;
+        let sum = 0;
+        for (let i = nPx - k; i < nPx; i++) sum += closes[i]!;
+        const sma = sum / k;
+        return sma > 0 ? ((lastClose / sma) - 1) * 100 : null;
+    };
+    const sma20Pct = smaDistPct(20);
+    const sma50Pct = smaDistPct(50);
+    const sma200Pct = smaDistPct(200);
+
+    const perfBackPct = (bars: number): number | null => {
+        if (nPx <= bars || lastClose == null) return null;
+        const base = closes[nPx - 1 - bars]!;
+        return base > 0 ? ((lastClose / base) - 1) * 100 : null;
+    };
+    const perf1m = perfBackPct(21);
+    const perf3m = perfBackPct(63);
+    const perf6m = perfBackPct(126);
+    const perf1y = perfBackPct(252);
+    let perfYtd: number | null = null;
+    if (nPx >= 2 && lastClose != null) {
+        const curYear = priceAsc[nPx - 1]!.date.getUTCFullYear();
+        // Last close of prior calendar year (or first close of current year if newly listed)
+        let ytdBase: number | null = null;
+        for (let i = nPx - 1; i >= 0; i--) {
+            if (priceAsc[i]!.date.getUTCFullYear() < curYear) {
+                ytdBase = priceAsc[i]!.closePrice!;
+                break;
+            }
+        }
+        if (ytdBase == null) {
+            const firstCurYear = priceAsc.find(r => r.date.getUTCFullYear() === curYear);
+            if (firstCurYear) ytdBase = firstCurYear.closePrice!;
+        }
+        if (ytdBase != null && ytdBase > 0) perfYtd = ((lastClose / ytdBase) - 1) * 100;
+    }
+
     const stmts = await prisma.financialStatement.findMany({
         where: { symbol },
         orderBy: { endDate: 'desc' },
@@ -58,8 +126,9 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         // No financial statements (foreign ADRs Finnhub doesn't cover — TSM,
         // ASML, BABA...) — a silent return froze the last written score forever
         // (TSM kept healthScore=100 with zero statements). Write an explicit
-        // insufficient-data row instead: null scores + fresh updatedAt.
-        await prisma.analysisCache.upsert({
+        // insufficient-data row instead: null scores + fresh updatedAt (while
+        // keeping technical price indicators populated).
+        await (prisma.analysisCache as any).upsert({
             where: { symbol },
             update: {
                 healthScore: null, profitabilityScore: null, valuationScore: null,
@@ -71,8 +140,15 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
                 marginStability: null, negativeNiYears: null,
                 pePercentile: null, peVsMedian3yPct: null,
                 fundLevel: null, valLevel: null, verdictKey: 'insufficient',
+                roic: null, epsCagr5y: null, priceToCash: null,
+                rsi14, sma20Pct, sma50Pct, sma200Pct,
+                perf1m, perf3m, perf6m, perfYtd, perf1y,
             },
-            create: { symbol },
+            create: {
+                symbol, verdictKey: 'insufficient',
+                rsi14, sma20Pct, sma50Pct, sma200Pct,
+                perf1m, perf3m, perf6m, perfYtd, perf1y,
+            },
         });
         return;
     }
@@ -606,6 +682,25 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         }
     }
 
+    // Finviz-style fundamental extras persisted on AnalysisCache:
+    // - roic (%): same TTM NOPAT / Invested Capital basis as the Profitability pillar
+    // - epsCagr5y (%): 5Y annual EPS CAGR, clamped to [-80, 300]
+    // - priceToCash: marketCap / cashAndEquivalents (fallback price / cashPerShare)
+    const persistedRoic = pillarRoic !== null && isFinite(pillarRoic)
+        ? Math.max(-100, Math.min(200, pillarRoic * 100))
+        : null;
+    const persistedEpsCagr5y = epsCagr5y !== null && isFinite(epsCagr5y) && epsCagr5y <= 300 && epsCagr5y >= -80
+        ? epsCagr5y
+        : null;
+    const rawPriceToCash = (mcapNow !== null && mcapNow > 0 && bsStmt?.cashAndEquivalents && bsStmt.cashAndEquivalents > 0)
+        ? mcapNow / bsStmt.cashAndEquivalents
+        : (currentPrice > 0 && finnhubMetrics?.cashPerShare && finnhubMetrics.cashPerShare > 0
+            ? currentPrice / finnhubMetrics.cashPerShare
+            : null);
+    const priceToCash = rawPriceToCash !== null && isFinite(rawPriceToCash) && rawPriceToCash > 0 && rawPriceToCash <= 500
+        ? rawPriceToCash
+        : null;
+
     await (prisma.analysisCache as any).upsert({
         where: { symbol },
         update: {
@@ -616,6 +711,9 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
             humanDebtInfo, humanPeInfo, marginStability, negativeNiYears, pePercentile,
             peVsMedian3yPct,
             fundLevel: vc.fundLevel, valLevel: vc.valLevel, verdictKey: vc.verdictKey,
+            roic: persistedRoic, epsCagr5y: persistedEpsCagr5y, priceToCash,
+            rsi14, sma20Pct, sma50Pct, sma200Pct,
+            perf1m, perf3m, perf6m, perfYtd, perf1y,
             ...(lastQualitySignalAt ? { lastQualitySignalAt } : {})
         },
         create: {
@@ -626,6 +724,9 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
             humanDebtInfo, humanPeInfo, marginStability, negativeNiYears, pePercentile,
             peVsMedian3yPct, lastQualitySignalAt,
             fundLevel: vc.fundLevel, valLevel: vc.valLevel, verdictKey: vc.verdictKey,
+            roic: persistedRoic, epsCagr5y: persistedEpsCagr5y, priceToCash,
+            rsi14, sma20Pct, sma50Pct, sma200Pct,
+            perf1m, perf3m, perf6m, perfYtd, perf1y,
         }
     });
 }

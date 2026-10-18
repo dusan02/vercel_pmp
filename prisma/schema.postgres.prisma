@@ -360,6 +360,18 @@ model AnalysisCache {
   fundLevel           String?
   valLevel            String?
   verdictKey          String?
+  roic                Float?
+  epsCagr5y           Float?
+  priceToCash         Float?
+  rsi14               Float?
+  sma20Pct            Float?
+  sma50Pct            Float?
+  sma200Pct           Float?
+  perf1m              Float?
+  perf3m              Float?
+  perf6m              Float?
+  perfYtd             Float?
+  perf1y              Float?
   ticker              Ticker    @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@index([healthScore])

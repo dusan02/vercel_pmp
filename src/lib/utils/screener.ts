@@ -30,6 +30,7 @@ export interface ScreenerResult {
         quickRatio: number | null;
         debtEquityRatio: number | null;
         interestCoverage: number | null;
+        assetTurnover?: number | null;
         week52Position: number | null;
     } | null;
     healthScore: number | null;
@@ -48,6 +49,18 @@ export interface ScreenerResult {
     interestCoverage: number | null;
     revenueCagr: number | null;
     netIncomeCagr: number | null;
+    epsCagr5y?: number | null;
+    roic?: number | null;
+    priceToCash?: number | null;
+    rsi14?: number | null;
+    sma20Pct?: number | null;
+    sma50Pct?: number | null;
+    sma200Pct?: number | null;
+    perf1m?: number | null;
+    perf3m?: number | null;
+    perf6m?: number | null;
+    perfYtd?: number | null;
+    perf1y?: number | null;
     marginStability: number | null;
     /** Current P/E percentile vs own DailyValuationHistory (0=cheapest, 100=priciest). */
     pePercentile: number | null;
@@ -91,6 +104,8 @@ export interface ScreenerResult {
         lastChangePct: number | null;
         lastMarketCap: number | null;
         marketCapDiff: number | null;
+        latestMoversRVOL?: number | null;
+        stdDevReturn20d?: number | null;
     } | null;
 }
 
@@ -229,6 +244,7 @@ export const METRIC_FILTERS = [
     { key: 'grossMargin', label: 'Gross Margin %', min: 0, max: 100, step: 1, group: 'Profitability' },
     { key: 'operatingMargin', label: 'Op Margin %', min: -50, max: 60, step: 1, group: 'Profitability' },
     { key: 'netMargin', label: 'Net Margin %', min: -50, max: 60, step: 1, group: 'Profitability' },
+    { key: 'assetTurnover', label: 'Asset Turnover', min: 0, max: 3, step: 0.1, group: 'Profitability' },
     // Growth
     { key: 'revenueGrowth', label: 'Rev Growth %', min: -50, max: 100, step: 1, group: 'Growth' },
     { key: 'earningsGrowth', label: 'EPS Growth %', min: -50, max: 100, step: 1, group: 'Growth' },
@@ -272,6 +288,10 @@ export const INSIDER_RANGE_FILTERS = [
 export const MARKET_RANGE_FILTERS = [
     { key: 'price', label: 'Price $', min: 0, max: 1000, step: 10, field: 'lastPrice', group: 'Market' },
     { key: 'changePct', label: 'Day Change %', min: -20, max: 20, step: 0.5, field: 'lastChangePct', group: 'Market' },
+    { key: 'rvol', label: 'Rel. Volume ×', min: 0, max: 5, step: 0.1, field: 'latestMoversRVOL', group: 'Market',
+      hint: 'Relative volume vs 20-day average — >1.5× signals unusual trading activity.' },
+    { key: 'volatility20d', label: 'Volatility 20D %', min: 0, max: 8, step: 0.1, field: 'stdDevReturn20d', group: 'Market',
+      hint: '20-day daily return standard deviation (%).' },
     { key: 'employees', label: 'Employees', min: 0, max: 3_000_000, step: 1000, field: 'employees', group: 'Market' },
 ] as const;
 
@@ -300,14 +320,39 @@ export const ANALYSIS_RANGE_FILTERS = [
       hint: 'Share of the stock’s own ~10Y P/E history priced below today — 0 = cheapest day on record, 50 ≈ at the median, 100 = most expensive. Low = cheap vs own history.' },
     { key: 'peVsMedian3yPct', label: 'P/E vs 3Y Med %', min: -80, max: 50, step: 1, group: 'Analysis',
       hint: 'Current P/E vs its own trailing-3-year median — negative = below the 3Y median (−20 means a 20 % discount). Set max to 0 to find stocks below their 3Y median.' },
+    { key: 'priceToCash', label: 'P/Cash', min: 0, max: 100, step: 1, group: 'Analysis',
+      hint: 'Market cap ÷ cash & short-term investments — lower means larger cash cushion.' },
+    { key: 'roic', label: 'ROIC %', min: -30, max: 80, step: 1, group: 'Analysis',
+      hint: 'Return on Invested Capital (TTM NOPAT ÷ invested capital).' },
     { key: 'revenueCagr', label: 'Rev CAGR 5Y %', min: -30, max: 60, step: 1, group: 'Analysis',
       hint: '5-year revenue compound annual growth rate — sustained top-line momentum, not one-off spikes.' },
     { key: 'netIncomeCagr', label: 'NI CAGR 5Y %', min: -50, max: 100, step: 1, group: 'Analysis',
       hint: '5-year net income compound annual growth rate — earnings trajectory over the cycle.' },
+    { key: 'epsCagr5y', label: 'EPS CAGR 5Y %', min: -50, max: 100, step: 1, group: 'Analysis',
+      hint: '5-year diluted EPS compound annual growth rate (split-adjusted).' },
     { key: 'fcfConversion', label: 'FCF Conv ×', min: -1, max: 3, step: 0.05, group: 'Analysis',
       hint: 'Free cash flow ÷ net income — >1 means cash exceeds reported profit (high earnings quality).' },
     { key: 'marginStability', label: 'Margin σ', min: 0, max: 0.5, step: 0.01, group: 'Analysis',
       hint: 'Standard deviation (σ) of annual operating margins — lower means more consistent profitability (<0.05 = <5pp).' },
+    // Technical & Price Performance (DailyValuationHistory closes)
+    { key: 'rsi14', label: 'RSI (14)', min: 0, max: 100, step: 1, group: 'Technical',
+      hint: '14-day Wilder Relative Strength Index — <30 oversold, >70 overbought.' },
+    { key: 'sma20Pct', label: 'vs SMA 20 %', min: -40, max: 40, step: 1, group: 'Technical',
+      hint: 'Price distance from 20-day simple moving average (%).' },
+    { key: 'sma50Pct', label: 'vs SMA 50 %', min: -50, max: 50, step: 1, group: 'Technical',
+      hint: 'Price distance from 50-day simple moving average (%).' },
+    { key: 'sma200Pct', label: 'vs SMA 200 %', min: -60, max: 80, step: 1, group: 'Technical',
+      hint: 'Price distance from 200-day simple moving average (%).' },
+    { key: 'perf1m', label: 'Perf 1M %', min: -50, max: 50, step: 1, group: 'Technical',
+      hint: '1-month (21 trading days) price return (%).' },
+    { key: 'perf3m', label: 'Perf 3M %', min: -60, max: 80, step: 1, group: 'Technical',
+      hint: '3-month (63 trading days) price return (%).' },
+    { key: 'perf6m', label: 'Perf 6M %', min: -70, max: 100, step: 1, group: 'Technical',
+      hint: '6-month (126 trading days) price return (%).' },
+    { key: 'perfYtd', label: 'Perf YTD %', min: -70, max: 100, step: 1, group: 'Technical',
+      hint: 'Year-to-date price return (%).' },
+    { key: 'perf1y', label: 'Perf 1Y %', min: -80, max: 150, step: 2, group: 'Technical',
+      hint: '1-year (252 trading days) price return (%).' },
 ] as const;
 
 /**
@@ -488,13 +533,16 @@ export interface PresetMatchContext {
         altmanZ?: number | null; fcfMargin?: number | null;
         // Analysis-derived range-filter fields (AnalysisCache columns).
         pePercentile?: number | null; peVsMedian3yPct?: number | null;
-        revenueCagr?: number | null; netIncomeCagr?: number | null;
+        revenueCagr?: number | null; netIncomeCagr?: number | null; epsCagr5y?: number | null;
+        roic?: number | null; priceToCash?: number | null;
+        rsi14?: number | null; sma20Pct?: number | null; sma50Pct?: number | null; sma200Pct?: number | null;
+        perf1m?: number | null; perf3m?: number | null; perf6m?: number | null; perfYtd?: number | null; perf1y?: number | null;
         fcfConversion?: number | null; marginStability?: number | null;
         // Persisted verdict axes (AnalysisCache columns).
         fundLevel?: string | null; valLevel?: string | null; verdictKey?: string | null;
     } | null;
     metrics?: Partial<Record<MetricFilterKey, number | null>> | null;
-    market?: { price?: number | null; changePct?: number | null; marketCapB?: number | null; employees?: number | null } | null;
+    market?: { price?: number | null; changePct?: number | null; marketCapB?: number | null; employees?: number | null; rvol?: number | null; volatility20d?: number | null } | null;
     insider?: Partial<Record<'netBuyValue90d' | 'netBuyPct90d', number | null>> | null;
     trendSignal?: { qualified?: boolean | null } | null;
 }
@@ -533,8 +581,12 @@ export function matchesPreset(p: ScreenerPreset, ctx: PresetMatchContext): boole
         let v: number | null | undefined;
         if (def.source === 'finnhub') v = ctx.metrics?.[key as MetricFilterKey];
         else if (def.source === 'insider') v = ctx.insider?.[key as 'netBuyValue90d' | 'netBuyPct90d'];
-        else if (def.source === 'analysis') v = ctx.scores?.[key as 'pePercentile' | 'peVsMedian3yPct' | 'revenueCagr' | 'netIncomeCagr' | 'fcfConversion' | 'marginStability'];
-        else v = def.field === 'lastPrice' ? ctx.market?.price : def.field === 'employees' ? ctx.market?.employees : ctx.market?.changePct;
+        else if (def.source === 'analysis') v = (ctx.scores as any)?.[key];
+        else v = def.field === 'lastPrice' ? ctx.market?.price
+            : def.field === 'employees' ? ctx.market?.employees
+            : def.field === 'latestMoversRVOL' ? ctx.market?.rvol
+            : def.field === 'stdDevReturn20d' ? ctx.market?.volatility20d
+            : ctx.market?.changePct;
         if (!inRange(v, r)) return false;
     }
     return true;
@@ -650,6 +702,18 @@ export const SORT_OPTIONS = [
     { value: 'debtRepaymentYears:desc', label: 'Debt Repay ↓ (slowest)' },
     { value: 'revenueCagr:desc', label: 'Revenue CAGR ↓ (5Y)' },
     { value: 'netIncomeCagr:desc', label: 'Net Income CAGR ↓ (5Y)' },
+    { value: 'epsCagr5y:desc', label: 'EPS CAGR ↓ (5Y)' },
+    { value: 'roic:desc', label: 'ROIC ↓' },
+    { value: 'priceToCash:asc', label: 'P/Cash ↑ (most cash)' },
+    { value: 'rsi14:asc', label: 'RSI (14) ↑ (oversold)' },
+    { value: 'rsi14:desc', label: 'RSI (14) ↓ (overbought)' },
+    { value: 'sma200Pct:desc', label: 'vs SMA 200 ↓ (strongest trend)' },
+    { value: 'sma200Pct:asc', label: 'vs SMA 200 ↑ (deepest below)' },
+    { value: 'perf1m:desc', label: 'Perf 1M ↓' },
+    { value: 'perf3m:desc', label: 'Perf 3M ↓' },
+    { value: 'perfYtd:desc', label: 'Perf YTD ↓' },
+    { value: 'perf1y:desc', label: 'Perf 1Y ↓' },
+    { value: 'ticker.latestMoversRVOL:desc', label: 'Rel. Volume ↓' },
     { value: 'fcfConversion:desc', label: 'FCF Conversion ↓' },
     { value: 'pePercentile:asc', label: 'P/E %ile ↑ (cheapest vs hist)' },
     { value: 'pePercentile:desc', label: 'P/E %ile ↓ (priciest vs hist)' },

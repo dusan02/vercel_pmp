@@ -154,21 +154,12 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
             if (minMarketCap !== undefined) tickerWhere.lastMarketCap.gte = minMarketCap;
             if (maxMarketCap !== undefined) tickerWhere.lastMarketCap.lte = maxMarketCap;
         }
-        // Price / day-change range filters (Ticker columns)
-        if (minPrice !== undefined || maxPrice !== undefined) {
-            tickerWhere.lastPrice = { ...(tickerWhere.lastPrice ?? {}) };
-            if (minPrice !== undefined) tickerWhere.lastPrice.gte = minPrice;
-            if (maxPrice !== undefined) tickerWhere.lastPrice.lte = maxPrice;
-        }
-        if (minChangePct !== undefined || maxChangePct !== undefined) {
-            tickerWhere.lastChangePct = {};
-            if (minChangePct !== undefined) tickerWhere.lastChangePct.gte = minChangePct;
-            if (maxChangePct !== undefined) tickerWhere.lastChangePct.lte = maxChangePct;
-        }
-        if (minEmployees !== undefined || maxEmployees !== undefined) {
-            tickerWhere.employees = {};
-            if (minEmployees !== undefined) tickerWhere.employees.gte = minEmployees;
-            if (maxEmployees !== undefined) tickerWhere.employees.lte = maxEmployees;
+        // Market / Ticker column range filters (lastPrice, lastChangePct,
+        // employees, latestMoversRVOL, stdDevReturn20d).
+        for (const r of tickerRanges) {
+            tickerWhere[r.field] = { ...(tickerWhere[r.field] ?? {}) };
+            if (r.min !== undefined) tickerWhere[r.field].gte = r.min;
+            if (r.max !== undefined) tickerWhere[r.field].lte = r.max;
         }
 
         // ── Relation range filters (FinnhubMetrics + InsiderAggregate) ──
@@ -238,7 +229,7 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
         const ANALYST_FIELDS = new Set(['strongBuy', 'buy', 'hold', 'sell', 'strongSell']);
         // Whitelist of sortable Ticker columns — an arbitrary `sort=ticker.X`
         // value would otherwise reach Prisma orderBy and 500 on unknown fields.
-        const TICKER_FIELDS = new Set(['symbol', 'name', 'sector', 'industry', 'employees', 'lastPrice', 'lastChangePct', 'lastMarketCap', 'lastPriceUpdated']);
+        const TICKER_FIELDS = new Set(['symbol', 'name', 'sector', 'industry', 'employees', 'lastPrice', 'lastChangePct', 'lastMarketCap', 'lastPriceUpdated', 'latestMoversRVOL', 'stdDevReturn20d', 'lastVolume', 'avgVolume20d']);
 
         let orderBy: any;
         const isMcapDiffSort = sortField === 'ticker.lastMarketCapDiff';
@@ -295,6 +286,18 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
                     debtRepaymentYears: true,
                     revenueCagr: true,
                     netIncomeCagr: true,
+                    epsCagr5y: true,
+                    roic: true,
+                    priceToCash: true,
+                    rsi14: true,
+                    sma20Pct: true,
+                    sma50Pct: true,
+                    sma200Pct: true,
+                    perf1m: true,
+                    perf3m: true,
+                    perf6m: true,
+                    perfYtd: true,
+                    perf1y: true,
                     fcfConversion: true,
                     marginStability: true,
                     pePercentile: true,
@@ -349,6 +352,7 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
                     quickRatio: true,
                     debtEquityRatio: true,
                     interestCoverage: true,
+                    assetTurnover: true,
                     week52Position: true,
                 },
             },
@@ -467,8 +471,20 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
             beneishScore: t.analysisCache?.beneishScore ?? null,
             fcfMargin: t.analysisCache?.fcfMargin ?? null,
             debtRepaymentYears: t.analysisCache?.debtRepaymentYears ?? null,
-            revenueCagr: t.analysisCache?.revenueCagr ?? null,
-            netIncomeCagr: t.analysisCache?.netIncomeCagr ?? null,
+            revenueCagr: (t.analysisCache as any)?.revenueCagr ?? null,
+            netIncomeCagr: (t.analysisCache as any)?.netIncomeCagr ?? null,
+            epsCagr5y: (t.analysisCache as any)?.epsCagr5y ?? null,
+            roic: (t.analysisCache as any)?.roic ?? null,
+            priceToCash: (t.analysisCache as any)?.priceToCash ?? null,
+            rsi14: (t.analysisCache as any)?.rsi14 ?? null,
+            sma20Pct: (t.analysisCache as any)?.sma20Pct ?? null,
+            sma50Pct: (t.analysisCache as any)?.sma50Pct ?? null,
+            sma200Pct: (t.analysisCache as any)?.sma200Pct ?? null,
+            perf1m: (t.analysisCache as any)?.perf1m ?? null,
+            perf3m: (t.analysisCache as any)?.perf3m ?? null,
+            perf6m: (t.analysisCache as any)?.perf6m ?? null,
+            perfYtd: (t.analysisCache as any)?.perfYtd ?? null,
+            perf1y: (t.analysisCache as any)?.perf1y ?? null,
             fcfConversion: t.analysisCache?.fcfConversion ?? null,
             marginStability: t.analysisCache?.marginStability ?? null,
             pePercentile: t.analysisCache?.pePercentile ?? null,
@@ -500,6 +516,8 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
                 lastPrice: t.lastPrice,
                 lastChangePct: t.lastChangePct,
                 lastMarketCap: t.lastMarketCap,
+                latestMoversRVOL: t.latestMoversRVOL,
+                stdDevReturn20d: t.stdDevReturn20d,
                 // Derived: prevMcap = mcap / (1 + pct/100) → diff = mcap·pct/(100+pct), in $B
                 marketCapDiff: t.lastMarketCap != null && t.lastMarketCap > 0 && t.lastChangePct != null && (100 + t.lastChangePct) > 0
                     ? t.lastMarketCap * t.lastChangePct / (100 + t.lastChangePct)

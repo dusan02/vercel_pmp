@@ -59,7 +59,9 @@ describe('screener filter param conventions', () => {
 
     it('ticker-source defs map to real Ticker columns', () => {
         const ticker = RANGE_FILTERS.filter((d) => d.source === 'ticker');
-        expect(ticker.map((d) => d.field).sort()).toEqual(['employees', 'lastChangePct', 'lastPrice']);
+        expect(ticker.map((d) => d.field).sort()).toEqual([
+            'employees', 'lastChangePct', 'lastPrice', 'latestMoversRVOL', 'stdDevReturn20d',
+        ]);
     });
 });
 

@@ -26,8 +26,9 @@ import { useState, useEffect } from 'react';
 // changes the dataset. Tab order runs general → specialised.
 const COLUMN_VIEWS = [
   { id: 'overview', label: 'Overview', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'overallScore', 'valuationScore', 'growthScore', 'profitabilityScore', 'healthScore', 'qualityScore', 'moatScore', 'screens'] },
-  { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'ticker.sector', 'ticker.employees', 'ticker.lastMarketCapDiff', 'analyst.buy'] },
-  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'revenueCagr', 'netIncomeCagr', 'metrics.peRatio', 'pePercentile', 'peVsMedian3yPct', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position', 'trendSignal'] },
+  { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'ticker.sector', 'ticker.employees', 'ticker.lastMarketCapDiff', 'ticker.latestMoversRVOL', 'ticker.stdDevReturn20d', 'analyst.buy'] },
+  { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'metrics.roe', 'roic', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'revenueCagr', 'netIncomeCagr', 'epsCagr5y', 'metrics.peRatio', 'pePercentile', 'peVsMedian3yPct', 'metrics.priceFreeCashFlow', 'priceToCash', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position', 'trendSignal'] },
+  { id: 'technical', label: 'Technical', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'rsi14', 'sma20Pct', 'sma50Pct', 'sma200Pct', 'perf1m', 'perf3m', 'perf6m', 'perfYtd', 'perf1y', 'metrics.week52Position', 'ticker.latestMoversRVOL', 'ticker.stdDevReturn20d'] },
   { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'fcfConversion', 'marginStability', 'debtRepaymentYears', 'healthScore', 'qualityScore', 'overallScore'] },
   { id: 'insiders', label: 'Insiders', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'insider.netBuyValue90d', 'insider.largestBuyValue90d', 'insider.largestSellValue90d', 'insider.uniqueSellers14d', 'overallScore'] },
   { id: 'all', label: 'All columns', keys: null }, // null = every defined column
@@ -45,11 +46,25 @@ const COLUMN_LABELS: Record<string, string> = {
   'ticker.lastMarketCap': 'Market Cap',
   'ticker.lastMarketCapDiff': 'Mkt Cap Δ',
   'ticker.employees': 'Employees',
+  'ticker.latestMoversRVOL': 'Rel. Volume',
+  'ticker.stdDevReturn20d': 'Volatility 20D',
   'analyst.buy': 'Analysts',
   'analysts': 'Analysts',
   'debtRepaymentYears': 'Debt Repay',
   'revenueCagr': 'Rev CAGR 5Y',
   'netIncomeCagr': 'NI CAGR 5Y',
+  'epsCagr5y': 'EPS CAGR 5Y',
+  'roic': 'ROIC %',
+  'priceToCash': 'P/Cash',
+  'rsi14': 'RSI (14)',
+  'sma20Pct': 'vs SMA 20',
+  'sma50Pct': 'vs SMA 50',
+  'sma200Pct': 'vs SMA 200',
+  'perf1m': 'Perf 1M',
+  'perf3m': 'Perf 3M',
+  'perf6m': 'Perf 6M',
+  'perfYtd': 'Perf YTD',
+  'perf1y': 'Perf 1Y',
   'fcfConversion': 'FCF Conv.',
   'marginStability': 'Margin σ',
   'pePercentile': 'P/E %ile vs Hist',
@@ -385,6 +400,82 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
       render: (r) => <span className="text-sm tabular-nums text-gray-700 dark:text-gray-200" title="5-year net income CAGR">{r.netIncomeCagr !== null ? `${r.netIncomeCagr > 0 ? '+' : ''}${r.netIncomeCagr.toFixed(1)}%` : '-'}</span>,
     },
     {
+      key: 'epsCagr5y',
+      header: <>EPS CAGR <SortIcon field="epsCagr5y" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => <span className="text-sm tabular-nums text-gray-700 dark:text-gray-200" title="5-year diluted EPS CAGR">{r.epsCagr5y != null ? `${r.epsCagr5y > 0 ? '+' : ''}${r.epsCagr5y.toFixed(1)}%` : '-'}</span>,
+    },
+    {
+      key: 'roic',
+      header: <>ROIC <SortIcon field="roic" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => <span className="text-sm tabular-nums text-gray-700 dark:text-gray-200" title="Return on Invested Capital (TTM NOPAT ÷ invested capital)">{r.roic != null ? `${r.roic.toFixed(1)}%` : '-'}</span>,
+    },
+    {
+      key: 'priceToCash',
+      header: <>P/Cash <SortIcon field="priceToCash" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => <span className="text-sm tabular-nums text-gray-700 dark:text-gray-200" title="Market cap ÷ cash & short-term investments">{r.priceToCash != null ? `${r.priceToCash.toFixed(1)}×` : '-'}</span>,
+    },
+    {
+      key: 'rsi14',
+      header: <>RSI 14 <SortIcon field="rsi14" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => {
+        const v = r.rsi14;
+        if (v == null) return <span className="text-gray-400">-</span>;
+        const color = v <= 30 ? 'text-green-600 dark:text-green-400 font-semibold' : v >= 70 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-700 dark:text-gray-200';
+        return <span className={`text-sm tabular-nums ${color}`} title="14-day Wilder RSI (<30 oversold, >70 overbought)">{v.toFixed(0)}</span>;
+      },
+    },
+    ...([
+      ['sma20Pct', 'SMA 20', 'Price distance from 20-day simple moving average'],
+      ['sma50Pct', 'SMA 50', 'Price distance from 50-day simple moving average'],
+      ['sma200Pct', 'SMA 200', 'Price distance from 200-day simple moving average'],
+      ['perf1m', 'Perf 1M', '1-month (21 trading days) price return'],
+      ['perf3m', 'Perf 3M', '3-month (63 trading days) price return'],
+      ['perf6m', 'Perf 6M', '6-month (126 trading days) price return'],
+      ['perfYtd', 'Perf YTD', 'Year-to-date price return'],
+      ['perf1y', 'Perf 1Y', '1-year (252 trading days) price return'],
+    ] as const).map(([key, hdr, tip]) => ({
+      key,
+      header: <>{hdr} <SortIcon field={key} /></>,
+      align: 'right' as const,
+      sortable: true,
+      render: (r: ScreenerResult) => {
+        const v = (r as any)[key] as number | null | undefined;
+        if (v == null) return <span className="text-gray-400">-</span>;
+        const color = v > 0 ? 'text-green-600 dark:text-green-400' : v < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-200';
+        return <span className={`text-sm tabular-nums ${color}`} title={tip}>{v > 0 ? '+' : ''}{v.toFixed(1)}%</span>;
+      },
+    })),
+    {
+      key: 'ticker.latestMoversRVOL',
+      header: <>RVOL <SortIcon field="ticker.latestMoversRVOL" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => {
+        const v = r.ticker?.latestMoversRVOL;
+        if (v == null) return <span className="text-gray-400">-</span>;
+        const color = v >= 1.5 ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-gray-700 dark:text-gray-200';
+        return <span className={`text-sm tabular-nums ${color}`} title="Relative volume vs 20-day average">{v.toFixed(2)}×</span>;
+      },
+    },
+    {
+      key: 'ticker.stdDevReturn20d',
+      header: <>Vol 20D <SortIcon field="ticker.stdDevReturn20d" /></>,
+      align: 'right',
+      sortable: true,
+      render: (r) => {
+        const v = r.ticker?.stdDevReturn20d;
+        return v != null ? <span className="text-sm tabular-nums text-gray-700 dark:text-gray-200" title="20-day daily return standard deviation">{v.toFixed(2)}%</span> : <span className="text-gray-400">-</span>;
+      },
+    },
+    {
       key: 'marginStability',
       header: <>Margin σ <SortIcon field="marginStability" /></>,
       align: 'right',
@@ -604,7 +695,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
     QUICK_SCREENS.filter((q) => q.group !== 'score' && matchesPreset(q.preset, {
       scores: r,
       metrics: r.metrics,
-      market: { price: r.ticker?.lastPrice ?? null, changePct: r.ticker?.lastChangePct ?? null, marketCapB: r.ticker?.lastMarketCap ?? null, employees: r.ticker?.employees ?? null },
+      market: { price: r.ticker?.lastPrice ?? null, changePct: r.ticker?.lastChangePct ?? null, marketCapB: r.ticker?.lastMarketCap ?? null, employees: r.ticker?.employees ?? null, rvol: r.ticker?.latestMoversRVOL ?? null, volatility20d: r.ticker?.stdDevReturn20d ?? null },
       insider: { netBuyValue90d: r.insiderNetBuyValue90d, netBuyPct90d: r.insiderNetBuyPct90d },
       trendSignal: r.trendSignal ?? null,
     }));
