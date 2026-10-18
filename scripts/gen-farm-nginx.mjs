@@ -27,11 +27,12 @@ const cidrs = await getFarmCidrs({ refresh: REFRESH });
 console.log(`${cidrs.length} v4 prefixes across ${FARM_ASNS.length} farm ASNs`);
 if (!cidrs.length) { console.error('no prefixes — refusing to write an empty deny map'); process.exit(1); }
 
-// Dedupe: sort numerically and drop prefixes contained in a previous range.
-// RIPEstat returns overlapping announcements (e.g. /24 inside /22) which make
-// nginx emit "duplicate network" warnings.
+// Dedupe: sort by start and drop prefixes whose end is already covered —
+// O(n): with start-asc order a prefix is contained iff its end <= running
+// max end of all earlier ranges. RIPEstat returns overlapping announcements
+// (e.g. /24 inside /22) which make nginx emit "duplicate network" warnings.
 const ip2i = (ip) => ip.split('.').reduce((n, o) => n * 256 + Number(o), 0);
-const seen = [];
+let maxEnd = -1;
 const deduped = cidrs
   .map((c) => {
     const [ip, bits] = c.cidr.split('/');
@@ -40,8 +41,8 @@ const deduped = cidrs
   })
   .sort((a, b) => a.start - b.start || b.end - a.end)
   .filter((c) => {
-    if (seen.some((s) => c.start >= s.start && c.end <= s.end)) return false;
-    seen.push(c);
+    if (c.end <= maxEnd) return false;
+    maxEnd = c.end;
     return true;
   });
 console.log(`${deduped.length} unique prefixes after dedupe (-${cidrs.length - deduped.length} contained)`);
