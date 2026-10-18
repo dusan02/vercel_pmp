@@ -98,9 +98,10 @@ export default function VerdictMatrix({
                                 key={v.id}
                                 onClick={() => pickAxis('val', v.id)}
                                 title={`All verdicts with valuation ${v.label} (${colTotal(v.id)} tickers)`}
-                                className={`text-[10px] font-semibold uppercase tracking-wide text-center rounded px-1 py-0.5 transition-colors ${v.cls} ${active ? 'bg-blue-50 dark:bg-blue-950/50 ring-1 ring-blue-400' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                                className={`text-[10px] font-semibold uppercase tracking-wide text-center rounded px-1 py-0.5 transition-colors flex flex-col sm:flex-row items-center justify-center sm:gap-1 leading-tight ${v.cls} ${active ? 'bg-blue-50 dark:bg-blue-950/50 ring-1 ring-blue-400' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                             >
-                                {v.label} <span className="text-[9px] font-normal opacity-75">({colTotal(v.id)})</span>
+                                <span>{v.label}</span>
+                                <span className="text-[9px] font-normal opacity-75">({colTotal(v.id)})</span>
                             </button>
                         );
                     })}
