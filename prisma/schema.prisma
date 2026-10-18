@@ -45,6 +45,7 @@ model User {
   favorites     UserFavorite[]
   preferences   UserPreferences?
   savedScreens  SavedScreen[]
+  chartDrawings ChartDrawing[]
 }
 
 model PortfolioItem {
@@ -266,6 +267,21 @@ model SavedScreen {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model ChartDrawing {
+  id        String   @id @default(cuid())
+  userId    String
+  ticker    String
+  // JSON array of Drawing objects from the price-chart draw tools
+  // (measure/trend/ray/hline/zone/fibo) — replaces the whole set per ticker.
+  data      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ticker])
+  @@index([ticker])
 }
 
 model VolumeBucket {

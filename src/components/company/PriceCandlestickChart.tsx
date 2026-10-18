@@ -19,7 +19,8 @@ import {
 } from 'recharts';
 import { CHART_FONT } from '@/components/charts/chartTheme';
 import { event as gaEvent } from '@/lib/ga';
-import { Ruler, TrendingUp, Eraser, Minus, Square, ArrowUpRight, Percent } from 'lucide-react';
+import { Ruler, TrendingUp, Eraser, Minus, Square, ArrowUpRight, Percent, Save, Check, CloudOff } from 'lucide-react';
+import { useSession, signIn } from 'next-auth/react';
 import { ChartDrawLayer, loadDrawings, saveDrawings, type Drawing, type DrawTool } from './chart/ChartDrawTools';
 
 interface Candle {
@@ -726,16 +727,67 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   // (date, price) coordinates, persisted per ticker in localStorage.
   const [drawTool, setDrawTool] = useState<DrawTool>(null);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
-  useEffect(() => { setDrawings(loadDrawings(ticker)); setDrawTool(null); }, [ticker]);
+  const [drawDirty, setDrawDirty] = useState(false);
+  const [drawSave, setDrawSave] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const { data: session } = useSession();
+  const loggedIn = !!session?.user;
+
+  useEffect(() => {
+    setDrawings(loadDrawings(ticker));
+    setDrawTool(null);
+    setDrawDirty(false);
+  }, [ticker]);
+
+  // Server set wins over the local draft — it survived sign-out/cache clears.
+  // A non-empty server set replaces local; an empty one keeps local work and
+  // marks it dirty so the next Save pushes it to the account.
+  useEffect(() => {
+    if (!loggedIn) return;
+    let live = true;
+    fetch(`/api/user/drawings?ticker=${encodeURIComponent(ticker)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!live || !Array.isArray(j?.drawings)) return;
+        if (j.drawings.length > 0) {
+          setDrawings(j.drawings);
+          saveDrawings(ticker, j.drawings);
+          setDrawDirty(false);
+        }
+      })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [ticker, loggedIn]);
+
+  const markDirty = () => setDrawDirty(true);
   const addDrawing = (d: Drawing) => {
     setDrawings((prev) => { const next = [...prev, d]; saveDrawings(ticker, next); return next; });
+    markDirty();
     setDrawTool(null); // single-shot: after drawing, handles appear for editing
   };
-  const updateDrawing = (idx: number, d: Drawing) =>
+  const updateDrawing = (idx: number, d: Drawing) => {
     setDrawings((prev) => { const next = prev.map((x, j) => (j === idx ? d : x)); saveDrawings(ticker, next); return next; });
-  const removeDrawing = (idx: number) =>
+    markDirty();
+  };
+  const removeDrawing = (idx: number) => {
     setDrawings((prev) => { const next = prev.filter((_, j) => j !== idx); saveDrawings(ticker, next); return next; });
-  const clearDrawings = () => { setDrawings([]); saveDrawings(ticker, []); };
+    markDirty();
+  };
+  const clearDrawings = () => { setDrawings([]); saveDrawings(ticker, []); markDirty(); };
+
+  const saveToAccount = async () => {
+    if (!loggedIn) { signIn('google'); return; }
+    setDrawSave('saving');
+    try {
+      const r = await fetch('/api/user/drawings', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ticker, drawings }),
+      });
+      setDrawSave(r.ok ? 'saved' : 'error');
+      if (r.ok) setDrawDirty(false);
+    } catch { setDrawSave('error'); }
+    setTimeout(() => setDrawSave((s) => (s === 'saved' ? 'idle' : s)), 2500);
+  };
   // Esc disarms the active tool (and any in-progress draft is discarded by
   // the layer on pointer-up).
   useEffect(() => {
@@ -1355,6 +1407,30 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                   </div>
                 )}
               </div>
+              {/* Save — localStorage keeps drawings across refresh for everyone;
+                  this additionally persists them to the signed-in account
+                  (cross-device, survives cache clears). Logged-out click opens
+                  the Google sign-in flow. */}
+              {(drawings.length > 0 || drawSave === 'saved') && (
+                <button
+                  type="button"
+                  onClick={saveToAccount}
+                  disabled={drawSave === 'saving'}
+                  title={loggedIn
+                    ? 'Save drawings to your account'
+                    : 'Sign in to save drawings to your account'}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 disabled:opacity-50 ${
+                    drawSave === 'saved'
+                      ? 'bg-white dark:bg-gray-900 shadow-sm text-emerald-600 dark:text-emerald-400'
+                      : drawDirty
+                        ? 'bg-white dark:bg-gray-900 shadow-sm text-violet-600 dark:text-violet-400'
+                        : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+                  }`}
+                >
+                  {drawSave === 'saved' ? <Check size={12} /> : drawSave === 'error' ? <CloudOff size={12} /> : <Save size={12} />}
+                  <span>{drawSave === 'saving' ? 'Saving…' : drawSave === 'saved' ? 'Saved' : drawSave === 'error' ? 'Retry' : 'Save'}</span>
+                </button>
+              )}
             </div>
           </div>
           <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
