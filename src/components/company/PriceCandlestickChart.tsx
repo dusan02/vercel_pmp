@@ -299,123 +299,6 @@ function lineEndTag(text: string, color: string, endIdx: number, dy: number) {
 }
 
 // ── Custom Tooltip ──────────────────────────────────────────────────────────
-function CandleTooltip({ active, payload, ticker, bmLabel, compare, peMedian }: any) {
-  if (!active || !payload?.length) return null;
-  const p: ChartPoint = payload[0].payload;
-  if (!p) return null;
-  const up = p.c >= p.o;
-  const changePct = p.o > 0 ? ((p.c - p.o) / p.o) * 100 : 0;
-
-  return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 shadow-lg text-xs min-w-[170px]">
-      <div className="text-gray-500 dark:text-gray-400 mb-2 font-medium">
-        {new Date(p.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-      </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono">
-        {!compare && (
-        <>
-        <span className="text-gray-500 dark:text-gray-400">Open</span>
-        <span className="text-right text-gray-900 dark:text-white">${p.o.toFixed(2)}</span>
-        <span className="text-gray-500 dark:text-gray-400">High</span>
-        <span className="text-right text-gray-900 dark:text-white">${p.h.toFixed(2)}</span>
-        <span className="text-gray-500 dark:text-gray-400">Low</span>
-        <span className="text-right text-gray-900 dark:text-white">${p.l.toFixed(2)}</span>
-        <span className="text-gray-500 dark:text-gray-400">Close</span>
-        <span className="text-right font-semibold" style={{ color: up ? UP : DOWN }}>
-          ${p.c.toFixed(2)} ({changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%)
-        </span>
-        <span className="text-gray-500 dark:text-gray-400">Volume</span>
-        <span className="text-right text-gray-700 dark:text-gray-300">
-          {fmtVol(p.v)}{p.volSpike ? ' ⚡' : ''}
-        </span>
-        {p.sma20 != null && (
-          <>
-            <span style={{ color: MA20 }}>MA 20w</span>
-            <span className="text-right text-gray-700 dark:text-gray-300">${p.sma20.toFixed(2)}</span>
-          </>
-        )}
-        {p.sma50 != null && (
-          <>
-            <span style={{ color: MA50 }}>MA 50w</span>
-            <span className="text-right text-gray-700 dark:text-gray-300">${p.sma50.toFixed(2)}</span>
-          </>
-        )}
-        {p.sma200 != null && (
-          <>
-            <span style={{ color: MA200 }}>MA 200d</span>
-            <span className="text-right text-gray-700 dark:text-gray-300">${p.sma200.toFixed(2)}</span>
-          </>
-        )}
-        {p.pe != null && p.pe > 0 && (
-          <>
-            <span className="text-gray-500 dark:text-gray-400">P/E (TTM)</span>
-            <span className="text-right text-gray-700 dark:text-gray-300">
-              {p.pe.toFixed(1)}×
-              {peMedian != null && peMedian !== 0 && (
-                <span className="text-[10px]" style={{ color: p.pe >= peMedian ? DOWN : UP }}>
-                  {' '}{((p.pe - peMedian) / peMedian) * 100 >= 0 ? '+' : ''}
-                  {(((p.pe - peMedian) / peMedian) * 100).toFixed(0)}% vs med
-                </span>
-              )}
-            </span>
-          </>
-        )}
-        </>
-        )}
-        {compare && (
-          <>
-            <span className="text-gray-500 dark:text-gray-400">Close</span>
-            <span className="text-right font-semibold text-gray-900 dark:text-white">${p.c.toFixed(2)}</span>
-            {p.chgPct != null && (
-              <>
-                <span className="text-gray-700 dark:text-gray-300 font-medium">{ticker}</span>
-                <span
-                  className="text-right font-medium"
-                  style={{ color: p.bmPct != null ? (p.chgPct >= p.bmPct ? UP : DOWN) : undefined }}
-                >
-                  {p.chgPct >= 0 ? '+' : ''}{p.chgPct.toFixed(1)}%
-                </span>
-              </>
-            )}
-            {p.bmPct != null && (
-              <>
-                <span style={{ color: BM_LINE }}>{bmLabel}</span>
-                <span className="text-right font-medium" style={{ color: BM_LINE }}>
-                  {p.bmPct >= 0 ? '+' : ''}{p.bmPct.toFixed(1)}%
-                </span>
-              </>
-            )}
-            {p.bmPct != null && p.chgPct != null && (
-              <>
-                <span className="text-gray-500 dark:text-gray-400">Relative</span>
-                <span className="text-right font-semibold" style={{ color: p.chgPct - p.bmPct >= 0 ? UP : DOWN }}>
-                  {p.chgPct - p.bmPct >= 0 ? '+' : ''}{(p.chgPct - p.bmPct).toFixed(1)}pp
-                </span>
-              </>
-            )}
-          </>
-        )}
-        {!compare && p.peFair != null && (
-          <>
-            <span style={{ color: PE_FAIR }}>Med P/E fair</span>
-            <span className="text-right text-gray-700 dark:text-gray-300">
-              ${p.peFair.toFixed(2)}
-              {' '}
-              <span className="text-[10px]" style={{ color: p.c <= p.peFair ? UP : DOWN }}>
-                ({((p.c - p.peFair) / p.peFair) * 100 >= 0 ? '+' : ''}{(((p.c - p.peFair) / p.peFair) * 100).toFixed(0)}%)
-              </span>
-            </span>
-          </>
-        )}
-        {!compare && p.epsChanged && (
-          <div className="col-span-2 mt-1 pt-1 border-t border-gray-200 dark:border-gray-700 text-[10px]" style={{ color: PE_FAIR }}>
-            ↑ earnings update — new TTM EPS
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // Valuation-metric view tooltip — the multiple itself vs its own
 // distribution. Denominator row shows what the multiple is composed of
@@ -864,6 +747,10 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   // Tools measure price — meaningless on the %-axis compare view and on the
   // valuation chart, so they stay armed only in plain price mode.
   const drawActive = mode === 'price' && !bmActive && drawTool != null;
+
+  // Hovered candle index for the TradingView-style readout strip — the old
+  // floating tooltip card covered candles and user drawings on hover.
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   // Two-phase view swap (mode / metric / period): the chart wrapper fades
   // out for ~120ms, the change commits while invisible, then it fades back
@@ -1624,8 +1511,54 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         )}
         </>
       ) : (
+      <>
+      {/* TradingView-style readout strip — updates on hover, defaults to the
+          last bar. Replaces the floating tooltip card that covered candles
+          and user drawings. */}
+      {(() => {
+        const hd = (hoverIdx != null ? data[hoverIdx] : undefined) ?? data[data.length - 1];
+        if (!hd) return null;
+        const up = hd.c >= hd.o;
+        const chg = hd.o > 0 ? ((hd.c - hd.o) / hd.o) * 100 : 0;
+        const med = peStats?.median ?? null;
+        return (
+          <div className="mb-0.5 flex items-baseline gap-x-2.5 overflow-x-auto whitespace-nowrap text-[11px] tabular-nums text-gray-500 dark:text-gray-400 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <span className="font-medium">{new Date(hd.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+            {bmActive ? (
+              <>
+                <span className="font-semibold" style={{ color: (hd.chgPct ?? 0) >= 0 ? UP : DOWN }}>{ticker} {(hd.chgPct ?? 0) >= 0 ? '+' : ''}{(hd.chgPct ?? 0).toFixed(1)}%</span>
+                <span className="font-semibold" style={{ color: '#0ea5e9' }}>{bmLabel} {(hd.bmPct ?? 0) >= 0 ? '+' : ''}{(hd.bmPct ?? 0).toFixed(1)}%</span>
+                {hd.chgPct != null && hd.bmPct != null && (
+                  <span>Δ {(hd.chgPct - hd.bmPct) >= 0 ? '+' : ''}{(hd.chgPct - hd.bmPct).toFixed(1)}pp</span>
+                )}
+              </>
+            ) : (
+              <>
+                <span>O ${hd.o.toFixed(2)}</span>
+                <span>H ${hd.h.toFixed(2)}</span>
+                <span>L ${hd.l.toFixed(2)}</span>
+                <span>C <b className="font-semibold" style={{ color: up ? UP : DOWN }}>${hd.c.toFixed(2)} ({chg >= 0 ? '+' : ''}{chg.toFixed(2)}%)</b></span>
+                <span>Vol {fmtVol(hd.v)}{hd.volSpike ? ' ⚡' : ''}</span>
+                {inds.has('ma20') && hd.sma20 != null && <span style={{ color: MA20 }}>MA20 ${hd.sma20.toFixed(2)}</span>}
+                {inds.has('ma50') && hd.sma50 != null && <span style={{ color: MA50 }}>MA50 ${hd.sma50.toFixed(2)}</span>}
+                {inds.has('ma200') && hd.sma200 != null && <span style={{ color: MA200 }}>MA200 ${hd.sma200.toFixed(2)}</span>}
+                {inds.has('bb') && hd.bbLo != null && hd.bbUp != null && <span style={{ color: BB_COLOR }}>BB ${hd.bbLo.toFixed(0)}–${hd.bbUp.toFixed(0)}</span>}
+                {hd.pe != null && hd.pe > 0 && (
+                  <span>P/E {hd.pe.toFixed(1)}×{med != null && med !== 0 && (
+                    <span style={{ color: hd.pe >= med ? DOWN : UP }}> ({((hd.pe - med) / med) * 100 >= 0 ? '+' : ''}{(((hd.pe - med) / med) * 100).toFixed(0)}% vs med)</span>
+                  )}</span>
+                )}
+                {hd.peFair != null && <span style={{ color: PE_FAIR }}>Fair ${hd.peFair.toFixed(2)}</span>}
+                {hd.epsChanged && <span style={{ color: PE_FAIR }}>↑ earnings update</span>}
+              </>
+            )}
+          </div>
+        );
+      })()}
       <ResponsiveContainer width="100%" height={narrow ? 340 : 420}>
-        <ComposedChart data={data} syncId="pmp-price" margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 24 }}>
+        <ComposedChart data={data} syncId="pmp-price" margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 24 }}
+          onMouseMove={(s: any) => setHoverIdx(typeof s?.activeTooltipIndex === 'number' ? s.activeTooltipIndex : null)}
+          onMouseLeave={() => setHoverIdx(null)}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.18)" vertical={false} />
           <XAxis
             dataKey="date"
@@ -1649,8 +1582,10 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
             axisLine={false}
             width={narrow ? 44 : 56}
           />
+          {/* Cursor column highlight only — the readout lives in the strip
+              above the chart so nothing overlays the candles/drawings. */}
           <Tooltip
-            content={<CandleTooltip ticker={ticker} bmLabel={bmLabel} compare={bmActive} peMedian={peStats?.median ?? null} />}
+            content={() => null}
             cursor={{ fill: 'rgba(148,163,184,0.12)' }}
             isAnimationActive={false}
           />
@@ -1869,6 +1804,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
           )}
         </ComposedChart>
       </ResponsiveContainer>
+      </>
       )}
       </div>
       {/* Oscillator panes — RSI(14) / MACD(12,26,9) under the price chart.
