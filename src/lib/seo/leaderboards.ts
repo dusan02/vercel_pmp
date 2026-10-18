@@ -466,6 +466,141 @@ export const LEADERBOARDS: LeaderboardDef[] = [
       { q: 'How is the dollar amount computed?', a: 'Shares sold multiplied by the actual execution price reported in each Form 4 filing — not the current market price.' },
     ],
   },
+  {
+    slug: 'most-oversold',
+    title: 'Most Oversold Stocks — Lowest RSI (14) Today',
+    h1: 'Most Oversold Stocks',
+    description:
+      'US stocks ranked by the lowest 14-day RSI — technically oversold names trading furthest below their recent momentum. Updated daily.',
+    keywords: ['most oversold stocks', 'oversold stocks', 'low rsi stocks', 'rsi below 30 stocks', 'oversold stock screener'],
+    metricLabel: 'RSI (14)',
+    source: 'analysisCache',
+    field: 'rsi14',
+    order: 'asc',
+    screenerParams: 'sort=rsi14:asc',
+    format: num1,
+    intro: [
+      'The 14-day Relative Strength Index (RSI) measures the speed of recent price moves on a 0–100 scale — readings below 30 are traditionally called oversold, meaning the stock has fallen faster than its recent norm.',
+      'This list ranks US stocks by the lowest current RSI, computed daily from closing prices. Oversold describes momentum, not value — a low RSI can stay low in a real downtrend, so treat this as a discovery list, not a buy signal.',
+    ],
+    faq: [
+      { q: 'What RSI level is considered oversold?', a: 'The classic threshold is RSI below 30; below 20 is deeply oversold. In strong downtrends RSI can stay oversold for weeks — the reading alone does not time a bottom.' },
+      { q: 'How is this RSI computed?', a: 'Wilder’s 14-day RSI from daily closing prices — average gains divided by average losses over the window, smoothed day to day. We recompute it daily for every ticker.' },
+      { q: 'Should I buy oversold stocks?', a: 'Oversold screens surface candidates, not conclusions — check the fundamental pillars and valuation on each analysis page before acting on a momentum reading.' },
+    ],
+  },
+  {
+    slug: 'most-overbought',
+    title: 'Most Overbought Stocks — Highest RSI (14) Today',
+    h1: 'Most Overbought Stocks',
+    description:
+      'US stocks ranked by the highest 14-day RSI — technically overbought names trading furthest above their recent momentum. Updated daily.',
+    keywords: ['most overbought stocks', 'overbought stocks', 'high rsi stocks', 'rsi above 70 stocks', 'overbought stock screener'],
+    metricLabel: 'RSI (14)',
+    source: 'analysisCache',
+    field: 'rsi14',
+    order: 'desc',
+    screenerParams: 'sort=rsi14:desc',
+    format: num1,
+    intro: [
+      'The 14-day RSI above 70 is traditionally called overbought — the stock has risen faster than its recent norm. This list ranks US stocks by the highest current RSI, computed daily from closing prices.',
+      'Overbought is a momentum reading, not a sell signal — strong trends can hold RSI above 70 for weeks. Use it to spot stretched moves and crowded entries, not to short blindly.',
+    ],
+    faq: [
+      { q: 'What RSI level is considered overbought?', a: 'RSI above 70 is the classic threshold; above 80 is deeply overbought. Momentum names can remain overbought for extended periods during strong uptrends.' },
+      { q: 'Does overbought mean the stock will fall?', a: 'No — it means recent gains were unusually fast versus the stock’s own history. Overbought readings resolve through pullbacks or sideways consolidation, sometimes much later.' },
+    ],
+  },
+  {
+    slug: 'stocks-above-200-day-moving-average',
+    title: 'Stocks Above the 200-Day Moving Average — Strongest Uptrends',
+    h1: 'Stocks Above Their 200-Day Moving Average',
+    description:
+      'US stocks trading furthest above their 200-day simple moving average — the strongest established uptrends in the market. Updated daily.',
+    keywords: ['stocks above 200 day moving average', 'stocks above 200dma', '200 day moving average screener', 'strongest uptrend stocks', 'stocks in uptrend'],
+    metricLabel: 'vs 200D MA',
+    source: 'analysisCache',
+    field: 'sma200Pct',
+    order: 'desc',
+    extraWhere: { sma200Pct: { gte: 0 } },
+    screenerParams: 'minSma200Pct=0&sort=sma200Pct:desc',
+    format: pct1,
+    intro: [
+      'The 200-day simple moving average is the market’s standard long-term trend line — institutions watch it, and sustained trading above it defines an established uptrend. This list ranks US stocks by how far above their 200-day average they currently trade.',
+      'Distance above the 200-day is a double-edged signal: it confirms trend strength but also marks extension. The furthest-stretched names are the strongest trends and the most vulnerable to mean reversion at the same time.',
+    ],
+    faq: [
+      { q: 'Why does the 200-day moving average matter?', a: 'It approximates the average cost basis of the last ~10 months of trading and is the most-watched long-term trend reference among institutional and technical traders.' },
+      { q: 'Is a high reading above the 200-day good?', a: 'It confirms a strong uptrend — but extreme extension (e.g. 50%+ above) historically precedes consolidation. Trend followers buy strength; mean-reversion traders see the same reading as stretched.' },
+    ],
+  },
+  {
+    slug: 'best-1y-performers',
+    title: 'Best Performing Stocks of the Last 12 Months',
+    h1: 'Best Performing Stocks (1 Year)',
+    description:
+      'US stocks ranked by 1-year price return — the biggest winners over the trailing twelve months. Updated daily.',
+    keywords: ['best performing stocks', 'top stocks last 12 months', 'best stocks 1 year', '1 year stock performance', 'biggest stock gainers'],
+    metricLabel: '1Y return',
+    source: 'analysisCache',
+    field: 'perf1y',
+    order: 'desc',
+    screenerParams: 'sort=perf1y:desc',
+    format: pct1,
+    intro: [
+      'This list ranks US stocks by total price return over the trailing 252 trading days (~1 year) — the market’s biggest winners, from genuine compounders to speculative spikes.',
+      'One-year leaders mix two very different groups: high-quality businesses compounding steadily, and beaten-down names bouncing hard. The analysis page separates them — check whether revenue and earnings actually grew alongside the price.',
+    ],
+    faq: [
+      { q: 'Does a high 1-year return predict future returns?', a: 'Momentum is real but mean-reverting — academic momentum effects fade over multi-year horizons. A big 1Y gain is a fact about the past, not a forecast.' },
+      { q: 'How is the 1-year return computed?', a: 'Current price versus the closing price 252 trading days ago (approximately one year of trading), from our daily valuation history.' },
+    ],
+  },
+  {
+    slug: 'best-ytd-performers',
+    title: 'Best Performing Stocks Year to Date — Top YTD Gainers',
+    h1: 'Best Performing Stocks Year to Date',
+    description:
+      'US stocks ranked by year-to-date price return — the biggest winners so far this year. Updated daily.',
+    keywords: ['best stocks ytd', 'top stocks year to date', 'best performing stocks this year', 'ytd stock gainers', 'best stocks of the year'],
+    metricLabel: 'YTD return',
+    source: 'analysisCache',
+    field: 'perfYtd',
+    order: 'desc',
+    screenerParams: 'sort=perfYtd:desc',
+    format: pct1,
+    intro: [
+      'Year-to-date return measures the price change since the last trading day of the previous year — this list shows the biggest US stock winners of the current calendar year.',
+      'YTD leaders rotate with the dominant theme of the year — sectors and narratives cluster at the top. Check the sector column and each stock’s analysis page to see what is driving the move.',
+    ],
+    faq: [
+      { q: 'What does YTD return include?', a: 'Price appreciation only — dividends are not reinvested in this figure. The window runs from the first trading day of the current calendar year to the latest close.' },
+      { q: 'Is chasing YTD winners a strategy?', a: 'Buying recent winners is momentum investing — it works until it doesn’t. YTD performance is best used for discovery: find what is working, then evaluate fundamentals separately.' },
+    ],
+  },
+  {
+    slug: 'stocks-near-52-week-high',
+    title: 'Stocks Near 52-Week Highs — Momentum Leaders',
+    h1: 'Stocks Near 52-Week Highs',
+    description:
+      'US stocks trading in the top 20% of their 52-week range — momentum leaders closest to their yearly peak. Updated daily.',
+    keywords: ['stocks near 52 week high', '52 week high stocks', 'stocks at 52 week highs', 'momentum stocks list', 'stocks near yearly high'],
+    metricLabel: '% of 52W range',
+    source: 'finnhubMetrics',
+    field: 'week52Position',
+    order: 'desc',
+    extraWhere: { week52Position: { gte: 80 } },
+    screenerParams: 'minWeek52Position=80&sort=metrics.week52Position:desc',
+    format: pct1,
+    intro: [
+      'The 52-week position places today’s price inside the stock’s yearly range: 0% means trading at the 52-week low, 100% at the 52-week high. This list shows stocks in the top quintile — at or within 20% of their yearly peak.',
+      'Trading near the high is the classic momentum signature — the “52-week high effect” is one of the better-documented anomalies in market research. It says nothing about valuation: pair it with the P/E vs history column on each analysis page.',
+    ],
+    faq: [
+      { q: 'Why do stocks near 52-week highs keep winning?', a: 'The 52-week high effect is a documented behavioral anomaly — investors anchor to the old high and underreact to good news, so breakouts tend to continue. It is a tendency, not a law.' },
+      { q: 'How is the 52-week position calculated?', a: '(Current price − 52-week low) ÷ (52-week high − 52-week low) × 100 — a value of 90 means the price sits in the top tenth of the yearly range.' },
+    ],
+  },
 ];
 
 /**
