@@ -183,7 +183,7 @@ const TOOL_LABEL: Record<string, string> = {
 };
 const TOOL_HINT: Record<string, string> = {
   measure: 'Drag to measure a move',
-  trend: 'Drag to draw a trendline — extends both ways',
+  trend: 'Drag to draw a segment between two points',
   ray: 'Drag to draw a ray — extends forward only',
   hline: 'Click to place the price level',
   zone: 'Drag a rectangle to mark a zone',
@@ -1372,7 +1372,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                   >
                     {([
                       ['measure', 'Measure move', 'Drag between two points — Δ%, Δ$, bar count', <Ruler key="r" size={13} />],
-                      ['trend', 'Trendline', 'Drag to draw — extends both ways', <TrendingUp key="t" size={13} />],
+                      ['trend', 'Trendline', 'Segment between two points', <TrendingUp key="t" size={13} />],
                       ['ray', 'Ray', 'Drag — extends only forward', <ArrowUpRight key="a" size={13} />],
                       ['hline', 'Horizontal level', 'Click to place a price level', <Minus key="h" size={13} />],
                       ['zone', 'Zone', 'Drag a rectangle — support/resistance area', <Square key="z" size={13} />],

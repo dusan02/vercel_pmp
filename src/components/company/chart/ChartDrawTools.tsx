@@ -347,29 +347,16 @@ export function ChartDrawLayer({ tool, drawings, onAdd, onUpdate, onDelete, date
         }
 
         if (d.kind === 'trend') {
-          // Extend through the plot bounds in both directions.
-          const dx = x2 - x1, dy = y2 - y1;
-          let ex1 = x1, ey1 = y1, ex2 = x2, ey2 = y2;
-          if (dx !== 0) {
-            const m = dy / dx;
-            ex1 = L; ey1 = y1 + m * (L - x1);
-            ex2 = R; ey2 = y1 + m * (R - x1);
-            ey1 = Math.min(Math.max(ey1, T), B);
-            ey2 = Math.min(Math.max(ey2, T), B);
-            if (m !== 0) {
-              ex1 = x1 + (ey1 - y1) / m;
-              ex2 = x1 + (ey2 - y1) / m;
-            }
-          }
+          // Bounded segment — exactly between the two points the user picked.
           return (
             <g key={i} opacity={isDraft ? 0.7 : 1}>
               {editable && (
-                <line x1={ex1} y1={ey1} x2={ex2} y2={ey2} stroke="transparent" strokeWidth={14}
+                <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="transparent" strokeWidth={14}
                   style={{ cursor: 'move', touchAction: 'none' }}
                   onPointerDown={(e) => editDown(e, i, 'all')}
                   onPointerMove={editMove} onPointerUp={editUp} />
               )}
-              <line x1={ex1} y1={ey1} x2={ex2} y2={ey2} stroke={color}
+              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color}
                 strokeWidth={selected ? 2.5 : 1.5} strokeDasharray={isDraft ? '4 3' : undefined}
                 style={{ pointerEvents: 'none' }} />
               {isDraft && (
