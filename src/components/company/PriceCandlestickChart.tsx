@@ -10,6 +10,7 @@ import {
   Tooltip,
   Bar,
   Line,
+  Cell,
   Area,
   ReferenceLine,
   ReferenceDot,
@@ -18,7 +19,7 @@ import {
 } from 'recharts';
 import { CHART_FONT } from '@/components/charts/chartTheme';
 import { event as gaEvent } from '@/lib/ga';
-import { Ruler, TrendingUp, Eraser } from 'lucide-react';
+import { Ruler, TrendingUp, Eraser, Minus, Square, ArrowUpRight, Percent } from 'lucide-react';
 import { ChartDrawLayer, loadDrawings, saveDrawings, type Drawing, type DrawTool } from './chart/ChartDrawTools';
 
 interface Candle {
@@ -56,6 +57,14 @@ interface ChartPoint extends Candle {
   /** [p25, p75] band for the active valuation-metric view */
   band?: [number, number];
   volSpike?: boolean;
+  /** Bollinger Bands (20, 2σ) on weekly closes */
+  bbUp?: number | null;
+  bbLo?: number | null;
+  /** Oscillators on weekly closes (pane below the chart) */
+  rsi14?: number | null;
+  macdL?: number | null; // MACD line = EMA12 − EMA26
+  macdS?: number | null; // signal = EMA9 of MACD line
+  macdH?: number | null; // histogram = line − signal
   /** Benchmark overlay — raw weekly close of the benchmark (SPY/QQQ/XLF) */
   bm?: number | null;
   /** % change of the ticker's close since the visible window's first close */
@@ -164,15 +173,34 @@ const weekKeyOf = (t: number) => Math.floor((t - MS_MONDAY_OFFSET) / MS_WEEK);
 
 // User-togglable indicator set; persisted per-browser, default off.
 const IND_KEY = 'pmp:pricechart:indicators';
-type IndKey = 'ma20' | 'ma50' | 'ma200' | 'pefair' | 'w52' | 'volspike';
+type IndKey = 'ma20' | 'ma50' | 'ma200' | 'pefair' | 'w52' | 'volspike' | 'bb' | 'rsi' | 'macd';
 type ModeKey = 'price' | 'pe';
+// Draw-tool labels for the armed toolbar button + under-chart hint.
+const TOOL_LABEL: Record<string, string> = {
+  measure: '📐 Measure', trend: '╱ Trend', ray: '➚ Ray',
+  hline: '― Level', zone: '▦ Zone', fibo: 'ƒ Fibo',
+};
+const TOOL_HINT: Record<string, string> = {
+  measure: 'Drag to measure a move',
+  trend: 'Drag to draw a trendline — extends both ways',
+  ray: 'Drag to draw a ray — extends forward only',
+  hline: 'Click to place the price level',
+  zone: 'Drag a rectangle to mark a zone',
+  fibo: 'Drag from swing low to swing high',
+};
+const BB_COLOR = '#94a3b8';   // slate — quiet band behind the price
+const RSI_COLOR = '#8b5cf6';  // violet
+const MACD_COLOR = '#0ea5e9'; // sky
 const INDICATORS: { key: IndKey; label: string; color: string }[] = [
   { key: 'ma20', label: 'MA 20w', color: MA20 },
   { key: 'ma50', label: 'MA 50w', color: MA50 },
   { key: 'ma200', label: 'MA 200d', color: MA200 },
+  { key: 'bb', label: 'Bollinger', color: BB_COLOR },
   { key: 'pefair', label: 'Med P/E', color: PE_FAIR },
   { key: 'w52', label: '52W hi/lo', color: REF52 },
   { key: 'volspike', label: 'Vol spike', color: VOL_SPIKE },
+  { key: 'rsi', label: 'RSI 14', color: RSI_COLOR },
+  { key: 'macd', label: 'MACD', color: MACD_COLOR },
 ];
 
 // Rolling mean — null until `n` observations exist (line starts later).
@@ -183,6 +211,54 @@ function rollingMean(vals: number[], n: number): (number | null)[] {
     sum += vals[i]!;
     if (i >= n) sum -= vals[i - n]!;
     if (i >= n - 1) out[i] = sum / n;
+  }
+  return out;
+}
+
+// Rolling stdev of window n (population) — for Bollinger Bands.
+function rollingStd(vals: number[], n: number): (number | null)[] {
+  const out: (number | null)[] = new Array(vals.length).fill(null);
+  let sum = 0, sq = 0;
+  for (let i = 0; i < vals.length; i++) {
+    sum += vals[i]!; sq += vals[i]! * vals[i]!;
+    if (i >= n) { const o = vals[i - n]!; sum -= o; sq -= o * o; }
+    if (i >= n - 1) {
+      const m = sum / n;
+      out[i] = Math.sqrt(Math.max(0, sq / n - m * m));
+    }
+  }
+  return out;
+}
+
+// Exponential MA — seeded with the first value (TradingView-style seeding
+// would use an SMA, but the tail difference is negligible at 260+ bars).
+function ema(vals: number[], n: number): (number | null)[] {
+  const out: (number | null)[] = new Array(vals.length).fill(null);
+  const k = 2 / (n + 1);
+  let e = 0;
+  for (let i = 0; i < vals.length; i++) {
+    e = i === 0 ? vals[i]! : vals[i]! * k + e * (1 - k);
+    if (i >= n - 1) out[i] = e;
+  }
+  return out;
+}
+
+// Wilder RSI(14) — avgGain/avgLoss seeded with SMA of first n changes.
+function rsi(vals: number[], n = 14): (number | null)[] {
+  const out: (number | null)[] = new Array(vals.length).fill(null);
+  if (vals.length <= n) return out;
+  let g = 0, l = 0;
+  for (let i = 1; i <= n; i++) {
+    const ch = vals[i]! - vals[i - 1]!;
+    if (ch > 0) g += ch; else l -= ch;
+  }
+  g /= n; l /= n;
+  out[n] = l === 0 ? 100 : 100 - 100 / (1 + g / l);
+  for (let i = n + 1; i < vals.length; i++) {
+    const ch = vals[i]! - vals[i - 1]!;
+    g = (g * (n - 1) + Math.max(0, ch)) / n;
+    l = (l * (n - 1) + Math.max(0, -ch)) / n;
+    out[i] = l === 0 ? 100 : 100 - 100 / (1 + g / l);
   }
   return out;
 }
@@ -572,11 +648,24 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
     if (!allCandles) return [];
     // Sort the full series first — SMA must see consecutive candles.
     const sorted = [...allCandles].sort((a, b) => a.t - b.t);
-    const sma20 = rollingMean(sorted.map((c) => c.c), 20);
-    const sma50 = rollingMean(sorted.map((c) => c.c), 50);
+    const closes = sorted.map((c) => c.c);
+    const sma20 = rollingMean(closes, 20);
+    const sma50 = rollingMean(closes, 50);
     // 40 weekly bars ≈ the 200-day average investors actually mean by SMA200
-    const sma200 = rollingMean(sorted.map((c) => c.c), 40);
+    const sma200 = rollingMean(closes, 40);
     const volSma = rollingMean(sorted.map((c) => c.v || 0), 20);
+    // Bollinger (20, 2σ) + RSI14 + MACD(12,26,9) on weekly closes — computed
+    // on the full series so window edges don't reset the warmup.
+    const std20 = rollingStd(closes, 20);
+    const rsiArr = rsi(closes, 14);
+    const ema12 = ema(closes, 12);
+    const ema26 = ema(closes, 26);
+    const macdRaw: (number | null)[] = closes.map((_, i) =>
+      ema12[i] != null && ema26[i] != null ? ema12[i]! - ema26[i]! : null);
+    const firstMacd = macdRaw.findIndex((v) => v != null);
+    const macdTail = firstMacd >= 0 ? ema(macdRaw.slice(firstMacd).map((v) => v!), 9) : [];
+    const macdSig: (number | null)[] = new Array(closes.length).fill(null);
+    for (let i = 0; i < macdTail.length; i++) macdSig[firstMacd + i] = macdTail[i] ?? null;
     // Implied TTM EPS on the full series — close ÷ P/E cancels the price out,
     // so week-over-week changes flag a fresh financial statement (earnings
     // marker), not market movement. Computed pre-window so a filing just
@@ -607,6 +696,12 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         epsChanged: epsChanged[i] ?? false,
         // Spike = this week's volume > 2× its own trailing 20w mean (≈ RVOL 2)
         volSpike: va != null && va > 0 && (c.v || 0) > 2 * va,
+        bbUp: sma20[i] != null && std20[i] != null ? sma20[i]! + 2 * std20[i]! : null,
+        bbLo: sma20[i] != null && std20[i] != null ? sma20[i]! - 2 * std20[i]! : null,
+        rsi14: rsiArr[i] ?? null,
+        macdL: macdRaw[i] ?? null,
+        macdS: macdSig[i] ?? null,
+        macdH: macdRaw[i] != null && macdSig[i] != null ? macdRaw[i]! - macdSig[i]! : null,
       });
     }
     // Valuation layer — median-P/E fair value. Stats come from the API
@@ -951,6 +1046,10 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       if (inds.has('ma50') && d.sma50 != null) { if (d.sma50 < min) min = d.sma50; if (d.sma50 > max) max = d.sma50; }
       if (inds.has('ma200') && d.sma200 != null) { if (d.sma200 < min) min = d.sma200; if (d.sma200 > max) max = d.sma200; }
       if (inds.has('pefair') && d.peFair != null) { if (d.peFair < min) min = d.peFair; if (d.peFair > max) max = d.peFair; }
+      if (inds.has('bb')) {
+        if (d.bbUp != null && d.bbUp > max) max = d.bbUp;
+        if (d.bbLo != null && d.bbLo < min) min = d.bbLo;
+      }
 
     }
     if (inds.has('w52') && hiLo52) {
@@ -1324,7 +1423,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                   }`}
                   style={drawTool ? { color: '#8b5cf6' } : undefined}
                 >
-                  <span>{drawTool === 'measure' ? '📐 Measure' : drawTool === 'trend' ? '╱ Trend' : 'Draw'}</span>
+                  <span>{drawTool ? (TOOL_LABEL[drawTool] ?? 'Draw') : 'Draw'}</span>
                   <span className="text-[9px] opacity-60">{openMenu === 'draw' ? '▴' : '▾'}</span>
                 </button>
                 {openMenu === 'draw' && !bmActive && (
@@ -1333,8 +1432,12 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
                     className="absolute right-0 top-full mt-1 z-50 min-w-[190px] rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl py-1"
                   >
                     {([
-                      ['measure', 'Measure move', 'Drag between two points — shows Δ%, Δ$ and bar count', <Ruler key="r" size={13} />],
-                      ['trend', 'Trendline', 'Drag to draw — line extends to chart edges', <TrendingUp key="t" size={13} />],
+                      ['measure', 'Measure move', 'Drag between two points — Δ%, Δ$, bar count', <Ruler key="r" size={13} />],
+                      ['trend', 'Trendline', 'Drag to draw — extends both ways', <TrendingUp key="t" size={13} />],
+                      ['ray', 'Ray', 'Drag — extends only forward', <ArrowUpRight key="a" size={13} />],
+                      ['hline', 'Horizontal level', 'Click to place a price level', <Minus key="h" size={13} />],
+                      ['zone', 'Zone', 'Drag a rectangle — support/resistance area', <Square key="z" size={13} />],
+                      ['fibo', 'Fib retracement', 'Drag swing-to-swing — auto levels', <Percent key="f" size={13} />],
                     ] as [DrawTool & string, string, string, React.ReactNode][]).map(([k, label, hint, icon]) => (
                       <button
                         key={k}
@@ -1522,7 +1625,7 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
         </>
       ) : (
       <ResponsiveContainer width="100%" height={narrow ? 340 : 420}>
-        <ComposedChart data={data} margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 24 }}>
+        <ComposedChart data={data} syncId="pmp-price" margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 24 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.18)" vertical={false} />
           <XAxis
             dataKey="date"
@@ -1624,6 +1727,12 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
           )}
           {!bmActive && inds.has('ma200') && (
             <Line type="monotone" dataKey="sma200" stroke={MA200} strokeWidth={1.5} dot={false} isAnimationActive={false} />
+          )}
+          {!bmActive && inds.has('bb') && (
+            <>
+              <Line type="monotone" dataKey="bbUp" stroke={BB_COLOR} strokeWidth={1} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
+              <Line type="monotone" dataKey="bbLo" stroke={BB_COLOR} strokeWidth={1} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
+            </>
           )}
           {/* Compare mode — both series indexed to the window start on a %
               axis. Solid benchmark line; the ticker's line is split green/
@@ -1762,10 +1871,51 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       </ResponsiveContainer>
       )}
       </div>
+      {/* Oscillator panes — RSI(14) / MACD(12,26,9) under the price chart.
+          Right-axis width and margins mirror the main chart so plots align;
+          syncId links the crosshair across panes. */}
+      {mode === 'price' && !bmActive && inds.has('rsi') && (
+        <ResponsiveContainer width="100%" height={80}>
+          <ComposedChart data={data} syncId="pmp-price" margin={{ top: 2, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 2 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" vertical={false} />
+            <XAxis dataKey="date" scale="band" hide />
+            <YAxis domain={[0, 100]} orientation="right" ticks={[30, 50, 70]}
+              tick={{ fontSize: CHART_FONT.axis, fill: 'currentColor' }}
+              className="text-gray-500 dark:text-gray-500" tickLine={false} axisLine={false}
+              width={narrow ? 44 : 56} />
+            <Tooltip content={() => null} cursor={{ stroke: 'rgba(148,163,184,0.4)' }} isAnimationActive={false} />
+            <ReferenceLine y={70} stroke={DOWN} strokeDasharray="3 3" strokeOpacity={0.5} />
+            <ReferenceLine y={50} stroke="rgba(148,163,184,0.35)" strokeDasharray="3 3" />
+            <ReferenceLine y={30} stroke={UP} strokeDasharray="3 3" strokeOpacity={0.5} />
+            <Line type="monotone" dataKey="rsi14" name="RSI 14" stroke={RSI_COLOR} strokeWidth={1.5} dot={false} isAnimationActive={false} connectNulls />
+          </ComposedChart>
+        </ResponsiveContainer>
+      )}
+      {mode === 'price' && !bmActive && inds.has('macd') && (
+        <ResponsiveContainer width="100%" height={80}>
+          <ComposedChart data={data} syncId="pmp-price" margin={{ top: 2, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 2 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" vertical={false} />
+            <XAxis dataKey="date" scale="band" hide />
+            <YAxis orientation="right" tickFormatter={(v: number) => v.toFixed(1)}
+              tick={{ fontSize: CHART_FONT.axis, fill: 'currentColor' }}
+              className="text-gray-500 dark:text-gray-500" tickLine={false} axisLine={false}
+              width={narrow ? 44 : 56} />
+            <Tooltip content={() => null} cursor={{ stroke: 'rgba(148,163,184,0.4)' }} isAnimationActive={false} />
+            <ReferenceLine y={0} stroke="rgba(148,163,184,0.4)" />
+            <Bar dataKey="macdH" isAnimationActive={false}>
+              {data.map((d, i) => (
+                <Cell key={i} fill={(d.macdH ?? 0) >= 0 ? UP : DOWN} fillOpacity={0.45} />
+              ))}
+            </Bar>
+            <Line type="monotone" dataKey="macdL" name="MACD" stroke={MACD_COLOR} strokeWidth={1.5} dot={false} isAnimationActive={false} connectNulls />
+            <Line type="monotone" dataKey="macdS" name="Signal" stroke="#f59e0b" strokeWidth={1.2} dot={false} isAnimationActive={false} connectNulls />
+          </ComposedChart>
+        </ResponsiveContainer>
+      )}
       {/* Tool hint — below the chart so it never covers the drawings */}
-      {drawActive && (
+      {drawActive && drawTool && (
         <div className="mt-1 text-[10px] font-semibold text-violet-600 dark:text-violet-400">
-          {drawTool === 'measure' ? 'Drag to measure a move' : 'Drag to draw a trendline'} · Esc to cancel
+          {TOOL_HINT[drawTool]} · Esc to cancel
         </div>
       )}
 

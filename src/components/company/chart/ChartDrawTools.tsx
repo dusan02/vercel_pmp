@@ -23,8 +23,12 @@ import {
  */
 
 export interface DrawPoint { date: string; v: number }
-export interface Drawing { kind: 'measure' | 'trend'; a: DrawPoint; b: DrawPoint }
-export type DrawTool = 'measure' | 'trend' | null;
+export interface Drawing {
+  kind: 'measure' | 'trend' | 'ray' | 'hline' | 'zone' | 'fibo';
+  a: DrawPoint;
+  b: DrawPoint;
+}
+export type DrawTool = Drawing['kind'] | null;
 
 export interface ChartDrawLayerProps {
   tool: DrawTool;
@@ -39,6 +43,10 @@ export interface ChartDrawLayerProps {
 const UP = '#16a34a';
 const DOWN = '#dc2626';
 const TREND = '#8b5cf6'; // violet — distinct from candle/indicator colors
+const HLINE = '#0891b2'; // teal — horizontal S/R levels
+const ZONE = '#d97706';  // amber — supply/demand zones
+const FIBO = '#7c3aed';  // purple — fibonacci levels
+const FIBO_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1];
 
 type DragRef = {
   idx: number;
@@ -92,6 +100,8 @@ export function ChartDrawLayer({ tool, drawings, onAdd, onUpdate, onDelete, date
     e.preventDefault();
     const p = toPoint(e);
     if (!p) return;
+    // Horizontal level is a single click — place it immediately.
+    if (tool === 'hline') { onAdd({ kind: 'hline', a: p, b: p }); return; }
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
     setDraft({ kind: tool, a: p, b: p });
   };
@@ -184,7 +194,10 @@ export function ChartDrawLayer({ tool, drawings, onAdd, onUpdate, onDelete, date
         const isDraft = draft != null && i === all.length - 1;
         const editable = !tool && !isDraft;
         const selected = sel === i;
-        const color = d.kind === 'trend' ? TREND
+        const color = d.kind === 'trend' || d.kind === 'ray' ? TREND
+          : d.kind === 'hline' ? HLINE
+          : d.kind === 'zone' ? ZONE
+          : d.kind === 'fibo' ? FIBO
           : (d.b.v / d.a.v - 1) >= 0 ? UP : DOWN;
 
         const handles = editable && (
@@ -203,15 +216,135 @@ export function ChartDrawLayer({ tool, drawings, onAdd, onUpdate, onDelete, date
             <circle cx={x2} cy={y2} r={3.5} fill={color} stroke="#fff" strokeWidth={1} style={{ pointerEvents: 'none' }} />
           </g>
         );
+        const delX = d.kind === 'hline' ? x1 : (x1 + x2) / 2;
         const deleteBtn = editable && selected && (
           <g
             style={{ cursor: 'pointer' }}
             onPointerDown={(e) => { e.stopPropagation(); onDelete(i); setSel(null); }}
           >
-            <circle cx={(x1 + x2) / 2} cy={Math.min(y1, y2) - 12} r={8} fill="#fff" stroke={color} strokeWidth={1.2} />
-            <text x={(x1 + x2) / 2} y={Math.min(y1, y2) - 8} textAnchor="middle" fontSize={11} fontWeight={700} fill={color}>×</text>
+            <circle cx={delX} cy={Math.min(y1, y2) - 12} r={8} fill="#fff" stroke={color} strokeWidth={1.2} />
+            <text x={delX} y={Math.min(y1, y2) - 8} textAnchor="middle" fontSize={11} fontWeight={700} fill={color}>×</text>
           </g>
         );
+
+        if (d.kind === 'hline') {
+          // Single-point level line across the whole plot with a price label.
+          return (
+            <g key={i}>
+              {editable && (
+                <line x1={L} y1={y1} x2={R} y2={y1} stroke="transparent" strokeWidth={14}
+                  style={{ cursor: 'ns-resize', touchAction: 'none' }}
+                  onPointerDown={(e) => editDown(e, i, 'all')}
+                  onPointerMove={editMove} onPointerUp={editUp} />
+              )}
+              <line x1={L} y1={y1} x2={R} y2={y1} stroke={color}
+                strokeWidth={selected ? 2.5 : 1.5} strokeDasharray="6 4" style={{ pointerEvents: 'none' }} />
+              <text x={R - 4} y={y1 - 4} textAnchor="end" fontSize={10} fontWeight={600} fill={color}
+                style={{ paintOrder: 'stroke', stroke: 'rgba(255,255,255,0.85)', strokeWidth: 3, pointerEvents: 'none' }}>
+                ${d.a.v.toFixed(2)}
+              </text>
+              {deleteBtn}
+            </g>
+          );
+        }
+
+        if (d.kind === 'zone') {
+          // Supply/demand rectangle — shaded band between two price levels
+          // over the dragged date range, no diagonal or Δ label.
+          const rx = Math.min(x1, x2), rw = Math.abs(x2 - x1);
+          const ry = Math.min(y1, y2), rh = Math.abs(y2 - y1);
+          const lo = Math.min(d.a.v, d.b.v), hi = Math.max(d.a.v, d.b.v);
+          return (
+            <g key={i} opacity={isDraft ? 0.8 : 1}>
+              {editable && (
+                <rect x={rx - 5} y={ry - 5} width={rw + 10} height={rh + 10} fill="transparent"
+                  style={{ cursor: 'move', touchAction: 'none' }}
+                  onPointerDown={(e) => editDown(e, i, 'all')}
+                  onPointerMove={editMove} onPointerUp={editUp} />
+              )}
+              <rect x={rx} y={ry} width={rw} height={rh} fill={color}
+                fillOpacity={selected ? 0.18 : 0.1} stroke={color}
+                strokeOpacity={selected ? 0.9 : 0.55} strokeWidth={1}
+                style={{ pointerEvents: 'none' }} />
+              <text x={rx + 4} y={ry - 4} fontSize={9.5} fontWeight={600} fill={color}
+                style={{ paintOrder: 'stroke', stroke: 'rgba(255,255,255,0.85)', strokeWidth: 3, pointerEvents: 'none' }}>
+                ${lo.toFixed(0)}–${hi.toFixed(0)}
+              </text>
+              {handles}
+              {deleteBtn}
+            </g>
+          );
+        }
+
+        if (d.kind === 'ray') {
+          // Ray — a→b direction only, extends past b to the plot edge.
+          const dx = x2 - x1, dy = y2 - y1;
+          let ex = x2, ey = y2;
+          if (dx !== 0) {
+            const m = dy / dx;
+            const edge = dx > 0 ? R : L;
+            ey = Math.min(Math.max(y1 + m * (edge - x1), T), B);
+            ex = m !== 0 ? x1 + (ey - y1) / m : edge;
+          } else {
+            ey = dy > 0 ? B : T; // vertical ray
+          }
+          return (
+            <g key={i} opacity={isDraft ? 0.7 : 1}>
+              {editable && (
+                <line x1={x1} y1={y1} x2={ex} y2={ey} stroke="transparent" strokeWidth={14}
+                  style={{ cursor: 'move', touchAction: 'none' }}
+                  onPointerDown={(e) => editDown(e, i, 'all')}
+                  onPointerMove={editMove} onPointerUp={editUp} />
+              )}
+              <line x1={x1} y1={y1} x2={ex} y2={ey} stroke={color}
+                strokeWidth={selected ? 2.5 : 1.5} strokeDasharray={isDraft ? '4 3' : undefined}
+                style={{ pointerEvents: 'none' }} />
+              {handles}
+              {deleteBtn}
+            </g>
+          );
+        }
+
+        if (d.kind === 'fibo') {
+          // Fibonacci retracement — levels between a (0%) and b (100%) drawn
+          // horizontally over the dragged date range.
+          const x0 = Math.min(x1, x2), xE = Math.max(x1, x2);
+          return (
+            <g key={i} opacity={isDraft ? 0.75 : 1}>
+              {editable && (
+                <rect x={x0} y={Math.min(y1, y2)} width={xE - x0} height={Math.abs(y2 - y1)}
+                  fill="transparent"
+                  style={{ cursor: 'move', touchAction: 'none' }}
+                  onPointerDown={(e) => editDown(e, i, 'all')}
+                  onPointerMove={editMove} onPointerUp={editUp} />
+              )}
+              {/* golden-pocket shading between 38.2% and 61.8% */}
+              <rect x={x0} y={y1 + (y2 - y1) * 0.382} width={xE - x0}
+                height={Math.abs((y2 - y1) * (0.618 - 0.382))}
+                fill={color} fillOpacity={0.06} style={{ pointerEvents: 'none' }} />
+              {FIBO_LEVELS.map((lvl) => {
+                const py = y1 + (y2 - y1) * lvl;
+                const pv = d.a.v + (d.b.v - d.a.v) * lvl;
+                return (
+                  <g key={lvl}>
+                    <line x1={x0} y1={py} x2={xE} y2={py} stroke={color}
+                      strokeWidth={lvl === 0 || lvl === 1 ? 1.5 : 0.75}
+                      strokeDasharray={lvl === 0 || lvl === 1 ? undefined : '4 3'}
+                      strokeOpacity={lvl === 0 || lvl === 1 ? 0.9 : 0.55}
+                      style={{ pointerEvents: 'none' }} />
+                    <text x={x0 + 3} y={py - 2} fontSize={9} fontWeight={600} fill={color}
+                      fillOpacity={lvl === 0 || lvl === 1 ? 1 : 0.8}
+                      style={{ paintOrder: 'stroke', stroke: 'rgba(255,255,255,0.85)', strokeWidth: 3, pointerEvents: 'none' }}>
+                      {(lvl * 100).toFixed(1)}% · ${pv.toFixed(2)}
+                    </text>
+                  </g>
+                );
+              })}
+              {handles}
+              {deleteBtn}
+            </g>
+          );
+        }
 
         if (d.kind === 'trend') {
           // Extend through the plot bounds in both directions.
@@ -291,7 +424,9 @@ export function loadDrawings(ticker: string): Drawing[] {
   try {
     const raw = localStorage.getItem(STORAGE_PREFIX + ticker);
     const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr.filter((d: any) => d?.a?.date && d?.b?.date && (d.kind === 'measure' || d.kind === 'trend')) : [];
+    return Array.isArray(arr) ? arr.filter((d: any) =>
+      d?.a?.date && d?.b?.date &&
+      ['measure', 'trend', 'ray', 'hline', 'zone', 'fibo'].includes(d.kind)) : [];
   } catch { return []; }
 }
 
