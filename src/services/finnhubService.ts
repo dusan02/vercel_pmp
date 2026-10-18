@@ -107,20 +107,30 @@ async function getCachedMetrics(symbol: string): Promise<FinnhubMetric | null> {
  */
 async function saveMetrics(symbol: string, metrics: FinnhubMetric): Promise<void> {
     // Position of the latest price inside the 52w range (0 = at low, 100 =
-    // at high; can be <0 / >100 when price just broke out). Drives the
-    // screener's "52W Position" filter — one extra ticker read per save.
+    // at high). Prefer our own USD DailyValuationHistory closes (authoritative
+    // for foreign ADRs / Canadian dual-listed tickers where Finnhub reports
+    // 52w low/high in CAD/CHF/GBP/JPY vs the USD price — TRP had -24.9%,
+    // NVS +144.1%). Fall back to Finnhub's 52w range only when DVH is empty
+    // and the position lands inside a tight [-5%, 105%] breakout band,
+    // clamped to [0, 100].
     let week52Position: number | null = null;
-    if (metrics.week52High != null && metrics.week52Low != null && metrics.week52High > metrics.week52Low) {
-        const t = await prisma.ticker.findUnique({ where: { symbol }, select: { lastPrice: true } });
-        const price = t?.lastPrice;
-        if (price != null && price > 0) {
+    const t = await prisma.ticker.findUnique({ where: { symbol }, select: { lastPrice: true } });
+    const price = t?.lastPrice;
+    if (price != null && price > 0) {
+        const cutoff = new Date(Date.now() - 366 * 24 * 60 * 60 * 1000);
+        const dvhRange = await prisma.dailyValuationHistory.aggregate({
+            where: { symbol, date: { gte: cutoff }, closePrice: { gt: 0 } },
+            _min: { closePrice: true },
+            _max: { closePrice: true },
+        });
+        const lo = dvhRange._min.closePrice;
+        const hi = dvhRange._max.closePrice;
+        if (lo != null && hi != null && hi > lo) {
+            const pos = ((price - lo) / (hi - lo)) * 100;
+            week52Position = Math.max(0, Math.min(100, pos));
+        } else if (metrics.week52High != null && metrics.week52Low != null && metrics.week52High > metrics.week52Low) {
             const pos = ((price - metrics.week52Low) / (metrics.week52High - metrics.week52Low)) * 100;
-            // Plausibility window — Finnhub occasionally reports the 52w
-            // range in the wrong share-class units (BRK.B gets BRK.A's
-            // ~$800K range vs its ~$500 price → position ≈ -645). Beyond
-            // ~-25%/+150% the range is stale or mismatched; store null
-            // rather than let garbage top the "near 52w low" sort.
-            week52Position = pos >= -25 && pos <= 150 ? pos : null;
+            week52Position = pos >= -5 && pos <= 105 ? Math.max(0, Math.min(100, pos)) : null;
         }
     }
     const data = {

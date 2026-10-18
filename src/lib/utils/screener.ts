@@ -306,8 +306,8 @@ export const ANALYSIS_RANGE_FILTERS = [
       hint: '5-year net income compound annual growth rate — earnings trajectory over the cycle.' },
     { key: 'fcfConversion', label: 'FCF Conv ×', min: -1, max: 3, step: 0.05, group: 'Analysis',
       hint: 'Free cash flow ÷ net income — >1 means cash exceeds reported profit (high earnings quality).' },
-    { key: 'marginStability', label: 'Margin Var', min: 0, max: 1, step: 0.01, group: 'Analysis',
-      hint: 'Variance of margins across years — lower means more consistent profitability.' },
+    { key: 'marginStability', label: 'Margin σ', min: 0, max: 0.5, step: 0.01, group: 'Analysis',
+      hint: 'Standard deviation (σ) of annual operating margins — lower means more consistent profitability (<0.05 = <5pp).' },
 ] as const;
 
 /**
@@ -432,7 +432,7 @@ export const QUICK_SCREENS: {
     // low", "insiders buying", "abnormal move on solid fundamentals"). The
     // `sort` field applies once on click; the pill stays active while the
     // user re-sorts the same screen.
-    { label: 'Quality Selloff', tip: 'Quality ≥70 · Fin. Health ≥70 · in bottom 25% of 52W range · >$2B — quality names near their yearly low', group: 'discovery', icon: 'TrendingDown', preset: { minQuality: 70, minHealth: 70, marketCapPreset: 'midplus', ranges: { week52Position: { max: 25 } }, sort: 'metrics.week52Position:asc' } },
+    { label: 'Quality Selloff', tip: 'Quality ≥70 · Fin. Health ≥70 · in bottom 25% of 52W range · >$2B — quality names near their yearly low', group: 'discovery', icon: 'TrendingDown', preset: { minQuality: 70, minHealth: 70, marketCapPreset: 'midplus', ranges: { week52Position: { min: 0, max: 25 } }, sort: 'metrics.week52Position:asc' } },
     { label: 'Insider Buying', tip: 'Net insider buying >$0 (90d) · Quality ≥60 · Fin. Health ≥50, sorted by insider buy $', group: 'discovery', icon: 'HandCoins', preset: { minQuality: 60, minHealth: 50, ranges: { netBuyValue90d: { min: 1 } }, sort: 'insider.netBuyValue90d:desc' } },
     { label: 'Selloff + Fundamentals', tip: 'Day change ≤-5% · Overall ≥70 · Quality ≥70 — abnormal drop on strong fundamentals', group: 'discovery', icon: 'ArrowDown', preset: { minOverall: 70, minQuality: 70, ranges: { changePct: { max: -5 } }, sort: 'ticker.lastChangePct:asc' } },
     { label: 'Momentum + Fundamentals', tip: 'Day change ≥+5% · Overall ≥70 · Quality ≥70 — abnormal move on strong fundamentals', group: 'discovery', icon: 'Zap', preset: { minOverall: 70, minQuality: 70, ranges: { changePct: { min: 5 } }, sort: 'ticker.lastChangePct:desc' } },
@@ -494,7 +494,7 @@ export interface PresetMatchContext {
         fundLevel?: string | null; valLevel?: string | null; verdictKey?: string | null;
     } | null;
     metrics?: Partial<Record<MetricFilterKey, number | null>> | null;
-    market?: { price?: number | null; changePct?: number | null; marketCapB?: number | null } | null;
+    market?: { price?: number | null; changePct?: number | null; marketCapB?: number | null; employees?: number | null } | null;
     insider?: Partial<Record<'netBuyValue90d' | 'netBuyPct90d', number | null>> | null;
     trendSignal?: { qualified?: boolean | null } | null;
 }
@@ -534,7 +534,7 @@ export function matchesPreset(p: ScreenerPreset, ctx: PresetMatchContext): boole
         if (def.source === 'finnhub') v = ctx.metrics?.[key as MetricFilterKey];
         else if (def.source === 'insider') v = ctx.insider?.[key as 'netBuyValue90d' | 'netBuyPct90d'];
         else if (def.source === 'analysis') v = ctx.scores?.[key as 'pePercentile' | 'peVsMedian3yPct' | 'revenueCagr' | 'netIncomeCagr' | 'fcfConversion' | 'marginStability'];
-        else v = def.field === 'lastPrice' ? ctx.market?.price : ctx.market?.changePct;
+        else v = def.field === 'lastPrice' ? ctx.market?.price : def.field === 'employees' ? ctx.market?.employees : ctx.market?.changePct;
         if (!inRange(v, r)) return false;
     }
     return true;

@@ -18,7 +18,7 @@ export async function GET() {
     try {
         const rows = await prisma.analysisCache.groupBy({
             by: ['verdictKey'],
-            where: { ticker: { lastPrice: { gt: 0 } } },
+            where: { ticker: { lastPrice: { gt: 0 }, lastMarketCap: { gt: 0 } } },
             _count: { _all: true },
         });
         const counts: Record<string, number> = {};

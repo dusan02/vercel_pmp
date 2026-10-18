@@ -188,14 +188,18 @@ export function useScreener({
                 limit: initialLimit.toString(),
                 page: page.toString()
             });
-            // Score ranges — always sent for the 5 core scores (explicit bounds
-            // keep null-score tickers out of the scored universe). Moat is only
-            // sent when constrained so rows before a moat backfill stay visible.
+            // Score ranges — only sent when actually constrained (min > 0 or
+            // max < 100). Sending default 0–100 bounds on every request excluded
+            // null-score tickers (`Insufficient data (76)` returned 1 row instead
+            // of 76 because SQL `NULL >= 0` is false).
             for (const def of SCORE_FILTERS) {
                 const r = debouncedFilters.scoreRanges[def.key];
-                if (def.key === 'moat' && r?.min === undefined && r?.max === undefined) continue;
-                params.append(def.apiMin, (r?.min ?? SCORE_RANGE_MIN).toString());
-                params.append(def.apiMax, (r?.max ?? SCORE_RANGE_MAX).toString());
+                if (r?.min !== undefined && r.min > SCORE_RANGE_MIN) {
+                    params.append(def.apiMin, r.min.toString());
+                }
+                if (r?.max !== undefined && r.max < SCORE_RANGE_MAX) {
+                    params.append(def.apiMax, r.max.toString());
+                }
             }
             // Advanced filters — only sent when active (sentinel defaults).
             for (const def of ADVANCED_FILTERS) {

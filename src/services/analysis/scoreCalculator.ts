@@ -7,6 +7,7 @@ import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
 import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
 import { medianOf, percentileBelow } from './valuationHistory';
 import { classifyVerdict } from '@/lib/analysis/verdict';
+import { isPeDistorted } from '@/lib/analysis/peDistortion';
 
 export interface CalculateScoresOptions {
     /** No-op — AI verdict generation was removed (cost vs. value). */
@@ -195,15 +196,19 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     // 5 years, matching the CAGR window) so quarterly seasonality and 10-year
     // secular margin expansion don't penalize stable compounders or diverge
     // between sibling classes with different quarterly history depth (GOOGL vs GOOG).
+    // Clamp each period's margin to [-2, 2] (same ±200% guard as fcfMargin) so
+    // a pre-revenue biotech year ($0.1M revenue, -$500M EBIT) doesn't produce
+    // σ = 534.95.
+    const clampMargin = (m: number) => Math.max(-2, Math.min(2, m));
     const fyMargins = annualStmts
         .slice(0, 5)
         .filter(s => s.revenue && s.revenue > 0 && s.ebit !== null)
-        .map(s => s.ebit! / s.revenue!);
+        .map(s => clampMargin(s.ebit! / s.revenue!));
     const margins: number[] = fyMargins.length >= 3
         ? fyMargins
         : stmts
             .filter(s => s.revenue && s.revenue > 0 && s.ebit !== null)
-            .map(s => s.ebit! / s.revenue!);
+            .map(s => clampMargin(s.ebit! / s.revenue!));
 
     let marginStability: number | null = null;
     if (margins.length > 2) {
@@ -302,8 +307,10 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         select: { peRatio: true, date: true },
     });
     const peForPct = latestPeRow?.peRatio ?? currentPE;
+    const peMedian = allValuations.length > 0 ? medianOf(allValuations.map(v => v.peRatio!)) : null;
+    const peDistortedNow = isPeDistorted(peForPct, peMedian);
     let pePercentile: number | null = null;
-    if (allValuations.length > 0 && peForPct !== null && peForPct > 0) {
+    if (allValuations.length > 0 && peForPct !== null && peForPct > 0 && !peDistortedNow) {
         pePercentile = percentileBelow(allValuations.map(v => v.peRatio!), peForPct);
         humanPeInfo = formatPePercentile(peForPct, pePercentile);
     }
@@ -323,17 +330,17 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     const psPercentile = (allPsValuations.length > 0 && latestPsRow?.psRatio != null && latestPsRow.psRatio > 0)
         ? percentileBelow(allPsValuations.map(v => v.psRatio!), latestPsRow.psRatio)
         : null;
-    const peMedian = allValuations.length > 0 ? medianOf(allValuations.map(v => v.peRatio!)) : null;
 
     // 3Y-window median vs current — the screener "PE below its 3Y median"
     // signal. Window anchors at the latest DVH row (not wall-clock today) so
-    // a lagging history doesn't silently shrink it. Sparse windows stay null
-    // instead of producing a noisy discount number.
+    // a lagging history doesn't silently shrink it. Exclude distorted P/E
+    // days (>150x, collapsed EPS) from both current and the 3Y window so
+    //GPC (+2,676%) and RKT (-93.8% vs a ~1000x 3Y median) don't top the sort.
     let peVsMedian3yPct: number | null = null;
-    if (latestPeRow?.date && peForPct !== null && peForPct > 0) {
+    if (latestPeRow?.date && peForPct !== null && peForPct > 0 && !peDistortedNow) {
         const cutoff3y = new Date(latestPeRow.date.getTime() - 3 * 365.25 * 86_400_000);
         const windowRows = await prisma.dailyValuationHistory.findMany({
-            where: { symbol, peRatio: { not: null, gt: 0 }, date: { gte: cutoff3y } },
+            where: { symbol, peRatio: { not: null, gt: 0, lte: 150 }, date: { gte: cutoff3y } },
             select: { peRatio: true },
             orderBy: { peRatio: 'asc' },
         });
@@ -374,11 +381,16 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     const yearsBack = fyDiff > 0 ? fyDiff : (annualStmts.length >= 5 ? 4 : (annualStmts.length - 1));
     
     if (latestAnnual && stmt5yAgoAnnual && yearsBack > 0) {
-        if (latestAnnual.revenue && stmt5yAgoAnnual.revenue && stmt5yAgoAnnual.revenue > 0) {
-            revenueCagr = (Math.pow(latestAnnual.revenue / stmt5yAgoAnnual.revenue, 1 / yearsBack) - 1) * 100;
+        // Require meaningful base-year scale (>= $10M revenue, >= $1M net income)
+        // so spin-off stub periods (SOLS +1,108%) and pre-revenue biotech rows
+        // (IBRX +232%) don't produce thousand-percent CAGR artifacts.
+        if (latestAnnual.revenue && latestAnnual.revenue > 0 && stmt5yAgoAnnual.revenue && stmt5yAgoAnnual.revenue >= 10_000_000) {
+            const rawRevCagr = (Math.pow(latestAnnual.revenue / stmt5yAgoAnnual.revenue, 1 / yearsBack) - 1) * 100;
+            if (rawRevCagr <= 300) revenueCagr = rawRevCagr;
         }
-        if (latestAnnual.netIncome && stmt5yAgoAnnual.netIncome && stmt5yAgoAnnual.netIncome > 0 && latestAnnual.netIncome > 0) {
-            netIncomeCagr = (Math.pow(latestAnnual.netIncome / stmt5yAgoAnnual.netIncome, 1 / yearsBack) - 1) * 100;
+        if (latestAnnual.netIncome && stmt5yAgoAnnual.netIncome && stmt5yAgoAnnual.netIncome >= 1_000_000 && latestAnnual.netIncome > 0) {
+            const rawNiCagr = (Math.pow(latestAnnual.netIncome / stmt5yAgoAnnual.netIncome, 1 / yearsBack) - 1) * 100;
+            if (rawNiCagr <= 300) netIncomeCagr = rawNiCagr;
         }
     }
 

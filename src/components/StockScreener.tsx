@@ -28,7 +28,7 @@ const COLUMN_VIEWS = [
   { id: 'overview', label: 'Overview', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'overallScore', 'valuationScore', 'growthScore', 'profitabilityScore', 'healthScore', 'qualityScore', 'moatScore', 'screens'] },
   { id: 'market', label: 'Market', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'ticker.sector', 'ticker.employees', 'ticker.lastMarketCapDiff', 'analyst.buy'] },
   { id: 'metrics', label: 'Metrics', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'metrics.roe', 'metrics.operatingMargin', 'metrics.revenueGrowth', 'revenueCagr', 'netIncomeCagr', 'metrics.peRatio', 'pePercentile', 'peVsMedian3yPct', 'metrics.priceFreeCashFlow', 'metrics.dividendYield', 'metrics.payoutRatio', 'metrics.beta', 'metrics.week52Position', 'trendSignal'] },
-  { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'fcfConversion', 'debtRepaymentYears', 'healthScore', 'qualityScore', 'overallScore'] },
+  { id: 'risk', label: 'Risk & Quality', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'altmanZ', 'piotroskiScore', 'beneishScore', 'fcfMargin', 'fcfConversion', 'marginStability', 'debtRepaymentYears', 'healthScore', 'qualityScore', 'overallScore'] },
   { id: 'insiders', label: 'Insiders', keys: ['ticker.name', 'sparkline', 'ticker.lastPrice', 'ticker.lastChangePct', 'ticker.lastMarketCap', 'insider.netBuyValue90d', 'insider.largestBuyValue90d', 'insider.largestSellValue90d', 'insider.uniqueSellers14d', 'overallScore'] },
   { id: 'all', label: 'All columns', keys: null }, // null = every defined column
   { id: 'custom', label: 'Custom', keys: null },   // user-defined ordered set
@@ -51,7 +51,7 @@ const COLUMN_LABELS: Record<string, string> = {
   'revenueCagr': 'Rev CAGR 5Y',
   'netIncomeCagr': 'NI CAGR 5Y',
   'fcfConversion': 'FCF Conv.',
-  'marginStability': 'Margin Var.',
+  'marginStability': 'Margin σ',
   'pePercentile': 'P/E %ile vs Hist',
   'peVsMedian3yPct': 'P/E vs 3Y Med',
   'overallScore': 'Overall',
@@ -118,6 +118,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
     searchQuery, setSearchQuery,
     industries,
     marketCapPreset, setMarketCapPreset,
+    trendConfirmed, setTrendConfirmed,
     verdictFilters, setVerdictFilter,
     metricRanges, setMetricRange,
     sortField, sortOrder, handleSort, setSort,
@@ -385,10 +386,15 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
     },
     {
       key: 'marginStability',
-      header: <>Margin Var. <SortIcon field="marginStability" /></>,
+      header: <>Margin σ <SortIcon field="marginStability" /></>,
       align: 'right',
       sortable: true,
-      render: (r) => <span className="text-sm tabular-nums text-gray-700 dark:text-gray-200" title="Margin variance across years — lower means more consistent">{r.marginStability !== null ? r.marginStability.toFixed(2) : '-'}</span>,
+      render: (r) => {
+        const v = r.marginStability;
+        if (v === null) return <span className="text-gray-400">-</span>;
+        const color = v < 0.05 ? 'text-green-600 dark:text-green-400' : v < 0.15 ? 'text-gray-700 dark:text-gray-200' : 'text-red-600 dark:text-red-400';
+        return <span className={`text-sm tabular-nums ${color}`} title="Standard deviation (σ) of annual operating margins — lower means more consistent">{(v * 100).toFixed(1)}%</span>;
+      },
     },
     {
       key: 'pePercentile',
@@ -598,7 +604,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
     QUICK_SCREENS.filter((q) => q.group !== 'score' && matchesPreset(q.preset, {
       scores: r,
       metrics: r.metrics,
-      market: { price: r.ticker?.lastPrice ?? null, changePct: r.ticker?.lastChangePct ?? null, marketCapB: r.ticker?.lastMarketCap ?? null },
+      market: { price: r.ticker?.lastPrice ?? null, changePct: r.ticker?.lastChangePct ?? null, marketCapB: r.ticker?.lastMarketCap ?? null, employees: r.ticker?.employees ?? null },
       insider: { netBuyValue90d: r.insiderNetBuyValue90d, netBuyPct90d: r.insiderNetBuyPct90d },
       trendSignal: r.trendSignal ?? null,
     }));
@@ -960,7 +966,7 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
               <span className="text-[10px] text-gray-400">Metrics from Finnhub fundamentals + our own analysis history (coverage ~70–99 % per field; filtered-out tickers without data are excluded).</span>
               {metricsActive && (
                 <button
-                  onClick={() => { for (const def of [...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS, ...ANALYSIS_RANGE_FILTERS]) setMetricRange(def.key as RangeFilterKey, undefined); }}
+                  onClick={() => { for (const def of [...MARKET_RANGE_FILTERS, ...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS, ...ANALYSIS_RANGE_FILTERS]) setMetricRange(def.key as RangeFilterKey, undefined); }}
                   className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
                 >
                   Clear metric filters
@@ -1031,6 +1037,9 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         if (marketCapPreset !== 'all') {
           const p = MARKET_CAP_PRESETS.find((x) => x.id === marketCapPreset);
           if (p) chips.push({ id: 'mcap', label: `Cap: ${p.label}`, clear: () => setMarketCapPreset('all') });
+        }
+        if (trendConfirmed) {
+          chips.push({ id: 'trend', label: 'Trend × Fundamentals', clear: () => setTrendConfirmed(false) });
         }
         for (const d of VERDICT_FILTERS) {
           const v = verdictFilters[d.key];

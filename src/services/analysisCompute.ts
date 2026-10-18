@@ -6,6 +6,7 @@ import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
 import { dedupeShareClasses } from '@/lib/companyNames';
 import { buildValuationHistory } from '@/services/analysis/valuationHistory';
 import { computePillars, deriveMoatInputs } from '@/services/analysis/pillars';
+import { isPeDistorted } from '@/lib/analysis/peDistortion';
 
 /**
  * Shared analysis computation used by both:
@@ -331,16 +332,17 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         }
     }
 
-    // Live marginStability & fcfConversion (same FY-first rule as scoreCalculator)
+    // Live marginStability & fcfConversion (same FY-first rule & ±200% clamp as scoreCalculator)
+    const clampMargin = (m: number) => Math.max(-2, Math.min(2, m));
     const fyMargins = annualStmts
         .slice(0, 5)
         .filter(s => s.revenue && s.revenue > 0 && s.ebit !== null)
-        .map(s => s.ebit! / s.revenue!);
+        .map(s => clampMargin(s.ebit! / s.revenue!));
     const marginSeries = fyMargins.length >= 3
         ? fyMargins
         : stmts
             .filter(s => s.revenue && s.revenue > 0 && s.ebit !== null)
-            .map(s => s.ebit! / s.revenue!);
+            .map(s => clampMargin(s.ebit! / s.revenue!));
     let liveMarginStability: number | null = null;
     if (marginSeries.length > 2) {
         const mean = marginSeries.reduce((a, b) => a + b, 0) / marginSeries.length;
@@ -377,8 +379,12 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     // "insufficient data", never as a low-quality company.
     const insufficientData = !stmts.some(s => s.revenue != null || s.netIncome != null);
 
+    const peDistortedNow = isPeDistorted(
+        valuationHistoryStats?.pe.current ?? null,
+        valuationHistoryStats?.pe.median ?? null,
+    );
     const pillarsInput = {
-        pePercentile: valuationHistoryStats?.pe.percentile ?? null,
+        pePercentile: peDistortedNow ? null : (valuationHistoryStats?.pe.percentile ?? null),
         fcfYield: currentFcfYield ?? latestValuation?.fcfYield ?? null,
         psRatio: currentPs ?? finnhubMetrics?.psRatio ?? null,
         evEbit: currentEvEbit ?? null,

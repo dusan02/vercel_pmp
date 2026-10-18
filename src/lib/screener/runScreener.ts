@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
-import { downsampleSeries, RANGE_FILTERS, SCORE_FILTERS, ADVANCED_FILTERS, ANALYSIS_SORT_FIELDS, VERDICT_FILTERS, VERDICT_PARAM_VALUES } from '@/lib/utils/screener';
+import { downsampleSeries, RANGE_FILTERS, SCORE_FILTERS, ADVANCED_FILTERS, ANALYSIS_SORT_FIELDS, VERDICT_FILTERS, VERDICT_PARAM_VALUES, MARKET_CAP_PRESETS } from '@/lib/utils/screener';
 import { computeTrendSignal, type TrendSignal } from '@/lib/analysis/trendSignal';
 import { getTrendQualifiedSymbols } from '@/lib/analysis/trendUniverse';
 
@@ -33,10 +33,13 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
 
     // Score + advanced filters — param→AnalysisCache mapping lives in the
     // SCORE_FILTERS/ADVANCED_FILTERS registries (shared with the UI + saved-
-    // screen validator). New score field = one line in screener.ts.
+    // screen validator). Accept both API names (minValuation/minProfitability)
+    // and URL/preset aliases (minValue/minProfit) so presetToQueryString() and
+    // saved-screen deep links work identically when passed to runScreener.
     const scoreRanges: { field: string; min?: number; max?: number }[] = [];
     for (const d of SCORE_FILTERS) {
-        const lo = num(d.apiMin), hi = num(d.apiMax);
+        const lo = num(d.apiMin) ?? num(d.urlMin);
+        const hi = num(d.apiMax) ?? num(d.urlMax);
         if (lo !== undefined || hi !== undefined) {
             const r: { field: string; min?: number; max?: number } = { field: d.field };
             if (lo !== undefined) r.min = lo;
@@ -67,9 +70,12 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
     const trendConfirmed = searchParams.get('trendConfirmed') === '1';
     // Search: symbol or company name (case-insensitive contains)
     const q = searchParams.get('q')?.trim() || undefined;
-    // Market Cap filter (in billions)
-    const minMarketCap = num('minMarketCap');
-    const maxMarketCap = num('maxMarketCap');
+    // Market Cap filter (in billions) — accept explicit minMarketCap/maxMarketCap
+    // or the URL/preset shorthand `mcap=mega|large|midplus|mid|small`.
+    const mcapId = searchParams.get('mcap');
+    const mcapPreset = mcapId ? MARKET_CAP_PRESETS.find((p) => p.id === mcapId) : undefined;
+    const minMarketCap = num('minMarketCap') ?? mcapPreset?.min;
+    const maxMarketCap = num('maxMarketCap') ?? mcapPreset?.max;
 
     // Range filters driven by RANGE_FILTERS — the single registry that maps
     // every min<Cap>/max<Cap> param to its target: Ticker column (price,
@@ -127,8 +133,8 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
     } catch {}
 
     try {
-        // ── Base query: Ticker (ALL stocks with a price) ──
-        const tickerWhere: any = { lastPrice: { gt: 0 } };
+        // ── Base query: Ticker (ALL active stocks with a price and market cap) ──
+        const tickerWhere: any = { lastPrice: { gt: 0 }, lastMarketCap: { gt: 0 } };
         if (sector) tickerWhere.sector = sector;
         if (industry) tickerWhere.industry = industry;
         if (q) {
@@ -144,7 +150,7 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
         }
         // Market Cap filter (stored in billions on Ticker)
         if (minMarketCap !== undefined || maxMarketCap !== undefined) {
-            tickerWhere.lastMarketCap = {};
+            tickerWhere.lastMarketCap = { gt: 0 };
             if (minMarketCap !== undefined) tickerWhere.lastMarketCap.gte = minMarketCap;
             if (maxMarketCap !== undefined) tickerWhere.lastMarketCap.lte = maxMarketCap;
         }

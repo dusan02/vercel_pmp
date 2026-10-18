@@ -147,6 +147,15 @@ describe('discovery presets (Quality Selloff / Insider Buying / abnormal moves)'
         // null 52w position never passes (SQL-null semantics)
         expect(matchesPreset(selloff, { ...ctx, metrics: { week52Position: null } })).toBe(false);
         expect(matchesPreset(selloff, { ...ctx, metrics: null })).toBe(false);
+        // negative 52w position (currency-mismatched foreign range) is rejected by min: 0
+        expect(matchesPreset(selloff, { ...ctx, metrics: { week52Position: -20 } })).toBe(false);
+    });
+
+    it('matchesPreset reads market.employees for the employees ticker filter', () => {
+        const empPreset = { ranges: { employees: { min: 1000, max: 50000 } } };
+        expect(matchesPreset(empPreset, { market: { employees: 10000 } })).toBe(true);
+        expect(matchesPreset(empPreset, { market: { employees: 200 } })).toBe(false);
+        expect(matchesPreset(empPreset, { market: { changePct: 10000 } })).toBe(false);
     });
 
     it('Insider Buying requires positive net insider buying', () => {
