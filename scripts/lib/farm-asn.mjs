@@ -27,15 +27,18 @@ export const FARM_ASNS = [
   398781,  // OCULUS NETWORKS
   212238,  // Datacamp Limited (CDN77 ranges abused by bots)
   // Big cloud DCs — real consumer browsing from these is ~zero; the render
-  // farm runs mostly inside them. Deliberately EXCLUDES AS13335 Cloudflare
-  // (1.1.1.1 WARP users are real humans) and all residential ISPs.
+  // farm runs mostly inside them. Deliberately EXCLUDES:
+  //   - AS13335 Cloudflare (1.1.1.1 WARP users are real humans)
+  //   - AS15169 Google Corp (Googlebot 66.249.64.0/19 + Google One VPN
+  //     162.120.128.0/17; customer GCP VMs are in AS396982 below)
+  //   - AS8075 Microsoft (Bingbot 40.77.*/157.55.*/207.46.*/52.167.144.* +
+  //     Bing's HeadlessChrome rendering fleet across Azure IPs)
+  //   - all residential ISPs.
   45090,   // Tencent (main CN ASN — biggest observed farm source)
   14618,   // Amazon AWS (US)
   16509,   // Amazon AWS
-  396982,  // Google Cloud
-  15169,   // Google
+  396982,  // Google Cloud (customer GCP VMs)
   9009,    // M247 — major VPN/proxy hoster
-  8075,    // Microsoft Azure
   213230,  // Hetzner
   20473,   // Vultr / The Constant Company (Oculus-style proxies)
 ];
@@ -73,10 +76,15 @@ export async function getFarmCidrs({ refresh = false } = {}) {
       const st = fs.statSync(CACHE);
       if (Date.now() - st.mtimeMs < TTL_MS) {
         const j = JSON.parse(fs.readFileSync(CACHE, 'utf8'));
-        // Refetch when the ASN list grew since the cache was written.
+        // Refetch when the ASN list grew since the cache was written, and
+        // always filter cached CIDRs to the current FARM_ASNS set so removed
+        // ASNs disappear immediately without needing --refresh.
+        const allowed = new Set(FARM_ASNS);
         const cached = new Set(j?.asns ?? []);
         const complete = FARM_ASNS.every((a) => cached.has(a));
-        if (complete && Array.isArray(j?.cidrs) && j.cidrs.length) return j.cidrs;
+        if (complete && Array.isArray(j?.cidrs) && j.cidrs.length) {
+          return j.cidrs.filter((c) => allowed.has(c.asn));
+        }
       }
     }
   } catch { /* fall through to fetch */ }
