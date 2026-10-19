@@ -208,14 +208,19 @@ export default function RootLayout({
             <Script id="google-analytics" strategy="afterInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                const debugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
-                gtag('config', '${GA_ID}', {
-                  send_page_view: false,
-                  anonymize_ip: true,
-                  debug_mode: debugMode
-                });
+                if (!window.gtag) {
+                  window.gtag = function gtag(){window.dataLayer.push(arguments);};
+                }
+                if (!window.__gaConfigured) {
+                  const debugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
+                  window.gtag('js', new Date());
+                  window.gtag('config', '${GA_ID}', {
+                    send_page_view: false,
+                    anonymize_ip: true,
+                    debug_mode: debugMode
+                  });
+                  window.__gaConfigured = true;
+                }
               `}
             </Script>
           </>

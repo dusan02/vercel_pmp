@@ -11,7 +11,32 @@ declare global {
   interface Window {
     dataLayer: any[];
     gtag: (...args: any[]) => void;
+    __gaConfigured?: boolean;
   }
+}
+
+function ensureGtag(): ((...args: any[]) => void) | null {
+  if (typeof window === 'undefined' || !GA_ID) {
+    return null;
+  }
+  window.dataLayer = window.dataLayer || [];
+  if (!window.gtag) {
+    window.gtag = function gtag() {
+      // eslint-disable-next-line prefer-rest-params
+      window.dataLayer.push(arguments);
+    };
+  }
+  if (!window.__gaConfigured) {
+    const debugMode = new URLSearchParams(window.location.search).has('debug');
+    window.gtag('js', new Date());
+    window.gtag('config', GA_ID, {
+      send_page_view: false,
+      anonymize_ip: true,
+      debug_mode: debugMode,
+    });
+    window.__gaConfigured = true;
+  }
+  return window.gtag;
 }
 
 /**
@@ -19,12 +44,15 @@ declare global {
  * @param url - The URL path to track (e.g., '/heatmap' or '/heatmap?metric=mcap')
  */
 export function pageview(url: string): void {
-  if (typeof window === 'undefined' || !window.gtag) {
+  const gtag = ensureGtag();
+  if (!gtag) {
     return;
   }
 
-  window.gtag('config', GA_ID, {
+  gtag('event', 'page_view', {
     page_path: url,
+    page_location: window.location.href,
+    page_title: document.title,
   });
 }
 
@@ -34,11 +62,12 @@ export function pageview(url: string): void {
  * @param params - Optional event parameters
  */
 export function event(name: string, params?: Record<string, any>): void {
-  if (typeof window === 'undefined' || !window.gtag) {
+  const gtag = ensureGtag();
+  if (!gtag) {
     return;
   }
 
-  window.gtag('event', name, params);
+  gtag('event', name, params);
 }
 
 /**
