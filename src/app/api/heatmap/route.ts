@@ -46,7 +46,10 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        data: result.payload,
+        // `data` (full payload) dropped 2026-10-21 — clients consume the
+        // compact `rows` format; sending both doubled a ~1.4MB response.
+        // ?full=1 keeps an escape hatch for any legacy consumer.
+        ...(request.nextUrl.searchParams.get('full') === '1' ? { data: result.payload } : {}),
         rows: result.rows,
         cached: result.fromCache,
         count: result.count,

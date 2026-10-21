@@ -373,11 +373,30 @@ export async function setCachedData(key: string, data: any, ttl?: number): Promi
 }
 
 /**
- * Multi-get JSON data from multiple keys
+ * Multi-get JSON data from multiple keys.
+ * Single MGET round-trip — the previous sequential redisOps.get loop cost
+ * ~1 round-trip + JSON.parse per key (~1000+ keys in the heatmap rebuild).
  */
 export async function mGetJsonMap<T>(keys: string[]): Promise<Map<string, T | null>> {
   const result = new Map<string, T | null>();
-  
+
+  if (keys.length === 0) return result;
+
+  try {
+    const { redisClient } = await import('./client');
+    if (redisClient && redisClient.isOpen) {
+      const values = await redisClient.mGet(keys);
+      keys.forEach((key, index) => {
+        const data = values[index];
+        result.set(key, data ? JSON.parse(data) : null);
+      });
+      return result;
+    }
+  } catch (error) {
+    console.warn('⚠️ mGetJsonMap MGET failed, falling back to sequential GETs:', error);
+  }
+
+  // Fallback for closed/missing client: sequential enhanced gets (localStorage fallback included)
   try {
     for (const key of keys) {
       const data = await redisOps.get(key);
@@ -386,6 +405,6 @@ export async function mGetJsonMap<T>(keys: string[]): Promise<Map<string, T | nu
   } catch (error) {
     console.warn('⚠️ Failed to mGetJsonMap:', error);
   }
-  
+
   return result;
 }

@@ -77,64 +77,124 @@ export type HeatmapServiceResult =
       debug?: Record<string, unknown>;
     };
 
+/**
+ * Single-flight rebuild: concurrent cache misses share one DB rebuild
+ * instead of stampeding SQLite/Redis (was the cause of multi-second
+ * queueing and nginx 504s during pre-market open rebuild bursts).
+ */
+let inflightRebuild: Promise<HeatmapServiceResult> | null = null;
+
+function startHeatmapRebuild(opts: { timeframe: string; forceRefresh: boolean; debug: boolean }): Promise<HeatmapServiceResult> {
+  if (!inflightRebuild) {
+    inflightRebuild = rebuildHeatmapData(opts).finally(() => { inflightRebuild = null; });
+  }
+  return inflightRebuild;
+}
+
+function applyLimit(result: HeatmapServiceResult, requestedLimit: number | null): HeatmapServiceResult {
+  if (!result.ok || !requestedLimit || result.payload.length <= requestedLimit) return result;
+  return {
+    ...result,
+    payload: result.payload.slice(0, requestedLimit),
+    rows: result.rows.slice(0, requestedLimit),
+    count: requestedLimit,
+  };
+}
+
 export async function getHeatmapData(query: HeatmapQuery = {}): Promise<HeatmapServiceResult> {
+  const startTime = Date.now();
+  // NaN (non-numeric ?limit=) must not reach prisma.take — it 500s.
+  const requestedLimit = typeof query.limit === 'number' && isFinite(query.limit)
+    ? Math.max(1, Math.min(3000, query.limit))
+    : null;
+  const timeframe = query.timeframe || 'day';
+  const forceRefresh = query.forceRefresh === true;
+  const debug = query.debug === true;
+
+  // 1. Cache check
+  if (!forceRefresh) {
+    try {
+      const cachedEnvelope = await getCachedData(CACHE_KEY);
+      // Envelope {fetchedAt, data} since 2026-10; tolerate legacy bare array.
+      const cachedData = Array.isArray(cachedEnvelope) ? cachedEnvelope : (cachedEnvelope as any)?.data;
+      const fetchedAtMs = !Array.isArray(cachedEnvelope) && typeof (cachedEnvelope as any)?.fetchedAt === 'number'
+        ? (cachedEnvelope as any).fetchedAt
+        : null;
+
+      if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
+        const cacheTimestamp = (cachedData as any)?.[0]?._timestamp || null;
+        const dataAgeMs = cacheTimestamp ? Date.now() - new Date(cacheTimestamp).getTime() : Infinity;
+
+        // Rebuild-rate gate: dataAge alone can't distinguish "stale because
+        // the market moved" from "stale because the market is closed" — a
+        // closed market freezes maxUpdatedAt, so refetches return identical
+        // rows yet ran on EVERY call (permanent cache-miss loop, ~1.7s of
+        // DB work per request). fetchedAt bounds rebuilds to once per
+        // window; while closed the window stretches to the cache TTL since
+        // the DB provably holds nothing fresher.
+        const fetchAgeMs = fetchedAtMs ? Date.now() - fetchedAtMs : Infinity;
+        const rebuildWindowMs = detectSession(nowET()) === 'closed' ? CACHE_TTL * 1000 : MAX_DATA_AGE;
+
+        if (dataAgeMs < MAX_DATA_AGE || fetchAgeMs < rebuildWindowMs) {
+          console.log(`✅ Heatmap cache hit - returning ${cachedData.length} companies (data age: ${Math.floor(dataAgeMs / 1000)}s, ${Date.now() - startTime}ms)`);
+          const limited = requestedLimit ? cachedData.slice(0, requestedLimit) : cachedData;
+          return {
+            ok: true,
+            payload: limited,
+            rows: limited.map(toCompactRow),
+            count: limited.length,
+            fromCache: true,
+            dataAgeMs,
+            lastUpdatedAt: cacheTimestamp || new Date().toISOString(),
+          };
+        }
+
+        // Stale-while-revalidate: serve the stale payload now (bounded by the
+        // Redis envelope TTL — never older than the last successful rebuild +
+        // CACHE_TTL) and refresh the cache via the shared rebuild. Blocking
+        // on the rebuild here was what turned rebuild storms into 60s+ waits.
+        console.log(`⚠️ Cache data is stale (${Math.floor(dataAgeMs / 1000)}s old) - serving stale + rebuilding in background`);
+        void startHeatmapRebuild({ timeframe, forceRefresh: false, debug }).then((res) => {
+          if (!res.ok) console.warn('⚠️ Heatmap background rebuild failed:', res.error);
+        }).catch((err) => {
+          console.warn('⚠️ Heatmap background rebuild error:', err);
+        });
+        const limited = requestedLimit ? cachedData.slice(0, requestedLimit) : cachedData;
+        return {
+          ok: true,
+          payload: limited,
+          rows: limited.map(toCompactRow),
+          count: limited.length,
+          fromCache: true,
+          dataAgeMs,
+          lastUpdatedAt: cacheTimestamp || new Date().toISOString(),
+        };
+      }
+    } catch (cacheError) {
+      console.warn('⚠️ Cache read error, continuing with DB fetch:', cacheError);
+    }
+  }
+
+  // 2. Cold cache (or force) — all concurrent misses await one shared rebuild.
+  console.log('🔄 Heatmap cache miss - awaiting shared DB rebuild...');
+  return applyLimit(await startHeatmapRebuild({ timeframe, forceRefresh, debug }), requestedLimit);
+}
+
+/**
+ * Full DB rebuild pipeline — always produces the complete payload; callers
+ * slice per-request (a ?limit= request must not shrink the shared cache).
+ */
+async function rebuildHeatmapData(opts: { timeframe: string; forceRefresh: boolean; debug: boolean }): Promise<HeatmapServiceResult> {
   const startTime = Date.now();
   process.env.SILENT_PREVCLOSE_LOGS = 'true';
 
   try {
-    // NaN (non-numeric ?limit=) must not reach prisma.take — it 500s.
-    const requestedLimit = typeof query.limit === 'number' && isFinite(query.limit)
-      ? Math.max(1, Math.min(3000, query.limit))
-      : null;
-    const timeframe = query.timeframe || 'day';
-    const forceRefresh = query.forceRefresh === true;
-    const debug = query.debug === true;
-
-    // 1. Cache check
-    if (!forceRefresh) {
-      try {
-        const cachedEnvelope = await getCachedData(CACHE_KEY);
-        // Envelope {fetchedAt, data} since 2026-10; tolerate legacy bare array.
-        const cachedData = Array.isArray(cachedEnvelope) ? cachedEnvelope : (cachedEnvelope as any)?.data;
-        const fetchedAtMs = !Array.isArray(cachedEnvelope) && typeof (cachedEnvelope as any)?.fetchedAt === 'number'
-          ? (cachedEnvelope as any).fetchedAt
-          : null;
-
-        if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
-          const cacheTimestamp = (cachedData as any)?.[0]?._timestamp || null;
-          const dataAgeMs = cacheTimestamp ? Date.now() - new Date(cacheTimestamp).getTime() : Infinity;
-
-          // Rebuild-rate gate: dataAge alone can't distinguish "stale because
-          // the market moved" from "stale because the market is closed" — a
-          // closed market freezes maxUpdatedAt, so refetches return identical
-          // rows yet ran on EVERY call (permanent cache-miss loop, ~1.7s of
-          // DB work per request). fetchedAt bounds rebuilds to once per
-          // window; while closed the window stretches to the cache TTL since
-          // the DB provably holds nothing fresher.
-          const fetchAgeMs = fetchedAtMs ? Date.now() - fetchedAtMs : Infinity;
-          const rebuildWindowMs = detectSession(nowET()) === 'closed' ? CACHE_TTL * 1000 : MAX_DATA_AGE;
-
-          if (dataAgeMs < MAX_DATA_AGE || fetchAgeMs < rebuildWindowMs) {
-            console.log(`✅ Heatmap cache hit - returning ${cachedData.length} companies (data age: ${Math.floor(dataAgeMs / 1000)}s, ${Date.now() - startTime}ms)`);
-            const limited = requestedLimit ? cachedData.slice(0, requestedLimit) : cachedData;
-            return {
-              ok: true,
-              payload: limited,
-              rows: limited.map(toCompactRow),
-              count: limited.length,
-              fromCache: true,
-              dataAgeMs,
-              lastUpdatedAt: cacheTimestamp || new Date().toISOString(),
-            };
-          }
-          console.log(`⚠️ Cache data is stale (${Math.floor(dataAgeMs / 1000)}s old) - fetching from DB`);
-        }
-      } catch (cacheError) {
-        console.warn('⚠️ Cache read error, continuing with DB fetch:', cacheError);
-      }
-    }
-
-    console.log('🔄 Heatmap cache miss - fetching from DB...');
+    const timeframe = opts.timeframe;
+    const forceRefresh = opts.forceRefresh;
+    const debug = opts.debug;
+    // Rebuild always computes the full payload — limit is applied per-request
+    // by callers so a mobile ?limit=250 can't shrink the shared cache.
+    const requestedLimit = null;
 
     // 2. Fetch tickers from DB
     let tickers: any[];
