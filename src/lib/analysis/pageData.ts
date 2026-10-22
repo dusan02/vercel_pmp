@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db/prisma';
 import { dedupeShareClasses } from '@/lib/companyNames';
 import type { StatementRow } from '@/components/company/analysis/sections/FinancialFlowsSection';
 import { detectSession } from '@/lib/utils/timeUtils';
-import { nowET } from '@/lib/utils/dateET';
+import { createETDate, getDateET, nowET } from '@/lib/utils/dateET';
 import { getAnalysisResponse } from './analysisResponse';
 import { getHistoryResponse } from './historyResponse';
 import { getTickerNews, isAboutTicker } from './newsService';
@@ -272,6 +272,23 @@ export async function get52WeekRange(symbol: string) {
       || range._min.date.getTime() > cutoff.getTime() + 10 * day
       || range._max.date.getTime() < now - 10 * day) return null;
     return { low: range._min.closePrice, high: range._max.closePrice };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Today's pre-market session result — the 'pre' SessionPrice row the polygon
+ * worker keeps updated from 4:00–9:30 AM ET. Persists after the session ends,
+ * so it stays available through the regular session / after-hours. Null on
+ * weekends, holidays, or before the first pre-market tick.
+ */
+export async function getTodayPremarket(symbol: string) {
+  try {
+    return await prisma.sessionPrice.findUnique({
+      where: { symbol_date_session: { symbol, date: createETDate(getDateET()), session: 'pre' } },
+      select: { lastPrice: true, changePct: true, lastTs: true },
+    });
   } catch {
     return null;
   }

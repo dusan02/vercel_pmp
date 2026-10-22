@@ -14,6 +14,7 @@ import {
   getFinancialFlowsData,
   get52WeekRange,
   getInsiderActivity90d,
+  getTodayPremarket,
   prefetchAnalysisData,
   prefetchHistoryData,
   prefetchTopNews,
@@ -119,7 +120,7 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   // Fetch everything in parallel (independent queries).
   // Includes SSR pre-fetch of analysis API + history for instant client hydration.
-  const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, insiderActivity] = await Promise.all([
+  const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, insiderActivity, premarketData] = await Promise.all([
     getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
     getRelatedOpportunities(tickerUpper),
@@ -130,6 +131,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     getMatchedScreens(tickerUpper),
     getTickerNav(tickerUpper),
     getInsiderActivity90d(tickerUpper),
+    getTodayPremarket(tickerUpper),
   ]);
 
   // Reuse statements already loaded by prefetchAnalysisData; only hit the DB
@@ -327,6 +329,7 @@ export default async function AnalysisPage({ params }: PageProps) {
                 industry={data?.industry ?? null}
                 marketSession={marketSession}
                 prevClose={lastSessionPrevClose}
+                premarket={premarketData}
                 peRatio={displayPeRatio}
                 peHistory={analysisData?.valuationHistoryStats?.pe ?? null}
                 dividendYield={data?.finnhubMetrics?.dividendYield ?? null}

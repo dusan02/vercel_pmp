@@ -19,6 +19,10 @@ interface AnalysisHeroProps {
   marketSession: 'pre' | 'live' | 'after' | 'closed';
   /** Close of the session before the last one — used to compute the last real move when closed */
   prevClose: number | null;
+  /** Today's pre-market session result (SessionPrice 'pre' row, updated live
+   *  4:00–9:30 AM ET). During 'pre' the headline price already is the
+   *  pre-market price; outside it this renders as a dedicated line. */
+  premarket?: { lastPrice: number; changePct: number; lastTs: Date } | null;
   /** Key ratios for the hero stat strip (from finnhubMetrics) */
   peRatio?: number | null;
   dividendYield?: number | null;
@@ -64,6 +68,7 @@ export function AnalysisHero({
   industry,
   marketSession,
   prevClose,
+  premarket,
   peRatio,
   dividendYield,
   roe,
@@ -78,6 +83,14 @@ export function AnalysisHero({
   cashVsDebt,
 }: AnalysisHeroProps) {
   const isClosed = marketSession === 'closed';
+  const isPre = marketSession === 'pre';
+  const premarketLastEt = premarket?.lastTs
+    ? new Date(premarket.lastTs).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: 'America/New_York',
+      }) + ' ET'
+    : null;
   const earningsLabel =
     earningsDate && earningsDays != null
       ? earningsDays === 0
@@ -150,6 +163,14 @@ export function AnalysisHero({
             Market Closed
           </span>
         )}
+        {isPre && (
+          <span
+            className="self-center ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
+            title="Pre-market session (4:00–9:30 AM ET) — the headline price is the live pre-market price"
+          >
+            Pre-market
+          </span>
+        )}
         {displayPct != null && (
           <>
             <span
@@ -167,6 +188,34 @@ export function AnalysisHero({
           </>
         )}
       </div>
+      {/* Pre-market result — dedicated line outside the pre session (during
+          'pre' the headline price above already is the live pre-market price).
+          SessionPrice 'pre' row persists after 9:30, so it stays visible
+          through regular session and after-hours. */}
+      {!isPre && premarket != null && premarket.lastPrice > 0 && (
+        <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className="text-sm text-gray-500 dark:text-gray-400">Pre-market:</span>
+          <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+            ${formatPrice(premarket.lastPrice)}
+          </span>
+          {Number.isFinite(premarket.changePct) && (
+            <span
+              className={`text-lg font-bold tabular-nums ${
+                premarket.changePct > 0
+                  ? 'text-green-600 dark:text-green-400'
+                  : premarket.changePct < 0
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-gray-500 dark:text-gray-400'
+              }`}
+            >
+              {formatPercent(premarket.changePct)}
+            </span>
+          )}
+          <span className="text-xs text-gray-500 dark:text-gray-500">
+            vs prev close{premarketLastEt ? ` · last ${premarketLastEt}` : ''}
+          </span>
+        </div>
+      )}
       {/* P/E vs own history — the "cheap or expensive vs itself" answer at
           a glance; the full percentiles live in Key Metrics tooltips. */}
       {peHistory?.current != null && peHistory?.percentile != null && isPeDistorted(peHistory.current, peHistory.median) ? (
