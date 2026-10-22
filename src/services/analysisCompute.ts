@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
-import { computeTTM } from '@/lib/utils/ttm';
+import { computeTTM, isAnnualPeriod } from '@/lib/utils/ttm';
 import { summarizeLossYears } from '@/lib/utils/analysisMath';
 import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
 import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
@@ -158,7 +158,11 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     // (PSX: 403.27M stmt shares vs 399.02M ticker → two implied mcaps).
     const currentShareCount = trustedShares ?? sharesOutstanding;
     const effectivePrice = tickerRecord?.lastPrice || latestValuation?.closePrice || 0;
-    const effectiveNI = ttmNetIncome ?? latestStmt?.netIncome ?? null;
+    // Sub-TTM fallback is annual-only: a quarterly row's cumulative-YTD NI
+    // is not 12 months — a lone quarter priced GOOG at P/E ≈ 107 (Oct'21).
+    const effectiveNI = ttmNetIncome
+        ?? stmts.find(s => isAnnualPeriod(s.fiscalPeriod) && s.netIncome != null)?.netIncome
+        ?? null;
     let currentPe: number | null = null;
     if (effectivePrice > 0 && currentShareCount && currentShareCount > 0 && effectiveNI && effectiveNI > 0) {
         currentPe = (effectivePrice * currentShareCount) / effectiveNI;
@@ -295,7 +299,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     // Shared leg definitions (services/analysis/pillars.ts) — recomputed
     // read-time so all five axes sit on one as-of snapshot, independent of
     // how stale the stored AnalysisCache health/profitability/valuation are.
-    const annualStmts = stmts.filter(s => s.fiscalPeriod === 'FY');
+    const annualStmts = stmts.filter(s => isAnnualPeriod(s.fiscalPeriod));
     const moatDerived = deriveMoatInputs(annualStmts);
     const latestAnnual = annualStmts[0] ?? null;
     const stmt5yAgoAnnual = (latestAnnual?.fiscalYear != null
@@ -349,7 +353,9 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         const variance = marginSeries.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / marginSeries.length;
         liveMarginStability = Math.sqrt(variance);
     }
-    const fcfDenomNi = ttmNetIncome ?? latestStmt?.netIncome ?? null;
+    const fcfDenomNi = ttmNetIncome
+        ?? stmts.find(s => isAnnualPeriod(s.fiscalPeriod) && s.netIncome != null)?.netIncome
+        ?? null;
     const liveFcfConversion = (ttmFcf !== null && fcfDenomNi !== null && fcfDenomNi > 0)
         ? ttmFcf / fcfDenomNi
         : (cached.fcfConversion ?? null);

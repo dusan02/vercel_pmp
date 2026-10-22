@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { NotificationService } from '../notificationService';
-import { computeTTM } from '@/lib/utils/ttm';
+import { computeTTM, isAnnualPeriod } from '@/lib/utils/ttm';
 import { summarizeLossYears } from '@/lib/utils/analysisMath';
 import { computePillars, deriveMoatInputs } from './pillars';
 import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
@@ -152,7 +152,7 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         });
         return;
     }
-    const annualStmts = stmts.filter(s => s.fiscalPeriod === 'FY');
+    const annualStmts = stmts.filter(s => isAnnualPeriod(s.fiscalPeriod));
     const moatDerived = deriveMoatInputs(annualStmts);
     
     // TTM via shared utility
@@ -214,9 +214,11 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         const B = (bsStmt.retainedEarnings || 0) / bsStmt.totalAssets;
         // Altman Z requires annualized (TTM) EBIT and Sales over Total Assets —
         // reading bsStmt.ebit/revenue directly plugged 3M/6M/9M partial-year
-        // flows whenever the newest balance-sheet row was Q1/Q2/Q3.
-        const annualEbit = ttmEbit ?? bsStmt.ebit ?? 0;
-        const annualRev = ttmRevenue ?? bsStmt.revenue ?? 0;
+        // flows whenever the newest balance-sheet row was Q1/Q2/Q3. The sub-TTM
+        // fallback is annual-only for the same reason: a lone quarterly row is
+        // not 12 months (GOOG Oct'21: P/E ≈ 107 off one quarter's NI).
+        const annualEbit = ttmEbit ?? annualStmts.find(s => s.ebit != null)?.ebit ?? 0;
+        const annualRev = ttmRevenue ?? annualStmts.find(s => s.revenue != null)?.revenue ?? 0;
         const C = annualEbit / bsStmt.totalAssets;
         const D = bsStmt.totalLiabilities && bsStmt.totalLiabilities > 0 && marketValueOfEquity > 0
             ? marketValueOfEquity / bsStmt.totalLiabilities
@@ -254,14 +256,15 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
     }
 
     let fcfMargin: number | null = null;
-    if (fcf !== null && latestStmt.revenue && latestStmt.revenue > 0) {
+    const fcfDenomRev = ttmRevenue ?? annualStmts.find(s => s.revenue != null && s.revenue > 0)?.revenue ?? null;
+    if (fcf !== null && fcfDenomRev !== null && fcfDenomRev > 0) {
         // Clamp to ±200% — beyond that the tiny-revenue denominator makes
         // the ratio meaningless (observed artifacts like -31,000%).
-        fcfMargin = Math.max(-2, Math.min(2, fcf / (ttmRevenue ?? latestStmt.revenue)));
+        fcfMargin = Math.max(-2, Math.min(2, fcf / fcfDenomRev));
     }
 
     let fcfConversion: number | null = null;
-    const fcfDenomNi = ttmNetIncome ?? latestStmt.netIncome;
+    const fcfDenomNi = ttmNetIncome ?? annualStmts.find(s => s.netIncome != null)?.netIncome ?? null;
     if (fcf !== null && fcfDenomNi && fcfDenomNi > 0) {
         fcfConversion = fcf / fcfDenomNi;
     }
@@ -342,7 +345,7 @@ export async function calculateScores(symbol: string, opts: CalculateScoresOptio
         orderBy: { peRatio: 'asc' }
     });
 
-    const effectiveNetIncome = ttmNetIncome ?? latestStmt.netIncome;
+    const effectiveNetIncome = ttmNetIncome ?? annualStmts.find(s => s.netIncome != null)?.netIncome ?? null;
     // Corrupt-statement guard — identical to the read path's sharesOutstanding:
     // suspicious counts are replaced by the trusted Ticker count, but a
     // missing count stays missing (never substituted).

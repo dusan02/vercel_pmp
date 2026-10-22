@@ -78,7 +78,9 @@ describe('computeDayRatios — share-count fallback', () => {
 // EPS $12.02 on the same ticker. Rule: trusted basis for dates on/after the
 // latest statement period end (the "current" point), statement shares before.
 const vStatements = [
-    stmt({ fiscalPeriod: 'Q3', fiscalYear: 2026, endDate: new Date('2026-03-28T00:00:00Z'), netIncome: 22.45e9, sharesOutstanding: 1.883e9 }),
+    // FY period so the net-income fallback carries a real 12-month value —
+    // a lone quarterly row is cumulative-YTD and must never stand in for TTM.
+    stmt({ fiscalPeriod: 'FY', fiscalYear: 2026, endDate: new Date('2026-03-28T00:00:00Z'), netIncome: 22.45e9, sharesOutstanding: 1.883e9 }),
 ];
 
 describe('computeDayRatios — trusted share basis', () => {
@@ -100,6 +102,45 @@ describe('computeDayRatios — trusted share basis', () => {
     it('falls back to statement shares when trustedShares is null/absent', () => {
         const r = computeDayRatios(vStatements, 369.71, asOf);
         expect(r.marketCap).toBeCloseTo(369.71 * 1.883e9, -5);
+    });
+});
+
+// GOOG-shaped regression (prod 2026-10): the ticker's statement history
+// started at a lone Q3'21 filing — no FY row, no prior-year quarter. The
+// flow fallback treated that one quarter's cumulative-YTD net income as
+// TTM and priced GOOG at P/E ≈ 107 (real: ~28). A quarterly statement
+// must never stand in for TTM — the honest answer is a null multiple,
+// which the chart renders as a coverage gap.
+describe('computeDayRatios — quarterly flows never stand in for TTM', () => {
+    it('returns null P/E when only quarterly statements exist (GOOG Oct–Nov 2021)', () => {
+        const goog = [
+            stmt({ fiscalPeriod: 'Q3', fiscalYear: 2021, endDate: new Date('2021-09-30T00:00:00Z'), netIncome: 18.936e9, revenue: 65.118e9, sharesOutstanding: 13.53e9 }),
+        ];
+        const r = computeDayRatios(goog, 149.65, new Date('2021-11-12T04:00:00Z'));
+        expect(r.peRatio).toBeNull();
+        expect(r.psRatio).toBeNull();
+        expect(r.marketCap).toBeCloseTo(149.65 * 13.53e9, -6);
+    });
+
+    it('computes the real TTM once FY + prior-year quarter exist', () => {
+        const goog = [
+            stmt({ fiscalPeriod: 'Q3', fiscalYear: 2021, endDate: new Date('2021-09-30T00:00:00Z'), netIncome: 55.391e9, sharesOutstanding: 13.53e9 }),
+            stmt({ fiscalPeriod: 'FY', fiscalYear: 2020, endDate: new Date('2020-12-31T00:00:00Z'), netIncome: 40.269e9, sharesOutstanding: 13.48e9 }),
+            stmt({ fiscalPeriod: 'Q3', fiscalYear: 2020, endDate: new Date('2020-09-30T00:00:00Z'), netIncome: 25.042e9, sharesOutstanding: 13.49e9 }),
+        ];
+        // TTM NI = 55.391 + 40.269 − 25.042 = 70.618B → EPS ≈ 5.22 → P/E ≈ 28.7
+        const r = computeDayRatios(goog, 149.65, new Date('2021-11-12T04:00:00Z'));
+        expect(r.peRatio).toBeCloseTo(149.65 / (70.618e9 / 13.53e9), 1);
+    });
+
+    it('treats an H2 annual-report row as a valid 12M fallback (BHP-style semiannual filer)', () => {
+        // Semiannual filers store the full year in H2 — their H1 rows carry
+        // no flows — so H2 is a legitimate sub-TTM basis, not a 6M fragment.
+        const bhp = [
+            stmt({ fiscalPeriod: 'H2', fiscalYear: 2025, endDate: new Date('2025-06-30T00:00:00Z'), netIncome: 9.0e9, sharesOutstanding: 5.06e9 }),
+        ];
+        const r = computeDayRatios(bhp, 40, new Date('2025-10-15T04:00:00Z'));
+        expect(r.peRatio).toBeCloseTo(40 / (9.0e9 / 5.06e9), 1);
     });
 });
 

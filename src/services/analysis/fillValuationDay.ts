@@ -14,7 +14,7 @@
  */
 import type { FinancialStatement } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
-import { computeTTMAtDate } from '@/lib/utils/ttm';
+import { computeTTMAtDate, isAnnualPeriod } from '@/lib/utils/ttm';
 import { buildShareBoundaries, makeShareNormalizer } from '@/lib/utils/splitAdjustment';
 import { dbWriteRetry as dbWrite } from '@/lib/db/writeRetry';
 
@@ -117,6 +117,15 @@ export function computeDayRatios(statements: FinancialStatement[], closePrice: n
     // fall back per-field-group to the most recent statement that reports it.
     const latestWith = (pred: (s: FinancialStatement) => boolean) =>
         stmtsBeforeDate.find(pred) ?? statements.find(pred) ?? null;
+    // Flow fallbacks must come from annual rows — a quarterly statement's
+    // cumulative-YTD amount is not 12 months, so a lone quarter standing in
+    // for TTM inflates every multiple ~2–4× (GOOG Oct'21: P/E ≈ 107 priced
+    // off one quarter's net income). No annual row → null; the chart marks
+    // gaps. (isAnnualPeriod: FY + H2 — see ttm.ts.)
+    const latestFYWith = (pred: (s: FinancialStatement) => boolean) =>
+        stmtsBeforeDate.find((s) => isAnnualPeriod(s.fiscalPeriod) && pred(s))
+        ?? statements.find((s) => isAnnualPeriod(s.fiscalPeriod) && pred(s))
+        ?? null;
 
     // Split-normalized share counts: close prices are split-adjusted while
     // statement sharesOutstanding are as-reported — for pre-split dates the
@@ -159,10 +168,10 @@ export function computeDayRatios(statements: FinancialStatement[], closePrice: n
     const eqStmt = latestWith((s) => s.totalEquity != null);
     const equity = eqStmt?.totalEquity ?? null;
     const bs = latestWith((s) => s.totalDebt != null && s.cashAndEquivalents != null);
-    const effectiveNI = ttm.netIncome ?? latestWith((s) => s.netIncome != null)?.netIncome;
-    const effectiveRev = ttm.revenue ?? latestWith((s) => s.revenue != null)?.revenue;
-    const effectiveEbit = ttm.ebit ?? latestWith((s) => s.ebit != null)?.ebit;
-    const cf = latestWith((s) => s.operatingCashFlow != null && s.capex != null);
+    const effectiveNI = ttm.netIncome ?? latestFYWith((s) => s.netIncome != null)?.netIncome;
+    const effectiveRev = ttm.revenue ?? latestFYWith((s) => s.revenue != null)?.revenue;
+    const effectiveEbit = ttm.ebit ?? latestFYWith((s) => s.ebit != null)?.ebit;
+    const cf = latestFYWith((s) => s.operatingCashFlow != null && s.capex != null);
     const effOcf = ttm.operatingCashFlow ?? cf?.operatingCashFlow ?? null;
     const effCapex = ttm.capex ?? cf?.capex ?? null;
     const fcf = effOcf !== null && effCapex !== null ? effOcf - Math.abs(effCapex) : null;

@@ -18,13 +18,24 @@ export interface TTMResult {
 }
 
 /**
+ * Statement periods whose stored flows span ~12 months — the only rows a
+ * sub-TTM fallback may draw from. 'H2' doubles as the annual report for
+ * semiannual filers (BHP, DEO: H1 rows carry no flows, H2 holds the full
+ * year). Quarterly rows are cumulative-YTD (<12M), so a lone quarter must
+ * never stand in for TTM (GOOG Oct'21: P/E ≈ 107 off one quarter's NI).
+ * 'Q4' is deliberately excluded — never stored and ambiguous
+ * (cumulative-12M vs a discrete quarter).
+ */
+export const isAnnualPeriod = (p: string | null): boolean => p === 'FY' || p === 'H2';
+
+/**
  * Compute TTM values from a set of financial statements.
  * @param stmts Financial statements sorted by endDate desc (most recent first)
  * @returns TTMResult with all TTM fields, or null values if TTM can't be computed
  */
 export function computeTTM(stmts: FinancialStatement[]): TTMResult {
-    const quarterlyStmts = stmts.filter(s => s.fiscalPeriod !== 'FY');
-    const annualStmts = stmts.filter(s => s.fiscalPeriod === 'FY');
+    const quarterlyStmts = stmts.filter(s => !isAnnualPeriod(s.fiscalPeriod));
+    const annualStmts = stmts.filter(s => isAnnualPeriod(s.fiscalPeriod));
 
     const latestQ = quarterlyStmts[0] ?? null;
     // Use the FY whose fiscalYear = latestQ.fiscalYear - 1 (the correct one for TTM formula).
@@ -92,8 +103,8 @@ export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
     // Sort descending by endDate to ensure latest-first ordering
     const sorted = [...stmts].sort((a, b) => b.endDate.getTime() - a.endDate.getTime());
     const stmtsBeforeDate = sorted.filter(s => s.endDate.getTime() <= date.getTime());
-    const quarterlyBeforeDate = stmtsBeforeDate.filter(s => s.fiscalPeriod !== 'FY');
-    const annualBeforeDate = stmtsBeforeDate.filter(s => s.fiscalPeriod === 'FY');
+    const quarterlyBeforeDate = stmtsBeforeDate.filter(s => !isAnnualPeriod(s.fiscalPeriod));
+    const annualBeforeDate = stmtsBeforeDate.filter(s => isAnnualPeriod(s.fiscalPeriod));
     const latestQ = quarterlyBeforeDate[0] ?? null;
 
     // The correct FY for the TTM formula is the one whose fiscalYear =

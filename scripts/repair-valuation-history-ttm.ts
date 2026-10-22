@@ -23,7 +23,7 @@ import { loadEnvFromFiles } from './_utils/loadEnv';
 loadEnvFromFiles();
 
 import { prisma } from '../src/lib/db/prisma';
-import { computeTTMAtDate } from '../src/lib/utils/ttm';
+import { computeTTMAtDate, isAnnualPeriod } from '../src/lib/utils/ttm';
 import { applySplitAdjustments, applySplitEventsToStatements, applyPostSplitAdjustment, findNearestSplit } from '../src/lib/utils/splitAdjustment';
 import { dbWriteRetry as dbWrite } from '../src/lib/db/writeRetry';
 
@@ -120,26 +120,32 @@ async function main() {
             const stmt = stmtsBeforeDate[0] || stmts[stmts.length - 1]!;
             if (!stmt?.sharesOutstanding) continue;
 
+            // Flow fallback is annual-only — a quarterly row's cumulative-YTD
+            // value is not 12 months (a lone Q3'21 row priced GOOG at P/E ≈107).
+            const fyFallback = stmtsBeforeDate.find(s => isAnnualPeriod(s.fiscalPeriod))
+                ?? [...stmts].reverse().find(s => isAnnualPeriod(s.fiscalPeriod))
+                ?? null;
+
             const marketCap = closePrice * stmt.sharesOutstanding;
             let peRatio: number | null = null;
             let psRatio: number | null = null;
             let evEbitda: number | null = null;
             let fcfYield: number | null = null;
 
-            const effectiveNI = ttm.netIncome ?? stmt.netIncome;
+            const effectiveNI = ttm.netIncome ?? fyFallback?.netIncome;
             if (effectiveNI && effectiveNI > 0) {
                 peRatio = closePrice / (effectiveNI / stmt.sharesOutstanding);
             }
-            const effectiveRev = ttm.revenue ?? stmt.revenue;
+            const effectiveRev = ttm.revenue ?? fyFallback?.revenue;
             if (effectiveRev && effectiveRev > 0) {
                 psRatio = closePrice / (effectiveRev / stmt.sharesOutstanding);
             }
-            const effectiveEbit = ttm.ebit ?? stmt.ebit;
+            const effectiveEbit = ttm.ebit ?? fyFallback?.ebit;
             if (effectiveEbit && effectiveEbit > 0 && stmt.totalDebt !== null && stmt.cashAndEquivalents !== null) {
                 evEbitda = (marketCap + stmt.totalDebt - stmt.cashAndEquivalents) / effectiveEbit;
             }
-            const effOcf = ttm.operatingCashFlow ?? stmt.operatingCashFlow;
-            const effCapex = ttm.capex ?? stmt.capex;
+            const effOcf = ttm.operatingCashFlow ?? fyFallback?.operatingCashFlow;
+            const effCapex = ttm.capex ?? fyFallback?.capex;
             if (effOcf !== null && effCapex !== null) {
                 fcfYield = (effOcf - Math.abs(effCapex)) / marketCap;
             }
