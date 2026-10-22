@@ -76,6 +76,11 @@ const tickerFindFirst = jest.fn(async ({ where, orderBy }: any) => {
     const r = applyOrder(applyWhere(ROWS, where), orderBy)[0];
     return r ? { symbol: r.symbol, name: r.name } : null;
 });
+const tickerFindMany = jest.fn(async ({ where, orderBy, take }: any) =>
+    applyOrder(applyWhere(ROWS, where), orderBy)
+        .slice(0, take ?? ROWS.length)
+        .map(r => ({ symbol: r.symbol, name: r.name, lastMarketCap: r.lastMarketCap })),
+);
 const tickerFindUnique = jest.fn(async ({ where }: any) => {
     const r = ROWS.find(x => x.symbol === where.symbol);
     if (!r) return null;
@@ -91,13 +96,14 @@ jest.mock('@/lib/db/prisma', () => ({
     prisma: {
         ticker: {
             findFirst: (a: unknown) => tickerFindFirst(a),
+            findMany: (a: unknown) => tickerFindMany(a),
             findUnique: (a: unknown) => tickerFindUnique(a),
         },
     },
 }));
 
 // eslint-disable-next-line import/first
-import { getTickerNav } from '@/lib/analysis/tickerNav';
+import { getTickerNav, getSimilarTickers } from '@/lib/analysis/tickerNav';
 
 describe('getTickerNav', () => {
     it('market_cap mode returns ordered neighbors; ETF (no cache) is out of the universe', async () => {
@@ -156,5 +162,35 @@ describe('getTickerNav', () => {
         expect(await getTickerNav('SPY')).toBeNull();      // no AnalysisCache
         expect(await getTickerNav('GONE')).toBeNull();     // no market cap
         expect(await getTickerNav('NOPE')).toBeNull();     // no row at all
+    });
+});
+
+describe('getSimilarTickers', () => {
+    it('returns ≤5 closest-cap peers overall and per scope, self excluded', async () => {
+        const s = (await getSimilarTickers('SHOP'))!;
+        // Technology peers of SHOP(140): TIE 100, ZETA 100 (closest), then NVDA/MSFT/AAPL.
+        expect(s.sector.map(x => x.symbol)).toEqual(['TIE', 'ZETA', 'NVDA', 'MSFT', 'AAPL']);
+        expect(s.sector).not.toContainEqual(expect.objectContaining({ symbol: 'SHOP' }));
+        // market_cap scope pulls the 5 nearest across the whole universe —
+        // SHOP-sized peers win over distant mega-caps.
+        expect(s.market_cap.map(x => x.symbol)).toEqual(['MELI', 'SE', 'TIE', 'ZETA', 'SOLO']);
+    });
+
+    it('ranks by log-distance so similarity scales with size', async () => {
+        const s = (await getSimilarTickers('META'))!; // cap 1700
+        // NVDA 3400 (ln 0.69) < MSFT 3600 (0.75) < AAPL 3800 (0.80) ≪ SHOP 140 (2.5)
+        expect(s.market_cap.map(x => x.symbol).slice(0, 3)).toEqual(['NVDA', 'MSFT', 'AAPL']);
+    });
+
+    it('returns empty scopes when the sector/industry has no peers', async () => {
+        const s = (await getSimilarTickers('META'))!;
+        expect(s.sector).toEqual([]);   // only META in Communication Services
+        expect(s.industry).toEqual([]); // only META in Internet Content
+    });
+
+    it('returns null for tickers outside the eligible universe', async () => {
+        expect(await getSimilarTickers('SPY')).toBeNull();
+        expect(await getSimilarTickers('GONE')).toBeNull();
+        expect(await getSimilarTickers('NOPE')).toBeNull();
     });
 });

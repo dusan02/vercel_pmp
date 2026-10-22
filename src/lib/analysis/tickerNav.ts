@@ -105,3 +105,59 @@ export async function getTickerNav(symbol: string): Promise<TickerNav | null> {
     if (!mc.prev && !mc.next) return null; // single-row universe edge
     return { market_cap: mc, sector: sec, industry: ind };
 }
+
+export interface SimilarTickers {
+    /** 5 closest tickers by market cap across the eligible universe. */
+    market_cap: NavNeighbor[];
+    /** 5 closest by market cap within the same sector ([] if no sector). */
+    sector: NavNeighbor[];
+    /** 5 closest by market cap within the same industry ([] if none). */
+    industry: NavNeighbor[];
+}
+
+const SIMILAR_N = 5;
+
+/** The N closest rows by market cap around `mcap` within a scope — merges
+ *  the nearest larger and nearest smaller rows (two LIMIT-N index scans)
+ *  and ranks by |ln(m/mcap)| so similarity scales with size ($50B ≈ $100B
+ *  ≈ $200B). Symbol breaks exact distance ties for determinism. */
+async function nearestByCap(symbol: string, mcap: number, extraWhere: object, n: number): Promise<NavNeighbor[]> {
+    const sel = { symbol: true, name: true, lastMarketCap: true };
+    const [above, below] = await Promise.all([
+        prisma.ticker.findMany({
+            where: { AND: [ELIGIBLE, extraWhere, { lastMarketCap: { gt: mcap } }] },
+            orderBy: [{ lastMarketCap: 'asc' }, { symbol: 'asc' }],
+            take: n,
+            select: sel,
+        }),
+        prisma.ticker.findMany({
+            where: { AND: [ELIGIBLE, extraWhere, { lastMarketCap: { lt: mcap } }] },
+            orderBy: [{ lastMarketCap: 'desc' }, { symbol: 'desc' }],
+            take: n,
+            select: sel,
+        }),
+    ]);
+    const dist = (m: number) => Math.abs(Math.log(m / mcap));
+    return [...above, ...below]
+        .sort((a, b) => dist(a.lastMarketCap!) - dist(b.lastMarketCap!) || a.symbol.localeCompare(b.symbol))
+        .slice(0, n)
+        .map(({ symbol: s, name }) => ({ symbol: s, name }));
+}
+
+/** Similar-cap peers for the in-chart "similar tickers" chips — same
+ *  eligible universe as getTickerNav; null when the ticker isn't eligible. */
+export async function getSimilarTickers(symbol: string): Promise<SimilarTickers | null> {
+    const t = await prisma.ticker.findUnique({
+        where: { symbol },
+        select: { lastMarketCap: true, sector: true, industry: true, analysisCache: { select: { symbol: true } } },
+    });
+    if (!t?.analysisCache || !t.lastMarketCap || t.lastMarketCap <= 0) return null;
+    const mcap = t.lastMarketCap;
+    const [mc, sec, ind] = await Promise.all([
+        nearestByCap(symbol, mcap, {}, SIMILAR_N),
+        t.sector ? nearestByCap(symbol, mcap, { sector: t.sector }, SIMILAR_N) : Promise.resolve([] as NavNeighbor[]),
+        t.industry ? nearestByCap(symbol, mcap, { industry: t.industry }, SIMILAR_N) : Promise.resolve([] as NavNeighbor[]),
+    ]);
+    if (!mc.length && !sec.length && !ind.length) return null;
+    return { market_cap: mc, sector: sec, industry: ind };
+}

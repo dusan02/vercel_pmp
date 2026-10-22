@@ -24,7 +24,7 @@ import { Ruler, TrendingUp, Eraser, Minus, Square, ArrowUpRight, Percent, Save, 
 import { useSession, signIn } from 'next-auth/react';
 import { ChartDrawLayer, loadDrawings, saveDrawings, type Drawing, type DrawTool } from './chart/ChartDrawTools';
 import { useTickerNavMode } from '@/components/company/analysis/useTickerNavMode';
-import type { NavDimension, NavNeighbor, TickerNav } from '@/lib/analysis/tickerNav';
+import type { NavDimension, NavNeighbor, SimilarTickers, TickerNav } from '@/lib/analysis/tickerNav';
 
 interface Candle {
   t: number; // timestamp (ms)
@@ -150,6 +150,9 @@ interface PriceCandlestickChartProps {
   /** Prev/next neighbors from getTickerNav — feeds the in-chart ticker
    *  slider (same ordering and mode as the page-top navigator). */
   nav?: TickerNav | null;
+  /** Closest-cap peers per scope (5 each) — similar-ticker chips under the
+   *  chart; same link behavior as the slider arrows. */
+  similar?: SimilarTickers | null;
   /** Live/current quote to unify the header price with the page hero.
    *  When provided it overrides the latest-candle close (which may be stale
    *  or split-adjusted); the candle close stays visible as a dated reference. */
@@ -430,7 +433,37 @@ function ChartNavArrow({ direction, neighbor, navMode, fromTicker }: {
   );
 }
 
-export function PriceCandlestickChart({ ticker, companyName, nav, currentPrice, currentChangePct, changeLabel = 'day', onCompareChange }: PriceCandlestickChartProps) {
+/** One labeled group of similar-ticker chips (cap peers / sector / industry).
+ *  Same slider UX as the arrows: scroll preserved, active metric carried over
+ *  via the persisted chart view. */
+function SimilarChips({ label, dim, items, from }: {
+  label: string;
+  dim: NavDimension;
+  items: NavNeighbor[];
+  from: string;
+}) {
+  if (!items.length) return null;
+  return (
+    <span className="flex items-center gap-0.5 flex-wrap min-w-0">
+      <span className="font-semibold text-gray-400 dark:text-gray-500 mr-0.5 shrink-0">{label}:</span>
+      {items.map((n) => (
+        <Link
+          key={n.symbol}
+          href={`/analysis/${n.symbol}?nav=${dim}`}
+          scroll={false}
+          prefetch
+          title={n.name ?? n.symbol}
+          onClick={() => gaEvent('stock_navigator_click', { ticker_from: from, ticker_to: n.symbol, dimension: dim, direction: 'similar', location: 'chart' })}
+          className="px-1 py-0.5 rounded font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+        >
+          {n.symbol}
+        </Link>
+      ))}
+    </span>
+  );
+}
+
+export function PriceCandlestickChart({ ticker, companyName, nav, similar, currentPrice, currentChangePct, changeLabel = 'day', onCompareChange }: PriceCandlestickChartProps) {
   // In-chart prev/next ticker slider — same dimension resolution as the
   // page-top navigator (shared ?nav= param + 'ticker-nav-mode' LS key).
   const { mode: navMode, result: navRes } = useTickerNavMode(nav);
@@ -2090,6 +2123,16 @@ export function PriceCandlestickChart({ ticker, companyName, nav, currentPrice, 
           </>
         )}
       </p>
+
+      {/* Similar tickers — 5 closest-cap peers overall, in-sector and
+          in-industry. Quick hops that keep the chart's current view. */}
+      {similar && (
+        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/60 flex flex-wrap gap-x-5 gap-y-1 text-[11px]">
+          <SimilarChips label="Similar cap" dim="market_cap" items={similar.market_cap} from={ticker} />
+          <SimilarChips label={nav?.sector.label ?? 'Sector'} dim="sector" items={similar.sector} from={ticker} />
+          <SimilarChips label={nav?.industry.label ?? 'Industry'} dim="industry" items={similar.industry} from={ticker} />
+        </div>
+      )}
     </div>
   );
 }

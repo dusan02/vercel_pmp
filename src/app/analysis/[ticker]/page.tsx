@@ -23,7 +23,7 @@ import { buildStockSchema } from '@/lib/seo/analysisSchemas';
 import { buildFlowPeriods, type StatementRow } from '@/components/company/analysis/sections/FinancialFlowsSection';
 import { AnalysisHero } from '@/components/company/analysis/sections/AnalysisHero';
 import { TickerNavigator } from '@/components/company/analysis/TickerNavigator';
-import { getTickerNav } from '@/lib/analysis/tickerNav';
+import { getTickerNav, getSimilarTickers } from '@/lib/analysis/tickerNav';
 import { TrackPageEvent } from '@/components/analytics/TrackPageEvent';
 import { CompanyOverviewSection } from '@/components/company/analysis/sections/CompanyOverviewSection';
 import { KeyInsightsSection } from '@/components/company/analysis/sections/KeyInsightsSection';
@@ -120,7 +120,7 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   // Fetch everything in parallel (independent queries).
   // Includes SSR pre-fetch of analysis API + history for instant client hydration.
-  const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, insiderActivity, premarketData] = await Promise.all([
+  const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, similarTickers, insiderActivity, premarketData] = await Promise.all([
     getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
     getRelatedOpportunities(tickerUpper),
@@ -130,6 +130,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     prefetchTopNews(tickerUpper, companyName),
     getMatchedScreens(tickerUpper),
     getTickerNav(tickerUpper),
+    getSimilarTickers(tickerUpper),
     getInsiderActivity90d(tickerUpper),
     getTodayPremarket(tickerUpper),
   ]);
@@ -427,6 +428,7 @@ export default async function AnalysisPage({ params }: PageProps) {
             ticker={tickerUpper}
             companyName={companyName}
             nav={tickerNav}
+            similar={similarTickers}
             currentPrice={displayPrice}
             currentChangePct={displayChangePct}
             changeLabel={marketSession === 'closed' ? 'at last close' : marketSession === 'pre' ? 'pre-market' : marketSession === 'after' ? 'after-hours' : 'day'}
