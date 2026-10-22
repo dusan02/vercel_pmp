@@ -425,6 +425,8 @@ export default async function AnalysisPage({ params }: PageProps) {
               the whole row, so nothing sits empty beside it. */}
           <PriceHistorySection
             ticker={tickerUpper}
+            companyName={companyName}
+            nav={tickerNav}
             currentPrice={displayPrice}
             currentChangePct={displayChangePct}
             changeLabel={marketSession === 'closed' ? 'at last close' : marketSession === 'pre' ? 'pre-market' : marketSession === 'after' ? 'after-hours' : 'day'}

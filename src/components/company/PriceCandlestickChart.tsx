@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -22,6 +23,8 @@ import { event as gaEvent } from '@/lib/ga';
 import { Ruler, TrendingUp, Eraser, Minus, Square, ArrowUpRight, Percent, Save, Check, CloudOff } from 'lucide-react';
 import { useSession, signIn } from 'next-auth/react';
 import { ChartDrawLayer, loadDrawings, saveDrawings, type Drawing, type DrawTool } from './chart/ChartDrawTools';
+import { useTickerNavMode } from '@/components/company/analysis/useTickerNavMode';
+import type { NavDimension, NavNeighbor, TickerNav } from '@/lib/analysis/tickerNav';
 
 interface Candle {
   t: number; // timestamp (ms)
@@ -141,6 +144,12 @@ function impliedPerShare(p: ChartPoint, field: MetricField): number | null {
 
 interface PriceCandlestickChartProps {
   ticker: string;
+  /** Displayed next to the ticker in the chart's nav strip so the charted
+   *  company is unambiguous. */
+  companyName?: string | null;
+  /** Prev/next neighbors from getTickerNav — feeds the in-chart ticker
+   *  slider (same ordering and mode as the page-top navigator). */
+  nav?: TickerNav | null;
   /** Live/current quote to unify the header price with the page hero.
    *  When provided it overrides the latest-candle close (which may be stale
    *  or split-adjusted); the candle close stays visible as a dated reference. */
@@ -174,6 +183,11 @@ const weekKeyOf = (t: number) => Math.floor((t - MS_MONDAY_OFFSET) / MS_WEEK);
 
 // User-togglable indicator set; persisted per-browser, default off.
 const IND_KEY = 'pmp:pricechart:indicators';
+// Chart view (price vs valuation mode, metric, period) persisted per-browser
+// so the ticker slider keeps the same lens when the page navigates — and a
+// hard reload lands back on the last view too.
+const VIEW_KEY = 'pmp:pricechart:view';
+const PERIOD_LABELS: PeriodLabel[] = ['3M', '6M', 'YTD', '1Y', '3Y', '5Y', 'All'];
 type IndKey = 'ma20' | 'ma50' | 'ma200' | 'pefair' | 'w52' | 'volspike' | 'bb' | 'rsi' | 'macd';
 type ModeKey = 'price' | 'pe';
 // Draw-tool labels for the armed toolbar button + under-chart hint.
@@ -377,7 +391,49 @@ function MetricTooltip({ active, payload, metric, stats }: any) {
 }
 
 
-export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, changeLabel = 'day', onCompareChange }: PriceCandlestickChartProps) {
+const NAV_ARROW_CLS =
+  'inline-flex items-center gap-1 px-1.5 py-1 rounded-md text-xs font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 hover:text-gray-800 dark:hover:text-gray-100 transition-colors';
+
+/** Prev/next stepper for the in-chart ticker slider — routes to the
+ *  neighbor's analysis page with scroll preserved (scroll={false}), so the
+ *  chart stays in view and "slides" to the neighbor's data. The persisted
+ *  chart view (mode/metric/period) carries the same lens across the hop. */
+function ChartNavArrow({ direction, neighbor, navMode, fromTicker }: {
+  direction: 'previous' | 'next';
+  neighbor: NavNeighbor | null;
+  navMode: NavDimension;
+  fromTicker: string;
+}) {
+  const arrow = direction === 'previous' ? '←' : '→';
+  const word = direction === 'previous' ? 'Previous' : 'Next';
+  if (!neighbor) {
+    return (
+      <span className={`${NAV_ARROW_CLS} opacity-30 cursor-not-allowed`} aria-disabled="true" title={`No ${word.toLowerCase()} stock`}>
+        <span aria-hidden="true">{arrow}</span>
+      </span>
+    );
+  }
+  return (
+    <Link
+      href={`/analysis/${neighbor.symbol}?nav=${navMode}`}
+      scroll={false}
+      prefetch
+      title={`${word} stock${neighbor.name ? ` — ${neighbor.name}` : ''}`}
+      aria-label={`${word} stock: ${neighbor.symbol}`}
+      onClick={() => gaEvent('stock_navigator_click', { ticker_from: fromTicker, ticker_to: neighbor.symbol, dimension: navMode, direction, location: 'chart' })}
+      className={NAV_ARROW_CLS}
+    >
+      {direction === 'previous'
+        ? <><span aria-hidden="true">{arrow}</span><span>{neighbor.symbol}</span></>
+        : <><span>{neighbor.symbol}</span><span aria-hidden="true">{arrow}</span></>}
+    </Link>
+  );
+}
+
+export function PriceCandlestickChart({ ticker, companyName, nav, currentPrice, currentChangePct, changeLabel = 'day', onCompareChange }: PriceCandlestickChartProps) {
+  // In-chart prev/next ticker slider — same dimension resolution as the
+  // page-top navigator (shared ?nav= param + 'ticker-nav-mode' LS key).
+  const { mode: navMode, result: navRes } = useTickerNavMode(nav);
   const [allCandles, setAllCandles] = useState<Candle[] | null>(null);
   const [valStats, setValStats] = useState<Partial<Record<MetricField, MetricStats>>>({});
   const [evNetDebt, setEvNetDebt] = useState<number | null>(null);
@@ -430,6 +486,23 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
       if (raw) setInds(new Set(JSON.parse(raw) as IndKey[]));
     } catch { /* ignore corrupt value */ }
   }, []);
+
+  // Hydrate the last-used chart view (mode / metric / period) — soft-nav via
+  // the ticker slider already keeps these states mounted, this covers hard
+  // reloads and direct landings after a slider hop.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(VIEW_KEY);
+      if (!raw) return;
+      const v = JSON.parse(raw) as { mode?: unknown; metric?: unknown; period?: unknown };
+      if (v.mode === 'price' || v.mode === 'pe') setMode(v.mode);
+      if (typeof v.metric === 'string' && v.metric in METRIC_BY_KEY) setMetric(v.metric as MetricField);
+      if (typeof v.period === 'string' && (PERIOD_LABELS as string[]).includes(v.period)) setPeriod(v.period as PeriodLabel);
+    } catch { /* ignore corrupt value */ }
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem(VIEW_KEY, JSON.stringify({ mode, metric, period })); } catch { /* private mode */ }
+  }, [mode, metric, period]);
 
   const toggleInd = (k: IndKey) => {
     setInds((prev) => {
@@ -520,10 +593,14 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
   const activeMetric: MetricDef = METRIC_BY_KEY[metric];
   const metricStats = valStats[metric] ?? null;
   // A ticker may lack a metric's history (e.g. no balance sheet → no P/B) —
-  // fall back to P/E so the Valuation tab never opens on a dead chart.
+  // fall back to P/E so the Valuation tab never opens on a dead chart. The
+  // restored/persisted view can also land on 'pe' for a ticker with no
+  // valuation data at all — snap back to Price instead of an empty plot.
   useEffect(() => {
-    if (mode === 'pe' && !valStats[metric]) setMetric('pe');
-  }, [mode, metric, valStats]);
+    if (mode !== 'pe') return;
+    if (!loading && !Object.keys(valStats).length) setMode('price');
+    else if (!valStats[metric]) setMetric('pe');
+  }, [mode, metric, valStats, loading]);
 
   // Enriched full series — sorting, SMAs, implied EPS and the valuation band
   // are computed over ALL candles once; the price-mode `data` window and the
@@ -1073,6 +1150,26 @@ export function PriceCandlestickChart({ ticker, currentPrice, currentChangePct, 
 
   return (
     <div>
+      {/* Ticker slider + chart identity — step through the nav universe
+          without leaving the chart context; the persisted view keeps the
+          same metric across hops. Rendered even without neighbors so the
+          charted company name + ticker are always visible. */}
+      <div className="flex items-center gap-0.5 mb-2 -mt-1 min-w-0">
+        {navRes && (
+          <ChartNavArrow direction="previous" neighbor={navRes.prev} navMode={navMode} fromTicker={ticker} />
+        )}
+        <div className="min-w-0 flex items-baseline gap-1.5 px-1">
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
+            {companyName ?? ticker}
+          </span>
+          {companyName && companyName !== ticker && (
+            <span className="text-xs font-medium text-gray-400 dark:text-gray-500 shrink-0">{ticker}</span>
+          )}
+        </div>
+        {navRes && (
+          <ChartNavArrow direction="next" neighbor={navRes.next} navMode={navMode} fromTicker={ticker} />
+        )}
+      </div>
       {/* Header: current price (price mode) or current metric (valuation
           mode) + toolbar. The header row itself never wraps — the headline
           may wrap internally (last-candle note drops under the number) and

@@ -11,24 +11,15 @@
  * canonical href points at the clean path).
  */
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { event } from '@/lib/ga';
-import type { NavDimension, TickerNav, NavModeResult } from '@/lib/analysis/tickerNav';
+import { useTickerNavMode } from '@/components/company/analysis/useTickerNavMode';
+import type { NavDimension, TickerNav } from '@/lib/analysis/tickerNav';
 
 const DIMENSIONS: { id: NavDimension; short: string }[] = [
     { id: 'market_cap', short: 'Cap' },
     { id: 'sector', short: 'Sector' },
     { id: 'industry', short: 'Industry' },
 ];
-
-const LS_KEY = 'ticker-nav-mode';
-const DEFAULT_MODE: NavDimension = 'sector';
-
-function readUrlMode(): NavDimension | null {
-    if (typeof window === 'undefined') return null;
-    const v = new URLSearchParams(window.location.search).get('nav');
-    return v === 'market_cap' || v === 'sector' || v === 'industry' ? v : null;
-}
 
 function ArrowLink({
     direction, neighbor, mode, from,
@@ -83,23 +74,8 @@ function ArrowLink({
 }
 
 export function TickerNavigator({ symbol, nav }: { symbol: string; nav: TickerNav }) {
-    const [mode, setMode] = useState<NavDimension>(DEFAULT_MODE);
-
-    // Post-mount: ?nav= wins, else last-used mode. Runs in an effect so the
-    // SSR render is deterministic (no hydration mismatch on the links).
-    useEffect(() => {
-        const m = readUrlMode() ?? (localStorage.getItem(LS_KEY) as NavDimension | null);
-        if (m && (nav[m].available || nav[m].prev || nav[m].next)) setMode(m);
-    }, [nav]);
-
-    // Fall back to market_cap when the default mode is unavailable.
-    const active: NavModeResult = nav[mode].available || nav[mode].prev || nav[mode].next ? nav[mode] : nav.market_cap;
-    const activeMode: NavDimension = nav[mode].available || nav[mode].prev || nav[mode].next ? mode : 'market_cap';
-
-    const pick = (d: NavDimension) => {
-        setMode(d);
-        try { localStorage.setItem(LS_KEY, d); } catch {}
-    };
+    const { mode: activeMode, result, pick } = useTickerNavMode(nav);
+    const active = result ?? nav.market_cap;
 
     return (
         <nav aria-label="Stock navigator" className="flex items-center justify-between gap-2 sm:gap-3 rounded-xl border border-gray-200/80 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 sm:px-3 py-1.5">
