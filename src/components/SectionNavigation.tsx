@@ -21,6 +21,7 @@ interface TabConfig {
 
 const TABS: TabConfig[] = [
   { id: 'heatmap',   label: 'Heatmap',    icon: 'heatmap',  href: '/heatmap' },
+  { id: 'brief',     label: 'Brief',      icon: 'brief',    href: '/brief' },
   { id: 'analysis',  label: 'Analysis',   icon: 'analysis', href: '/analysis' },
   { id: 'movers',    label: 'Movers',     icon: 'zap',      href: '/premarket-movers' },
   { id: 'portfolio', label: 'Portfolio',  icon: 'pie',      href: '/portfolio' },
@@ -36,6 +37,7 @@ export function SectionNavigation({ onTabChange }: SectionNavigationProps) {
   const tabParam    = searchParams.get('tab');
 
   const getActiveId = (): string => {
+    if (pathname === '/brief') return 'brief';
     if (pathname === '/blog' || pathname.startsWith('/blog/')) return 'blog';
     if (pathname === '/screener' || pathname.startsWith('/screener/')) return 'screener';
     if (pathname === '/analysis' || pathname.startsWith('/analysis/')) return 'analysis';

@@ -47,6 +47,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.85,
     },
+    {
+      url: `${baseUrl}/brief`,
+      lastModified: currentDate,
+      changeFrequency: 'hourly',
+      priority: 0.85,
+    },
     ...METRIC_PAGES.map((p) => ({
       url: `${baseUrl}/heatmap/${p.slug}`,
       lastModified: currentDate,

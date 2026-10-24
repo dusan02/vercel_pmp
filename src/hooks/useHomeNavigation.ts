@@ -27,6 +27,7 @@ const normalizeTab = (tab: string): string => (tab === 'allStocks' ? 'screener' 
 // ?tab → standalone double hop.
 const SECTION_ROUTES: Record<string, string> = {
   heatmap: '/heatmap',
+  brief: '/brief',
   analysis: '/analysis',
   movers: '/premarket-movers',
   portfolio: '/portfolio',
