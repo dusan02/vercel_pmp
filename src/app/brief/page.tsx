@@ -7,6 +7,7 @@ import { getEarningsRange } from '@/lib/seo/earningsSSR';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { detectSession, getSessionDateStr } from '@/lib/utils/timeUtils';
 import { formatPercent, formatPrice, formatMarketCap } from '@/lib/utils/heatmapFormat';
+import { shortName } from '@/lib/seo/metadata';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 
 const baseUrl = 'https://premarketprice.com';
@@ -49,9 +50,9 @@ function MoverRow({ r, eligible }: { r: HeatmapPayloadRow; eligible: Set<string>
   const up = r.percentChange >= 0;
   const body = (
     <div className="flex items-center justify-between gap-3 py-1.5 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
-      <div className="min-w-0">
-        <span className="font-semibold text-slate-900 dark:text-slate-100">{r.ticker}</span>
-        <span className="ml-2 text-xs text-slate-500 dark:text-slate-400 truncate hidden sm:inline">{r.companyName}</span>
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="font-semibold text-slate-900 dark:text-slate-100 flex-shrink-0">{r.ticker}</span>
+        <span className="text-xs text-slate-500 dark:text-slate-400 truncate hidden sm:inline">{shortName(r.companyName)}</span>
       </div>
       <div className="flex items-center gap-3 flex-shrink-0 text-sm">
         <span className="text-slate-500 dark:text-slate-400 tabular-nums hidden sm:inline">{formatPrice(r.currentPrice)}</span>
