@@ -12,6 +12,8 @@ import { getCompanyMetricValue, formatMetricValue, getMetricSentiment } from '@/
 import { formatSectorName } from '@/lib/utils/format';
 import styles from '@/styles/heatmap.module.css';
 import CompanyLogo from './CompanyLogo';
+import { Sparkline } from './Sparkline';
+import { useSparkline, sparkRangeForMetric } from '@/hooks/useSparkline';
 
 interface HeatmapTooltipProps {
   company: CompanyNode;
@@ -21,13 +23,19 @@ interface HeatmapTooltipProps {
 }
 
 export function HeatmapTooltip({ company, position, timeframe, metric }: HeatmapTooltipProps) {
+  // Period sparkline — range follows the selected performance metric
+  // (1D/1W/1M/YTD/1Y), 1D for score/valuation metrics. Hook must run
+  // before the early return below; cached in-module so re-hovers are free.
+  const sparkRange = sparkRangeForMetric(metric);
+  const spark = useSparkline(company?.symbol, sparkRange);
+
   if (!company) return null;
   // Determine position based on viewport width and height
   // Tooltip should be close to cursor but not cover the block
   const HORIZONTAL_OFFSET = 15; // Distance from cursor horizontally
   const VERTICAL_OFFSET = 10; // Small offset below cursor to keep block visible
   const TOOLTIP_ESTIMATED_WIDTH = 250;
-  const TOOLTIP_ESTIMATED_HEIGHT = 180; // Estimated tooltip height
+  const TOOLTIP_ESTIMATED_HEIGHT = 225; // Estimated tooltip height (incl. sparkline)
 
   let x = position.x + HORIZONTAL_OFFSET;
   let y = position.y + VERTICAL_OFFSET;
@@ -107,6 +115,20 @@ export function HeatmapTooltip({ company, position, timeframe, metric }: Heatmap
             {formatMetricValue(company, metric)}
           </span>
         </div>
+
+        {/* Period sparkline — fixed-height box so the tooltip doesn't jump
+            when the series arrives after mount. Hidden entirely when the
+            ticker has no series coverage (spark resolves to an empty array). */}
+        {(spark === null || spark.length >= 2) && (
+          <div className="flex items-center gap-2 mt-1 mb-0.5" style={{ minHeight: 34 }}>
+            {spark && spark.length >= 2 ? (
+              <Sparkline data={spark} width={184} height={32} />
+            ) : (
+              <div className="w-[184px] h-8 rounded bg-white/5 animate-pulse" aria-hidden="true" />
+            )}
+            <span className="text-[9px] uppercase tracking-wide text-gray-500">{sparkRange}</span>
+          </div>
+        )}
 
         {displayValue ? (
           // Special display for Dollar/Portfolio modes if displayValue is present
