@@ -119,7 +119,7 @@ export default function HeatmapPage() {
         <p>
           Each tile represents a publicly traded company. Tile size corresponds
           to market capitalization. Tile color indicates the selected metric —
-          choose from day, week, month, YTD or 1-year performance, P/E, forward
+          choose from day, week, month, 3-month, 6-month, YTD or 1-year performance, P/E, forward
           P/E, P/S, P/B, PEG and EV/EBITDA valuation ratios, dividend yield, ROE,
           net margin, revenue and EPS growth, free cash flow margin, Piotroski
           F-score, Altman Z-score, Beneish M-score, relative volume, beta and

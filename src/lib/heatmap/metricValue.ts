@@ -15,6 +15,8 @@ export const HEATMAP_METRICS: { id: HeatmapMetric; label: string; short?: string
   { id: 'percent',       label: 'Day change %',        short: 'Day %',       group: 'Performance' },
   { id: 'week',          label: '1-week change %',     short: '1W %',        group: 'Performance' },
   { id: 'month',         label: '1-month change %',    short: '1M %',        group: 'Performance' },
+  { id: 'quarter',       label: '3-month change %',    short: '3M %',        group: 'Performance' },
+  { id: 'halfyear',      label: '6-month change %',    short: '6M %',        group: 'Performance' },
   { id: 'ytd',           label: 'YTD change %',        short: 'YTD %',       group: 'Performance' },
   { id: 'year',          label: '1-year change %',     short: '1Y %',        group: 'Performance' },
   { id: 'mcap',          label: 'Mcap change',         short: 'Mcap Δ',      group: 'Performance' },
@@ -106,6 +108,8 @@ export function getCompanyMetricValue(company: CompanyNode, metric: HeatmapMetri
     case 'mcap':          return company.marketCapDiff ?? 0;
     case 'week':          return company.weekChange ?? null;
     case 'month':         return company.monthChange ?? null;
+    case 'quarter':       return company.quarterChange ?? null;
+    case 'halfyear':      return company.halfYearChange ?? null;
     case 'ytd':           return company.ytdChange ?? null;
     case 'year':          return company.yearChange ?? null;
     case 'health':        return company.healthScore ?? null;
@@ -145,6 +149,8 @@ export function formatMetricNumber(v: number, metric: HeatmapMetric): string {
     case 'percent':
     case 'week':
     case 'month':
+    case 'quarter':
+    case 'halfyear':
     case 'ytd':
     case 'year':      return formatPercent(v);
     case 'piotroski': return `${Math.round(v)}/9`;

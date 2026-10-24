@@ -7,6 +7,8 @@ export type HeatmapMetric =
   | 'mcap'           // market cap change ($B)
   | 'week'           // 1-week change % (price vs close 5 sessions back)
   | 'month'          // 1-month change % (DailyValuationHistory close ~30d back)
+  | 'quarter'        // 3-month change % (DailyValuationHistory close ~91d back)
+  | 'halfyear'       // 6-month change % (DailyValuationHistory close ~182d back)
   | 'ytd'            // year-to-date change %
   | 'year'           // 1-year change %
   // Scores (own computations, AnalysisCache)
@@ -69,8 +71,10 @@ export type CompanyNode = {
   moatScore?: number | undefined;
   piotroskiScore?: number | undefined;
   zScore?: number | undefined;
-  /** 1-month / YTD / 1-year % change (DailyValuationHistory closes) */
+  /** 1M / 3M / 6M / YTD / 1Y % change (DailyValuationHistory closes) */
   monthChange?: number | undefined;
+  quarterChange?: number | undefined;
+  halfYearChange?: number | undefined;
   ytdChange?: number | undefined;
   yearChange?: number | undefined;
   altmanZ?: number | undefined;

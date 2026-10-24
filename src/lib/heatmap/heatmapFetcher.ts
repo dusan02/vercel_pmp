@@ -256,6 +256,8 @@ export async function fetchWeekRefCloses(
 
 export interface PerfRefCloses {
   month: Map<string, number>;
+  quarter: Map<string, number>;
+  halfyear: Map<string, number>;
   ytd: Map<string, number>;
   year: Map<string, number>;
 }
@@ -273,11 +275,16 @@ export async function fetchPerfRefCloses(
   const DAY = 24 * 60 * 60 * 1000;
   const targets: { key: keyof PerfRefCloses; target: Date }[] = [
     { key: 'month', target: new Date(now.getTime() - 30 * DAY) },
+    { key: 'quarter', target: new Date(now.getTime() - 91 * DAY) },
+    { key: 'halfyear', target: new Date(now.getTime() - 182 * DAY) },
     { key: 'ytd', target: createETDate(`${todayYMD.slice(0, 4)}-01-01`) },
     { key: 'year', target: new Date(now.getTime() - 365 * DAY) },
   ];
 
-  const result: PerfRefCloses = { month: new Map(), ytd: new Map(), year: new Map() };
+  const result: PerfRefCloses = {
+    month: new Map(), quarter: new Map(), halfyear: new Map(),
+    ytd: new Map(), year: new Map(),
+  };
 
   await Promise.all(targets.map(async ({ key, target }) => {
     const lo = new Date(target.getTime() - 7 * DAY);

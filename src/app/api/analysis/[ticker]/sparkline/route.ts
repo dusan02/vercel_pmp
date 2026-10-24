@@ -11,8 +11,8 @@ export const dynamic = 'force-dynamic';
 const MS_DAY = 24 * 60 * 60 * 1000;
 const MAX_POINTS = 60;
 
-type SparkRange = '1d' | '1w' | '1m' | 'ytd' | '1y';
-const RANGES = new Set<SparkRange>(['1d', '1w', '1m', 'ytd', '1y']);
+type SparkRange = '1d' | '1w' | '1m' | '3m' | '6m' | 'ytd' | '1y';
+const RANGES = new Set<SparkRange>(['1d', '1w', '1m', '3m', '6m', 'ytd', '1y']);
 
 /**
  * Lightweight close-price series for the heatmap tooltip sparkline.
@@ -20,6 +20,8 @@ const RANGES = new Set<SparkRange>(['1d', '1w', '1m', 'ytd', '1y']);
  * - 1d  → Polygon 5-min bars for the current/last session (shared logic)
  * - 1w  → DailyValuationHistory closes, ~last 5 sessions
  * - 1m  → closes since ~30d back (same ref target as the month metric)
+ * - 3m  → closes since ~91d back (same ref as the quarter metric)
+ * - 6m  → closes since ~182d back (same ref as the halfyear metric)
  * - ytd → closes since Jan 1 ET (same ref as the ytd metric)
  * - 1y  → closes since ~365d back
  * The live Ticker.lastPrice is appended as the final point so the spark
@@ -55,6 +57,8 @@ export async function GET(
         const from: Record<Exclude<SparkRange, '1d'>, Date> = {
             '1w': new Date(now.getTime() - 10 * MS_DAY),
             '1m': new Date(now.getTime() - 32 * MS_DAY),
+            '3m': new Date(now.getTime() - 95 * MS_DAY),
+            '6m': new Date(now.getTime() - 185 * MS_DAY),
             'ytd': createETDate(`${getDateET(now).slice(0, 4)}-01-01`),
             '1y': new Date(now.getTime() - 370 * MS_DAY),
         };

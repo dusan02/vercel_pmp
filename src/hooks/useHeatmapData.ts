@@ -82,6 +82,8 @@ function mapCompactRow(row: any): CompanyNode | null {
     currentPrice: row.p,
     weekChange: row.w ?? undefined,
     monthChange: row.m1 ?? undefined,
+    quarterChange: row.m3 ?? undefined,
+    halfYearChange: row.m6 ?? undefined,
     ytdChange: row.ytd ?? undefined,
     yearChange: row.y1 ?? undefined,
     healthScore: row.hs ?? undefined,

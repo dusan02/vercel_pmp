@@ -3,13 +3,15 @@
 import { useEffect, useState } from 'react';
 import type { HeatmapMetric } from '@/lib/heatmap/types';
 
-export type SparkRange = '1d' | '1w' | '1m' | 'ytd' | '1y';
+export type SparkRange = '1d' | '1w' | '1m' | '3m' | '6m' | 'ytd' | '1y';
 
 /** Performance metrics → sparkline range; everything else defaults to 1D. */
 export function sparkRangeForMetric(metric: HeatmapMetric): SparkRange {
     switch (metric) {
         case 'week': return '1w';
         case 'month': return '1m';
+        case 'quarter': return '3m';
+        case 'halfyear': return '6m';
         case 'ytd': return 'ytd';
         case 'year': return '1y';
         default: return '1d';

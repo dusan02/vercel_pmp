@@ -22,6 +22,8 @@ export interface HeatmapPayloadRow {
   priceSource?: string;
   weekChange?: number;
   monthChange?: number;
+  quarterChange?: number;
+  halfYearChange?: number;
   ytdChange?: number;
   yearChange?: number;
   healthScore?: number;
@@ -434,6 +436,8 @@ export function transformToHeatmap(
     const perfFrom = (ref: number | undefined) =>
       (ref && currentPrice > 0) ? ((currentPrice / ref) - 1) * 100 : undefined;
     const monthChange = perfFrom(perfRefs?.month.get(ticker));
+    const quarterChange = perfFrom(perfRefs?.quarter.get(ticker));
+    const halfYearChange = perfFrom(perfRefs?.halfyear.get(ticker));
     const ytdChange = perfFrom(perfRefs?.ytd.get(ticker));
     const yearChange = perfFrom(perfRefs?.year.get(ticker));
 
@@ -451,6 +455,8 @@ export function transformToHeatmap(
       ...(priceSource !== 'unknown' ? { priceSource } : {}),
       ...(weekChange !== undefined && isFinite(weekChange) ? { weekChange } : {}),
       ...(monthChange !== undefined && isFinite(monthChange) ? { monthChange } : {}),
+      ...(quarterChange !== undefined && isFinite(quarterChange) ? { quarterChange } : {}),
+      ...(halfYearChange !== undefined && isFinite(halfYearChange) ? { halfYearChange } : {}),
       ...(ytdChange !== undefined && isFinite(ytdChange) ? { ytdChange } : {}),
       ...(yearChange !== undefined && isFinite(yearChange) ? { yearChange } : {}),
       ...(tickerInfo.healthScore != null ? { healthScore: tickerInfo.healthScore } : {}),
@@ -513,7 +519,8 @@ export function transformToHeatmap(
  * [payloadField, compactKey]
  */
 const METRIC_ROW_FIELDS: ReadonlyArray<readonly [keyof HeatmapPayloadRow, string]> = [
-  ['weekChange', 'w'], ['monthChange', 'm1'], ['ytdChange', 'ytd'], ['yearChange', 'y1'],
+  ['weekChange', 'w'], ['monthChange', 'm1'], ['quarterChange', 'm3'], ['halfYearChange', 'm6'],
+  ['ytdChange', 'ytd'], ['yearChange', 'y1'],
   ['healthScore', 'hs'], ['valuationScore', 'vs'], ['growthScore', 'gs'], ['profitabilityScore', 'ps'],
   ['qualityScore', 'qs'], ['moatScore', 'ms'], ['piotroskiScore', 'pi'],
   ['altmanZ', 'az'], ['beneishScore', 'be'], ['fcfMargin', 'fcfm'], ['zScore', 'z'], ['rvol', 'rv'],

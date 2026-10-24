@@ -66,6 +66,8 @@ function scaleConfig(
     case 'mcap':          return mcapScales[timeframe];
     case 'week':          return percentScales.week;
     case 'month':         return { domain: [-15, -8, 0, 8, 15], range: percentScales.week.range };
+    case 'quarter':       return { domain: [-20, -10, 0, 10, 20], range: percentScales.month.range };
+    case 'halfyear':      return { domain: [-28, -14, 0, 14, 28], range: percentScales.month.range };
     case 'ytd':           return { domain: [-30, -15, 0, 15, 30], range: percentScales.month.range };
     case 'year':          return { domain: [-40, -20, 0, 20, 40], range: percentScales.month.range };
     case 'health':

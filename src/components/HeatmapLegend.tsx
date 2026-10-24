@@ -15,7 +15,7 @@ interface HeatmapLegendProps {
   values?: number[] | undefined;
 }
 
-const PERCENT_METRICS = new Set(['percent', 'week', 'month', 'ytd', 'year', 'roe', 'netmargin', 'revgrowth', 'epsgrowth', 'fcfmargin', 'divyield']);
+const PERCENT_METRICS = new Set(['percent', 'week', 'month', 'quarter', 'halfyear', 'ytd', 'year', 'roe', 'netmargin', 'revgrowth', 'epsgrowth', 'fcfmargin', 'divyield']);
 
 export const HeatmapLegend: React.FC<HeatmapLegendProps> = ({ timeframe, metric = 'percent', values }) => {
   const colorScale = createHeatmapColorScale(timeframe, metric, values);
