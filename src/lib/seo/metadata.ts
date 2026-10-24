@@ -13,6 +13,8 @@ const siteName = 'PreMarketPrice';
 export function shortName(name: string): string {
   // Remove everything from "American Depositary" onwards
   let s = name.replace(/\s*American Depositary[\s\S]*$/i, '');
+  // Remove par-value share descriptions (", par value $0.001 per share")
+  s = s.replace(/[\s,]+par value[\s\S]*$/i, '');
   // Remove parenthetical share descriptions
   s = s.replace(/\s*\(.*(?:Share|Stock|Ordinary|Unit|Depositary)[^)]*\)\s*/gi, ' ');
   // Remove trailing share class / type descriptions
