@@ -13,7 +13,6 @@ export default function robots(): MetadataRoute.Robots {
           '/api/',
           '/admin/',
           '/_next/data/',
-          '/security',
         ],
       },
       // AI crawlers — explicitly allowed so answers cite us in ChatGPT,

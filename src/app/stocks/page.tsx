@@ -16,11 +16,11 @@ export const metadata: Metadata = generatePageMetadata({
   keywords: [
     'all stocks',
     'US stock list',
-    'stock screener',
-    'NYSE stocks',
-    'NASDAQ stocks',
+    'stock directory',
+    'NYSE stock list',
+    'NASDAQ stock list',
     'stocks by sector',
-    'stock market list',
+    'list of US stocks',
   ],
 });
 
