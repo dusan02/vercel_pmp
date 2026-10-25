@@ -7,7 +7,7 @@ const SA_HEADERS: Record<string, string> = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
 };
 
-interface SAData {
+export interface SAData {
     datekey: string[];
     fiscalYear: string[];
     fiscalQuarter: string[];
@@ -167,7 +167,7 @@ function saYtdSum(data: SAData | null, keys: string[], upToQuarter: string, fisc
     return found ? sum : null;
 }
 
-async function mergeSAPage(
+export async function mergeSAPage(
     symbol: string,
     income: SAData,
     balance: SAData | null,
@@ -232,9 +232,21 @@ async function mergeSAPage(
         };
 
         if (!opts.gapfill) {
+            // 'full' mode is still bound by the same rule as gapfill: an
+            // existing non-null ebit is never rewritten by SA's adjusted
+            // opinc. A ticker can transiently lose its revenue rows (which
+            // is what makes 'full' mode reachable) without its previously
+            // reported ebit ceasing to be valid — data protection must not
+            // depend on how the caller was reached. Create + null-fill stay.
+            const existing = await prisma.financialStatement.findUnique({
+                where: { symbol_fiscalYear_fiscalPeriod: { symbol, fiscalYear, fiscalPeriod } },
+                select: { ebit: true },
+            });
+            const updateData: Record<string, any> = { ...stmtData };
+            if (existing?.ebit != null) delete updateData.ebit;
             await prisma.financialStatement.upsert({
                 where: { symbol_fiscalYear_fiscalPeriod: { symbol, fiscalYear, fiscalPeriod } },
-                update: stmtData,
+                update: updateData,
                 create: { symbol, period: fiscalPeriod, fiscalYear, fiscalPeriod, ...stmtData },
             });
             inserted++;
@@ -253,11 +265,10 @@ async function mergeSAPage(
             continue;
         }
 
-        // Existing row: fill null fields; also repair three known corruptions:
-        // 1. ebit >50% off SA's operating income (fabricated GP−SGA chain)
-        // 2. capex < 0 (legacy SA scrape before datekey indexing — shifted
+        // Existing row: fill null fields; also repair two known corruptions:
+        // 1. capex < 0 (legacy SA scrape before datekey indexing — shifted
         //    the "TTM" BS/CF column into FY25 and stored negative capex)
-        // 3. integer-EPS-derived sharesOutstanding (GOOGL FY22=ni/4, FY23=ni/5)
+        // 2. integer-EPS-derived sharesOutstanding (GOOGL FY22=ni/4, FY23=ni/5)
         const patch: Record<string, any> = {};
         const legacyShiftedRow = existing.capex !== null && existing.capex < 0;
         for (const [k, v] of Object.entries(stmtData)) {
@@ -271,12 +282,15 @@ async function mergeSAPage(
             && isSuspiciousShareCount(existing.sharesOutstanding, existing.netIncome, opts.trustedShares)) {
             patch.sharesOutstanding = stmtData.sharesOutstanding;
         }
+        // ebit: NULL-FILL ONLY. The former >50% divergence repair is removed —
+        // it could not distinguish a fabricated stored value from a REPORTED
+        // XBRL OperatingIncomeLoss, and SA's opinc is an adjusted basis that
+        // excludes one-time items (T FY2022: reported −4.59B incl. a $27.5B
+        // goodwill impairment vs SA +28.35B adjusted — the repair swapped a
+        // valid GAAP number for a different accounting concept). Without
+        // persisted per-row provenance, an existing ebit is never rewritten.
         const saEbit = stmtData.ebit;
-        const curEbit = existing.ebit;
-        if (saEbit !== null && curEbit !== null && saEbit !== 0
-            && Math.abs(curEbit / saEbit - 1) > 0.5) {
-            patch.ebit = saEbit;
-        } else if (saEbit !== null && curEbit === null) {
+        if (saEbit !== null && existing.ebit === null) {
             patch.ebit = saEbit;
         }
         if (Object.keys(patch).length > 0) {
@@ -403,6 +417,9 @@ export async function syncFinancials(symbol: string): Promise<void> {
     // Newest quarterly endDate Finnhub offered this run — persisted on
     // Ticker so the integrity check can flag "provider has newer than DB".
     let providerPeriodEnd: Date | null = null;
+    // Rows where interestExpense was filled from cash InterestPaidNet
+    // (no accrual tag) — logged after the loop for identification.
+    const cashInterestFallbackRows: string[] = [];
 
     try {
         // Ensure Ticker row exists (FK requirement for FinancialStatement)
@@ -547,6 +564,11 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 const capex = extract(report, 'cf', [
                     'us-gaap_PaymentsToAcquirePropertyPlantAndEquipment', 'us-gaap_PaymentsToAcquireOtherPropertyPlantAndEquipment',
                     'us-gaap_PaymentsToAcquireProductiveAssets',
+                    'us-gaap_PaymentsToAcquireOtherProductiveAssets',
+                    'us-gaap_PaymentsToAcquireOilAndGasPropertyAndEquipment',
+                    'us-gaap_PaymentsToAcquireOilAndGasProperty',
+                    'us-gaap_PaymentsToAcquireFurnitureAndFixtures',
+                    'us-gaap_PaymentsToDevelopRealEstateAssetsAndPaymentsForCapitalExpenditures',
                     'us-gaap_PaymentsToAcquireFixedAssets',
                     'us-gaap_CapitalExpenditureIncurredForPropertyPlantAndEquipment',
                     // Without prefix
@@ -616,17 +638,39 @@ export async function syncFinancials(symbol: string): Promise<void> {
                     'us-gaap_ShareBasedCompensation'
                 ]);
 
-                const interestExpense = extract(report, 'ic', ['us-gaap_InterestExpense', 'us-gaap_InterestExpenseDebt']);
+                // Accrual interest expense first (ic section). Some issuers
+                // report it under Nonoperating/Operating variants — KKR
+                // switched tags between FY23 (us-gaap_InterestExpense) and
+                // FY24-25 (us-gaap_InterestExpenseNonoperating), so a narrow
+                // list silently wrote null for valid years. Last tier: cash
+                // interest paid from the cf section — a DIFFERENT basis
+                // (cash paid, not the accrual charge). It is written into the
+                // same column only when no accrual tag exists, and the
+                // affected rows are logged below so cash-basis values stay
+                // separately identifiable (a real provenance column is a
+                // Phase-2 schema decision).
+                const interestExpenseAccrual = extract(report, 'ic', [
+                    'us-gaap_InterestExpense', 'us-gaap_InterestExpenseDebt',
+                    'us-gaap_InterestExpenseNonoperating', 'us-gaap_InterestExpenseOperating',
+                ]);
+                const interestExpense = interestExpenseAccrual
+                    ?? extract(report, 'cf', ['us-gaap_InterestPaidNet']);
+                if (interestExpenseAccrual === null && interestExpense !== null) {
+                    cashInterestFallbackRows.push(`${fiscalPeriod}${fiscalYear}`);
+                }
                 
                 const longTermDebt = extract(report, 'bs', [
                     'us-gaap_LongTermDebtNoncurrent', 'us-gaap_LongTermDebtAndCapitalLeaseObligations', 'us-gaap_LongTermDebt',
                     'us-gaap_LongTermDebtFairValue', 'us-gaap_LongTermLineOfCredit',
+                    'us-gaap_LongTermNotesPayable', 'us-gaap_ConvertibleDebtNoncurrent',
+                    'us-gaap_SeniorNotesNetOfDebtIssuanceCosts', 'us-gaap_SecuredDebt',
                     // Without prefix
                     'LongTermDebtNoncurrent', 'LongTermDebt'
                 ]);
                 const shortTermDebt = extract(report, 'bs', [
                     'us-gaap_DebtCurrent', 'us-gaap_ShortTermBorrowings', 'us-gaap_LongTermDebtAndCapitalLeaseObligationsCurrent',
                     'us-gaap_CommercialPaper', 'us-gaap_ShortTermDebt',
+                    'us-gaap_NotesPayableCurrent',
                     // Without prefix
                     'DebtCurrent', 'ShortTermBorrowings'
                 ]);
@@ -634,11 +678,17 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 if (longTermDebt !== null || shortTermDebt !== null) {
                     totalDebt = (longTermDebt || 0) + (shortTermDebt || 0);
                 }
-                // Fallback: try direct total debt concept
+                // Fallback: try direct total debt concept. Combined/tag-ambiguous
+                // forms (NotesPayable, DebtInstrumentCarryingAmount) carry both
+                // tranches for some filers (e.g. PCAR). They precede the legacy
+                // LiabilitiesNoncurrent catch-all — which is NOT debt (it adds
+                // deferred revenue/tax) but is kept last to preserve existing
+                // semantics for tickers that previously resolved through it.
                 if (totalDebt === null) {
                     totalDebt = extract(report, 'bs', [
-                        'us-gaap_DebtLongtermAndShorttermCombined', 'us-gaap_LiabilitiesNoncurrent',
-                        'us-gaap_LongTermDebtAndShortTermDebt'
+                        'us-gaap_DebtLongtermAndShorttermCombined', 'us-gaap_DebtAndCapitalLeaseObligations',
+                        'us-gaap_LongTermDebtAndShortTermDebt', 'us-gaap_DebtInstrumentCarryingAmount',
+                        'us-gaap_NotesPayable', 'us-gaap_LiabilitiesNoncurrent',
                     ]);
                 }
 
@@ -713,6 +763,10 @@ export async function syncFinancials(symbol: string): Promise<void> {
     } catch (error) {
         console.error(`Error syncing financials mapping via Finnhub for ${symbol}:`, error);
         throw error;
+    }
+
+    if (cashInterestFallbackRows.length > 0) {
+        console.log(`[syncFinancials] ${symbol}: interestExpense cash-basis fallback (InterestPaidNet, not accrual) on: ${cashInterestFallbackRows.join(', ')}`);
     }
 
     // Fallback: if Finnhub produced no usable statements (ADR/foreign
