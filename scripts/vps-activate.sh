@@ -141,7 +141,7 @@ curl -s -o /dev/null -w 'llms=%{http_code}\n' http://localhost:3001/llms.txt
 # arrives. Note this verifies the DB-backed render (mover links, archive
 # dates) — the rank pipeline itself is legitimately empty overnight and
 # cannot be checked here.
-for p in /premarket-movers /premarket-gainers /premarket-losers /heatmap; do
+for p in / /brief /premarket-movers /gainers /losers /earnings /unusual-volume /premarket-gainers /premarket-losers /heatmap; do
   curl -s -o /dev/null --max-time 30 "http://localhost:3001$p" || true
 done
 sleep 10

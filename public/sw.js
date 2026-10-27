@@ -1,6 +1,6 @@
 // Version management - increment on layout/structure changes
 // Bump this whenever we ship caching changes to ensure clients drop stale caches
-const CACHE_VERSION = "2.0.6";
+const CACHE_VERSION = "2.0.7";
 const CACHE_NAME = `premarketprice-v${CACHE_VERSION}`;
 const STATIC_CACHE = `premarketprice-static-v${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `premarketprice-dynamic-v${CACHE_VERSION}`;
@@ -8,7 +8,6 @@ const API_CACHE = `premarketprice-api-v${CACHE_VERSION}`;
 
 // Files to cache immediately
 const STATIC_FILES = [
-  "/",
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png",
@@ -114,13 +113,26 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // CRITICAL: For navigations (HTML documents), always go network-first and don't cache.
-  // This avoids returning old HTML that references removed chunks after deploy.
+  // CRITICAL: For navigations (HTML documents) and Next.js App Router RSC
+  // fetches (?_rsc=... / RSC: 1), always go network-first and never cache in SW.
+  // Previously RSC fetches fell through to handleStaticRequest (cache-first in
+  // DYNAMIC_CACHE), pinning yesterday's page payload across tab clicks until
+  // the user did a hard reload (Cmd+Shift+R).
+  const isRscRequest =
+    request.headers.get("RSC") === "1" ||
+    request.headers.get("Next-Router-Prefetch") === "1" ||
+    url.searchParams.has("_rsc");
+
+  if (isRscRequest) {
+    event.respondWith(fetch(request, { cache: "no-store" }));
+    return;
+  }
+
   if (request.mode === "navigate" || request.destination === "document") {
-    // If the user explicitly chose to continue offline, serve the cached index
+    // If the user explicitly chose to continue offline, serve the cached offline page
     if (url.searchParams.get("offline") === "true") {
       event.respondWith(
-        caches.match("/").then((response) => response || caches.match("/offline.html"))
+        caches.match("/offline.html").then((response) => response || fetch(request))
       );
       return;
     }
@@ -137,15 +149,20 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Handle static file requests
-  if (url.origin === location.origin) {
-    event.respondWith(handleStaticRequest(request));
+  // Handle logo requests
+  if (url.pathname.startsWith("/logos/")) {
+    event.respondWith(handleLogoRequest(request));
     return;
   }
 
-  // Handle external requests (logos, etc.)
-  if (url.pathname.startsWith("/logos/")) {
-    event.respondWith(handleLogoRequest(request));
+  // Handle true static file requests (icons, fonts, manifest, images) — never
+  // arbitrary route pathnames.
+  const isStaticAsset = /\.(png|jpg|jpeg|gif|webp|avif|svg|ico|woff|woff2|ttf|eot|css|js)$/i.test(
+    url.pathname
+  ) || STATIC_FILES.includes(url.pathname);
+
+  if (url.origin === location.origin && isStaticAsset) {
+    event.respondWith(handleStaticRequest(request));
     return;
   }
 });

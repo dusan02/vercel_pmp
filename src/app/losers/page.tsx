@@ -10,11 +10,12 @@ import { SsrMoverLinks } from '@/components/seo/SsrMoverLinks';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { getPremarketDateSummaries } from '@/lib/seo/premarketArchive';
 import { StandaloneHeader } from '@/components/StandaloneHeader';
+import { SsrFreshnessGuard } from '@/components/SsrFreshnessGuard';
 
 export const revalidate = 60;
 
 function getTodayFormatted(): string {
-  return new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  return new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' });
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -98,8 +99,11 @@ export default async function LosersPage() {
     })),
   };
 
+  const renderedAt = Date.now();
+
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
+        <SsrFreshnessGuard renderedAt={renderedAt} maxAgeMs={90_000} refreshIntervalMs={60_000} />
         <StandaloneHeader />
       <script
         type="application/ld+json"

@@ -96,13 +96,14 @@ const nextConfig: NextConfig = {
       },
       {
         // ISR default emits stale-while-revalidate=31535940 (1y) — browsers that
-        // honor SWR (Chrome) then serve year-old HTML. Cap the stale window at
-        // the same 60s as the ISR revalidate.
-        source: '/premarket-movers',
+        // honor SWR (Chrome) then serve day/year-old HTML on direct visits until
+        // a hard reload. Cap the browser/shared stale window at 60s across all
+        // HTML/ISR page routes (static assets below override this with immutable).
+        source: '/((?!api/|_next/|logos/|llms\\.txt|sitemap\\.xml|robots\\.txt|manifest\\.json|sw\\.js).*)',
         headers: [
           {
             key: 'Cache-Control',
-            value: 's-maxage=60, stale-while-revalidate=60',
+            value: 'public, max-age=0, s-maxage=60, stale-while-revalidate=60',
           },
         ],
       },

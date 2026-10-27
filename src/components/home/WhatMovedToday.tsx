@@ -50,6 +50,7 @@ export function WhatMovedToday({ movers, eligibleTickers }: WhatMovedTodayProps)
     month: 'long',
     day: 'numeric',
     year: 'numeric',
+    timeZone: 'America/New_York',
   });
 
   return (

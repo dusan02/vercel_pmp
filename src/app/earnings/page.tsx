@@ -8,6 +8,7 @@ import { getSessionDateStr } from '@/lib/utils/timeUtils';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 import { EarningsTable, FeaturedEarningsCard } from '@/components/earnings/EarningsShared';
 import EarningsDayExplorer from '@/components/earnings/EarningsDayExplorer';
+import { SsrFreshnessGuard } from '@/components/SsrFreshnessGuard';
 
 const baseUrl = 'https://premarketprice.com';
 
@@ -106,8 +107,11 @@ export default async function EarningsPage() {
       })),
   };
 
+  const renderedAt = Date.now();
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <SsrFreshnessGuard renderedAt={renderedAt} maxAgeMs={300_000} refreshIntervalMs={0} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(earningsItemList) }} />
       {/* Breadcrumbs */}
       <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">

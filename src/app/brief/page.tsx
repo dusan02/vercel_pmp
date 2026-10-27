@@ -9,6 +9,7 @@ import { detectSession, getSessionDateStr } from '@/lib/utils/timeUtils';
 import { formatPercent, formatPrice, formatMarketCap } from '@/lib/utils/heatmapFormat';
 import { shortName } from '@/lib/seo/metadata';
 import { toJsonLd } from '@/lib/seo/jsonLd';
+import { SsrFreshnessGuard } from '@/components/SsrFreshnessGuard';
 
 const baseUrl = 'https://premarketprice.com';
 
@@ -170,8 +171,11 @@ export default async function BriefPage() {
   const breadthTone = weightedAvg > 0.05 ? 'up' : weightedAvg < -0.05 ? 'down' : undefined;
   const breadthWord = weightedAvg > 0.05 ? 'positive' : weightedAvg < -0.05 ? 'negative' : 'flat';
 
+  const renderedAt = Date.now();
+
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <SsrFreshnessGuard renderedAt={renderedAt} maxAgeMs={90_000} refreshIntervalMs={60_000} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(moversItemList) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(breadcrumbLd) }} />
 

@@ -11,6 +11,7 @@ import { MoversExplorer } from '@/components/movers/MoversExplorer';
 import { getMoversData } from '@/services/movers/getMovers';
 import { DailyRecapCard, type DailyRecapData } from '@/components/home/DailyRecapCard';
 import { isMicrocap } from '@/services/movers/liquidity';
+import { SsrFreshnessGuard } from '@/components/SsrFreshnessGuard';
 
 export const revalidate = 60;
 
@@ -21,11 +22,11 @@ export const revalidate = 60;
 const getMovers = cache(() => getMoversData(50, 2.0));
 
 function getTodayFormatted(): string {
-  return new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  return new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' });
 }
 
 function getTodayShort(): string {
-  return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' });
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -207,8 +208,11 @@ export default async function PremarketMoversPage() {
     ],
   };
 
+  const renderedAt = Date.now();
+
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
+      <SsrFreshnessGuard renderedAt={renderedAt} maxAgeMs={90_000} refreshIntervalMs={60_000} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(itemListSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(faqSchema) }} />
       <div className="container mx-auto py-8 px-4">

@@ -7,6 +7,7 @@ import { getSessionDateStr } from '@/lib/utils/timeUtils';
 import { getUnusualVolumeStocks, type PremarketArchiveRow } from '@/lib/seo/premarketArchive';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { StandaloneHeader } from '@/components/StandaloneHeader';
+import { SsrFreshnessGuard } from '@/components/SsrFreshnessGuard';
 
 export const revalidate = 300; // 5 minutes — live-ish data
 
@@ -40,9 +41,11 @@ export default async function UnusualVolumePage() {
   });
 
   const rows = await getUnusualVolumeStocks(todayStr, 2, 50);
+  const renderedAt = Date.now();
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
+        <SsrFreshnessGuard renderedAt={renderedAt} maxAgeMs={300_000} refreshIntervalMs={60_000} />
         <StandaloneHeader />
       <div className="container mx-auto py-8 px-4">
         <div className="mb-8">

@@ -13,6 +13,7 @@ import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 import { getMoversData } from '@/services/movers/getMovers';
 import { getHeatmapData } from '@/lib/heatmap/heatmapService';
 import { prisma } from '@/lib/db/prisma';
+import { SsrFreshnessGuard } from '@/components/SsrFreshnessGuard';
 
 const baseUrl = 'https://premarketprice.com';
 
@@ -191,9 +192,11 @@ export default async function Page() {
   // Full discovery is handled by /stocks hub page (server-rendered, 700 tickers).
   const topTickersForNav = allTickersForNav.slice(0, 50);
   const eligibleSet = new Set(allTickersForNav);
+  const renderedAt = Date.now();
 
   return (
     <>
+      <SsrFreshnessGuard renderedAt={renderedAt} maxAgeMs={60_000} refreshIntervalMs={0} />
       {/* Server-rendered internal links (helps crawl/discovery even if the main UI is client-heavy) */}
       <nav className="sr-only" aria-label="Primary navigation">
         <Link href="/premarket-movers">Premarket Movers</Link>

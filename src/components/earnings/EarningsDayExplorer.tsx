@@ -156,6 +156,12 @@ export default function EarningsDayExplorer({
     }
   }, []);
 
+  // Sync if SSR initialDate updates after an ISR refresh
+  useEffect(() => {
+    setSelectedDate(initialDate);
+    setRowsByDate(prev => ({ ...prev, [initialDate]: initialRows }));
+  }, [initialDate, initialRows]);
+
   // Fetch rows for non-SSR dates
   useEffect(() => {
     if (rowsByDate[selectedDate]) return;
@@ -181,10 +187,10 @@ export default function EarningsDayExplorer({
     return () => { cancelled = true; };
   }, [selectedDate, rowsByDate]);
 
-  // Live refresh: the Price column should track the market — re-pull the
-  // selected day every 60s while the tab is visible (today's prices drift
-  // post-earnings; SSR rows would otherwise freeze at generation time).
+  // Live refresh: pull fresh rows on mount and every 60s while the tab is
+  // visible so prices and reported actuals never stay frozen at SSR time.
   useEffect(() => {
+    void fetchDay(selectedDate, true);
     const id = setInterval(() => {
       if (document.visibilityState === 'visible') fetchDay(selectedDate, true);
     }, 60_000);
