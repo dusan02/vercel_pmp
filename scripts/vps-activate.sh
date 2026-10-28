@@ -86,6 +86,11 @@ fi
 # guard in sitemap.ts throws instead of caching a gutted version.
 rm -f .next/server/app/sitemap.xml* 2>/dev/null || true
 find .next/cache -name '*sitemap*' -delete 2>/dev/null || true
+# Also drop CI build-time empty prerenders for DB-backed ISR pages with
+# revalidate >= 60s so the post-restart warmup below immediately populates
+# real production data instead of serving the empty CI shell until revalidate expires.
+rm -rf .next/server/app/earnings.html .next/server/app/earnings.rsc .next/server/app/earnings.meta .next/server/app/earnings.segments 2>/dev/null || true
+rm -rf .next/server/app/brief.html .next/server/app/brief.rsc .next/server/app/brief.meta .next/server/app/brief.segments 2>/dev/null || true
 
 rollback() {
   echo "❌ Rolling back to previous build"

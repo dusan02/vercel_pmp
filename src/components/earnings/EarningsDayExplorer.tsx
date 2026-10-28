@@ -426,6 +426,7 @@ export default function EarningsDayExplorer({
   const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
   const [detailsBySymbol, setDetailsBySymbol] = useState<Record<string, EarningsTickerDetail>>({});
   const [loadingSymbol, setLoadingSymbol] = useState<string | null>(null);
+  const [showAllRows, setShowAllRows] = useState(false);
 
   const fetchDay = useCallback(async (date: string, silent = false) => {
     if (!silent) { setLoading(true); setError(null); }
@@ -454,6 +455,7 @@ export default function EarningsDayExplorer({
   // Collapse open row when switching date
   useEffect(() => {
     setExpandedTicker(null);
+    setShowAllRows(false);
   }, [selectedDate]);
 
   // Fetch rows for non-SSR dates
@@ -634,6 +636,12 @@ export default function EarningsDayExplorer({
     });
     return sorted;
   }, [filteredRows, sortKey, sortDir]);
+
+  const visibleRows = useMemo(
+    () => (showAllRows || search.trim().length > 0 ? sortedRows : sortedRows.slice(0, 50)),
+    [sortedRows, showAllRows, search],
+  );
+  const hiddenRowCount = sortedRows.length - visibleRows.length;
 
   const handleSort = useCallback((key: SortKey) => {
     if (key === sortKey) setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
@@ -885,7 +893,7 @@ export default function EarningsDayExplorer({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100 dark:divide-slate-800">
-                  {sortedRows.map((r) => {
+                  {visibleRows.map((r) => {
                     const badge = capBadge(r.marketCap);
                     const chip = timeChip(r.time);
                     const verdict = verdictBadge(r.overallScore);
@@ -989,7 +997,7 @@ export default function EarningsDayExplorer({
 
             {/* Mobile cards */}
             <div className="md:hidden divide-y divide-neutral-100 dark:divide-slate-800">
-              {sortedRows.map((r) => {
+              {visibleRows.map((r) => {
                 const badge = capBadge(r.marketCap);
                 const chip = timeChip(r.time);
                 const verdict = verdictBadge(r.overallScore);
@@ -1054,6 +1062,18 @@ export default function EarningsDayExplorer({
                 );
               })}
             </div>
+
+            {hiddenRowCount > 0 && (
+              <div className="border-t border-neutral-100 dark:border-slate-800 px-4 py-3 text-center bg-neutral-50/50 dark:bg-slate-900/50">
+                <button
+                  type="button"
+                  onClick={() => setShowAllRows(true)}
+                  className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Show all {sortedRows.length} companies (+{hiddenRowCount} more)
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

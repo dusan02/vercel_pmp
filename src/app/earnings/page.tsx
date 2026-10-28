@@ -35,19 +35,34 @@ function formatDateDisplay(dateStr: string): string {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
+const PREVIEW_ROWS_PER_DAY = 15;
+
 function EarningsDaySection({ group, eligible }: { group: EarningsSSRGroup; eligible: Set<string> }) {
   if (group.total === 0) return null;
-  const allRows = [...group.preMarket, ...group.afterMarket, ...group.timeTbd];
+  const allRows = [...group.preMarket, ...group.afterMarket, ...group.timeTbd]
+    .sort((a, b) => (b.marketCap ?? 0) - (a.marketCap ?? 0));
+  const previewRows = allRows.slice(0, PREVIEW_ROWS_PER_DAY);
+  const hiddenCount = allRows.length - previewRows.length;
 
   return (
     <div className="mb-6">
-      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">
-        <Link href={`/earnings/date/${group.date}`} className="hover:underline">
-          {formatDateDisplay(group.date)}
-        </Link>
-        <span className="ml-2 text-sm font-normal text-slate-500">{group.total} earnings</span>
-      </h3>
-      <EarningsTable rows={allRows} eligible={eligible} />
+      <div className="flex items-baseline justify-between mb-2">
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+          <Link href={`/earnings/date/${group.date}`} className="hover:underline">
+            {formatDateDisplay(group.date)}
+          </Link>
+          <span className="ml-2 text-sm font-normal text-slate-500">{group.total} earnings</span>
+        </h3>
+        {hiddenCount > 0 && (
+          <Link
+            href={`/earnings/date/${group.date}`}
+            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            View all {group.total} →
+          </Link>
+        )}
+      </div>
+      <EarningsTable rows={previewRows} eligible={eligible} />
     </div>
   );
 }

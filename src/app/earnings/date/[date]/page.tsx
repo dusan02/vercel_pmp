@@ -100,7 +100,9 @@ export default async function EarningsDatePage({ params }: PageProps) {
     );
   }
 
-  const allRows = [...group.preMarket, ...group.afterMarket, ...group.timeTbd];
+  const allRows = [...group.preMarket, ...group.afterMarket, ...group.timeTbd]
+    .sort((a, b) => (b.marketCap ?? 0) - (a.marketCap ?? 0));
+  const tableRows = allRows.slice(0, 100);
   const reportedCount = allRows.filter(r => r.hasReported).length;
   const upcomingCount = allRows.length - reportedCount;
   const eligibleAnalysis = await getEligibleAnalysisSet();
@@ -162,7 +164,7 @@ export default async function EarningsDatePage({ params }: PageProps) {
         )}
 
         {/* Earnings table */}
-        <EarningsTable rows={allRows} eligible={eligibleAnalysis} />
+        <EarningsTable rows={tableRows} eligible={eligibleAnalysis} />
 
         {/* Back link */}
         <div className="mt-6">
