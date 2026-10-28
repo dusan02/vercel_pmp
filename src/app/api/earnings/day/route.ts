@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Missing or invalid date (YYYY-MM-DD)' }, { status: 400 });
   }
 
-  const cacheKey = `earnings:day:v2:${date}`;
+  const cacheKey = `earnings:day:v3:${date}`;
   try {
     const cached = await getCachedData(cacheKey);
     if (cached) {

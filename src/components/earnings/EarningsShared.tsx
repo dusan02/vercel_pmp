@@ -235,11 +235,21 @@ export function PillarStrip({ row }: { row: EarningsSSRRow }) {
   );
 }
 
-/** One-line factual "why watch" — sector + size + standout pillars + vol proxy. */
+/** One-line factual "why watch" — sector + size + standout pillars + valuation/analyst/vol proxy. */
 export function whyWatch(row: EarningsSSRRow): string {
   const bits: string[] = [];
   if (row.sector) bits.push(row.sector);
   if (row.marketCap !== null) bits.push(`${formatMcap(row.marketCap)} market cap`);
+  if (row.forwardPe != null && row.forwardPe > 0) {
+    bits.push(`Fwd P/E ${row.forwardPe.toFixed(1)}×`);
+  } else if (row.peRatio != null && row.peRatio > 0) {
+    bits.push(`P/E ${row.peRatio.toFixed(1)}×`);
+  }
+  const totalAnalysts = (row.analystBuy ?? 0) + (row.analystHold ?? 0) + (row.analystSell ?? 0);
+  if (totalAnalysts >= 3) {
+    const buyPct = Math.round(((row.analystBuy ?? 0) / totalAnalysts) * 100);
+    bits.push(`${buyPct}% Buy (${totalAnalysts} analysts)`);
+  }
   const best = ([
     ['Quality', row.qualityScore], ['Profitability', row.profitabilityScore],
     ['Growth', row.growthScore], ['Health', row.healthScore],
@@ -251,6 +261,7 @@ export function whyWatch(row: EarningsSSRRow): string {
 }
 
 export function FeaturedEarningsCard({ row, eligible }: { row: EarningsSSRRow; eligible: Set<string> }) {
+  const reactionPct = row.earningsDayMovePct ?? (row.hasReported ? row.priceChangePct : null);
   const inner = (
     <div className="h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
       <div className="flex items-start justify-between gap-2">
@@ -285,15 +296,20 @@ export function FeaturedEarningsCard({ row, eligible }: { row: EarningsSSRRow; e
             </>
           )}
         </div>
-        {row.earningsDayMovePct !== null && (
+        {reactionPct !== null && (
           <div>Stock reaction:{' '}
-            <span className={`font-semibold ${row.earningsDayMovePct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-              {formatPercent(row.earningsDayMovePct)}
+            <span className={`font-semibold ${reactionPct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+              {formatPercent(reactionPct)}
             </span>
           </div>
         )}
       </div>
       <div className="mt-2"><PillarStrip row={row} /></div>
+      {row.moversReason && (
+        <div className="mt-2 text-[11px] text-amber-700 dark:text-amber-400 leading-snug line-clamp-2">
+          {row.moversReason}
+        </div>
+      )}
       {whyWatch(row) && (
         <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 leading-snug">{whyWatch(row)}</div>
       )}

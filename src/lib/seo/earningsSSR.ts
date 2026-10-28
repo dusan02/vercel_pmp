@@ -37,6 +37,17 @@ export interface EarningsSSRRow {
   qualityScore: number | null;
   ewScore: number | null;
   ewMaxPossible: number | null;
+  moversReason?: string | null;
+  moversCategory?: string | null;
+  rvol?: number | null;
+  peRatio?: number | null;
+  forwardPe?: number | null;
+  week52High?: number | null;
+  week52Low?: number | null;
+  week52Position?: number | null;
+  analystBuy?: number | null;
+  analystHold?: number | null;
+  analystSell?: number | null;
 }
 
 export interface EarningsSSRGroup {
@@ -99,6 +110,17 @@ function rowFromDB(e: {
     qualityScore: null,
     ewScore: null,
     ewMaxPossible: null,
+    moversReason: null,
+    moversCategory: null,
+    rvol: null,
+    peRatio: null,
+    forwardPe: null,
+    week52High: null,
+    week52Low: null,
+    week52Position: null,
+    analystBuy: null,
+    analystHold: null,
+    analystSell: null,
   };
 }
 
@@ -126,10 +148,14 @@ async function enrichEarningsRows(
   refEnd.setUTCDate(refEnd.getUTCDate() + 5);
 
   const mcapLookback = new Date(Date.now() - 14 * 86400_000);
-  const [tickers, mcaps, caches, ews, dailyRefs] = await Promise.all([
+  const [tickers, mcaps, caches, ews, dailyRefs, fhMetrics, fhRecs] = await Promise.all([
     prisma.ticker.findMany({
       where: { symbol: { in: symbols } },
-      select: { symbol: true, name: true, sector: true, stdDevReturn20d: true, lastPrice: true, lastChangePct: true, lastMarketCap: true, lastMarketCapDiff: true },
+      select: {
+        symbol: true, name: true, sector: true, stdDevReturn20d: true,
+        lastPrice: true, lastChangePct: true, lastMarketCap: true, lastMarketCapDiff: true,
+        moversReason: true, moversCategory: true, latestMoversRVOL: true,
+      },
     }),
     // DailyValuationHistory is the live market-cap source (Ticker.lastMarketCap
     // and EarningsCalendar.marketCap are both unpopulated).
@@ -159,10 +185,25 @@ async function enrichEarningsRows(
       orderBy: { date: 'asc' },
       select: { symbol: true, date: true, previousClose: true, regularClose: true },
     }),
+    prisma.finnhubMetrics.findMany({
+      where: { symbol: { in: symbols } },
+      select: {
+        symbol: true, peRatio: true, forwardPe: true,
+        week52High: true, week52Low: true, week52Position: true,
+      },
+    }),
+    prisma.finnhubRecommendation.findMany({
+      where: { symbol: { in: symbols } },
+      select: {
+        symbol: true, strongBuy: true, buy: true, hold: true, sell: true, strongSell: true,
+      },
+    }),
   ]);
 
   const tickerBy = new Map(tickers.map((t) => [t.symbol, t]));
   const cacheBy = new Map(caches.map((c) => [c.symbol, c]));
+  const metricsBy = new Map(fhMetrics.map((m) => [m.symbol, m]));
+  const recBy = new Map(fhRecs.map((r) => [r.symbol, r]));
   const ewBy = new Map<string, { totalScore: number; maxPossible: number }>();
   for (const e of ews) {
     if (!ewBy.has(e.symbol)) ewBy.set(e.symbol, e); // desc order — first wins
@@ -193,6 +234,28 @@ async function enrichEarningsRows(
       row.price = t.lastPrice;
       // Ticker.lastMarketCapDiff is stored in $B — scale to dollars.
       row.marketCapDiff = t.lastMarketCapDiff !== null ? t.lastMarketCapDiff * 1e9 : null;
+      row.moversReason = t.moversReason ?? null;
+      row.moversCategory = t.moversCategory ?? null;
+      row.rvol = t.latestMoversRVOL ?? null;
+    }
+    const fm = metricsBy.get(row.ticker);
+    if (fm) {
+      row.peRatio = fm.peRatio ?? null;
+      row.forwardPe = fm.forwardPe ?? null;
+      row.week52High = fm.week52High ?? null;
+      row.week52Low = fm.week52Low ?? null;
+      row.week52Position = fm.week52Position ?? null;
+    }
+    const rec = recBy.get(row.ticker);
+    if (rec) {
+      const buy = (rec.strongBuy ?? 0) + (rec.buy ?? 0);
+      const hold = rec.hold ?? 0;
+      const sell = (rec.sell ?? 0) + (rec.strongSell ?? 0);
+      if (buy + hold + sell > 0) {
+        row.analystBuy = buy;
+        row.analystHold = hold;
+        row.analystSell = sell;
+      }
     }
     row.marketCap = row.marketCap
       ?? mcapBy.get(row.ticker)

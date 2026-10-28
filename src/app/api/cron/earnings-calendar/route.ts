@@ -53,7 +53,7 @@ async function replaceEarningsForDate(earningsData: EarningsData[], date: string
         await tx.earningsCalendar.createMany({ data: records });
         serverLog(`✅ Replaced ${deleted.count} → ${records.length} earnings records for ${date}`);
       });
-      await del([`earnings:day:v2:${date}`]).catch(() => {});
+      await del([`earnings:day:v2:${date}`, `earnings:day:v3:${date}`]).catch(() => {});
       return;
     } catch (error) {
       const isP2028 = typeof error === 'object' && error !== null
