@@ -4,7 +4,7 @@ import { checkEarningsForOurTickers } from '@/lib/clients/yahooFinanceScraper';
 import { prisma } from '@/lib/db/prisma';
 import { verifyCronAuth, verifyCronAuthOptional, withCronLock } from '@/lib/utils/cronAuth';
 
-const FINNHUB_KEY = process.env.FINNHUB_TOKEN;
+const FINNHUB_KEY = process.env.FINNHUB_API_KEY || process.env.FINNHUB_TOKEN;
 
 interface EarningsData {
   ticker: string;
@@ -35,18 +35,32 @@ async function replaceEarningsForDate(earningsData: EarningsData[], date: string
     revenueSurprisePercent: earning.revenueSurprisePercent || null
   }));
 
-  await prisma.$transaction(async (tx) => {
-    const deleted = await tx.earningsCalendar.deleteMany({
-      where: {
-        date: {
-          gte: new Date(date + 'T00:00:00Z'),
-          lt: new Date(date + 'T24:00:00Z')
-        }
-      }
-    });
-    await tx.earningsCalendar.createMany({ data: records });
-    serverLog(`✅ Replaced ${deleted.count} → ${records.length} earnings records for ${date}`);
-  });
+  // P2028 (transaction start timeout) happens under SQLite writer contention —
+  // a short retry window rides it out instead of failing the whole cron run.
+  const maxAttempts = 3;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await prisma.$transaction(async (tx) => {
+        const deleted = await tx.earningsCalendar.deleteMany({
+          where: {
+            date: {
+              gte: new Date(date + 'T00:00:00Z'),
+              lt: new Date(date + 'T24:00:00Z')
+            }
+          }
+        });
+        await tx.earningsCalendar.createMany({ data: records });
+        serverLog(`✅ Replaced ${deleted.count} → ${records.length} earnings records for ${date}`);
+      });
+      return;
+    } catch (error) {
+      const isP2028 = typeof error === 'object' && error !== null
+        && (error as { code?: string }).code === 'P2028';
+      if (!isP2028 || attempt >= maxAttempts) throw error;
+      serverLog(`⚠️ Transaction timeout (P2028) for ${date}, retry ${attempt}/${maxAttempts - 1}`);
+      await new Promise(resolve => setTimeout(resolve, attempt * 1500));
+    }
+  }
 }
 
 /**
@@ -54,7 +68,7 @@ async function replaceEarningsForDate(earningsData: EarningsData[], date: string
  */
 async function fetchEarningsFromFinnhub(date: string): Promise<EarningsData[]> {
   if (!FINNHUB_KEY) {
-    serverLog('⚠️ FINNHUB_TOKEN is not set, skipping Finnhub fetch');
+    serverLog('⚠️ FINNHUB_API_KEY/FINNHUB_TOKEN is not set, skipping Finnhub fetch');
     return [];
   }
   try {
@@ -170,8 +184,10 @@ async function fetchEarningsFromYahoo(date: string): Promise<EarningsData[]> {
     return earningsData;
 
   } catch (error) {
+    // Yahoo/HeadersOverflow outages must not kill the whole run — the Finnhub
+    // bulk still lands and keeps the calendar populated.
     console.error('❌ Error fetching earnings:', error);
-    throw error;
+    return [];
   }
 }
 

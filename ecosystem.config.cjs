@@ -431,7 +431,7 @@ module.exports = {
       error_file: path.join(__dirname, "logs", "pm2", "cron-earnings-calendar-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "cron-earnings-calendar-out.log"),
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      cron_restart: "0 8 * * *", // Každý deň o 08:00 UTC (pred otvorením trhu)
+      cron_restart: "0 8,23 * * *", // 08:00 UTC (pre-open) + 23:00 UTC (po close — doťahne AMC actuals ešte v ten istý večer)
       autorestart: false,
     },
     {
