@@ -2,6 +2,7 @@
 import { serverLog } from '@/lib/utils/serverLog';
 import { checkEarningsForOurTickers } from '@/lib/clients/yahooFinanceScraper';
 import { prisma } from '@/lib/db/prisma';
+import { del } from '@/lib/redis/operations';
 import { verifyCronAuth, verifyCronAuthOptional, withCronLock } from '@/lib/utils/cronAuth';
 
 const FINNHUB_KEY = process.env.FINNHUB_API_KEY || process.env.FINNHUB_TOKEN;
@@ -52,6 +53,7 @@ async function replaceEarningsForDate(earningsData: EarningsData[], date: string
         await tx.earningsCalendar.createMany({ data: records });
         serverLog(`✅ Replaced ${deleted.count} → ${records.length} earnings records for ${date}`);
       });
+      await del([`earnings:day:v2:${date}`]).catch(() => {});
       return;
     } catch (error) {
       const isP2028 = typeof error === 'object' && error !== null
@@ -232,14 +234,28 @@ async function runEarningsCalendarUpdate(manual: boolean): Promise<NextResponse>
       // 3. Získaj earnings data z Yahoo Finance (naše tickery, možno viac detailov)
       const yahooData = await fetchEarningsFromYahoo(dateStr);
 
-      // 4. Merge: Finnhub (all) + Yahoo (our tickers with more detail)
+      // 4. Merge: Finnhub (all) + Yahoo (our tickers — preserve non-null Finnhub fields)
       const mergedMap = new Map<string, EarningsData>();
       for (const e of finnhubData) {
         mergedMap.set(e.ticker, e);
       }
-      // Yahoo data overrides Finnhub for our tickers (more detail)
       for (const e of yahooData) {
-        mergedMap.set(e.ticker, e);
+        const existing = mergedMap.get(e.ticker);
+        if (!existing) {
+          mergedMap.set(e.ticker, e);
+        } else {
+          mergedMap.set(e.ticker, {
+            ...existing,
+            companyName: e.companyName && e.companyName !== e.ticker ? e.companyName : existing.companyName,
+            time: e.time !== 'tbd' ? e.time : existing.time,
+            epsEstimate: e.epsEstimate ?? existing.epsEstimate,
+            epsActual: e.epsActual ?? existing.epsActual,
+            revenueEstimate: e.revenueEstimate ?? existing.revenueEstimate,
+            revenueActual: e.revenueActual ?? existing.revenueActual,
+            epsSurprisePercent: e.epsSurprisePercent ?? existing.epsSurprisePercent,
+            revenueSurprisePercent: e.revenueSurprisePercent ?? existing.revenueSurprisePercent,
+          });
+        }
       }
 
       const earningsData = Array.from(mergedMap.values());

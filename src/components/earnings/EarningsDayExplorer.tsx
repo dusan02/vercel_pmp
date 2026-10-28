@@ -109,7 +109,7 @@ function sortValue(r: EarningsSSRRow, key: SortKey): string | number | null {
   switch (key) {
     case 'ticker': return r.ticker;
     case 'marketCap': return r.marketCap;
-    case 'price': return r.price;
+    case 'price': return r.priceChangePct;
     case 'eps': return r.epsSurprisePercent ?? r.epsActual ?? r.epsEstimate;
     case 'revenue': return r.revenueSurprisePercent ?? r.revenueActual ?? r.revenueEstimate;
   }
@@ -226,6 +226,7 @@ export default function EarningsDayExplorer({
     sorted.sort((a, b) => {
       const av = sortValue(a, sortKey);
       const bv = sortValue(b, sortKey);
+      if (av == null && bv == null) return (b.marketCap ?? 0) - (a.marketCap ?? 0);
       if (av == null) return 1;
       if (bv == null) return -1;
       if (typeof av === 'string' && typeof bv === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
