@@ -68,7 +68,6 @@ export function AnalysisHero({
   industry,
   marketSession,
   prevClose,
-  premarket,
   peRatio,
   dividendYield,
   roe,
@@ -84,13 +83,11 @@ export function AnalysisHero({
 }: AnalysisHeroProps) {
   const isClosed = marketSession === 'closed';
   const isPre = marketSession === 'pre';
-  const premarketLastEt = premarket?.lastTs
-    ? new Date(premarket.lastTs).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZone: 'America/New_York',
-      }) + ' ET'
-    : null;
+  const formatOrdinal = (n: number) => {
+    const r = Math.round(n);
+    const s = ['th', 'st', 'nd', 'rd'][(r % 100 >= 11 && r % 100 <= 13) ? 0 : r % 10] || 'th';
+    return `${r}${s}`;
+  };
   const earningsLabel =
     earningsDate && earningsDays != null
       ? earningsDays === 0
@@ -188,34 +185,6 @@ export function AnalysisHero({
           </>
         )}
       </div>
-      {/* Pre-market result — dedicated line outside the pre session (during
-          'pre' the headline price above already is the live pre-market price).
-          SessionPrice 'pre' row persists after 9:30, so it stays visible
-          through regular session and after-hours. */}
-      {!isPre && premarket != null && premarket.lastPrice > 0 && (
-        <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Pre-market:</span>
-          <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-            ${formatPrice(premarket.lastPrice)}
-          </span>
-          {Number.isFinite(premarket.changePct) && (
-            <span
-              className={`text-lg font-bold tabular-nums ${
-                premarket.changePct > 0
-                  ? 'text-green-600 dark:text-green-400'
-                  : premarket.changePct < 0
-                    ? 'text-red-600 dark:text-red-400'
-                    : 'text-gray-500 dark:text-gray-400'
-              }`}
-            >
-              {formatPercent(premarket.changePct)}
-            </span>
-          )}
-          <span className="text-xs text-gray-500 dark:text-gray-500">
-            vs prev close{premarketLastEt ? ` · last ${premarketLastEt}` : ''}
-          </span>
-        </div>
-      )}
       {/* P/E vs own history — the "cheap or expensive vs itself" answer at
           a glance; the full percentiles live in Key Metrics tooltips. */}
       {peHistory?.current != null && peHistory?.percentile != null && isPeDistorted(peHistory.current, peHistory.median) ? (
@@ -248,7 +217,7 @@ export function AnalysisHero({
               ? `bottom ${Math.round(peHistory.percentile)}% of history`
               : peHistory.percentile >= 80
                 ? `top ${Math.round(100 - peHistory.percentile)}% of history`
-                : `${Math.round(peHistory.percentile)}th percentile of history`}
+                : `${formatOrdinal(peHistory.percentile)} percentile of history`}
           </span>
         </p>
       )}
@@ -350,10 +319,9 @@ export function AnalysisHero({
                 const medPos = peHistory.median != null && peHistory.median > min && peHistory.median < max
                   ? Math.min(100, Math.max(0, ((peHistory.median - min) / span) * 100))
                   : null;
-                const pct = peHistory.percentile != null ? Math.round(peHistory.percentile) : null;
-                const ord = pct != null ? `${pct}${['th', 'st', 'nd', 'rd'][(pct % 100 >= 11 && pct % 100 <= 13) ? 0 : pct % 10] || 'th'}` : null;
+                const ord = peHistory.percentile != null ? formatOrdinal(peHistory.percentile) : null;
                 return (
-                  <div title={`P/E range over ~${peHistory.years ?? 'several'} years of daily history`}>
+                  <div title={`P/E range over ~${peHistory.years != null ? Math.round(peHistory.years) : 'several'} years of daily history`}>
                     <div className="relative h-1.5 rounded-full bg-gradient-to-r from-emerald-200/80 via-gray-200 to-red-200/80 dark:from-emerald-900/40 dark:via-gray-700 dark:to-red-900/40">
                       {medPos != null && (
                         <span
@@ -374,7 +342,7 @@ export function AnalysisHero({
                       <span>High {max.toFixed(1)}×</span>
                     </div>
                     <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
-                      P/E {peHistory.current!.toFixed(1)}×{ord != null ? ` sits at the ${ord} percentile` : ''} of its{peHistory.years != null ? ` ${peHistory.years}-year` : ''} history.
+                      P/E {peHistory.current!.toFixed(1)}×{ord != null ? ` sits at the ${ord} percentile` : ''} of its{peHistory.years != null ? ` ${Math.round(peHistory.years)}-year` : ''} history.
                     </p>
                   </div>
                 );
