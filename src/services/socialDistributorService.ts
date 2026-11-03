@@ -346,7 +346,7 @@ export class SocialDistributorService {
      *   X relationship; our account's X credits are bypassed entirely).
      * - Otherwise direct X API (requires paid credits on the X side).
      */
-    private bufferChannels: { id: string; service: string }[] | null | undefined;
+    private bufferChannels: { id: string; service: string }[] | undefined;
 
     /**
      * Social links carry per-channel UTM so GA4 can attribute clicks — apps
@@ -454,31 +454,46 @@ export class SocialDistributorService {
         return res.json();
     }
 
-    /** Connected Buffer channels we post to (twitter/x, threads, bluesky). Cached per process. */
+    /**
+     * Connected Buffer channels we post to (twitter/x, threads, bluesky).
+     * Successful lookups are cached per process; failures are not, so the
+     * next run retries (e.g. after a token rotation).
+     */
     private async getBufferChannels(): Promise<{ id: string; service: string }[]> {
-        if (this.bufferChannels !== undefined) return this.bufferChannels ?? [];
+        if (this.bufferChannels !== undefined) return this.bufferChannels;
         try {
             const account = await this.bufferGraphql('query { account { organizations { id } } }');
             const orgId = account?.data?.account?.organizations?.[0]?.id;
-            if (!orgId) return (this.bufferChannels = null) ?? [];
+            if (!orgId) {
+                const gqlError = account?.errors?.[0];
+                const code = gqlError?.extensions?.code;
+                const reason = gqlError ? `${gqlError.message}${code ? ` (${code})` : ''}` : 'no organization on account';
+                const hint = code === 'UNAUTHENTICATED' ? ' — rotate BUFFER_ACCESS_TOKEN (Buffer → Settings → API)' : '';
+                console.error(`❌ SocialDistributorService: Buffer account lookup failed: ${reason}${hint}. X/Threads posting is DISABLED.`);
+                return [];
+            }
 
             const channels = await this.bufferGraphql(
                 'query($orgId: OrganizationId!) { channels(input: { organizationId: $orgId }) { id service name displayName isDisconnected } }',
                 { orgId }
             );
+            if (!channels?.data?.channels) {
+                console.error(`❌ SocialDistributorService: Buffer channels query failed: ${channels?.errors?.[0]?.message ?? 'no data'}. X/Threads posting is DISABLED.`);
+                return [];
+            }
             const wanted = new Set(['twitter', 'x', 'threads', 'bluesky']);
             // Brand-scope: post only to channels named after the brand —
             // the Buffer account can have personal profiles connected too
             // (e.g. a personal Threads handle) and bot posts must never land
             // on those. BUFFER_BRAND_NAME overrides the default match.
             const brand = (process.env.BUFFER_BRAND_NAME || 'premarketprice').toLowerCase();
-            this.bufferChannels = (channels?.data?.channels ?? [])
+            this.bufferChannels = channels.data.channels
                 .filter((c: any) => wanted.has(c.service))
                 .filter((c: any) => !c.isDisconnected)
                 .filter((c: any) => `${c.name} ${c.displayName}`.toLowerCase().includes(brand));
         } catch (e) {
-            console.warn('⚠️ SocialDistributorService: Buffer channel lookup failed', e);
-            this.bufferChannels = null;
+            console.error('❌ SocialDistributorService: Buffer channel lookup failed. X/Threads posting is DISABLED.', e);
+            return [];
         }
         return this.bufferChannels ?? [];
     }

@@ -252,3 +252,43 @@ describe('digest end-to-end (Bluesky only)', () => {
         expect(captured.record.embed.external.uri).toContain('utm_source=bluesky');
     });
 });
+
+describe('Buffer channel lookup', () => {
+    const bufferFetch = (responses: any[]) =>
+        jest.fn(async () => ({ ok: true, json: async () => responses.shift() }) as any);
+
+    beforeEach(() => {
+        svc.bufferChannels = undefined;
+        process.env.BUFFER_ACCESS_TOKEN = 't';
+    });
+
+    it('logs an explicit error on an invalid token and retries next run', async () => {
+        const errSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        const invalid = { errors: [{ message: 'Access token is not valid', extensions: { code: 'UNAUTHENTICATED' } }] };
+        (global as any).fetch = bufferFetch([invalid, invalid]);
+
+        expect(await svc.getBufferChannels()).toEqual([]);
+        expect(errSpy.mock.calls[0][0]).toContain('UNAUTHENTICATED');
+        expect(errSpy.mock.calls[0][0]).toContain('rotate BUFFER_ACCESS_TOKEN');
+
+        await svc.getBufferChannels();
+        expect((global as any).fetch).toHaveBeenCalledTimes(2);
+        errSpy.mockRestore();
+    });
+
+    it('caches a successful lookup, brand-scoped', async () => {
+        (global as any).fetch = bufferFetch([
+            { data: { account: { organizations: [{ id: 'org' }] } } },
+            { data: { channels: [
+                { id: 'x1', service: 'twitter', name: 'premarketprice', displayName: 'premarketprice', isDisconnected: false },
+                { id: 't1', service: 'threads', name: 'personal', displayName: 'Personal', isDisconnected: false },
+                { id: 't2', service: 'threads', name: 'premarketprice', displayName: 'premarketprice', isDisconnected: true },
+            ] } },
+        ]);
+
+        const first = await svc.getBufferChannels();
+        expect(first.map((c: any) => c.id)).toEqual(['x1']);
+        expect(await svc.getBufferChannels()).toBe(first);
+        expect((global as any).fetch).toHaveBeenCalledTimes(2);
+    });
+});
