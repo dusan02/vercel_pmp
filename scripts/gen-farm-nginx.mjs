@@ -1,8 +1,8 @@
 /**
  * Generates the nginx datacenter/farm ASN deny map on the VPS.
  *
- *   /etc/nginx/conf.d/zz-farm-asn.conf   → geo $farm_asn { CIDR 1; ... }
- *   /etc/nginx/snippets/farm_asn_filter.conf → `if ($farm_asn) { return 403; }`
+ *   /etc/nginx/conf.d/zz-farm-asn.conf   → geo $farm_asn { CIDR 1; ... } + $farm_block map
+ *   /etc/nginx/snippets/farm_asn_filter.conf → `if ($farm_block) { return 403; }`
  *   sites-enabled/*                        → idempotent `include` after the
  *                                            junk_filter include (443 blocks)
  *
@@ -57,9 +57,20 @@ const geo = [
   ...deduped.map((c) => `    ${c.cidr} 1; # AS${c.asn}`),
   '}',
   '',
+  '# Buffer (X/Threads publishing) fetches OG card images from AWS — let its',
+  '# image fetchers through, on the OG image endpoints only.',
+  'map "$http_user_agent|$uri" $farm_allow {',
+  '    default 0;',
+  '    "~^Buffer(ImageProbe|LinkPreviewBot)/[^|]*\\|/(api/og|analysis/[^/]+/opengraph-image)$" 1;',
+  '}',
+  'map "$farm_asn$farm_allow" $farm_block {',
+  '    default 0;',
+  '    10 1;',
+  '}',
+  '',
 ].join('\n');
 
-const snippet = '# 403 for requests from render-farm ASN prefixes (zz-farm-asn.conf geo map).\nif ($farm_asn) { return 403; }\n';
+const snippet = '# 403 for requests from render-farm ASN prefixes (zz-farm-asn.conf geo + $farm_block map).\nif ($farm_block) { return 403; }\n';
 
 if (DRY) {
   console.log('--- geo (head) ---\n' + geo.split('\n').slice(0, 12).join('\n') + `\n... (${cidrs.length} entries)`);
