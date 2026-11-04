@@ -73,7 +73,6 @@ const COLUMN_LABELS: Record<string, string> = {
   'peVsMedian1yPct': 'P/E vs 1Y Median',
   'peVsMedian3yPct': 'P/E vs 3Y Median',
   'peVsMedian5yPct': 'P/E vs 5Y Median',
-  'peVsMedian10yPct': 'P/E vs 10Y Median',
   'overallScore': 'Overall',
   'valuationScore': 'Valuation',
   'growthScore': 'Growth',
@@ -118,7 +117,7 @@ const FILTER_DRAWER_TABS = [
   {
     id: 'valuation',
     label: 'Valuation',
-    keys: ['peRatio', 'forwardPe', 'pegRatio', 'psRatio', 'pbRatio', 'priceFreeCashFlow', 'priceCashFlow', 'priceToCash', 'evEbitda', 'evSales', 'peVsMedian1yPct', 'peVsMedian3yPct', 'peVsMedian5yPct', 'peVsMedian10yPct'] as RangeFilterKey[],
+    keys: ['peRatio', 'forwardPe', 'pegRatio', 'psRatio', 'pbRatio', 'priceFreeCashFlow', 'priceCashFlow', 'priceToCash', 'evEbitda', 'evSales', 'peVsMedian1yPct', 'peVsMedian3yPct', 'peVsMedian5yPct'] as RangeFilterKey[],
   },
   {
     id: 'profitability',

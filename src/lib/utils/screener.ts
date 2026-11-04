@@ -320,9 +320,9 @@ export const ANALYST_RANGE_FILTERS = [
  */
 export const ANALYSIS_RANGE_FILTERS = [
     { key: 'pePercentile', label: 'P/E Hist. Percentile', min: 0, max: 100, step: 1, group: 'Analysis',
-      hint: 'Share of the stock’s own ~10Y P/E history priced below today — 0 = cheapest day on record, 50 ≈ at the median, 100 = most expensive. Low = cheap vs own history.' },
+      hint: 'Share of the stock’s own ~5Y P/E history priced below today — 0 = cheapest day on record, 50 ≈ at the median, 100 = most expensive. Low = cheap vs own history.' },
     // P/E vs own trailing-window median — rendered as ONE "P/E vs historical
-    // median" block with a 1Y/3Y/5Y/10Y toggle (PE_MEDIAN_WINDOWS), not as
+    // median" block with a 1Y/3Y/5Y toggle (PE_MEDIAN_WINDOWS), not as
     // four separate sliders.
     { key: 'peVsMedian1yPct', label: 'P/E vs 1Y Median %', min: -80, max: 100, step: 1, group: 'Analysis',
       hint: 'Current P/E vs its own trailing-1-year median — −20 = 20 % below (cheaper), +20 = 20 % above (pricier).' },
@@ -330,8 +330,6 @@ export const ANALYSIS_RANGE_FILTERS = [
       hint: 'Current P/E vs its own trailing-3-year median — −20 = 20 % below (cheaper), +20 = 20 % above (pricier).' },
     { key: 'peVsMedian5yPct', label: 'P/E vs 5Y Median %', min: -80, max: 100, step: 1, group: 'Analysis',
       hint: 'Current P/E vs its own trailing-5-year median — −20 = 20 % below (cheaper), +20 = 20 % above (pricier).' },
-    { key: 'peVsMedian10yPct', label: 'P/E vs 10Y Median %', min: -80, max: 100, step: 1, group: 'Analysis',
-      hint: 'Current P/E vs its own trailing-10-year median — −20 = 20 % below (cheaper), +20 = 20 % above (pricier).' },
     { key: 'priceToCash', label: 'P/Cash', min: 0, max: 100, step: 1, group: 'Analysis',
       hint: 'Market cap ÷ cash & short-term investments — lower means larger cash cushion.' },
     { key: 'roic', label: 'ROIC %', min: -30, max: 80, step: 1, group: 'Analysis',
@@ -372,7 +370,8 @@ export const PE_MEDIAN_WINDOWS = [
     { id: '1y', label: '1Y', key: 'peVsMedian1yPct' },
     { id: '3y', label: '3Y', key: 'peVsMedian3yPct' },
     { id: '5y', label: '5Y', key: 'peVsMedian5yPct' },
-    { id: '10y', label: '10Y', key: 'peVsMedian10yPct' },
+    // 10Y (peVsMedian10yPct) is computed + persisted but hidden: prod P/E
+    // history is only ~5Y deep (Polygon plan limit), so it is always null.
 ] as const;
 export type PeMedianWindowId = (typeof PE_MEDIAN_WINDOWS)[number]['id'];
 export const PE_MEDIAN_KEYS: ReadonlySet<string> = new Set(PE_MEDIAN_WINDOWS.map((w) => w.key));
@@ -744,7 +743,6 @@ export const SORT_OPTIONS = [
     { value: 'peVsMedian3yPct:asc', label: 'P/E vs 3Y Median ↑ (biggest discount)' },
     { value: 'peVsMedian3yPct:desc', label: 'P/E vs 3Y Median ↓ (biggest premium)' },
     { value: 'peVsMedian5yPct:asc', label: 'P/E vs 5Y Median ↑ (biggest discount)' },
-    { value: 'peVsMedian10yPct:asc', label: 'P/E vs 10Y Median ↑ (biggest discount)' },
     { value: 'analyst.buy:desc', label: 'Analyst Buys ↓ (count)' },
     { value: 'analyst.strongBuy:desc', label: 'Analyst Strong Buys ↓ (count)' },
     { value: 'analyst.sell:asc', label: 'Analyst Sells ↑ (fewest)' },
