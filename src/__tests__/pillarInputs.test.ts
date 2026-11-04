@@ -336,3 +336,40 @@ describe('computeMetrics — cold vs warm AnalysisCache must not change pillars'
         expect(warm!.metrics.altmanZ).not.toBe(9.9);
     });
 });
+
+// ── P/E vs trailing 1Y / 3Y / 5Y / 10Y median (screener window toggle) ──────
+describe('derivePillarInputs — P/E vs trailing median windows', () => {
+    const DAY = 86_400_000;
+    const END = Date.UTC(2026, 10, 3);
+    // Older history is pricier: last 1Y @20x, 1–3Y @30x, 3–5Y @40x, 5–10.5Y @50x; today 18x.
+    const peAt = (ageDays: number) => (ageDays < 365 ? 20 : ageDays < 1095 ? 30 : ageDays < 1826 ? 40 : 50);
+    const rows = (days: number) => Array.from({ length: days }, (_, i) => {
+        const age = days - 1 - i;
+        return {
+            date: new Date(END - age * DAY), closePrice: 100, marketCap: 100e9,
+            peRatio: age === 0 ? 18 : peAt(age), psRatio: 5, evEbitda: 20, fcfYield: 0.03,
+        };
+    });
+    const run = (days: number) => derivePillarInputs({ ...KKR, valuationRows: rows(days) });
+
+    it('each window compares today’s P/E with its own trailing median (negative = cheaper)', () => {
+        const r = run(3835);
+        expect(r.peVsMedian1yPct).toBeCloseTo(-10, 0);   // vs 20x
+        expect(r.peVsMedian3yPct).toBeCloseTo(-40, 0);   // vs 30x
+        expect(r.peVsMedian5yPct).toBeCloseTo(-40, 0);   // 1826 rows: median falls in the 30x block
+        expect(r.peVsMedian10yPct).toBeLessThan(r.peVsMedian5yPct!);
+    });
+
+    it('a window not covered by history is null, not a shorter median in disguise', () => {
+        const r = run(800); // ~2.2 years
+        expect(r.peVsMedian1yPct).not.toBeNull();
+        expect(r.peVsMedian3yPct).toBeNull();
+        expect(r.peVsMedian5yPct).toBeNull();
+        expect(r.peVsMedian10yPct).toBeNull();
+    });
+
+    it('too little history → all windows null', () => {
+        const r = run(100);
+        expect([r.peVsMedian1yPct, r.peVsMedian3yPct, r.peVsMedian5yPct, r.peVsMedian10yPct]).toEqual([null, null, null, null]);
+    });
+});

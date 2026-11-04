@@ -183,7 +183,10 @@ export interface PillarDerivation {
     peForPct: number | null;
     peDistortedNow: boolean;
     psPercentile: number | null;
+    peVsMedian1yPct: number | null;
     peVsMedian3yPct: number | null;
+    peVsMedian5yPct: number | null;
+    peVsMedian10yPct: number | null;
     priceToCash: number | null;
     roic: number | null;             // persisted basis (decimal → %×100 at write)
     insufficientData: boolean;
@@ -438,23 +441,31 @@ export function derivePillarInputs(args: DerivePillarInputsArgs): PillarDerivati
         ? percentileBelow(psValues, latestPsRatio)
         : null;
 
-    // 3Y-window median vs current — the screener "PE below its 3Y median"
-    // signal. Window anchors at the latest DVH row (not wall-clock today) so
-    // a lagging history doesn't silently shrink it. Distorted P/E days (>150x)
-    // are excluded from both current and the window.
-    let peVsMedian3yPct: number | null = null;
-    if (latestPeRow?.date && peForPct !== null && peForPct > 0 && !peDistortedNow) {
-        const cutoff3y = new Date(latestPeRow.date.getTime() - 3 * 365.25 * 86_400_000);
-        const windowRows = valuationRows
-            .filter(r => r.peRatio != null && r.peRatio > 0 && r.peRatio <= 150 && r.date >= cutoff3y)
-            .map(r => r.peRatio!)
-            .sort((a, b) => a - b);
+    // Trailing-window medians vs current — the screener "P/E vs historical
+    // median" filter (1Y/3Y/5Y/10Y toggle). Windows anchor at the latest DVH
+    // row (not wall-clock today) so a lagging history doesn't silently shrink
+    // them. Distorted P/E days (>150x) are excluded from both current and the
+    // window.
+    const peVsMedianPct = (years: number): number | null => {
+        if (!latestPeRow?.date || peForPct === null || peForPct <= 0 || peDistortedNow) return null;
+        const cutoff = new Date(latestPeRow.date.getTime() - years * 365.25 * 86_400_000);
+        const inWindow = valuationRows
+            .filter(r => r.peRatio != null && r.peRatio > 0 && r.peRatio <= 150 && r.date >= cutoff);
         // ~120 trading days ≈ half a year — below that the median is noise.
-        if (windowRows.length >= 120) {
-            const median3y = medianOf(windowRows);
-            if (median3y !== null && median3y > 0) peVsMedian3yPct = ((peForPct - median3y) / median3y) * 100;
-        }
-    }
+        if (inWindow.length < 120) return null;
+        // History must span ≥80 % of the window, else a "10Y median" would
+        // silently be a 2-year one.
+        const earliestMs = inWindow.reduce((m, r) => Math.min(m, r.date.getTime()), Infinity);
+        const spanMs = latestPeRow.date.getTime() - earliestMs;
+        if (spanMs < 0.8 * years * 365.25 * 86_400_000) return null;
+        const windowRows = inWindow.map(r => r.peRatio!).sort((a, b) => a - b);
+        const median = medianOf(windowRows);
+        return median !== null && median > 0 ? ((peForPct - median) / median) * 100 : null;
+    };
+    const peVsMedian1yPct = peVsMedianPct(1);
+    const peVsMedian3yPct = peVsMedianPct(3);
+    const peVsMedian5yPct = peVsMedianPct(5);
+    const peVsMedian10yPct = peVsMedianPct(10);
 
     // Display stats block (read path renders it; identical series semantics).
     const valuationHistoryStats = valuationRows.length > 0
@@ -682,7 +693,7 @@ export function derivePillarInputs(args: DerivePillarInputsArgs): PillarDerivati
         fcfConversion, marginStability, negativeNiYears,
         humanDebtInfo, humanPeInfo,
         pePercentile, peMedian, peForPct, peDistortedNow,
-        psPercentile, peVsMedian3yPct, priceToCash,
+        psPercentile, peVsMedian1yPct, peVsMedian3yPct, peVsMedian5yPct, peVsMedian10yPct, priceToCash,
         roic: pillarRoic, insufficientData,
         latestStmt, bsStmt, annualStmts, ttm, moatDerived,
         currentPrice, marketCap, mcapNow, currentShareCount,

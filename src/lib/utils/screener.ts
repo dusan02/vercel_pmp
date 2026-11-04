@@ -64,8 +64,11 @@ export interface ScreenerResult {
     marginStability: number | null;
     /** Current P/E percentile vs own DailyValuationHistory (0=cheapest, 100=priciest). */
     pePercentile: number | null;
-    /** Signed % vs trailing-3Y P/E median (negative = below median). */
+    /** Signed % vs trailing 1Y/3Y/5Y/10Y P/E median (negative = below median). */
+    peVsMedian1yPct?: number | null;
     peVsMedian3yPct: number | null;
+    peVsMedian5yPct?: number | null;
+    peVsMedian10yPct?: number | null;
     /** Persisted PMP-verdict axes — fundLevel strong|mixed|weak, valLevel
         cheap|fair|expensive|unknown, verdictKey '<fund>_<val>'|'insufficient'. */
     fundLevel: string | null;
@@ -316,10 +319,19 @@ export const ANALYST_RANGE_FILTERS = [
  * Rendered as sliders in the "Analysis" group of Metric filters.
  */
 export const ANALYSIS_RANGE_FILTERS = [
-    { key: 'pePercentile', label: 'P/E %ile vs Hist', min: 0, max: 100, step: 1, group: 'Analysis',
+    { key: 'pePercentile', label: 'P/E Hist. Percentile', min: 0, max: 100, step: 1, group: 'Analysis',
       hint: 'Share of the stock’s own ~10Y P/E history priced below today — 0 = cheapest day on record, 50 ≈ at the median, 100 = most expensive. Low = cheap vs own history.' },
-    { key: 'peVsMedian3yPct', label: 'P/E vs 3Y Med %', min: -80, max: 50, step: 1, group: 'Analysis',
-      hint: 'Current P/E vs its own trailing-3-year median — negative = below the 3Y median (−20 means a 20 % discount). Set max to 0 to find stocks below their 3Y median.' },
+    // P/E vs own trailing-window median — rendered as ONE "P/E vs historical
+    // median" block with a 1Y/3Y/5Y/10Y toggle (PE_MEDIAN_WINDOWS), not as
+    // four separate sliders.
+    { key: 'peVsMedian1yPct', label: 'P/E vs 1Y Median %', min: -80, max: 100, step: 1, group: 'Analysis',
+      hint: 'Current P/E vs its own trailing-1-year median — −20 = 20 % below (cheaper), +20 = 20 % above (pricier).' },
+    { key: 'peVsMedian3yPct', label: 'P/E vs 3Y Median %', min: -80, max: 100, step: 1, group: 'Analysis',
+      hint: 'Current P/E vs its own trailing-3-year median — −20 = 20 % below (cheaper), +20 = 20 % above (pricier).' },
+    { key: 'peVsMedian5yPct', label: 'P/E vs 5Y Median %', min: -80, max: 100, step: 1, group: 'Analysis',
+      hint: 'Current P/E vs its own trailing-5-year median — −20 = 20 % below (cheaper), +20 = 20 % above (pricier).' },
+    { key: 'peVsMedian10yPct', label: 'P/E vs 10Y Median %', min: -80, max: 100, step: 1, group: 'Analysis',
+      hint: 'Current P/E vs its own trailing-10-year median — −20 = 20 % below (cheaper), +20 = 20 % above (pricier).' },
     { key: 'priceToCash', label: 'P/Cash', min: 0, max: 100, step: 1, group: 'Analysis',
       hint: 'Market cap ÷ cash & short-term investments — lower means larger cash cushion.' },
     { key: 'roic', label: 'ROIC %', min: -30, max: 80, step: 1, group: 'Analysis',
@@ -354,6 +366,16 @@ export const ANALYSIS_RANGE_FILTERS = [
     { key: 'perf1y', label: 'Perf 1Y %', min: -80, max: 150, step: 2, group: 'Technical',
       hint: '1-year (252 trading days) price return (%).' },
 ] as const;
+
+/** Median windows for the screener "P/E vs historical median" block. */
+export const PE_MEDIAN_WINDOWS = [
+    { id: '1y', label: '1Y', key: 'peVsMedian1yPct' },
+    { id: '3y', label: '3Y', key: 'peVsMedian3yPct' },
+    { id: '5y', label: '5Y', key: 'peVsMedian5yPct' },
+    { id: '10y', label: '10Y', key: 'peVsMedian10yPct' },
+] as const;
+export type PeMedianWindowId = (typeof PE_MEDIAN_WINDOWS)[number]['id'];
+export const PE_MEDIAN_KEYS: ReadonlySet<string> = new Set(PE_MEDIAN_WINDOWS.map((w) => w.key));
 
 /**
  * AnalysisCache columns valid as bare `sort=<field>:asc|desc` values —
@@ -533,6 +555,7 @@ export interface PresetMatchContext {
         altmanZ?: number | null; fcfMargin?: number | null;
         // Analysis-derived range-filter fields (AnalysisCache columns).
         pePercentile?: number | null; peVsMedian3yPct?: number | null;
+        peVsMedian1yPct?: number | null; peVsMedian5yPct?: number | null; peVsMedian10yPct?: number | null;
         revenueCagr?: number | null; netIncomeCagr?: number | null; epsCagr5y?: number | null;
         roic?: number | null; priceToCash?: number | null;
         rsi14?: number | null; sma20Pct?: number | null; sma50Pct?: number | null; sma200Pct?: number | null;
@@ -717,8 +740,11 @@ export const SORT_OPTIONS = [
     { value: 'fcfConversion:desc', label: 'FCF Conversion ↓' },
     { value: 'pePercentile:asc', label: 'P/E %ile ↑ (cheapest vs hist)' },
     { value: 'pePercentile:desc', label: 'P/E %ile ↓ (priciest vs hist)' },
-    { value: 'peVsMedian3yPct:asc', label: 'P/E vs 3Y Med ↑ (biggest discount)' },
-    { value: 'peVsMedian3yPct:desc', label: 'P/E vs 3Y Med ↓ (biggest premium)' },
+    { value: 'peVsMedian1yPct:asc', label: 'P/E vs 1Y Median ↑ (biggest discount)' },
+    { value: 'peVsMedian3yPct:asc', label: 'P/E vs 3Y Median ↑ (biggest discount)' },
+    { value: 'peVsMedian3yPct:desc', label: 'P/E vs 3Y Median ↓ (biggest premium)' },
+    { value: 'peVsMedian5yPct:asc', label: 'P/E vs 5Y Median ↑ (biggest discount)' },
+    { value: 'peVsMedian10yPct:asc', label: 'P/E vs 10Y Median ↑ (biggest discount)' },
     { value: 'analyst.buy:desc', label: 'Analyst Buys ↓ (count)' },
     { value: 'analyst.strongBuy:desc', label: 'Analyst Strong Buys ↓ (count)' },
     { value: 'analyst.sell:asc', label: 'Analyst Sells ↑ (fewest)' },

@@ -357,6 +357,10 @@ model AnalysisCache {
   negativeNiYears     Int?
   pePercentile        Float?
   peVsMedian3yPct     Float?
+  // Same signed % vs the trailing 1Y / 5Y / 10Y P/E median (screener toggle).
+  peVsMedian1yPct     Float?
+  peVsMedian5yPct     Float?
+  peVsMedian10yPct    Float?
   fundLevel           String?
   valLevel            String?
   verdictKey          String?

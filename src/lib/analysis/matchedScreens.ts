@@ -29,6 +29,7 @@ export const getMatchedScreens = cache(async (symbol: string): Promise<MatchedSc
                     growthScore: true, qualityScore: true, overallScore: true,
                     altmanZ: true, fcfMargin: true,
                     pePercentile: true, peVsMedian3yPct: true,
+                    peVsMedian1yPct: true, peVsMedian5yPct: true, peVsMedian10yPct: true,
                     fundLevel: true, valLevel: true, verdictKey: true,
                 },
             },

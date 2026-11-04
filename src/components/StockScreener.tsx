@@ -6,12 +6,13 @@ import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } fro
 import CompanyLogo from './CompanyLogo';
 import { UniversalTable, ColumnDef } from './UniversalTable';
 import { DualRangeSlider } from './analysis/DualRangeSlider';
+import { PeVsMedianFilter } from './PeVsMedianFilter';
 import { useScreener } from '@/hooks/useScreener';
 import { useSavedScreens, MAX_SAVED_SCREENS } from '@/hooks/useSavedScreens';
 import { LivePrice } from './LivePrice';
 import {
   ScreenerResult, scoreColor, altmanZLabel, piotroskiLabel, beneishLabel, fcfMarginLabel, debtRepayLabel,
-  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, ANALYSIS_RANGE_FILTERS, RANGE_FILTERS, RangeFilterKey, QUICK_SCREENS, PRESET_GROUPS,
+  SORT_OPTIONS, SECTORS, MARKET_CAP_PRESETS, METRIC_FILTERS, MARKET_RANGE_FILTERS, INSIDER_RANGE_FILTERS, ANALYSIS_RANGE_FILTERS, RANGE_FILTERS, RangeFilterKey, PE_MEDIAN_WINDOWS, PE_MEDIAN_KEYS, PeMedianWindowId, QUICK_SCREENS, PRESET_GROUPS,
   SCORE_FILTERS, ADVANCED_FILTERS, VERDICT_FILTERS, matchesPreset,
 } from '@/lib/utils/screener';
 import { Sparkline } from './Sparkline';
@@ -69,7 +70,10 @@ const COLUMN_LABELS: Record<string, string> = {
   'fcfConversion': 'FCF Conv.',
   'marginStability': 'Margin σ',
   'pePercentile': 'P/E %ile vs Hist',
-  'peVsMedian3yPct': 'P/E vs 3Y Med',
+  'peVsMedian1yPct': 'P/E vs 1Y Median',
+  'peVsMedian3yPct': 'P/E vs 3Y Median',
+  'peVsMedian5yPct': 'P/E vs 5Y Median',
+  'peVsMedian10yPct': 'P/E vs 10Y Median',
   'overallScore': 'Overall',
   'valuationScore': 'Valuation',
   'growthScore': 'Growth',
@@ -114,7 +118,7 @@ const FILTER_DRAWER_TABS = [
   {
     id: 'valuation',
     label: 'Valuation',
-    keys: ['peRatio', 'forwardPe', 'pegRatio', 'psRatio', 'pbRatio', 'priceFreeCashFlow', 'priceCashFlow', 'priceToCash', 'evEbitda', 'evSales', 'pePercentile', 'peVsMedian3yPct'] as RangeFilterKey[],
+    keys: ['peRatio', 'forwardPe', 'pegRatio', 'psRatio', 'pbRatio', 'priceFreeCashFlow', 'priceCashFlow', 'priceToCash', 'evEbitda', 'evSales', 'peVsMedian1yPct', 'peVsMedian3yPct', 'peVsMedian5yPct', 'peVsMedian10yPct'] as RangeFilterKey[],
   },
   {
     id: 'profitability',
@@ -539,17 +543,17 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         return <span className={`text-sm tabular-nums ${color}`} title="Current P/E percentile vs own valuation history (0 = cheapest day on record, 100 = most expensive)">{Math.round(v)}ᵗʰ</span>;
       },
     },
-    {
-      key: 'peVsMedian3yPct',
-      header: <>P/E vs 3Y Med <SortIcon field="peVsMedian3yPct" /></>,
+    ...PE_MEDIAN_WINDOWS.map((w): ColumnDef<ScreenerResult> => ({
+      key: w.key,
+      header: <>P/E vs {w.label} Med <SortIcon field={w.key} /></>,
       align: 'right',
       sortable: true,
       render: (r) => {
-        const v = r.peVsMedian3yPct;
+        const v = r[w.key];
         if (v == null) return <span className="text-gray-400">-</span>;
-        return <span className={`text-sm tabular-nums ${v < 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} title="Current P/E vs trailing 3-year median P/E — negative = trading below its own 3Y median">{v > 0 ? '+' : ''}{v.toFixed(0)}%</span>;
+        return <span className={`text-sm tabular-nums ${v < 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} title={`Current P/E vs its own trailing ${w.label} median P/E — negative = below (cheaper), positive = above (pricier)`}>{v > 0 ? '+' : ''}{v.toFixed(0)}%</span>;
       },
-    },
+    })),
     {
       // Backtested combo: rev/share +30% (1Y) AND EPS growth AND price ≥80%
       // of 52w high. Server-computed per row from DailyValuationHistory.
@@ -682,6 +686,23 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
   const [customCols, setCustomCols] = useState<string[]>([]);
   const [showColPicker, setShowColPicker] = useState(false);
   const [activeFilterTab, setActiveFilterTab] = useState<FilterTabId | null>(null);
+  // "P/E vs historical median" window — follows whichever window filter is
+  // active (URL restore / presets) so the toggle never hides a live filter.
+  const [peMedWindow, setPeMedWindow] = useState<PeMedianWindowId>('3y');
+  const activePeMedWindow = PE_MEDIAN_WINDOWS.find((w) => metricRanges[w.key] !== undefined)
+    ?? PE_MEDIAN_WINDOWS.find((w) => w.key === sortField);
+  useEffect(() => {
+    if (activePeMedWindow && activePeMedWindow.id !== peMedWindow) setPeMedWindow(activePeMedWindow.id);
+  }, [activePeMedWindow, peMedWindow]);
+  const peMedDef = PE_MEDIAN_WINDOWS.find((w) => w.id === peMedWindow) ?? PE_MEDIAN_WINDOWS[1];
+  const changePeMedWindow = (id: PeMedianWindowId) => {
+    const next = PE_MEDIAN_WINDOWS.find((w) => w.id === id);
+    if (!next || next.id === peMedDef.id) return;
+    const r = metricRanges[peMedDef.key];
+    if (r) { setMetricRange(peMedDef.key, undefined); setMetricRange(next.key, r); }
+    if (sortField === peMedDef.key) setSort(next.key, sortOrder);
+    setPeMedWindow(id);
+  };
   const advancedActiveCount = ADVANCED_FILTERS.filter((d) => d.active(advanced[d.key])).length;
   const METRIC_KEY_SET = new Set<string>([...MARKET_RANGE_FILTERS, ...METRIC_FILTERS, ...INSIDER_RANGE_FILTERS, ...ANALYSIS_RANGE_FILTERS].map(d => d.key));
   const metricsActiveCount = Object.keys(metricRanges).filter(k => METRIC_KEY_SET.has(k)).length;
@@ -791,8 +812,10 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
     }
     const view = COLUMN_VIEWS.find(v => v.id === columnView);
     if (!view || view.keys === null) return allColumns;
-    return (view.keys as readonly string[]).map(k => columnMap.get(k)).filter((c): c is ColumnDef<ScreenerResult> => !!c);
-  }, [allColumns, columnMap, columnView, effectiveCols]);
+    return (view.keys as readonly string[])
+      .map(k => columnMap.get(k === 'peVsMedian3yPct' ? peMedDef.key : k))
+      .filter((c): c is ColumnDef<ScreenerResult> => !!c);
+  }, [allColumns, columnMap, columnView, effectiveCols, peMedDef.key]);
 
   const applyCustomCols = (next: string[]) => {
     const deduped = [PINNED_COLUMN, ...next.filter((k) => k !== PINNED_COLUMN && columnMap.has(k))];
@@ -1070,8 +1093,11 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
         {activeFilterTab !== null && (() => {
           const tab = FILTER_DRAWER_TABS.find((t) => t.id === activeFilterTab)!;
           const sliderDefs = tab.keys
+            .filter((k) => !PE_MEDIAN_KEYS.has(k))
             .map((k) => SLIDER_BY_KEY.get(k))
             .filter((d): d is NonNullable<typeof d> => !!d);
+          const showPeMedian = tab.keys.some((k) => PE_MEDIAN_KEYS.has(k));
+          const peMedSlider = SLIDER_BY_KEY.get(peMedDef.key);
           const showScoresBlock = 'includesScores' in tab && tab.includesScores;
           const showAdvancedBlock = 'includesAdvanced' in tab && tab.includesAdvanced;
 
@@ -1095,6 +1121,17 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
                     ))}
                   </div>
                 </div>
+              )}
+
+              {showPeMedian && peMedSlider && (
+                <PeVsMedianFilter
+                  windowId={peMedDef.id}
+                  onWindowChange={changePeMedWindow}
+                  range={metricRanges[peMedDef.key]}
+                  onRangeChange={(r) => setMetricRange(peMedDef.key, r)}
+                  min={peMedSlider.min}
+                  max={peMedSlider.max}
+                />
               )}
 
               {sliderDefs.length > 0 && (
