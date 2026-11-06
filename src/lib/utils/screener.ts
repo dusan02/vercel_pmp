@@ -505,6 +505,10 @@ export const QUICK_SCREENS: {
     { label: 'P/E Below 3Y Median', tip: 'Current P/E below its own trailing-3Y median — sorted by deepest discount vs that median', group: 'discovery', icon: 'History', preset: { ranges: { peVsMedian3yPct: { max: 0 } }, sort: 'peVsMedian3yPct:asc' } },
     { label: 'P/E at Historical Low', tip: 'Current P/E in the bottom decile of its own valuation history (≤10ᵗʰ percentile)', group: 'discovery', icon: 'History', preset: { ranges: { pePercentile: { max: 10 } }, sort: 'pePercentile:asc' } },
     { label: 'Trend × Fundamentals', tip: 'Rev/share +30% (1Y) · EPS growing · price ≥80% of 52w high — backtested combo, ~2× fwd-return edge vs universe', group: 'discovery', icon: ['TrendingUp', 'Check'], preset: { trendConfirmed: true } },
+    { label: 'Dip-Buying Capitulation (RSI ≤ 27)', tip: 'Daily RSI (14) ≤ 27 — 1st tranche contrarian capitulation wave (<2% left tail of Gaussian curve)', group: 'discovery', icon: 'TrendingDown', preset: { ranges: { rsi14: { max: 27 } }, sort: 'metrics.rsi14:asc' } },
+    { label: 'Deep Oversold (RSI ≤ 23)', tip: 'Daily RSI (14) ≤ 23 — 2nd tranche deep oversold zone (<0.8% left tail of Gaussian curve)', group: 'discovery', icon: 'ArrowDown', preset: { ranges: { rsi14: { max: 23 } }, sort: 'metrics.rsi14:asc' } },
+    { label: 'Capitulation + High Volume', tip: 'Daily RSI (14) ≤ 30 · Relative Volume ≥ 2.0× — high-volume panic selling', group: 'discovery', icon: 'Zap', preset: { ranges: { rsi14: { max: 30 }, rvol: { min: 2 } }, sort: 'metrics.rsi14:asc' } },
+    { label: 'Overbought / Take Profit (RSI ≥ 78)', tip: 'Daily RSI (14) ≥ 78 — right tail (>98.5% Gaussian curve), euphoria / profit-taking or tax-hedge signal', group: 'discovery', icon: 'TrendingUp', preset: { ranges: { rsi14: { min: 78 } }, sort: 'metrics.rsi14:desc' } },
     // PMP Verdict — every cell of the persisted fundLevel × valLevel grid
     // (the exact headline the analysis page shows). Atomized: the same
     // verdicts are composable from the Fundamentals + Valuation selects.

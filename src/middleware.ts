@@ -148,6 +148,7 @@ export async function middleware(request: NextRequest) {
       : tab === 'earnings' ? '/earnings'
       : tab === 'blog' ? '/blog'
       : tab === 'analysis' ? '/analysis'
+      : tab === 'ideas' ? '/trading-ideas'
       : tab === 'portfolio' ? '/portfolio'
       : tab === 'favorites' ? '/favorites'
       : tab === 'pricing' ? '/pricing'

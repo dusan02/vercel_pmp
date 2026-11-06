@@ -23,6 +23,7 @@ const TABS: TabConfig[] = [
   { id: 'heatmap',   label: 'Heatmap',    icon: 'heatmap',  href: '/heatmap' },
   { id: 'brief',     label: 'Brief',      icon: 'brief',    href: '/brief' },
   { id: 'analysis',  label: 'Analysis',   icon: 'analysis', href: '/analysis' },
+  { id: 'ideas',     label: 'Trading Ideas (Long)', icon: 'ideas', href: '/trading-ideas' },
   { id: 'movers',    label: 'Movers',     icon: 'zap',      href: '/premarket-movers' },
   { id: 'portfolio', label: 'Portfolio',  icon: 'pie',      href: '/portfolio' },
   { id: 'favorites', label: 'Favorites',  icon: 'star',     href: '/favorites' },
@@ -40,6 +41,7 @@ export function SectionNavigation({ onTabChange }: SectionNavigationProps) {
     if (pathname === '/brief') return 'brief';
     if (pathname === '/blog' || pathname.startsWith('/blog/')) return 'blog';
     if (pathname === '/screener' || pathname.startsWith('/screener/')) return 'screener';
+    if (pathname === '/trading-ideas' || pathname.startsWith('/trading-ideas/')) return 'ideas';
     if (pathname === '/analysis' || pathname.startsWith('/analysis/')) return 'analysis';
     if (pathname === '/earnings' || pathname.startsWith('/earnings/')) return 'earnings';
     if (pathname === '/premarket-movers' || pathname.startsWith('/premarket-movers/')) return 'movers';

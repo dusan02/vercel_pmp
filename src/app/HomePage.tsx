@@ -60,6 +60,10 @@ const StockScreener = dynamic(
   () => import('@/components/StockScreener'),
   { ssr: false, loading: () => null }
 );
+const TradingIdeasBoard = dynamic(
+  () => import('@/components/tradingIdeas/TradingIdeasBoard').then((mod) => mod.TradingIdeasBoard),
+  { ssr: false, loading: () => null }
+);
 // OPTIMIZATION: Enable SSR for desktop (faster initial load), keep ssr: false for mobile
 // Desktop heatmap can be server-rendered, mobile uses different components
 const HomeHeatmap = dynamic(
@@ -439,6 +443,10 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                             activeTicker={analysisTicker}
                             onTickerChange={setAnalysisTicker}
                           />
+                        </KeepAliveTab>
+
+                        <KeepAliveTab active={activeSection === 'ideas'} className="tab-content fade-in">
+                          <TradingIdeasBoard />
                         </KeepAliveTab>
 
                         <KeepAliveTab active={activeSection === 'movers'} className="tab-content fade-in">

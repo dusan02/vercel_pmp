@@ -11,6 +11,7 @@ import { useAnalysis } from '../../hooks/useAnalysis';
 import { LoadingSkeleton } from './analysis/LoadingSkeleton';
 import type { AnalysisTabProps } from './analysis/types';
 import { buildFlowPeriods, type FlowPeriods } from './analysis/sections/FinancialFlowsSection';
+import { TechnicalDipSection } from './analysis/sections/TechnicalDipSection';
 
 // Re-export types for backward compatibility (other files import from here)
 export type {
@@ -139,6 +140,7 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
                         />
                         {hasPillars && <PillarsRadar pillars={data.pillars!} />}
                     </div>
+                    <TechnicalDipSection ticker={ticker} />
                     <KeyMetricsTable data={data} />
                 </>
             )}

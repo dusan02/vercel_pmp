@@ -5,7 +5,7 @@
 
 import React from 'react';
 
-export type SectionIconType = 'star' | 'pie' | 'globe' | 'calendar' | 'grid' | 'heatmap' | 'zap' | 'analysis' | 'screener' | 'book' | 'brief';
+export type SectionIconType = 'star' | 'pie' | 'globe' | 'calendar' | 'grid' | 'heatmap' | 'zap' | 'analysis' | 'screener' | 'book' | 'brief' | 'ideas';
 
 interface SectionIconProps {
   type: SectionIconType;
@@ -212,6 +212,24 @@ export function SectionIcon({ type, size = 20, className = '' }: SectionIconProp
         <path d="M18 14h-8" />
         <path d="M15 18h-5" />
         <path d="M10 6h8v4h-8V6z" />
+      </svg>
+    ),
+    ideas: (
+      <svg
+        width={iconSize}
+        height={iconSize}
+        viewBox="0 0 24 24"
+        fill={fill}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <circle cx="12" cy="12" r="6" />
+        <circle cx="12" cy="12" r="2" />
       </svg>
     )
   };

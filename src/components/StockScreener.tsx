@@ -1081,11 +1081,32 @@ export default function StockScreener({ initialData }: { initialData?: any[] }) 
             <button
               type="button"
               onClick={() => setActiveFilterTab(null)}
-              className="ml-auto text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
             >
               Hide ▴
             </button>
           )}
+          <div className="ml-auto flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setMetricRange('rsi14', { max: 27 });
+                setColumnView('technical');
+                setSort('metrics.rsi14', 'asc');
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 hover:border-emerald-400 transition-colors"
+              title="Filter stocks in 1st Capitulation Wave (Daily RSI ≤ 27) and switch to Technical columns"
+            >
+              🟢 Dip-Buy (RSI ≤ 27)
+            </button>
+            <a
+              href="/trading-ideas"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 hover:border-blue-400 transition-colors"
+              title="Open contrarian Dip-Buying Engine (Weekly RSI, 200W SMA, Master/Slave ETF & 3-Tranche Calculator)"
+            >
+              🎯 Trading Ideas →
+            </a>
+          </div>
         </div>
 
         {/* Open Filter Drawer */}

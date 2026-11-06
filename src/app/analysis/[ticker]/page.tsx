@@ -44,6 +44,7 @@ import { ThesisCard } from '@/components/company/analysis/sections/ThesisCard';
 import { PmpVerdict } from '@/components/company/analysis/sections/PmpVerdict';
 import { getMatchedScreens } from '@/lib/analysis/matchedScreens';
 import { renderPresetIcon } from '@/lib/utils/screenerIcons';
+import { TechnicalDipSection } from '@/components/company/analysis/sections/TechnicalDipSection';
 
 // Lazy client chunks — keeps recharts/finnhub-fetch code out of the initial bundle
 const IntradayChart = dynamic(() => import('@/components/company/IntradayChart').then((m) => m.IntradayChart));
@@ -433,6 +434,9 @@ export default async function AnalysisPage({ params }: PageProps) {
             currentChangePct={displayChangePct}
             changeLabel={marketSession === 'closed' ? 'at last close' : marketSession === 'pre' ? 'pre-market' : marketSession === 'after' ? 'after-hours' : 'day'}
           />
+
+          {/* Technical Dip-Buying Verdict, Gaussian Bell Curve & 3-Tranche Calculator */}
+          <TechnicalDipSection ticker={tickerUpper} />
 
           {/* Key metrics — rendered at page level (not inside the ssr:false
               tab) so the numbers land in SSR HTML for crawlers AND sit

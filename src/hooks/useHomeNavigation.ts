@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 export type ActiveSection =
   | 'heatmap'
   | 'analysis'
+  | 'ideas'
   | 'movers'
   | 'portfolio'
   | 'favorites'
@@ -15,7 +16,7 @@ export type ActiveSection =
   | 'pricing';
 
 const VALID_SECTIONS: ActiveSection[] = [
-  'heatmap', 'analysis', 'movers', 'portfolio', 'favorites',
+  'heatmap', 'analysis', 'ideas', 'movers', 'portfolio', 'favorites',
   'earnings', 'screener', 'blog', 'pricing',
 ];
 
@@ -29,6 +30,7 @@ const SECTION_ROUTES: Record<string, string> = {
   heatmap: '/heatmap',
   brief: '/brief',
   analysis: '/analysis',
+  ideas: '/trading-ideas',
   movers: '/premarket-movers',
   portfolio: '/portfolio',
   favorites: '/favorites',
