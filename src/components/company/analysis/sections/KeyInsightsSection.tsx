@@ -242,20 +242,39 @@ export function KeyInsightsSection({
   const twoCol = wide && bullets.length > 0;
 
   return (
-    <section className="mb-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-        Key Insights: {companyName} ({ticker})
-      </h2>
-      <div className={twoCol ? 'grid gap-x-10 gap-y-3 lg:grid-cols-2' : undefined}>
-        <p className={`text-sm text-gray-600 dark:text-gray-400 leading-relaxed ${twoCol ? '' : 'max-w-prose'}`}>{paragraph}</p>
-        {bullets.length > 0 && (
-          <ul className={`list-disc pl-5 space-y-1.5 text-sm text-gray-600 dark:text-gray-400 ${twoCol ? '' : 'mt-3 max-w-prose'}`}>
-            {bullets.map((s) => (
-              <li key={s.slice(0, 40)}>{s}</li>
-            ))}
-          </ul>
-        )}
-      </div>
+    <section className="mb-6">
+      <details className="group rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3.5">
+        <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 shrink-0">
+              Quantitative Summary: {companyName} ({ticker})
+            </h2>
+            <span className="text-xs text-gray-600 dark:text-gray-300 truncate group-open:hidden">
+              {insights[0]}
+            </span>
+          </div>
+          <span className="shrink-0 text-xs font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1">
+            <span className="group-open:hidden">Read full summary</span>
+            <span className="hidden group-open:inline">Hide</span>
+            <svg
+              className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </span>
+        </summary>
+        <div className={`mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 ${twoCol ? 'grid gap-x-8 gap-y-2.5 lg:grid-cols-2' : ''}`}>
+          <p className={`text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed ${twoCol ? '' : 'max-w-prose'}`}>{paragraph}</p>
+          {bullets.length > 0 && (
+            <ul className={`list-disc pl-5 space-y-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400 ${twoCol ? '' : 'mt-2.5 max-w-prose'}`}>
+              {bullets.map((s) => (
+                <li key={s.slice(0, 40)}>{s}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </details>
     </section>
   );
 }

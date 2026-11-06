@@ -133,41 +133,39 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
         )}
       </p>
 
-      {/* Collapsible 3-Tranche Pyramid Plan (matches PillarsRadar details pattern) */}
-      <details open={isActionable} className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-        <summary className="cursor-pointer select-none font-medium hover:text-gray-700 dark:hover:text-gray-200">
-          3-Tranche Buying Plan (28 : 28 : 44) · {activePlan.instrumentSymbol}
-        </summary>
-        <div className="mt-2 space-y-1.5 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-2.5 border border-gray-200/70 dark:border-gray-700/60">
+      {/* Compact 3-Column Tranche Strip (fixed height, always visible) */}
+      <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+        <div className="flex items-center justify-between text-[10px] text-gray-400 dark:text-gray-500 mb-1.5">
+          <span className="font-bold uppercase tracking-wider">
+            3-Tranche Plan ({activePlan.instrumentSymbol})
+          </span>
+          <Link
+            href={`/trading-ideas?ticker=${encodeURIComponent(ticker)}`}
+            className="font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+          >
+            <span>Tranche Calculator</span>
+            <ExternalLink size={10} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
           {activePlan.levels.map((lvl) => (
-            <div key={lvl.trancheNumber} className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-medium text-gray-700 dark:text-gray-200">
-                T{lvl.trancheNumber} ({lvl.weightPct}%)
-                {lvl.trancheNumber === 3 ? ' · 200W SMA' : lvl.trancheNumber === 1 ? ' · 50W SMA' : ' · Support'}
-              </span>
-              <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-                ${lvl.slaveEntryPrice.toFixed(2)}{' '}
-                <span className="text-[10px] font-normal text-gray-400">
-                  ({lvl.slaveDropFromCurrentPct.toFixed(1)}%)
+            <div
+              key={lvl.trancheNumber}
+              className="rounded-lg bg-gray-50 dark:bg-gray-800/50 px-2 py-1.5 border border-gray-200/70 dark:border-gray-700/60"
+            >
+              <div className="text-[9.5px] font-semibold text-gray-500 dark:text-gray-400 truncate">
+                T{lvl.trancheNumber} ({lvl.weightPct}%) · {lvl.trancheNumber === 3 ? '200W' : lvl.trancheNumber === 1 ? '50W' : 'Sup.'}
+              </div>
+              <div className="mt-0.5 text-xs font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                ${lvl.slaveEntryPrice.toFixed(2)}
+                <span className="ml-1 text-[9.5px] font-normal text-gray-400">
+                  {lvl.slaveDropFromCurrentPct.toFixed(0)}%
                 </span>
-              </span>
+              </div>
             </div>
           ))}
-          <div className="pt-1.5 mt-1 border-t border-gray-200/70 dark:border-gray-700/60 flex items-center justify-between text-[11px]">
-            <span>
-              Weekly RSI: <strong className="text-gray-800 dark:text-gray-200">{item.weeklyRsi14?.toFixed(1) ?? '–'}</strong> · RVOL:{' '}
-              <strong className="text-gray-800 dark:text-gray-200">{item.relVolume.toFixed(2)}×</strong>
-            </span>
-            <Link
-              href={`/trading-ideas?ticker=${encodeURIComponent(ticker)}`}
-              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
-            >
-              <span>Calculator</span>
-              <ExternalLink size={11} />
-            </Link>
-          </div>
         </div>
-      </details>
+      </div>
     </section>
   );
 }

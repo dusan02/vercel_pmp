@@ -315,157 +315,120 @@ export default async function AnalysisPage({ params }: PageProps) {
             </div>
           )}
 
-          {/* Top Bento Grid — Left main area (Hero card + 2 balanced sub-columns)
-              and Right quantitative rail (Profile Radar + Gaussian RSI & Dip).
-              lg:items-stretch + flex-1 on bottom cards ensures all columns align
-              along a crisp horizontal baseline above Price History with zero dead space. */}
-          <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_23.5rem] lg:items-stretch">
-            <div className="min-w-0 flex flex-col gap-4">
-              <AnalysisHero
-                ticker={tickerUpper}
-                companyName={companyName}
-                price={displayPrice}
-                changePct={displayChangePct}
-                marketCap={data?.lastMarketCap ?? null}
-                sector={data?.sector ?? null}
-                industry={data?.industry ?? null}
-                marketSession={marketSession}
-                prevClose={lastSessionPrevClose}
-                premarket={premarketData}
-                peRatio={displayPeRatio}
-                peHistory={analysisData?.valuationHistoryStats?.pe ?? null}
-                dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
-                roe={roeStat}
-                week52Low={week52?.low ?? null}
-                week52High={week52?.high ?? null}
-                cashVsDebt={cashVsDebt}
-                earningsDate={nextEarnings?.date ?? null}
-                earningsDays={earningsDays}
-                ewScore={ewScore}
-                priceTarget={data?.finnhubPriceTarget ?? null}
-                recommendation={data?.finnhubRecommendation ?? null}
-              />
-              {/* Mobile-only profile chips — the radar card sits deep in the
-                  scroll stack on small screens, so the six scores surface
-                  right under the hero instead. Hidden on lg+ (radar covers). */}
-              {hasPillars && (
-                <div className="lg:hidden">
-                  <PillarChips pillars={analysisData!.pillars!} />
-                </div>
-              )}
-              {/* Two balanced sub-columns under the Hero:
-                  Left: PMP Verdict + unified Bull Case & Risk Flags thesis card.
-                  Right: Intraday 5-min chart + What's Happening catalyst + About company. */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 items-stretch">
-                <div className="flex min-w-0 flex-col gap-4 h-full">
-                  <PmpVerdict
-                    pillars={analysisData?.pillars ?? null}
-                    insufficientData={analysisData?.insufficientData ?? null}
-                    pePercentile={analysisData?.valuationHistoryStats?.pe?.percentile ?? null}
-                    peCurrent={displayPeRatio}
-                    peMedian={analysisData?.valuationHistoryStats?.pe?.median ?? null}
-                    peYears={analysisData?.valuationHistoryStats?.pe?.years ?? null}
-                    psPercentile={analysisData?.valuationHistoryStats?.ps?.percentile ?? null}
-                    forwardPe={analysisData?.finnhubMetrics?.forwardPe ?? null}
-                    revenueGrowthYoY={analysisData?.finnhubMetrics?.revenueGrowth ?? null}
-                    revenueCagr={analysisData?.revenueCagr ?? null}
-                    changePct={displayChangePct}
-                    moversReason={data?.moversReason ?? null}
-                    moversCategory={data?.moversCategory ?? null}
-                    moversZScore={data?.latestMoversZScore ?? null}
-                    moversRvol={data?.latestMoversRVOL ?? null}
-                  />
-                  <ThesisCard
-                    analysisData={analysisData}
-                    cache={data?.analysisCache ?? null}
-                    roe={roeStat}
-                    only="combined"
-                  />
-                </div>
-                <div className="flex min-w-0 flex-col gap-4 h-full">
-                  <IntradayChart ticker={tickerUpper} />
-                  <MoverInsightSection
-                    ticker={tickerUpper}
-                    moversReason={data?.moversReason ?? null}
-                    moversCategory={data?.moversCategory ?? null}
-                    aiConfidence={data?.aiConfidence ?? null}
-                    isSbcAlert={data?.isSbcAlert ?? null}
-                    changePct={displayChangePct}
-                    topNews={topNews}
-                    earningsDate={nextEarnings?.date ?? null}
-                    earningsDays={earningsDays}
-                    lastMove={recentMoves[0] ?? null}
-                  />
-                  <CompanyOverviewSection
-                    companyName={companyName}
-                    description={data?.description}
-                    headquarters={data?.headquarters}
-                    employees={data?.employees}
-                    websiteUrl={data?.websiteUrl}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="min-w-0 flex flex-col gap-4 h-full">
-              {hasPillars && <PillarsRadar pillars={analysisData!.pillars!} />}
-              <TechnicalDipSection ticker={tickerUpper} />
-            </div>
+          {/* ROW 1: Hero Card (with integrated About & Report Pills) + 6-Axis Profile Radar */}
+          <div className={`mb-4 grid gap-4 ${hasPillars ? 'lg:grid-cols-[minmax(0,1fr)_23.5rem]' : 'grid-cols-1'} lg:items-stretch`}>
+            <AnalysisHero
+              ticker={tickerUpper}
+              companyName={companyName}
+              price={displayPrice}
+              changePct={displayChangePct}
+              marketCap={data?.lastMarketCap ?? null}
+              sector={data?.sector ?? null}
+              industry={data?.industry ?? null}
+              marketSession={marketSession}
+              prevClose={lastSessionPrevClose}
+              premarket={premarketData}
+              peRatio={displayPeRatio}
+              peHistory={analysisData?.valuationHistoryStats?.pe ?? null}
+              dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
+              roe={roeStat}
+              week52Low={week52?.low ?? null}
+              week52High={week52?.high ?? null}
+              cashVsDebt={cashVsDebt}
+              earningsDate={nextEarnings?.date ?? null}
+              earningsDays={earningsDays}
+              ewScore={ewScore}
+              priceTarget={data?.finnhubPriceTarget ?? null}
+              recommendation={data?.finnhubRecommendation ?? null}
+              description={data?.description ?? null}
+              headquarters={data?.headquarters ?? null}
+              employees={data?.employees ?? null}
+              websiteUrl={data?.websiteUrl ?? null}
+            />
+            {hasPillars && <PillarsRadar pillars={analysisData!.pillars!} />}
           </div>
 
-          {/* Price history — full-width section below the two-column block.
-              Inside the left column it left dead space under the shorter
-              right rail; a wide candle chart is the natural element to span
-              the whole row, so nothing sits empty beside it. */}
-          <PriceHistorySection
-            ticker={tickerUpper}
-            companyName={companyName}
-            nav={tickerNav}
-            similar={similarTickers}
-            currentPrice={displayPrice}
-            currentChangePct={displayChangePct}
-            changeLabel={marketSession === 'closed' ? 'at last close' : marketSession === 'pre' ? 'pre-market' : marketSession === 'after' ? 'after-hours' : 'day'}
-          />
+          {/* Mobile-only profile chips — quick score strip right under the hero on phones */}
+          {hasPillars && (
+            <div className="mb-4 lg:hidden">
+              <PillarChips pillars={analysisData!.pillars!} />
+            </div>
+          )}
 
-          {/* Key metrics — rendered at page level (not inside the ssr:false
-              tab) so the numbers land in SSR HTML for crawlers AND sit
-              directly under the Price History chart. When the SSR prefetch
-              failed, the client tab renders its own copy after fetching. */}
+          {/* ROW 2: 3-Column Decision, Intraday & Statistical Dip Grid
+              Col 1: Unified PMP Verdict & Thesis (Strengths + Bull Case + Risk Flags)
+              Col 2: Live Intraday 5-min Chart + What's Happening Catalyst
+              Col 3: Gaussian RSI & Dip Curve + 3-Tranche Plan */}
+          <div className="mb-6 grid gap-4 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_23.5rem] lg:items-stretch">
+            <PmpVerdict
+              pillars={analysisData?.pillars ?? null}
+              insufficientData={analysisData?.insufficientData ?? null}
+              pePercentile={analysisData?.valuationHistoryStats?.pe?.percentile ?? null}
+              peCurrent={displayPeRatio}
+              peMedian={analysisData?.valuationHistoryStats?.pe?.median ?? null}
+              peYears={analysisData?.valuationHistoryStats?.pe?.years ?? null}
+              psPercentile={analysisData?.valuationHistoryStats?.ps?.percentile ?? null}
+              forwardPe={analysisData?.finnhubMetrics?.forwardPe ?? null}
+              revenueGrowthYoY={analysisData?.finnhubMetrics?.revenueGrowth ?? null}
+              revenueCagr={analysisData?.revenueCagr ?? null}
+              changePct={displayChangePct}
+              moversReason={data?.moversReason ?? null}
+              moversCategory={data?.moversCategory ?? null}
+              moversZScore={data?.latestMoversZScore ?? null}
+              moversRvol={data?.latestMoversRVOL ?? null}
+              analysisData={analysisData}
+              cache={data?.analysisCache ?? null}
+              roe={roeStat}
+            />
+            <div className="flex min-w-0 flex-col gap-3.5 h-full">
+              <IntradayChart ticker={tickerUpper} />
+              <MoverInsightSection
+                ticker={tickerUpper}
+                moversReason={data?.moversReason ?? null}
+                moversCategory={data?.moversCategory ?? null}
+                aiConfidence={data?.aiConfidence ?? null}
+                isSbcAlert={data?.isSbcAlert ?? null}
+                changePct={displayChangePct}
+                topNews={topNews}
+                earningsDate={nextEarnings?.date ?? null}
+                earningsDays={earningsDays}
+                lastMove={recentMoves[0] ?? null}
+              />
+            </div>
+            <TechnicalDipSection ticker={tickerUpper} />
+          </div>
+
+          {/* Price history — full-width section */}
+          <div id="price-chart" className="scroll-mt-16">
+            <PriceHistorySection
+              ticker={tickerUpper}
+              companyName={companyName}
+              nav={tickerNav}
+              similar={similarTickers}
+              currentPrice={displayPrice}
+              currentChangePct={displayChangePct}
+              changeLabel={marketSession === 'closed' ? 'at last close' : marketSession === 'pre' ? 'pre-market' : marketSession === 'after' ? 'after-hours' : 'day'}
+            />
+          </div>
+
+          {/* Key metrics — SSR table directly under Price History */}
           {analysisData && (
-            <div className="mb-6">
+            <div id="key-metrics" className="mb-6 scroll-mt-16">
               <KeyMetricsTable data={analysisData} insiderTransactions={data.finnhubInsiderTransactions} insiderActivity={insiderActivity} />
             </div>
           )}
 
-          {/* Insights sits alone — insider filings moved into Key Metrics so
-              the page keeps a single table surface. */}
-          <div className="grid gap-6 grid-cols-1 items-start">
-            <KeyInsightsSection
+          {/* Full interactive analysis — financial statement pairs (history bar + structure sankey), valuation, health charts */}
+          <div id="financial-charts" className="scroll-mt-16">
+            <AnalysisTabClient
+              key={tickerUpper}
               ticker={tickerUpper}
-              companyName={companyName}
-              changePct={displayChangePct}
-              marketSession={marketSession}
-              cache={insightsCache}
-              lossHistory={summarizeLossYears(analysisData?.statements ?? [])}
-              peRatio={displayPeRatio}
-              roe={roeStat}
-              dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
-              earningsDays={earningsDays}
-              moversReason={data?.moversReason ?? null}
-              moversCategory={data?.moversCategory ?? null}
-              wide
+              initialAnalysisData={analysisData}
+              initialHistoryData={historyData}
+              flowPeriods={flowPeriods}
+              ewScore={ewScore}
             />
           </div>
-
-          {/* Full interactive analysis — financial statement pairs
-              (history bar + structure sankey), valuation, health table */}
-          <AnalysisTabClient
-            key={tickerUpper}
-            ticker={tickerUpper}
-            initialAnalysisData={analysisData}
-            initialHistoryData={historyData}
-            flowPeriods={flowPeriods}
-            ewScore={ewScore}
-          />
 
           <p className="-mt-2 mb-6 text-xs text-gray-500 dark:text-gray-500">
             See how {tickerUpper} ranks on the{' '}
@@ -473,18 +436,45 @@ export default async function AnalysisPage({ params }: PageProps) {
             {' '}— top 50 capital spenders compared.
           </p>
 
-          {/* Two thin data rows side by side when there's room — auto-fit
-              keeps a lone card full width instead of leaving a dead
-              column when one of them renders nothing. */}
-          <div className="grid gap-6 grid-cols-1 lg:grid-cols-[repeat(auto-fit,minmax(min(100%,32rem),1fr))] items-start">
+          {/* Earnings & Recent Unusual Moves side-by-side */}
+          <div id="earnings-moves" className="grid gap-6 grid-cols-1 lg:grid-cols-[repeat(auto-fit,minmax(min(100%,32rem),1fr))] items-start scroll-mt-16">
             <EarningsSection upcoming={earningsData.upcoming} recent={earningsData.recent} />
             <RecentMovesSection ticker={tickerUpper} moves={recentMoves} />
           </div>
 
-          {/* FAQ — visible Q&As mirrored by the FAQPage JSON-LD above */}
+          {/* Cross-links to related report pages + share in a compact 4-column bar */}
+          <AnalysisCrossLinks
+            ticker={tickerUpper}
+            companyName={companyName}
+            description={data?.description}
+          />
+
+          {/* Related opportunities — grouped discovery links (same-industry, sector movers, cheaper/similar alternatives) */}
+          <RelatedOpportunities ticker={tickerUpper} related={relatedOpps} />
+
+          {/* FAQ — 2-column compact accordion mirrored by FAQPage JSON-LD */}
           <AnalysisFaqSection items={faqItems} ticker={tickerUpper} />
 
-          {/* SEO text section — unique keyword-rich content for Google indexing */}
+          {/* Latest news — client-side fetch from Finnhub, cached 30min */}
+          <NewsSection ticker={tickerUpper} />
+
+          {/* Collapsible Quantitative Summary & SEO text sections — full SSR HTML for Google indexing with zero visual clutter */}
+          <KeyInsightsSection
+            ticker={tickerUpper}
+            companyName={companyName}
+            changePct={displayChangePct}
+            marketSession={marketSession}
+            cache={insightsCache}
+            lossHistory={summarizeLossYears(analysisData?.statements ?? [])}
+            peRatio={displayPeRatio}
+            roe={roeStat}
+            dividendYield={data?.finnhubMetrics?.dividendYield ?? null}
+            earningsDays={earningsDays}
+            moversReason={data?.moversReason ?? null}
+            moversCategory={data?.moversCategory ?? null}
+            wide
+          />
+
           <SeoTextSection
             ticker={tickerUpper}
             companyName={companyName}
@@ -499,21 +489,6 @@ export default async function AnalysisPage({ params }: PageProps) {
             hasFinancials={!!data?.analysisCache}
             peersCount={peersCount}
           />
-
-          {/* Cross-links to related report pages + share — grouped with the
-              discovery section at the bottom */}
-          <AnalysisCrossLinks
-            ticker={tickerUpper}
-            companyName={companyName}
-            description={data?.description}
-          />
-
-          {/* Related opportunities — grouped discovery links (same-industry,
-              sector movers, cheaper/similar alternatives) */}
-          <RelatedOpportunities ticker={tickerUpper} related={relatedOpps} />
-
-          {/* Latest news — at the very bottom, client-side fetch from Finnhub, cached 30min */}
-          <NewsSection ticker={tickerUpper} />
         </main>
       </div>
     </>

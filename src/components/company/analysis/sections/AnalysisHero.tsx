@@ -55,6 +55,11 @@ interface AnalysisHeroProps {
   recommendation?: RecommendationData | null;
   /** Latest reported balance sheet — cash vs debt bar under the 52w range */
   cashVsDebt?: { cash: number; debt: number; label: string } | null;
+  /** Optional company profile overview integrated into the hero footer */
+  description?: string | null;
+  headquarters?: string | null;
+  employees?: number | null;
+  websiteUrl?: string | null;
 }
 
 
@@ -80,6 +85,10 @@ export function AnalysisHero({
   priceTarget,
   recommendation,
   cashVsDebt,
+  description,
+  headquarters,
+  employees,
+  websiteUrl,
 }: AnalysisHeroProps) {
   const isClosed = marketSession === 'closed';
   const isPre = marketSession === 'pre';
@@ -113,7 +122,8 @@ export function AnalysisHero({
     || earningsLabel != null;
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-5">
+    <div className="h-full flex flex-col justify-between rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-5">
+      <div>
       <div className="flex flex-wrap items-start sm:items-end justify-between gap-2.5">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <img
@@ -408,7 +418,7 @@ export function AnalysisHero({
                   </span>
                   <span>Debt ${formatMarketCap(cashVsDebt.debt)}</span>
                 </div>
-                <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+                  <p className="mt-0.5 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
                   {cashVsDebt.debt > 0
                     ? `Cash covers ${Math.round((cashVsDebt.cash / cashVsDebt.debt) * 100)}% of debt`
                     : 'No reported debt'}
@@ -418,6 +428,102 @@ export function AnalysisHero({
             )}
         </div>
       )}
+      </div>
+
+      {/* Integrated Company Overview & Quick Deep-Dive Links Footer */}
+      {(() => {
+        const hasOverview = !!(description || headquarters || employees != null || websiteUrl);
+        const websiteHref = websiteUrl
+          ? (websiteUrl.startsWith('http://') || websiteUrl.startsWith('https://') ? websiteUrl : `https://${websiteUrl}`)
+          : null;
+        const firstSentence = description?.match(/^[^.!?]+[.!?]/)?.[0].trim() ?? null;
+        const rest = firstSentence && description ? description.slice(firstSentence.length).trim() : (description ?? '');
+        const hasMeta = !!(headquarters || employees != null || websiteHref);
+        const expandable = !!rest || hasMeta;
+
+        return (
+          <div className="mt-3.5 pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2">
+            {hasOverview && (
+              <details className="group text-xs">
+                <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden flex items-start justify-between gap-2 text-gray-600 dark:text-gray-300 leading-relaxed">
+                  <span className="min-w-0 flex-1">
+                    <span className="font-bold uppercase tracking-wider text-[10px] text-gray-400 dark:text-gray-500 mr-1.5">
+                      About:
+                    </span>
+                    {firstSentence ?? description ?? companyName}
+                    {expandable && (
+                      <span className="ml-1.5 text-blue-600 dark:text-blue-400 font-medium group-open:hidden">
+                        More ▾
+                      </span>
+                    )}
+                  </span>
+                </summary>
+                {expandable && (
+                  <div className="mt-1.5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed space-y-1 pl-0.5">
+                    {rest && <p>{rest}</p>}
+                    {hasMeta && (
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                        {headquarters && <>HQ: <strong className="font-medium text-gray-700 dark:text-gray-300">{headquarters}</strong></>}
+                        {employees != null && <>{headquarters && ' · '}Employees: <strong className="font-medium text-gray-700 dark:text-gray-300">{employees.toLocaleString('en-US')}</strong></>}
+                        {websiteHref && (
+                          <>
+                            {(headquarters || employees != null) && ' · '}
+                            <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                              Official Website ↗
+                            </a>
+                          </>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </details>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mr-0.5">
+                  Reports:
+                </span>
+                <Link
+                  href={`/valuation/${ticker}`}
+                  className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 font-medium transition-colors"
+                >
+                  Valuation &amp; P/E
+                </Link>
+                <Link
+                  href={`/financials/${ticker}`}
+                  className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 font-medium transition-colors"
+                >
+                  Financials
+                </Link>
+                <Link
+                  href={`/premarket/${ticker}`}
+                  className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 font-medium transition-colors"
+                >
+                  Premarket
+                </Link>
+                <a
+                  href={`https://stockcv.com/${ticker}`}
+                  rel="noopener"
+                  className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-semibold transition-colors"
+                >
+                  {ticker} StockCV ↗
+                </a>
+              </div>
+              <div className="hidden sm:flex items-center gap-2 text-gray-400 dark:text-gray-500">
+                <a href="#price-chart" className="hover:text-blue-600 dark:hover:text-blue-400">Chart ↓</a>
+                <span>·</span>
+                <a href="#key-metrics" className="hover:text-blue-600 dark:hover:text-blue-400">Metrics ↓</a>
+                <span>·</span>
+                <a href="#financial-charts" className="hover:text-blue-600 dark:hover:text-blue-400">Sankey ↓</a>
+                <span>·</span>
+                <a href="#faq" className="hover:text-blue-600 dark:hover:text-blue-400">FAQ ↓</a>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

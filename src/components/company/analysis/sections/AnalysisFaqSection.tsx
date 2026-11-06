@@ -124,15 +124,18 @@ export function buildFaqSchema(items: FaqItem[]) {
 export function AnalysisFaqSection({ items, ticker }: { items: FaqItem[]; ticker: string }) {
   if (!items.length) return null;
   return (
-    <section className="mb-6" aria-label="Frequently asked questions">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+    <section id="faq" className="mb-6 scroll-mt-16" aria-label="Frequently asked questions">
+      <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">
         Frequently Asked Questions about {ticker}
       </h2>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
         {items.map((item) => (
-          <details key={item.q} className="group px-5 py-3.5">
+          <details
+            key={item.q}
+            className="group rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3"
+          >
             <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden flex items-center justify-between gap-3">
-              <h3 className="text-sm font-medium text-gray-800 dark:text-gray-200">{item.q}</h3>
+              <h3 className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200">{item.q}</h3>
               <svg
                 className="w-4 h-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180"
                 fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"
@@ -140,7 +143,7 @@ export function AnalysisFaqSection({ items, ticker }: { items: FaqItem[]; ticker
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </summary>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{item.a}</p>
+            <p className="mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{item.a}</p>
           </details>
         ))}
       </div>

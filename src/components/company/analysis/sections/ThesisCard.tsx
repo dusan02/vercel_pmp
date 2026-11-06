@@ -45,10 +45,17 @@ function EvidenceList({ title, items, icon, iconClass }: {
     );
 }
 
-export function ThesisCard({ analysisData, cache, roe, only }: ThesisCardProps) {
+export function computeThesisPoints({
+    analysisData,
+    cache,
+    roe,
+}: {
+    analysisData?: AnalysisData | null;
+    cache?: ThesisCardProps['cache'];
+    roe?: number | null;
+}): { strengths: string[]; risks: string[] } {
     const m = analysisData?.metrics ?? null;
     const peStat = analysisData?.valuationHistoryStats?.pe ?? null;
-    // SBC as % of TTM revenue — BalanceSheetSummary only carries SBC/NI
     const ttm = analysisData?.ttm ?? null;
     const sbcRev = (ttm?.sbc != null && ttm?.revenue != null && ttm.revenue > 0)
         ? (ttm.sbc / ttm.revenue) * 100
@@ -115,6 +122,12 @@ export function ThesisCard({ analysisData, cache, roe, only }: ThesisCardProps) 
     if (!peDistorted && pePct != null && pePct >= 80 && peStat?.current != null) {
         risks.push(`P/E ${fmt(peStat.current)}× at top ${Math.round(100 - pePct)}% of ${peYears ? Math.round(peYears) : 'multi'}-year history`);
     }
+
+    return { strengths, risks };
+}
+
+export function ThesisCard({ analysisData, cache, roe, only }: ThesisCardProps) {
+    const { strengths, risks } = computeThesisPoints({ analysisData, cache, roe });
 
     if (strengths.length === 0 && risks.length === 0) return null;
     if (only === 'strengths') {

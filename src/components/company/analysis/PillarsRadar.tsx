@@ -98,13 +98,13 @@ export default function PillarsRadar({ pillars }: { pillars: PillarScores }) {
     const values = axes.map(p => p?.score ?? 0);
 
     return (
-        <section className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900" aria-label="Company profile scores">
+        <section className="h-full flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900" aria-label="Company profile scores">
             <h2 className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 Profile
             </h2>
             <svg
                 viewBox="0 0 284 206"
-                className="mt-1 w-full"
+                className="mt-0.5 w-full max-h-[190px]"
                 role="img"
                 aria-label={`Radar profile: ${axes.map((p, i) => `${p?.label ?? SHORT_LABEL[AXIS_ORDER[i]!]} ${p?.score ?? 0}`).join(', ')}`}
             >
