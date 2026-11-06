@@ -237,17 +237,17 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
                 <span>CONTRARIAN DIP-BUYING ENGINE</span>
               </span>
               <span className="text-xs text-slate-500 dark:text-slate-400">
-                Wilder RSI (14) · Gaussov chvost (&lt; 2,0 % / &lt; 0,8 % / &lt; 0,3 %) · Master → Slave ETF · Anti-FOMO Semafor
+                Wilder RSI (14) · Gaussian Tail (&lt; 2.0% / &lt; 0.8% / &lt; 0.3%) · Master → Slave ETF · Anti-FOMO Signal
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-2">
-              Trading Ideas (Long) — Časovanie kapitulácií &amp; Vážené tranže (28 : 28 : 44)
+              Trading Ideas (Long) — Capitulation Timing &amp; Weighted Tranches (28 : 28 : 44)
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1 max-w-4xl">
-              Štrukturálne hladiny podpory (<strong>Weekly SMA 50</strong>, horizontálny support a{' '}
-              <strong>Weekly SMA 200</strong>) sa vyhodnocujú na podkladovom aktíve (<strong>Master</strong>)
-              a cez násobok páky (2×/3×) sa prepočítajú nákupné úrovne pre pákové ETF (<strong>Slave</strong>)
-              bez skreslenia z <em>volatility decay</em>.
+              Structural support levels (<strong>Weekly SMA 50</strong>, horizontal support, and{' '}
+              <strong>Weekly SMA 200</strong>) are evaluated on the underlying asset (<strong>Master</strong>)
+              and projected via the leverage multiplier (2×/3×) to derive entry levels for the leveraged ETF (<strong>Slave</strong>)
+              without distortion from <em>volatility decay</em>.
             </p>
           </div>
 
@@ -258,7 +258,7 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
                 type="text"
                 value={customInput}
                 onChange={(e) => setCustomInput(e.target.value)}
-                placeholder="Pridať ticker (napr. ASML)..."
+                placeholder="Add ticker (e.g. ASML)..."
                 maxLength={7}
                 className="w-44 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white uppercase placeholder:normal-case focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -267,7 +267,7 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors"
               >
                 <Plus size={14} />
-                <span>Pridať</span>
+                <span>Add</span>
               </button>
             </form>
 
@@ -278,7 +278,7 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
               <RefreshCw size={14} className={refreshing ? 'animate-spin text-blue-500' : ''} />
-              <span>{refreshing ? 'Prepočítavam...' : 'Obnoviť live'}</span>
+              <span>{refreshing ? 'Recalculating...' : 'Refresh Live'}</span>
             </button>
           </div>
         </div>
@@ -288,13 +288,13 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
           <div className="rounded-xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/70 dark:border-emerald-900/40 p-3 flex items-center justify-between">
             <div>
               <div className="text-[11px] font-bold uppercase text-emerald-700 dark:text-emerald-400">
-                🟢 Kúpiť tranžu (RSI ≤ 27)
+                🟢 Buy Tranche (RSI ≤ 27)
               </div>
               <div className="text-xl font-extrabold text-emerald-700 dark:text-emerald-300 tabular-nums mt-0.5">
                 {summaryCounts.buyCount}
               </div>
               <div className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80">
-                Kapitulácia bez FOMO odskoku (≤ +4 %)
+                Capitulation without FOMO bounce (≤ +4%)
               </div>
             </div>
             <ShieldCheck size={24} className="text-emerald-500/70 shrink-0" />
@@ -303,13 +303,13 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
           <div className="rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 p-3 flex items-center justify-between">
             <div>
               <div className="text-[11px] font-bold uppercase text-amber-700 dark:text-amber-400">
-                🟡 Čakať na retest (Anti-FOMO)
+                🟡 Wait for Retest (Anti-FOMO)
               </div>
               <div className="text-xl font-extrabold text-amber-700 dark:text-amber-300 tabular-nums mt-0.5">
                 {summaryCounts.retestCount}
               </div>
               <div className="text-[11px] text-amber-600/80 dark:text-amber-400/80">
-                Premarket uletel &gt; +4 % · Limit na Close
+                Premarket jumped &gt; +4% · Limit near Close
               </div>
             </div>
             <AlertTriangle size={24} className="text-amber-500/70 shrink-0" />
@@ -318,13 +318,13 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
           <div className="rounded-xl bg-orange-50/70 dark:bg-orange-950/20 border border-orange-200/70 dark:border-orange-900/40 p-3 flex items-center justify-between">
             <div>
               <div className="text-[11px] font-bold uppercase text-orange-700 dark:text-orange-400">
-                🟠 / 🔵 Sledovať &amp; 200W SMA
+                🟠 / 🔵 Watch &amp; 200W SMA
               </div>
               <div className="text-xl font-extrabold text-orange-700 dark:text-orange-300 tabular-nums mt-0.5">
                 {summaryCounts.warning200wCount}
               </div>
               <div className="text-[11px] text-orange-600/80 dark:text-orange-400/80">
-                Blíži sa ku kapitulácii / pod 200W SMA
+                Approaching capitulation / below 200W SMA
               </div>
             </div>
             <Info size={24} className="text-orange-500/70 shrink-0" />
@@ -333,13 +333,13 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
           <div className="rounded-xl bg-rose-50/70 dark:bg-rose-950/20 border border-rose-200/70 dark:border-rose-900/40 p-3 flex items-center justify-between">
             <div>
               <div className="text-[11px] font-bold uppercase text-rose-700 dark:text-rose-400">
-                🔴 Vybrať zisk / Hedžovať
+                🔴 Take Profit / Hedge
               </div>
               <div className="text-xl font-extrabold text-rose-700 dark:text-rose-300 tabular-nums mt-0.5">
                 {summaryCounts.euphoriaCount}
               </div>
               <div className="text-[11px] text-rose-600/80 dark:text-rose-400/80">
-                Pravý chvost &gt; 98,5 % (Daily RSI ≥ 78)
+                Right tail &gt; 98.5% (Daily RSI ≥ 78)
               </div>
             </div>
             <Flame size={24} className="text-rose-500/70 shrink-0" />
@@ -352,14 +352,14 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
         <div className="flex flex-wrap items-center gap-1.5">
           {(
             [
-              { id: 'all', label: `Všetky sledované (${items.length})` },
+              { id: 'all', label: `All Tracked (${items.length})` },
               {
                 id: 'signals',
-                label: `Aktívne signály (${items.filter((i) => i.semafor.status !== 'NEUTRAL_WAIT').length})`,
+                label: `Active Signals (${items.filter((i) => i.semafor.status !== 'NEUTRAL_WAIT').length})`,
               },
-              { id: 'leveraged', label: 'Pákové ETF (Master → Slave 2×/3×)' },
-              { id: 'etf', label: 'Indexy & Sektory (QQQ / SOXX / SPY)' },
-              { id: 'stocks', label: 'Jednotlivé akcie' },
+              { id: 'leveraged', label: 'Leveraged ETFs (Master → Slave 2×/3×)' },
+              { id: 'etf', label: 'Indices & Sectors (QQQ / SOXX / SPY)' },
+              { id: 'stocks', label: 'Individual Stocks' },
             ] as { id: FilterMode; label: string }[]
           ).map((f) => (
             <button
@@ -383,7 +383,7 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
             className="inline-flex items-center gap-1.5 font-semibold text-blue-600 dark:text-blue-400 hover:underline"
           >
             <SlidersHorizontal size={14} />
-            <span>Hľadať kapitulácie v celom Screeneri (1 000+ akcií s RSI ≤ 27)</span>
+            <span>Scan all 1,000+ stocks in Screener for Capitulations (RSI ≤ 27)</span>
             <ChevronRight size={14} />
           </Link>
         </div>
@@ -404,11 +404,11 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 uppercase text-[11px] tracking-wider">
                   <th className="py-3 px-4 font-bold">Ticker (Master → Slave)</th>
-                  <th className="py-3 px-3 font-bold text-right">Aktuálna cena / Premarket %</th>
-                  <th className="py-3 px-3 font-bold">Anti-FOMO Semafor &amp; Akcia</th>
+                  <th className="py-3 px-3 font-bold text-right">Current Price / Premarket %</th>
+                  <th className="py-3 px-3 font-bold">Anti-FOMO Signal &amp; Action</th>
                   <th className="py-3 px-3 font-bold text-right">Daily RSI (14)</th>
                   <th className="py-3 px-3 font-bold text-right">Weekly RSI (14)</th>
-                  <th className="py-3 px-3 font-bold text-right">Gauss Percentil (Z-skóre)</th>
+                  <th className="py-3 px-3 font-bold text-right">Gaussian Percentile (Z-Score)</th>
                   <th className="py-3 px-3 font-bold text-right">Rel Volume</th>
                   <th className="py-3 px-4 font-bold text-right">Master vs Weekly SMA 50 / 200</th>
                 </tr>
@@ -454,7 +454,7 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
                               <Link
                                 href={`/analysis/${item.pair.masterSymbol}`}
                                 onClick={(e) => e.stopPropagation()}
-                                title={`Otvoriť fundamentálnu a technickú analýzu ${item.pair.masterSymbol}`}
+                                title={`Open Fundamental & Technical Analysis for ${item.pair.masterSymbol}`}
                                 className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 ml-0.5"
                               >
                                 <ExternalLink size={12} />
@@ -498,7 +498,7 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
                           </div>
                         ) : (
                           <div className="text-[11px] text-slate-400 mt-0.5">
-                            Od včerajšieho Low: {mQuote.reboundFromYesterdayLowPct >= 0 ? '+' : ''}
+                            From Prev Low: {mQuote.reboundFromYesterdayLowPct >= 0 ? '+' : ''}
                             {mQuote.reboundFromYesterdayLowPct.toFixed(1)}%
                           </div>
                         )}
@@ -538,8 +538,8 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
                         </span>
                         <div className="text-[10px] text-slate-400 mt-0.5">
                           {item.weeklyRsi14 != null && item.weeklyRsi14 <= 32
-                            ? 'Dlhodobé dno!'
-                            : 'Týždenný trend'}
+                            ? 'Long-term bottom!'
+                            : 'Weekly trend'}
                         </div>
                       </td>
 
@@ -547,7 +547,7 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
                       <td className="py-3.5 px-3 align-middle text-right tabular-nums">
                         <div className="font-bold text-slate-900 dark:text-white">
                           {item.gaussian.dailyRsi.gaussianPercentile != null
-                            ? `${item.gaussian.dailyRsi.gaussianPercentile.toFixed(2)} %`
+                            ? `${item.gaussian.dailyRsi.gaussianPercentile.toFixed(2)}%`
                             : '–'}
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -572,7 +572,7 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
                         >
                           {item.relVolume.toFixed(2)}×
                         </span>
-                        <div className="text-[10px] text-slate-400">vs 20D priemer</div>
+                        <div className="text-[10px] text-slate-400">vs 20D avg</div>
                       </td>
 
                       {/* 8. Distance of Master from Weekly SMA 50 & SMA 200 */}
@@ -638,14 +638,14 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
                     </h2>
                     {selectedItem.pair.slaveSymbol && (
                       <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
-                        Pákové ETF: {selectedItem.pair.slaveSymbol} ({selectedItem.pair.leverage}× Long)
+                        Leveraged ETF: {selectedItem.pair.slaveSymbol} ({selectedItem.pair.leverage}× Long)
                       </span>
                     )}
                     <Link
                       href={`/analysis/${selectedItem.pair.masterSymbol}`}
                       className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      <span>Plná analýza {selectedItem.pair.masterSymbol}</span>
+                      <span>Full {selectedItem.pair.masterSymbol} Analysis</span>
                       <ExternalLink size={12} />
                     </Link>
                   </div>
@@ -678,13 +678,13 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mt-4 text-xs">
               <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-2.5 border border-slate-200/70 dark:border-slate-700/60">
                 <div className="text-[10px] font-semibold uppercase text-slate-400">
-                  Cena podkladu ({selectedItem.pair.masterSymbol})
+                  Underlying Price ({selectedItem.pair.masterSymbol})
                 </div>
                 <div className="text-sm font-extrabold text-slate-900 dark:text-white tabular-nums mt-0.5">
                   ${selectedItem.masterQuote.currentPrice.toFixed(2)}
                 </div>
                 <div className="text-[11px] text-slate-500 tabular-nums">
-                  Včera Low: ${selectedItem.masterQuote.prevLow.toFixed(2)}
+                  Prev Low: ${selectedItem.masterQuote.prevLow.toFixed(2)}
                 </div>
               </div>
 
@@ -703,13 +703,13 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
 
               <div className="rounded-xl bg-blue-50/50 dark:bg-blue-950/20 p-2.5 border border-blue-200/60 dark:border-blue-900/40">
                 <div className="text-[10px] font-semibold uppercase text-blue-600 dark:text-blue-400">
-                  1. Hladina: Weekly SMA 50
+                  Level 1: Weekly SMA 50
                 </div>
                 <div className="text-sm font-extrabold text-slate-900 dark:text-white tabular-nums mt-0.5">
                   ${selectedItem.masterTechnicals.weeklySma50?.toFixed(2) ?? '–'}
                 </div>
                 <div className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold tabular-nums">
-                  Vzdialenosť:{' '}
+                  Distance:{' '}
                   {selectedItem.masterTechnicals.distWeeklySma50Pct != null
                     ? `${selectedItem.masterTechnicals.distWeeklySma50Pct >= 0 ? '+' : ''}${selectedItem.masterTechnicals.distWeeklySma50Pct.toFixed(1)}%`
                     : '–'}
@@ -718,25 +718,25 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
 
               <div className="rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 p-2.5 border border-emerald-200/60 dark:border-emerald-900/40">
                 <div className="text-[10px] font-semibold uppercase text-emerald-600 dark:text-emerald-400">
-                  2. Hladina: Horiz. Support
+                  Level 2: Horiz. Support
                 </div>
                 <div className="text-sm font-extrabold text-slate-900 dark:text-white tabular-nums mt-0.5">
                   ${selectedItem.masterTechnicals.horizontalSupport?.toFixed(2) ?? '–'}
                 </div>
                 <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold tabular-nums">
-                  Stredná podpora (2. tranža)
+                  Mid Support (Tranche 2)
                 </div>
               </div>
 
               <div className="rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 p-2.5 border border-emerald-300/70 dark:border-emerald-800/60">
                 <div className="text-[10px] font-semibold uppercase text-emerald-700 dark:text-emerald-300">
-                  3. Hladina: Weekly SMA 200
+                  Level 3: Weekly SMA 200
                 </div>
                 <div className="text-sm font-extrabold text-slate-900 dark:text-white tabular-nums mt-0.5">
                   ${selectedItem.masterTechnicals.weeklySma200?.toFixed(2) ?? '–'}
                 </div>
                 <div className="text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold tabular-nums">
-                  Vzdialenosť:{' '}
+                  Distance:{' '}
                   {selectedItem.masterTechnicals.distWeeklySma200Pct != null
                     ? `${selectedItem.masterTechnicals.distWeeklySma200Pct >= 0 ? '+' : ''}${selectedItem.masterTechnicals.distWeeklySma200Pct.toFixed(1)}%`
                     : '–'}
@@ -745,13 +745,13 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
 
               <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-2.5 border border-slate-200/70 dark:border-slate-700/60">
                 <div className="text-[10px] font-semibold uppercase text-slate-400">
-                  Inverzný Hedžing ETF
+                  Inverse Hedging ETF
                 </div>
                 <div className="text-sm font-extrabold text-slate-900 dark:text-white tabular-nums mt-0.5">
                   {selectedItem.pair.inverseSymbol ?? 'SQQQ'}{' '}
                   {selectedItem.pair.inverseLeverage ? `(${selectedItem.pair.inverseLeverage}× Short)` : ''}
                 </div>
-                <div className="text-[11px] text-slate-500">Pri RSI ≥ 78 pred 1Y testom</div>
+                <div className="text-[11px] text-slate-500">At RSI ≥ 78 before 1Y tax test</div>
               </div>
             </div>
           </div>

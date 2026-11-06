@@ -31,11 +31,11 @@ export function GaussianBellCurveChart({
     const tabs: { key: MetricTabKey; label: string; shortLabel: string }[] = [
       { key: 'dailyRsi', label: 'Daily RSI (14)', shortLabel: 'Daily RSI' },
       { key: 'weeklyRsi', label: 'Weekly RSI (14)', shortLabel: 'Weekly RSI' },
-      { key: 'weeklySma200Dist', label: 'Odchýlka od 200W SMA (%)', shortLabel: 'vs 200W SMA' },
-      { key: 'dailySma200Dist', label: 'Odchýlka od 200D SMA (%)', shortLabel: 'vs 200D SMA' },
+      { key: 'weeklySma200Dist', label: 'Distance from 200W SMA (%)', shortLabel: 'vs 200W SMA' },
+      { key: 'dailySma200Dist', label: 'Distance from 200D SMA (%)', shortLabel: 'vs 200D SMA' },
     ];
     if (distributions.peRatio && distributions.peRatio.sampleSize >= 20) {
-      tabs.push({ key: 'peRatio', label: 'P/E Valuácia (Hist.)', shortLabel: 'P/E Hist.' });
+      tabs.push({ key: 'peRatio', label: 'Historical P/E', shortLabel: 'P/E Hist.' });
     }
     return tabs;
   }, [distributions.peRatio]);
@@ -137,14 +137,14 @@ export function GaussianBellCurveChart({
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-              Gaussova krivka rozdelenia ({masterSymbol})
+              Gaussian Probability Distribution ({masterSymbol})
             </h4>
             <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${zoneColorClasses}`}>
               {stats.zoneLabelSk}
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Empirická distribúcia za ~10 rokov ({stats.sampleSize.toLocaleString('en-US')} pozorovaní) ·{' '}
+            Empirical ~10Y distribution ({stats.sampleSize.toLocaleString('en-US')} observations) ·{' '}
             <span className="font-medium text-slate-700 dark:text-slate-300">
               μ = {fmtVal(stats.mean)}, σ = {stats.stdDev.toFixed(1)}
             </span>
@@ -176,21 +176,21 @@ export function GaussianBellCurveChart({
       {/* Key Gaussian Stat Pills */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3 text-xs">
         <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-2.5 py-1.5 border border-slate-200/70 dark:border-slate-700/60">
-          <div className="text-[10px] text-slate-400 uppercase font-semibold">Dnešná hodnota</div>
+          <div className="text-[10px] text-slate-400 uppercase font-semibold">Current Value</div>
           <div className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
             {fmtVal(stats.currentValue)}
           </div>
         </div>
         <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-2.5 py-1.5 border border-slate-200/70 dark:border-slate-700/60">
-          <div className="text-[10px] text-slate-400 uppercase font-semibold">Z-Skóre (σ)</div>
+          <div className="text-[10px] text-slate-400 uppercase font-semibold">Z-Score (σ)</div>
           <div className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
             {stats.zScore != null ? `${stats.zScore >= 0 ? '+' : ''}${stats.zScore.toFixed(2)}σ` : '–'}
           </div>
         </div>
         <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-2.5 py-1.5 border border-slate-200/70 dark:border-slate-700/60">
-          <div className="text-[10px] text-slate-400 uppercase font-semibold">Gauss Percentil (zľava)</div>
+          <div className="text-[10px] text-slate-400 uppercase font-semibold">Left-Tail Percentile</div>
           <div className="text-sm font-bold text-blue-600 dark:text-blue-400 tabular-nums">
-            {stats.gaussianPercentile != null ? `${stats.gaussianPercentile.toFixed(2)} %` : '–'}
+            {stats.gaussianPercentile != null ? `${stats.gaussianPercentile.toFixed(2)}%` : '–'}
           </div>
         </div>
         <div className="rounded-lg bg-slate-50 dark:bg-slate-800/50 px-2.5 py-1.5 border border-slate-200/70 dark:border-slate-700/60">
@@ -201,7 +201,7 @@ export function GaussianBellCurveChart({
         </div>
         <div className="col-span-2 sm:col-span-1 rounded-lg bg-slate-50 dark:bg-slate-800/50 px-2.5 py-1.5 border border-slate-200/70 dark:border-slate-700/60">
           <div className="text-[10px] text-slate-400 uppercase font-semibold">
-            {isRsi ? 'Pásma nákupu (1./2./3.)' : 'Kľúčové chvosty'}
+            {isRsi ? 'Buy Zones (1st/2nd/3rd)' : 'Key Sigma Tails'}
           </div>
           <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
             ≤ {stats.thresholds.neg2_1Sigma} / {stats.thresholds.neg2_4Sigma} / {stats.thresholds.neg2_6Sigma}
@@ -215,7 +215,7 @@ export function GaussianBellCurveChart({
           viewBox={`0 0 ${width} ${height}`}
           className="w-full h-auto select-none"
           role="img"
-          aria-label={`Gaussova krivka pre ${symbol} - ${stats.label}`}
+          aria-label={`Gaussian bell curve for ${symbol} - ${stats.label}`}
         >
           {/* Shaded Gaussian tail zones */}
           {/* Neutral core (-2.1σ to +2.0σ) */}
@@ -245,7 +245,7 @@ export function GaussianBellCurveChart({
             { z: -2.6, label: '-2.6σ (0.3%)', sub: fmtVal(zToVal(-2.6)), cls: 'text-emerald-600 dark:text-emerald-400' },
             { z: -2.1, label: '-2.1σ (2.0%)', sub: fmtVal(zToVal(-2.1)), cls: 'text-lime-600 dark:text-lime-400' },
             { z: -1.0, label: '-1.0σ', sub: fmtVal(zToVal(-1.0)), cls: 'text-slate-400 dark:text-slate-500' },
-            { z: 0, label: 'μ (Stred)', sub: fmtVal(stats.mean), cls: 'text-slate-700 dark:text-slate-300' },
+            { z: 0, label: 'μ (Mean)', sub: fmtVal(stats.mean), cls: 'text-slate-700 dark:text-slate-300' },
             { z: 1.0, label: '+1.0σ', sub: fmtVal(zToVal(1.0)), cls: 'text-slate-400 dark:text-slate-500' },
             { z: 2.0, label: '+2.0σ (98.5%)', sub: fmtVal(zToVal(2.0)), cls: 'text-rose-600 dark:text-rose-400' },
           ].map((m) => {
@@ -370,7 +370,7 @@ export function GaussianBellCurveChart({
                   textAnchor="middle"
                   className="text-[10px] font-bold fill-white"
                 >
-                  Dnes: {fmtVal(stats.currentValue)} ({stats.gaussianPercentile?.toFixed(1)}%)
+                  Now: {fmtVal(stats.currentValue)} ({stats.gaussianPercentile?.toFixed(1)}%)
                 </text>
               </g>
             </g>
@@ -383,19 +383,19 @@ export function GaussianBellCurveChart({
         <div className="flex flex-wrap items-center gap-3">
           <span className="inline-flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded-xs bg-emerald-600 inline-block" />
-            <span>&lt; 0,3 % (3. tranža · 200W SMA)</span>
+            <span>&lt; 0.3% (3rd Tranche · 200W SMA)</span>
           </span>
           <span className="inline-flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded-xs bg-emerald-400 inline-block" />
-            <span>&lt; 0,8 % (2. tranža)</span>
+            <span>&lt; 0.8% (2nd Tranche)</span>
           </span>
           <span className="inline-flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded-xs bg-lime-400 inline-block" />
-            <span>&lt; 2,0 % (1. tranža)</span>
+            <span>&lt; 2.0% (1st Tranche)</span>
           </span>
           <span className="inline-flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded-xs bg-rose-500 inline-block" />
-            <span>&gt; 98,5 % (Výber zisku / Hedžing)</span>
+            <span>&gt; 98.5% (Take Profit / Tax Hedge)</span>
           </span>
         </div>
       </div>

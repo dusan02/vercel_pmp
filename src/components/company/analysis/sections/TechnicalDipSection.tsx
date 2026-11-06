@@ -99,7 +99,7 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
 
   return (
     <section
-      aria-label="Technický Dip-Buying & Gaussova krivka RSI"
+      aria-label="Technical Dip-Buying & Gaussian RSI Curve"
       className={`mb-6 rounded-2xl border p-5 shadow-xs transition-all ${style.wrap}`}
     >
       {/* Top Row: Technical Timing Verdict Banner */}
@@ -108,7 +108,7 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
               <Activity size={14} />
-              <span>Technický Timing &amp; Anti-FOMO Semafor</span>
+              <span>Technical Timing &amp; Anti-FOMO Traffic Light</span>
             </span>
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold ${style.badge}`}>
               <span>{item.semafor.emoji}</span>
@@ -116,7 +116,7 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
             </span>
             {item.pair.slaveSymbol && (
               <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
-                Pár: {item.pair.masterSymbol} → {item.pair.slaveSymbol} ({item.pair.leverage}×)
+                Pair: {item.pair.masterSymbol} → {item.pair.slaveSymbol} ({item.pair.leverage}×)
               </span>
             )}
           </div>
@@ -137,7 +137,7 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors shadow-xs"
           >
             <Calculator size={14} />
-            <span>{showCalculator ? 'Skryť kalkulátor 3 tranží' : 'Kalkulátor 3 tranží (28:28:44)'}</span>
+            <span>{showCalculator ? 'Hide 3-Tranche Calculator' : '3-Tranche Calculator (28:28:44)'}</span>
             {showCalculator ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
 
@@ -159,7 +159,7 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
             {item.dailyRsi14?.toFixed(1) ?? '–'}
           </div>
           <div className="text-[11px] text-slate-500 tabular-nums">
-            Percentil: {item.gaussian.dailyRsi.gaussianPercentile?.toFixed(1) ?? '–'} % (
+            Percentile: {item.gaussian.dailyRsi.gaussianPercentile?.toFixed(1) ?? '–'}% (
             {item.gaussian.dailyRsi.zScore != null
               ? `${item.gaussian.dailyRsi.zScore >= 0 ? '+' : ''}${item.gaussian.dailyRsi.zScore.toFixed(2)}σ`
               : '–'}
@@ -173,7 +173,7 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
             {item.weeklyRsi14?.toFixed(1) ?? '–'}
           </div>
           <div className="text-[11px] text-slate-500 tabular-nums">
-            Percentil: {item.gaussian.weeklyRsi.gaussianPercentile?.toFixed(1) ?? '–'} %
+            Percentile: {item.gaussian.weeklyRsi.gaussianPercentile?.toFixed(1) ?? '–'}%
           </div>
         </div>
 
@@ -185,7 +185,7 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
             ${item.masterTechnicals.weeklySma50?.toFixed(2) ?? '–'}
           </div>
           <div className="text-[11px] text-slate-500 tabular-nums">
-            Vzdialenosť:{' '}
+            Distance:{' '}
             {item.masterTechnicals.distWeeklySma50Pct != null
               ? `${item.masterTechnicals.distWeeklySma50Pct >= 0 ? '+' : ''}${item.masterTechnicals.distWeeklySma50Pct.toFixed(1)}%`
               : '–'}
@@ -200,7 +200,7 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
             ${item.masterTechnicals.weeklySma200?.toFixed(2) ?? '–'}
           </div>
           <div className="text-[11px] text-slate-500 tabular-nums">
-            Vzdialenosť:{' '}
+            Distance:{' '}
             {item.masterTechnicals.distWeeklySma200Pct != null
               ? `${item.masterTechnicals.distWeeklySma200Pct >= 0 ? '+' : ''}${item.masterTechnicals.distWeeklySma200Pct.toFixed(1)}%`
               : '–'}
@@ -208,25 +208,25 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
         </div>
 
         <div className="rounded-xl bg-white/90 dark:bg-slate-900/90 p-2.5 border border-slate-200/80 dark:border-slate-800">
-          <div className="text-[10px] font-semibold uppercase text-slate-400">Rel. Objem &amp; Odskok</div>
+          <div className="text-[10px] font-semibold uppercase text-slate-400">Rel. Volume &amp; Bounce</div>
           <div className="text-base font-extrabold text-slate-900 dark:text-white tabular-nums mt-0.5">
             {item.relVolume.toFixed(2)}× RVOL
           </div>
           <div className="text-[11px] text-slate-500 tabular-nums">
-            Od Low včera: {item.masterQuote.reboundFromYesterdayLowPct >= 0 ? '+' : ''}
+            From Prev Low: {item.masterQuote.reboundFromYesterdayLowPct >= 0 ? '+' : ''}
             {item.masterQuote.reboundFromYesterdayLowPct.toFixed(1)}%
           </div>
         </div>
 
         <div className="rounded-xl bg-white/90 dark:bg-slate-900/90 p-2.5 border border-slate-200/80 dark:border-slate-800">
           <div className="text-[10px] font-semibold uppercase text-blue-600 dark:text-blue-400">
-            Plán 3 tranží ({activePlan.instrumentSymbol})
+            3-Tranche Plan ({activePlan.instrumentSymbol})
           </div>
           <div className="text-xs font-extrabold text-slate-900 dark:text-white tabular-nums mt-1">
-            1T: ${activePlan.levels[0].slaveEntryPrice} · 2T: ${activePlan.levels[1].slaveEntryPrice}
+            T1: ${activePlan.levels[0].slaveEntryPrice} · T2: ${activePlan.levels[1].slaveEntryPrice}
           </div>
           <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">
-            3T (44%): ${activePlan.levels[2].slaveEntryPrice}
+            T3 (44%): ${activePlan.levels[2].slaveEntryPrice}
           </div>
         </div>
       </div>

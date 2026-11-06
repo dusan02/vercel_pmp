@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       .slice(0, 10);
 
     const forceRefresh = searchParams.get('refresh') === '1';
-    const cacheKey = `dip:board:v2:${extraSymbols.slice().sort().join(',') || 'default'}`;
+    const cacheKey = `dip:board:v3:${extraSymbols.slice().sort().join(',') || 'default'}`;
 
     if (!forceRefresh) {
       try {

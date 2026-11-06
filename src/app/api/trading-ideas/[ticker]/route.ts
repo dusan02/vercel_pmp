@@ -18,7 +18,7 @@ export async function GET(
 
     const { searchParams } = new URL(request.url);
     const forceRefresh = searchParams.get('refresh') === '1';
-    const cacheKey = `dip:item:v2:${symbol}`;
+    const cacheKey = `dip:item:v3:${symbol}`;
 
     if (!forceRefresh) {
       try {

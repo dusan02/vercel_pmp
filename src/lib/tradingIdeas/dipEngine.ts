@@ -538,49 +538,49 @@ export function buildGaussianStats(
 
   // Classify zone using both RSI thresholds and Gaussian Z-score / percentile
   let zone: GaussianZone = 'NEUTRAL';
-  let zoneLabelSk = 'Neutrálna zóna (držať / čakať)';
+  let zoneLabelSk = 'Neutral Zone (Hold / Wait)';
 
   if (currentValue != null && zScore != null && gaussianPercentile != null) {
     if (isRsiMetric) {
       if (currentValue <= 20 || zScore <= -2.6 || gaussianPercentile <= 0.35) {
         zone = 'EXTREME_BOTTOM';
-        zoneLabelSk = 'Generačné dno (< 0,3 % · 3. nákup)';
+        zoneLabelSk = 'Generational Bottom (< 0.3% · 3rd Tranche Buy)';
       } else if (currentValue <= 23 || zScore <= -2.4 || gaussianPercentile <= 0.85) {
         zone = 'DEEP_OVERSOLD';
-        zoneLabelSk = 'Hlboké prepredanie (< 0,8 % · 2. nákup)';
+        zoneLabelSk = 'Deep Oversold (< 0.8% · 2nd Tranche Buy)';
       } else if (currentValue <= 27 || zScore <= -2.1 || gaussianPercentile <= 2.05) {
         zone = 'CAPITULATION_1';
-        zoneLabelSk = '1. vlna kapitulácie (< 2,0 % · 1. nákup)';
+        zoneLabelSk = '1st Capitulation Wave (< 2.0% · 1st Tranche Buy)';
       } else if (currentValue <= 32 || zScore <= -1.65) {
         zone = 'APPROACHING_OVERSOLD';
-        zoneLabelSk = 'Blíži sa ku kapitulácii (pripraviť Limit)';
+        zoneLabelSk = 'Approaching Capitulation (Prepare Limit Buy)';
       } else if (currentValue >= 78 || zScore >= 2.0 || gaussianPercentile >= 98.5) {
         zone = 'EUPHORIA';
-        zoneLabelSk = 'Extrémna eufória (> 98,5 % · Vybrať zisk / Hedžovať)';
+        zoneLabelSk = 'Extreme Euphoria (> 98.5% · Take Profit / Tax Hedge)';
       } else if (currentValue >= 70 || zScore >= 1.4) {
         zone = 'WARM';
-        zoneLabelSk = 'Prehriate pásmo (opatrnosť)';
+        zoneLabelSk = 'Overheated Zone (Caution)';
       }
     } else {
       // Non-RSI metric (e.g., Weekly SMA 200 distance % or P/E ratio)
       if (zScore <= -2.5) {
         zone = 'EXTREME_BOTTOM';
-        zoneLabelSk = 'Extrémne podhodnotenie (< 0,6 % chvost)';
+        zoneLabelSk = 'Extreme Left Tail (< 0.6% tail)';
       } else if (zScore <= -2.0) {
         zone = 'DEEP_OVERSOLD';
-        zoneLabelSk = 'Hlboký ľavý chvost (< 2,3 %)';
+        zoneLabelSk = 'Deep Left Tail (< 2.3% tail)';
       } else if (zScore <= -1.5) {
         zone = 'CAPITULATION_1';
-        zoneLabelSk = 'Výrazná odchýlka nadol (≤ -1,5σ)';
+        zoneLabelSk = 'Significant Downside Deviation (≤ -1.5σ)';
       } else if (zScore <= -1.0) {
         zone = 'APPROACHING_OVERSOLD';
-        zoneLabelSk = 'Pod priemerom (-1,0σ až -1,5σ)';
+        zoneLabelSk = 'Below Historical Mean (-1.0σ to -1.5σ)';
       } else if (zScore >= 2.0) {
         zone = 'EUPHORIA';
-        zoneLabelSk = 'Extrémny pravý chvost (≥ +2,0σ)';
+        zoneLabelSk = 'Extreme Right Tail (≥ +2.0σ)';
       } else if (zScore >= 1.3) {
         zone = 'WARM';
-        zoneLabelSk = 'Nadpriemerné pásmo (+1,3σ až +2,0σ)';
+        zoneLabelSk = 'Above Historical Mean (+1.3σ to +2.0σ)';
       }
     }
   }
@@ -1273,22 +1273,22 @@ export function evaluateAntiFomoSemafor(params: {
     activeWave = 1;
   }
 
-  // 4. 🔴 VYBRAŤ ZISK / HEDŽOVAŤ (Daily RSI >= 78 or Z >= +2.0σ)
+  // 4. 🔴 TAKE PROFIT / HEDGE (Daily RSI >= 78 or Z >= +2.0σ)
   if (rsi >= 78 || z >= 2.0) {
     return {
       status: 'TAKE_PROFIT_HEDGE',
       badgeColor: 'rose',
       emoji: '🔴',
-      headlineSk: 'VYBRAŤ ZISK / HEDŽOVAŤ',
-      actionSk: 'Predať časť pozície alebo daňovo zahedžovať cez inverzné ETF',
-      explanationSk: `Denné RSI (${rsi.toFixed(1)}) je v pravom chvoste Gaussovej krivky (Z = +${z.toFixed(2)}σ, > 98,5 %). Štatistická pravdepodobnosť korekcie je vysoká — ideálny bod na výber zisku alebo otvorenie daňového hedžingu pred dovŕšením 1-ročného časového testu.`,
+      headlineSk: 'TAKE PROFIT / TAX HEDGE',
+      actionSk: 'Trim position or open an inverse ETF tax hedge',
+      explanationSk: `Daily RSI (${rsi.toFixed(1)}) is in the right tail of the Gaussian curve (Z = +${z.toFixed(2)}σ, > 98.5%). Mean-reversion risk is elevated — ideal zone to lock in gains or hedge via an inverse ETF until the 1-year holding period completes.`,
       limitBuyRange: null,
       activeWave: null,
       isAntiFomoTriggered: false,
     };
   }
 
-  // 2. 🟡 ČAKAŤ NA RETEST (Limit Buy) — Anti-FOMO Guard!
+  // 2. 🟡 WAIT FOR RETEST (Limit Buy) — Anti-FOMO Guard!
   // Yesterday (or on the low) had capitulation (RSI <= 27), but premarket/live bounced > +4%
   if ((isOversoldToday || wasCapitulationYesterday) && maxReboundPct > 4.0) {
     const limitMin = Number(prevClose.toFixed(2));
@@ -1297,23 +1297,23 @@ export function evaluateAntiFomoSemafor(params: {
       status: 'WAIT_RETEST',
       badgeColor: 'amber',
       emoji: '🟡',
-      headlineSk: 'ČAKAŤ NA RETEST (Limit Buy)',
-      actionSk: `Nenaháňaj premarket (+${maxReboundPct.toFixed(1)} %), zadaj Limit Buy $${limitMin} – $${limitMax}`,
-      explanationSk: `Včera prebehla kapitulácia (RSI ${prevRsi.toFixed(1)}, RelVol ${maxRelVol.toFixed(1)}×), ale cena už od dna vyskočila o +${maxReboundPct.toFixed(1)} % (typický ranný short-squeeze / dead-cat bounce). Anti-FOMO ochrana: nenakupuj za market, zadaj Limit Buy na retest včerajšieho zatvorenia ($${limitMin} až +2 %).`,
+      headlineSk: 'WAIT FOR RETEST (Limit Buy)',
+      actionSk: `Do not chase premarket (+${maxReboundPct.toFixed(1)}%), place Limit Buy at $${limitMin} – $${limitMax}`,
+      explanationSk: `Capitulation occurred yesterday (RSI ${prevRsi.toFixed(1)}, RelVol ${maxRelVol.toFixed(1)}×), but price has already bounced +${maxReboundPct.toFixed(1)}% off the low (classic illiquid premarket short-squeeze / dead-cat bounce). Anti-FOMO rule: do not market-buy; place a Limit Buy for a retest of yesterday's close ($${limitMin} to +2%).`,
       limitBuyRange: { min: limitMin, max: limitMax },
       activeWave: activeWave ?? 1,
       isAntiFomoTriggered: true,
     };
   }
 
-  // 1. 🟢 KÚPIŤ 1. / 2. / 3. TRANŽU (Market/Limit)
+  // 1. 🟢 BUY 1st / 2nd / 3rd TRANCHE (Market/Limit)
   if ((isOversoldToday || (wasCapitulationYesterday && maxRelVol >= 2.5)) && maxReboundPct <= 4.0) {
     const waveLabel =
       activeWave === 3
-        ? 'KÚPIŤ 3. TRANŽU (Generačné dno · 44 %)'
+        ? 'BUY 3rd TRANCHE (Generational Bottom · 44%)'
         : activeWave === 2
-          ? 'KÚPIŤ 2. TRANŽU (Hlboké prepredanie · 28 %)'
-          : 'KÚPIŤ 1. TRANŽU (Market/Limit · 28 %)';
+          ? 'BUY 2nd TRANCHE (Deep Oversold · 28%)'
+          : 'BUY 1st TRANCHE (Market/Limit · 28%)';
 
     const limitMin = Number((effectiveLivePrice * 0.99).toFixed(2));
     const limitMax = Number((effectiveLivePrice * 1.01).toFixed(2));
@@ -1322,52 +1322,52 @@ export function evaluateAntiFomoSemafor(params: {
       badgeColor: 'emerald',
       emoji: '🟢',
       headlineSk: waveLabel,
-      actionSk: `Vstúpiť do ${activeWave ?? 1}. tranže v pásme $${limitMin} – $${limitMax}`,
-      explanationSk: `Potvrdená kapitulácia v ľavom chvoste Gaussovej krivky (Daily RSI ${rsi.toFixed(1)}, Z = ${z.toFixed(2)}σ, RelVol ${maxRelVol.toFixed(1)}×) a cena neodskočila od dna o viac ako +4 % (aktuálne ${maxReboundPct >= 0 ? '+' : ''}${maxReboundPct.toFixed(1)} %). Podmienky pre nákup sú splnené.`,
+      actionSk: `Execute Tranche #${activeWave ?? 1} entry in the $${limitMin} – $${limitMax} zone`,
+      explanationSk: `Confirmed left-tail capitulation on the Gaussian curve (Daily RSI ${rsi.toFixed(1)}, Z = ${z.toFixed(2)}σ, RelVol ${maxRelVol.toFixed(1)}×) and price has not bounced more than +4% off the low (currently ${maxReboundPct >= 0 ? '+' : ''}${maxReboundPct.toFixed(1)}%). Entry criteria are met.`,
       limitBuyRange: { min: limitMin, max: limitMax },
       activeWave: activeWave ?? 1,
       isAntiFomoTriggered: false,
     };
   }
 
-  // 3. 🟠 POZOR: PRERAZENÝ 200W SMA BEZ KAPITULÁCIE
+  // 3. 🟠 WARNING: BROKEN 200W SMA WITHOUT CAPITULATION
   if (isBelowWeekly200 && rsi > 30) {
     return {
       status: 'BROKEN_200W_NO_CAPITULATION',
       badgeColor: 'orange',
       emoji: '🟠',
-      headlineSk: 'POZOR: POD 200W SMA BEZ KAPITULÁCIE',
-      actionSk: 'Nenakupovať hneď — čakať na panický výpredaj (Daily RSI < 25)',
-      explanationSk: `Podklad prerazil kľúčový 200-týždňový priemer ($${masterWeeklySma200?.toFixed(2)}) smerom nadol, ale denné RSI je stále ${rsi.toFixed(1)} (> 30). Bez vrcholu paniky (kapitulácie objemu a RSI < 25) hrozí pomalé krvácanie. Čakaj na horizontálnu podporu a RSI ≤ 25.`,
+      headlineSk: 'CAUTION: BELOW 200W SMA WITHOUT CAPITULATION',
+      actionSk: 'Do not buy yet — wait for panic washout (Daily RSI < 25)',
+      explanationSk: `The underlying asset broke below its 200-Week SMA ($${masterWeeklySma200?.toFixed(2)}), but Daily RSI is still ${rsi.toFixed(1)} (> 30). Without a high-volume panic flush (RSI ≤ 25), stocks below the 200W SMA risk slow bleeding. Wait for horizontal support and RSI ≤ 25.`,
       limitBuyRange: null,
       activeWave: null,
       isAntiFomoTriggered: false,
     };
   }
 
-  // 5. 🔵 SLEDOVAŤ: BLÍŽI SA K 1. VLNE KAPITULÁCIE (RSI 27 - 32 or Weekly RSI <= 34)
+  // 5. 🔵 WATCH: APPROACHING 1st CAPITULATION WAVE (RSI 27 - 32 or Weekly RSI <= 34)
   if (rsi <= 32 || (weeklyRsi != null && weeklyRsi <= 34)) {
     return {
       status: 'WATCH_APPROACHING',
       badgeColor: 'sky',
       emoji: '🔵',
-      headlineSk: 'BLÍŽI SA KU KAPITULÁCII (Pripraviť 1. tranžu)',
-      actionSk: 'Pripraviť Limit Buy príkazy na 1. tranžu (čakať na RSI ≤ 27)',
-      explanationSk: `Denné RSI (${rsi.toFixed(1)}) klesá k hranici ľavého 2 % chvosta (RSI ≤ 27). Ešte nenastal plný kapitulačný preplach — zadaj čakajúci Limit Buy na úrovni 1. tranže a nechaj trh dôjsť k tvojej cene.`,
+      headlineSk: 'APPROACHING CAPITULATION (Stage Tranche 1)',
+      actionSk: 'Stage resting Limit Buy orders at Tranche 1 (wait for RSI ≤ 27)',
+      explanationSk: `Daily RSI (${rsi.toFixed(1)}) is approaching the 2% left-tail threshold (RSI ≤ 27). Full capitulation washout has not triggered yet — stage a resting Limit Buy at Tranche 1 and let price come to your level.`,
       limitBuyRange: null,
       activeWave: null,
       isAntiFomoTriggered: false,
     };
   }
 
-  // 6. ⚪ NEUTRÁLNE PÁSMO
+  // 6. ⚪ NEUTRAL ZONE
   return {
     status: 'NEUTRAL_WAIT',
     badgeColor: 'slate',
     emoji: '⚪',
-    headlineSk: 'NEUTRÁLNE PÁSMO (Čakať na pokles)',
-    actionSk: 'Držať hotovosť / existujúcu pozíciu — mimo extrémov',
-    explanationSk: `Denné RSI (${rsi.toFixed(1)}) sa nachádza v bežnom 88 % pásme Gaussovej krivky (30 – 70). Pre kontrariánsky nákup čakáme na pokles do ľavého chvosta (< 2,0 %, RSI ≤ 27).`,
+    headlineSk: 'NEUTRAL ZONE (Wait for Pullback)',
+    actionSk: 'Hold cash / existing position — no statistical extreme',
+    explanationSk: `Daily RSI (${rsi.toFixed(1)}) is inside the normal 88% Gaussian band (RSI 30–70). Contrarian dip-buying waits for a left-tail flush (< 2.0%, RSI ≤ 27).`,
     limitBuyRange: null,
     activeWave: null,
     isAntiFomoTriggered: false,
@@ -1520,8 +1520,8 @@ export function buildTranchePricePlan(params: {
     {
       trancheNumber: 1,
       weightPct: 28,
-      labelSk: '1. tranža (28 % kapitálu · 1. vlna kapitulácie)',
-      triggerConditionSk: 'Denné RSI ≤ 26–27 (ľavý 2 % chvost, Z ≤ -2,1σ) · pod Weekly SMA 50',
+      labelSk: 'Tranche 1 (28% Capital · 1st Capitulation Wave)',
+      triggerConditionSk: 'Daily RSI ≤ 26–27 (Left 2% tail, Z ≤ -2.1σ) · below Weekly SMA 50',
       masterTriggerPrice: Number(masterT1Price.toFixed(2)),
       masterDropFromCurrentPct: pctDiff(masterT1Price, masterPrice),
       slaveEntryPrice: slaveT1,
@@ -1531,8 +1531,8 @@ export function buildTranchePricePlan(params: {
     {
       trancheNumber: 2,
       weightPct: 28,
-      labelSk: '2. tranža (28 % kapitálu · Stredná podpora)',
-      triggerConditionSk: 'Pokles podkladu o ďalších ~14 % na horizontálny support (Daily RSI 22–24, Z ≤ -2,4σ)',
+      labelSk: 'Tranche 2 (28% Capital · Structural Support)',
+      triggerConditionSk: 'Further ~14% drop on Master to horizontal support (Daily RSI 22–24, Z ≤ -2.4σ)',
       masterTriggerPrice: Number(masterT2Price.toFixed(2)),
       masterDropFromCurrentPct: pctDiff(masterT2Price, masterPrice),
       slaveEntryPrice: slaveT2,
@@ -1542,8 +1542,8 @@ export function buildTranchePricePlan(params: {
     {
       trancheNumber: 3,
       weightPct: 44,
-      labelSk: '3. tranža (44 % kapitálu · Železná rezerva)',
-      triggerConditionSk: 'Dotyk podkladu s Weekly SMA 200 (Generačné dno · Daily RSI 18–21, Weekly RSI ≤ 30)',
+      labelSk: 'Tranche 3 (44% Capital · Iron Reserve)',
+      triggerConditionSk: 'Master touches Weekly SMA 200 (Generational bottom · Daily RSI 18–21, Weekly RSI ≤ 30)',
       masterTriggerPrice: Number(masterT3Price.toFixed(2)),
       masterDropFromCurrentPct: pctDiff(masterT3Price, masterPrice),
       slaveEntryPrice: slaveT3,
@@ -1793,7 +1793,7 @@ export async function evaluateDipIdeaForSymbol(
 
   const weeklySma200DistGauss = buildGaussianStats(
     'weeklySma200Dist',
-    'Odchýlka od Weekly SMA 200',
+    'Distance from Weekly SMA 200',
     '%',
     masterBaseline.distributions.weeklySma200DistValues,
     distWeeklySma200Pct,
@@ -1804,7 +1804,7 @@ export async function evaluateDipIdeaForSymbol(
 
   const dailySma200DistGauss = buildGaussianStats(
     'dailySma200Dist',
-    'Odchýlka od Daily SMA 200',
+    'Distance from Daily SMA 200',
     '%',
     masterBaseline.distributions.dailySma200DistValues,
     distDailySma200Pct,
@@ -1826,7 +1826,7 @@ export async function evaluateDipIdeaForSymbol(
         const curPe = peVals[peVals.length - 1] ?? null;
         peRatioGauss = buildGaussianStats(
           'peRatio',
-          'Historické P/E (Valuácia)',
+          'Historical P/E (Valuation)',
           '×',
           peVals,
           curPe,
