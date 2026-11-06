@@ -11,14 +11,15 @@
  *   npx tsx scripts/expand-ticker-universe.ts [--add=1000] [--dry-run]
  */
 
+import { loadEnvFromFiles } from './_utils/loadEnv';
+
+loadEnvFromFiles();
+
 import { prisma } from '../src/lib/db/prisma';
 import { redisClient } from '../src/lib/redis';
 import { addToUniverse, setPrevClose } from '../src/lib/redis/operations';
 import { getDateET, createETDate } from '../src/lib/utils/dateET';
 import { getTradingDay, getLastTradingDay } from '../src/lib/utils/timeUtils';
-import dotenv from 'dotenv';
-
-dotenv.config({ override: true });
 
 const POLYGON_API_KEY = process.env.POLYGON_API_KEY || '';
 
