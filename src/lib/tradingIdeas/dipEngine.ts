@@ -1495,9 +1495,7 @@ export function buildTranchePricePlan(params: {
   const slaveT1 =
     semafor.status === 'BUY_TRANCHE_1'
       ? currentInstrumentPrice
-      : semafor.status === 'WAIT_RETEST' && semafor.limitBuyRange
-        ? semafor.limitBuyRange.min
-        : projectToSlave(masterT1Price);
+      : projectToSlave(masterT1Price);
 
   const slaveT2 = projectToSlave(masterT2Price);
   const slaveT3 = projectToSlave(masterT3Price);
