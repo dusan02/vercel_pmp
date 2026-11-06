@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const getAll = searchParams.get('getAll') === 'true';
 
     // Validate and parse numeric parameters
-    const limit = limitParam ? Math.max(1, Math.min(1000, parseInt(limitParam, 10))) : null;
+    const limit = limitParam ? Math.max(1, Math.min(5000, parseInt(limitParam, 10))) : null;
     const offset = offsetParam ? Math.max(0, parseInt(offsetParam, 10)) : 0;
 
     // Validate sort parameter

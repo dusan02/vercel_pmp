@@ -54,8 +54,8 @@ export async function getAllTrackedTickers(): Promise<string[]> {
       totalCount: tickersArray.length
     });
 
-    // Limit to 1000 tickers (increased from 600)
-    return tickersArray.slice(0, 1000);
+    // Limit to 5000 tickers
+    return tickersArray.slice(0, 5000);
   } catch (error) {
     logger.warn('Redis unavailable, falling back to Database + Defaults for tracked tickers');
 
@@ -64,7 +64,7 @@ export async function getAllTrackedTickers(): Promise<string[]> {
       const { prisma } = await import('../db/prisma');
       const dbTickers = await prisma.ticker.findMany({
         select: { symbol: true },
-        take: 1000
+        take: 5000
       });
       
       const allTickers = new Set<string>(getAllProjectTickers('pmp'));

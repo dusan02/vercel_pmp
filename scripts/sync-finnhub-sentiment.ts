@@ -150,28 +150,33 @@ async function main() {
   console.log(`🔄 sync-finnhub-sentiment starting (force=${forceRefresh}, limit=${limit ?? 'all'})`);
 
   const tickers = await prisma.ticker.findMany({
-    where: { lastPrice: { gt: 0 } },
-    select: { symbol: true },
-    orderBy: { lastMarketCap: 'desc' },
+    where: { lastPrice: { gt: 0 }, assetType: 'STOCK' },
+    select: { symbol: true, tier: true },
+    orderBy: [{ tier: 'asc' }, { lastMarketCap: 'desc' }],
     ...(limit ? { take: limit } : {}),
   });
-  const symbols = tickers.map(t => t.symbol).filter((s): s is string => !!s);
-  console.log(`📊 ${symbols.length} tickers to sync`);
+  console.log(`📊 ${tickers.length} stock tickers to evaluate`);
 
   // 2 calls per ticker; ~2.1s spacing keeps us under the 60 calls/min free tier.
   const DELAY_MS = 2100;
-  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  let recOk = 0, insiderOk = 0, skipped = 0, failed = 0;
+  const MAX_SYNCS_PER_RUN = limit ?? 900;
+  let recOk = 0, insiderOk = 0, skipped = 0, failed = 0, synced = 0;
 
   let idx = 0;
-  for (const symbol of symbols) {
+  for (const t of tickers) {
+    const symbol = t.symbol;
+    if (!symbol) continue;
+    if (synced >= MAX_SYNCS_PER_RUN) break;
+
     try {
       if (!forceRefresh) {
         const existing = await prisma.finnhubRecommendation.findUnique({
           where: { symbol },
           select: { fetchedAt: true },
         });
-        if (existing?.fetchedAt && existing.fetchedAt > dayAgo) {
+        const maxAgeHours = (t.tier ?? 2) <= 2 ? 22 : 96;
+        const cutoff = new Date(Date.now() - maxAgeHours * 60 * 60 * 1000);
+        if (existing?.fetchedAt && existing.fetchedAt > cutoff) {
           skipped++;
           idx++;
           continue;
@@ -179,20 +184,20 @@ async function main() {
       }
 
       const r = await syncSymbol(symbol);
+      synced++;
       if (r.rec) recOk++;
       if (r.insider) insiderOk++;
       if (!r.rec && !r.insider) failed++;
     } catch {
+      synced++;
       failed++;
     }
 
     idx++;
-    if (idx % 50 === 0) {
-      console.log(`📈 ${idx}/${symbols.length} — rec:${recOk} insider:${insiderOk} skipped:${skipped} failed:${failed}`);
+    if (synced % 50 === 0) {
+      console.log(`📈 ${idx}/${tickers.length} (synced:${synced}) — rec:${recOk} insider:${insiderOk} skipped:${skipped} failed:${failed}`);
     }
-    if (idx < symbols.length) {
-      await new Promise(resolve => setTimeout(resolve, DELAY_MS));
-    }
+    await new Promise(resolve => setTimeout(resolve, DELAY_MS));
   }
 
   console.log(`✅ Done: rec=${recOk}, insider=${insiderOk}, skipped=${skipped}, failed=${failed}`);

@@ -144,6 +144,9 @@ model Ticker {
   employees            Int?
   websiteUrl           String?
   headquarters         String?
+  tier                 Int                     @default(2)
+  inHeatmap            Boolean                 @default(true)
+  assetType            String                  @default("STOCK")
   analysisCache        AnalysisCache?
   dailyRefs            DailyRef[]
   dailyValuations      DailyValuationHistory[]
@@ -172,6 +175,8 @@ model Ticker {
   @@index([lastMarketCapDiff])
   @@index([sector, lastMarketCap])
   @@index([industry, lastMarketCap])
+  @@index([inHeatmap])
+  @@index([tier])
 }
 
 model MoverEvent {

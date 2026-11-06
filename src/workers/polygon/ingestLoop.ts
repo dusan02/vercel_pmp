@@ -21,8 +21,70 @@ import { bootstrapPreviousCloses } from './bootstrapPrevClose';
 import { saveRegularClose } from './saveRegularClose';
 import { scheduleBulkPreload } from './bulkPreloadScheduler';
 
-const PREMIUM_INTERVAL = 60 * 1000; // 60s for all sessions
-const REST_INTERVAL = 5 * 60 * 1000; // 5min for rest
+const TIER_1_INTERVAL = 60 * 1000;       // 60s: Mega-cap Top 200 + User Portfolio/Watchlist/Alerts
+const TIER_2_INTERVAL = 5 * 60 * 1000;   // 5min: S&P 500 / Large-Cap / Core ETFs
+const TIER_3_INTERVAL = 15 * 60 * 1000;  // 15min: Expanded Mid/Small-Cap (Russell 2000 / S&P 400 / S&P 600)
+const TIER_4_INTERVAL = 30 * 60 * 1000;  // 30min: Long-tail Small-Cap
+const MAX_TICKERS_PER_LOOP = 900;        // Cap per 60s cycle (9 batches of 100) to avoid overlapping loops
+
+let cachedTierMap = new Map<string, number>();
+let cachedTierMapTs = 0;
+const TIER_CACHE_TTL_MS = 10 * 60 * 1000; // Refresh tiers + user-promoted symbols every 10 min
+
+async function getEffectiveTierMap(): Promise<Map<string, number>> {
+  const now = Date.now();
+  if (cachedTierMap.size > 0 && now - cachedTierMapTs < TIER_CACHE_TTL_MS) {
+    return cachedTierMap;
+  }
+
+  const map = new Map<string, number>();
+  try {
+    const [dbTickers, portfolioItems, favoriteItems, moveAlerts] = await Promise.all([
+      prisma.ticker.findMany({ select: { symbol: true, tier: true } }),
+      prisma.portfolioItem.findMany({ select: { ticker: true }, distinct: ['ticker'] }).catch(() => []),
+      prisma.userFavorite.findMany({ select: { ticker: true }, distinct: ['ticker'] }).catch(() => []),
+      prisma.symbolAlert.findMany({ select: { symbol: true }, distinct: ['symbol'] }).catch(() => []),
+    ]);
+
+    for (const t of dbTickers) {
+      map.set(t.symbol, t.tier ?? 2);
+    }
+
+    // Smart Promotion: any ticker held in a user's Portfolio, Favorites, or Active Move Alerts is promoted to Tier 1 (60s)
+    for (const p of portfolioItems) {
+      if (p.ticker) map.set(p.ticker.toUpperCase(), 1);
+    }
+    for (const f of favoriteItems) {
+      if (f.ticker) map.set(f.ticker.toUpperCase(), 1);
+    }
+    for (const a of moveAlerts) {
+      if (a.symbol && a.symbol !== '*') map.set(a.symbol.toUpperCase(), 1);
+    }
+
+    cachedTierMap = map;
+    cachedTierMapTs = now;
+  } catch (err) {
+    console.warn('Failed to refresh tier map from DB, using fallback:', err);
+    if (cachedTierMap.size === 0) {
+      const { getAllProjectTickers } = await import('@/data/defaultTickers');
+      const top200 = getAllProjectTickers('pmp').slice(0, 200);
+      for (const s of top200) map.set(s, 1);
+    } else {
+      return cachedTierMap;
+    }
+  }
+  return map;
+}
+
+function intervalForTier(tier: number, session: string): number {
+  if (tier <= 1) return TIER_1_INTERVAL;
+  if (tier === 2) return TIER_2_INTERVAL;
+  if (tier === 3) {
+    // During pre-market/after-hours, small/mid-caps trade thinly — 15m is plenty
+    return TIER_3_INTERVAL;
+  }
+  return TIER_4_INTERVAL;
+}
 
 let saveCloseInFlight = false;
 let lastSaveCloseAttempt = 0;
@@ -140,15 +202,14 @@ async function maybeBootstrap(
 }
 
 /**
- * Determine which tickers need update based on priority intervals.
- * Returns prioritized list (premium first, then rest).
+ * Determine which tickers need update based on 4-tier priority intervals.
+ * Returns prioritized list (Tier 1 first, then Tier 2, Tier 3, Tier 4, oldest first).
  */
 async function getTickersNeedingUpdate(
   tickers: string[],
   session: string
 ): Promise<{ prioritized: string[]; premium: number; rest: number }> {
-  const { getAllProjectTickers } = await import('@/data/defaultTickers');
-  const premiumTickers = getAllProjectTickers('pmp').slice(0, 200);
+  const tierMap = await getEffectiveTierMap();
   const lastUpdateMap = new Map<string, number>();
 
   // Load last update times from Redis hash
@@ -171,19 +232,28 @@ async function getTickersNeedingUpdate(
   }
 
   const now = Date.now();
-  const needingUpdate = tickers.filter(ticker => {
-    const lastUpdate = lastUpdateMap.get(ticker) || 0;
-    const interval = premiumTickers.includes(ticker) ? PREMIUM_INTERVAL : REST_INTERVAL;
-    return (now - lastUpdate) >= interval;
-  });
+  const dueItems: { symbol: string; tier: number; lastUpdate: number }[] = [];
 
-  const premiumNeeding = needingUpdate.filter(t => premiumTickers.includes(t));
-  const restNeeding = needingUpdate.filter(t => !premiumTickers.includes(t));
+  for (const ticker of tickers) {
+    const tier = tierMap.get(ticker) ?? 2;
+    const lastUpdate = lastUpdateMap.get(ticker) || 0;
+    const interval = intervalForTier(tier, session);
+    if (now - lastUpdate >= interval) {
+      dueItems.push({ symbol: ticker, tier, lastUpdate });
+    }
+  }
+
+  // Sort by tier ASC, then oldest lastUpdate first so no ticker ever starves
+  dueItems.sort((a, b) => a.tier - b.tier || a.lastUpdate - b.lastUpdate);
+
+  const capped = dueItems.slice(0, MAX_TICKERS_PER_LOOP);
+  const premiumCount = capped.filter(i => i.tier <= 1).length;
+  const restCount = capped.length - premiumCount;
 
   return {
-    prioritized: [...premiumNeeding, ...restNeeding],
-    premium: premiumNeeding.length,
-    rest: restNeeding.length,
+    prioritized: capped.map(i => i.symbol),
+    premium: premiumCount,
+    rest: restCount,
   };
 }
 

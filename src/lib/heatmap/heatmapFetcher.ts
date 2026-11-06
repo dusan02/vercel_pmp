@@ -66,7 +66,7 @@ export async function fetchTickers(maxTickers: number): Promise<{
   tickerSymbols: string[];
 }> {
   const tickers = await prisma.ticker.findMany({
-    where: {},
+    where: { inHeatmap: true, assetType: 'STOCK' },
     select: {
       symbol: true,
       name: true,
