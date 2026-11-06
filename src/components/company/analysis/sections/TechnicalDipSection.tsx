@@ -4,47 +4,33 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { DipIdeaItem, SemaforStatus } from '@/lib/tradingIdeas/dipEngine';
 import { GaussianBellCurveChart } from '@/components/tradingIdeas/GaussianBellCurveChart';
-import { TrancheCalculatorWidget } from '@/components/tradingIdeas/TrancheCalculatorWidget';
-import { Calculator, ExternalLink, ChevronDown, ChevronUp, Activity } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 
 interface TechnicalDipSectionProps {
   ticker: string;
 }
 
-const BANNER_STYLES: Record<
-  SemaforStatus,
-  { wrap: string; badge: string }
-> = {
-  BUY_TRANCHE_1: {
-    wrap: 'border-emerald-300 dark:border-emerald-800/70 bg-emerald-50/40 dark:bg-emerald-950/20',
-    badge: 'bg-emerald-600 text-white',
-  },
-  WAIT_RETEST: {
-    wrap: 'border-amber-300 dark:border-amber-800/70 bg-amber-50/40 dark:bg-amber-950/20',
-    badge: 'bg-amber-500 text-white',
-  },
-  BROKEN_200W_NO_CAPITULATION: {
-    wrap: 'border-orange-300 dark:border-orange-800/70 bg-orange-50/40 dark:bg-orange-950/20',
-    badge: 'bg-orange-600 text-white',
-  },
-  WATCH_APPROACHING: {
-    wrap: 'border-sky-300 dark:border-sky-800/70 bg-sky-50/40 dark:bg-sky-950/20',
-    badge: 'bg-sky-600 text-white',
-  },
-  TAKE_PROFIT_HEDGE: {
-    wrap: 'border-rose-300 dark:border-rose-800/70 bg-rose-50/40 dark:bg-rose-950/20',
-    badge: 'bg-rose-600 text-white',
-  },
-  NEUTRAL_WAIT: {
-    wrap: 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900',
-    badge: 'bg-slate-700 text-white dark:bg-slate-700',
-  },
+const BADGE_STYLES: Record<SemaforStatus, string> = {
+  BUY_TRANCHE_1: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
+  WAIT_RETEST: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/40',
+  BROKEN_200W_NO_CAPITULATION: 'bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/40',
+  WATCH_APPROACHING: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/40',
+  TAKE_PROFIT_HEDGE: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/40',
+  NEUTRAL_WAIT: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 border-gray-300 dark:border-gray-700',
+};
+
+const SHORT_HEADLINE: Record<SemaforStatus, string> = {
+  BUY_TRANCHE_1: 'Buy Tranche 1',
+  WAIT_RETEST: 'Wait Retest',
+  BROKEN_200W_NO_CAPITULATION: 'Below 200W SMA',
+  WATCH_APPROACHING: 'Approaching Dip',
+  TAKE_PROFIT_HEDGE: 'Take Profit / Hedge',
+  NEUTRAL_WAIT: 'Neutral Zone',
 };
 
 export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
   const [item, setItem] = useState<DipIdeaItem | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [showCalculator, setShowCalculator] = useState<boolean>(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,13 +41,6 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
         if (cancelled) return;
         if (json?.success && json?.data) {
           setItem(json.data);
-          // Auto-open the 3-tranche calculator if an active buy or retest signal is present
-          if (
-            json.data.semafor?.status === 'BUY_TRANCHE_1' ||
-            json.data.semafor?.status === 'WAIT_RETEST'
-          ) {
-            setShowCalculator(true);
-          }
         } else {
           setItem(null);
         }
@@ -80,16 +59,16 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
 
   if (loading) {
     return (
-      <div className="mb-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 animate-pulse">
-        <div className="h-5 w-64 bg-slate-200 dark:bg-slate-800 rounded mb-3" />
-        <div className="h-16 bg-slate-100 dark:bg-slate-800/60 rounded-xl" />
-      </div>
+      <section className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900 animate-pulse">
+        <div className="h-4 w-44 bg-gray-200 dark:bg-gray-800 rounded mb-3" />
+        <div className="h-36 bg-gray-100 dark:bg-gray-800/60 rounded-lg" />
+      </section>
     );
   }
 
   if (!item) return null;
 
-  const style = BANNER_STYLES[item.semafor.status];
+  const badgeCls = BADGE_STYLES[item.semafor.status];
   const activePlan =
     item.queriedRole === 'slave' && item.pair.slaveSymbol
       ? item.tranchePlanSlave
@@ -97,156 +76,99 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
         ? item.tranchePlanSlave
         : item.tranchePlanMaster;
 
+  const isActionable =
+    item.semafor.status === 'BUY_TRANCHE_1' ||
+    item.semafor.status === 'WAIT_RETEST' ||
+    item.semafor.status === 'WATCH_APPROACHING';
+
   return (
     <section
-      aria-label="Technical Dip-Buying & Gaussian RSI Curve"
-      className={`mb-6 rounded-2xl border p-5 shadow-xs transition-all ${style.wrap}`}
+      aria-label="Gaussian RSI & Dip Timing"
+      className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
     >
-      {/* Top Row: Technical Timing Verdict Banner */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-              <Activity size={14} />
-              <span>Technical Timing &amp; Anti-FOMO Traffic Light</span>
-            </span>
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-extrabold ${style.badge}`}>
-              <span>{item.semafor.emoji}</span>
-              <span>{item.semafor.headlineSk}</span>
-            </span>
-            {item.pair.slaveSymbol && (
-              <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
-                Pair: {item.pair.masterSymbol} → {item.pair.slaveSymbol} ({item.pair.leverage}×)
-              </span>
-            )}
-          </div>
-
-          <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">
-            {item.semafor.actionSk}
-          </h3>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-4xl leading-relaxed">
-            {item.semafor.explanationSk}
-          </p>
-        </div>
-
-        {/* Action buttons: Expand 3-Tranche Calculator + Link to full Trading Ideas tab */}
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setShowCalculator((v) => !v)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors shadow-xs"
+      {/* Top header matching PillarsRadar */}
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+          Gaussian RSI &amp; Dip
+        </h2>
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border ${badgeCls}`}
           >
-            <Calculator size={14} />
-            <span>{showCalculator ? 'Hide 3-Tranche Calculator' : '3-Tranche Calculator (28:28:44)'}</span>
-            {showCalculator ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
-
+            <span>{item.semafor.emoji}</span>
+            <span>{SHORT_HEADLINE[item.semafor.status]}</span>
+          </span>
           <Link
             href={`/trading-ideas?ticker=${encodeURIComponent(ticker)}`}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:border-blue-400 transition-colors"
+            title="Open in Trading Ideas & 3-Tranche Calculator"
+            className="p-1 rounded-md text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
-            <span>Trading Ideas</span>
             <ExternalLink size={13} />
           </Link>
         </div>
       </div>
 
-      {/* Key Technical & Tranche Strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mt-4 text-xs">
-        <div className="rounded-xl bg-white/90 dark:bg-slate-900/90 p-2.5 border border-slate-200/80 dark:border-slate-800">
-          <div className="text-[10px] font-semibold uppercase text-slate-400">Daily RSI (14)</div>
-          <div className="text-base font-extrabold text-slate-900 dark:text-white tabular-nums mt-0.5">
-            {item.dailyRsi14?.toFixed(1) ?? '–'}
-          </div>
-          <div className="text-[11px] text-slate-500 tabular-nums">
-            Percentile: {item.gaussian.dailyRsi.gaussianPercentile?.toFixed(1) ?? '–'}% (
-            {item.gaussian.dailyRsi.zScore != null
-              ? `${item.gaussian.dailyRsi.zScore >= 0 ? '+' : ''}${item.gaussian.dailyRsi.zScore.toFixed(2)}σ`
-              : '–'}
-            )
+      {/* Compact Gaussian Bell Curve */}
+      <GaussianBellCurveChart
+        symbol={ticker}
+        masterSymbol={item.pair.masterSymbol}
+        distributions={item.gaussian}
+        compact
+      />
+
+      {/* Actionable summary line */}
+      <p className="mt-2 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+        <strong className="font-semibold text-gray-900 dark:text-white">
+          {item.semafor.actionSk}
+        </strong>
+        {item.masterTechnicals.weeklySma200 != null && (
+          <span className="text-gray-500 dark:text-gray-400">
+            {' '}· 200W SMA: ${item.masterTechnicals.weeklySma200.toFixed(2)} (
+            {item.masterTechnicals.distWeeklySma200Pct != null &&
+            item.masterTechnicals.distWeeklySma200Pct >= 0
+              ? '+'
+              : ''}
+            {item.masterTechnicals.distWeeklySma200Pct?.toFixed(1)}%)
+          </span>
+        )}
+      </p>
+
+      {/* Collapsible 3-Tranche Pyramid Plan (matches PillarsRadar details pattern) */}
+      <details open={isActionable} className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+        <summary className="cursor-pointer select-none font-medium hover:text-gray-700 dark:hover:text-gray-200">
+          3-Tranche Buying Plan (28 : 28 : 44) · {activePlan.instrumentSymbol}
+        </summary>
+        <div className="mt-2 space-y-1.5 rounded-lg bg-gray-50 dark:bg-gray-800/50 p-2.5 border border-gray-200/70 dark:border-gray-700/60">
+          {activePlan.levels.map((lvl) => (
+            <div key={lvl.trancheNumber} className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-medium text-gray-700 dark:text-gray-200">
+                T{lvl.trancheNumber} ({lvl.weightPct}%)
+                {lvl.trancheNumber === 3 ? ' · 200W SMA' : lvl.trancheNumber === 1 ? ' · 50W SMA' : ' · Support'}
+              </span>
+              <span className="font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                ${lvl.slaveEntryPrice.toFixed(2)}{' '}
+                <span className="text-[10px] font-normal text-gray-400">
+                  ({lvl.slaveDropFromCurrentPct.toFixed(1)}%)
+                </span>
+              </span>
+            </div>
+          ))}
+          <div className="pt-1.5 mt-1 border-t border-gray-200/70 dark:border-gray-700/60 flex items-center justify-between text-[11px]">
+            <span>
+              Weekly RSI: <strong className="text-gray-800 dark:text-gray-200">{item.weeklyRsi14?.toFixed(1) ?? '–'}</strong> · RVOL:{' '}
+              <strong className="text-gray-800 dark:text-gray-200">{item.relVolume.toFixed(2)}×</strong>
+            </span>
+            <Link
+              href={`/trading-ideas?ticker=${encodeURIComponent(ticker)}`}
+              className="font-semibold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+            >
+              <span>Calculator</span>
+              <ExternalLink size={11} />
+            </Link>
           </div>
         </div>
-
-        <div className="rounded-xl bg-white/90 dark:bg-slate-900/90 p-2.5 border border-slate-200/80 dark:border-slate-800">
-          <div className="text-[10px] font-semibold uppercase text-slate-400">Weekly RSI (14)</div>
-          <div className="text-base font-extrabold text-slate-900 dark:text-white tabular-nums mt-0.5">
-            {item.weeklyRsi14?.toFixed(1) ?? '–'}
-          </div>
-          <div className="text-[11px] text-slate-500 tabular-nums">
-            Percentile: {item.gaussian.weeklyRsi.gaussianPercentile?.toFixed(1) ?? '–'}%
-          </div>
-        </div>
-
-        <div className="rounded-xl bg-white/90 dark:bg-slate-900/90 p-2.5 border border-slate-200/80 dark:border-slate-800">
-          <div className="text-[10px] font-semibold uppercase text-slate-400">
-            Weekly SMA 50 ({item.pair.masterSymbol})
-          </div>
-          <div className="text-base font-extrabold text-slate-900 dark:text-white tabular-nums mt-0.5">
-            ${item.masterTechnicals.weeklySma50?.toFixed(2) ?? '–'}
-          </div>
-          <div className="text-[11px] text-slate-500 tabular-nums">
-            Distance:{' '}
-            {item.masterTechnicals.distWeeklySma50Pct != null
-              ? `${item.masterTechnicals.distWeeklySma50Pct >= 0 ? '+' : ''}${item.masterTechnicals.distWeeklySma50Pct.toFixed(1)}%`
-              : '–'}
-          </div>
-        </div>
-
-        <div className="rounded-xl bg-white/90 dark:bg-slate-900/90 p-2.5 border border-slate-200/80 dark:border-slate-800">
-          <div className="text-[10px] font-semibold uppercase text-slate-400">
-            Weekly SMA 200 ({item.pair.masterSymbol})
-          </div>
-          <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums mt-0.5">
-            ${item.masterTechnicals.weeklySma200?.toFixed(2) ?? '–'}
-          </div>
-          <div className="text-[11px] text-slate-500 tabular-nums">
-            Distance:{' '}
-            {item.masterTechnicals.distWeeklySma200Pct != null
-              ? `${item.masterTechnicals.distWeeklySma200Pct >= 0 ? '+' : ''}${item.masterTechnicals.distWeeklySma200Pct.toFixed(1)}%`
-              : '–'}
-          </div>
-        </div>
-
-        <div className="rounded-xl bg-white/90 dark:bg-slate-900/90 p-2.5 border border-slate-200/80 dark:border-slate-800">
-          <div className="text-[10px] font-semibold uppercase text-slate-400">Rel. Volume &amp; Bounce</div>
-          <div className="text-base font-extrabold text-slate-900 dark:text-white tabular-nums mt-0.5">
-            {item.relVolume.toFixed(2)}× RVOL
-          </div>
-          <div className="text-[11px] text-slate-500 tabular-nums">
-            From Prev Low: {item.masterQuote.reboundFromYesterdayLowPct >= 0 ? '+' : ''}
-            {item.masterQuote.reboundFromYesterdayLowPct.toFixed(1)}%
-          </div>
-        </div>
-
-        <div className="rounded-xl bg-white/90 dark:bg-slate-900/90 p-2.5 border border-slate-200/80 dark:border-slate-800">
-          <div className="text-[10px] font-semibold uppercase text-blue-600 dark:text-blue-400">
-            3-Tranche Plan ({activePlan.instrumentSymbol})
-          </div>
-          <div className="text-xs font-extrabold text-slate-900 dark:text-white tabular-nums mt-1">
-            T1: ${activePlan.levels[0].slaveEntryPrice} · T2: ${activePlan.levels[1].slaveEntryPrice}
-          </div>
-          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">
-            T3 (44%): ${activePlan.levels[2].slaveEntryPrice}
-          </div>
-        </div>
-      </div>
-
-      {/* Interactive Gaussian Bell Curve (RSI / Weekly RSI / 200W SMA / 200D SMA / P/E) */}
-      <div className="mt-4">
-        <GaussianBellCurveChart
-          symbol={ticker}
-          masterSymbol={item.pair.masterSymbol}
-          distributions={item.gaussian}
-          compact
-        />
-      </div>
-
-      {/* Expandable 3-Tranche Calculator */}
-      {showCalculator && (
-        <div className="mt-4">
-          <TrancheCalculatorWidget item={item} />
-        </div>
-      )}
+      </details>
     </section>
   );
 }
+

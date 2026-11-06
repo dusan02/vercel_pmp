@@ -403,6 +403,7 @@ export default async function AnalysisPage({ params }: PageProps) {
             </div>
             <div className="min-w-0 space-y-6">
               {hasPillars && <PillarsRadar pillars={analysisData!.pillars!} />}
+              <TechnicalDipSection ticker={tickerUpper} />
               {/* Risks panel — split out of ThesisCard; compact list suits the
                   narrow rail better than sharing the wide left column. */}
               <ThesisCard
@@ -434,9 +435,6 @@ export default async function AnalysisPage({ params }: PageProps) {
             currentChangePct={displayChangePct}
             changeLabel={marketSession === 'closed' ? 'at last close' : marketSession === 'pre' ? 'pre-market' : marketSession === 'after' ? 'after-hours' : 'day'}
           />
-
-          {/* Technical Dip-Buying Verdict, Gaussian Bell Curve & 3-Tranche Calculator */}
-          <TechnicalDipSection ticker={tickerUpper} />
 
           {/* Key metrics — rendered at page level (not inside the ssr:false
               tab) so the numbers land in SSR HTML for crawlers AND sit
