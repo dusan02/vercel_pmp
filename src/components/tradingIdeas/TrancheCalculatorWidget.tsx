@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import type { DipIdeaItem } from '@/lib/tradingIdeas/dipEngine';
-import { calculateWeightedTranches } from '@/lib/tradingIdeas/dipEngine';
+import { calculateWeightedTranches } from '@/lib/tradingIdeas/dipClientMath';
 import { Calculator, RotateCcw, ShieldAlert, Coins, ArrowUpRight } from 'lucide-react';
 
 interface TrancheCalculatorWidgetProps {

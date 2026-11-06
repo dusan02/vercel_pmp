@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import type { GaussianDistributionStats } from '@/lib/tradingIdeas/dipEngine';
-import { normalPdf } from '@/lib/tradingIdeas/dipEngine';
+import { normalPdf } from '@/lib/tradingIdeas/dipClientMath';
 
 interface GaussianBellCurveChartProps {
   symbol: string;
