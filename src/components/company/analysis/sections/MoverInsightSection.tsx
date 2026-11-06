@@ -67,8 +67,8 @@ export function MoverInsightSection({
 
     const age = newsAge(topNews?.datetime ?? null);
     return (
-      <section className="mb-6" aria-label="Market context">
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 px-4 py-3">
+      <section className="last:flex-1 flex flex-col" aria-label="Market context">
+        <div className="flex-1 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3.5">
           <h2 className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
             What&apos;s happening with {ticker}
           </h2>
@@ -111,9 +111,9 @@ export function MoverInsightSection({
   const moveUp = changePct >= 0;
 
   return (
-    <section className="mb-6">
+    <section>
       <div
-        className={`rounded-2xl border p-5 sm:p-6 ${
+        className={`rounded-xl border p-4 sm:p-5 ${
           isSbcAlert
             ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/50'
             : 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/50'

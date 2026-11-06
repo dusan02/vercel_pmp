@@ -315,12 +315,12 @@ export default async function AnalysisPage({ params }: PageProps) {
             </div>
           )}
 
-          {/* Two independent columns — no row coupling, so neither column's
-              height can leave dead space under the other. Left: hero → news →
-              price history. Rail: radar (top-right anchor) → intraday → about
-              → consensus. Mobile stacks in DOM order: left stack, then rail. */}
-          <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
-            <div className="min-w-0 space-y-6">
+          {/* Top Bento Grid — Left main area (Hero card + 2 balanced sub-columns)
+              and Right quantitative rail (Profile Radar + Gaussian RSI & Dip).
+              lg:items-stretch + flex-1 on bottom cards ensures all columns align
+              along a crisp horizontal baseline above Price History with zero dead space. */}
+          <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_23.5rem] lg:items-stretch">
+            <div className="min-w-0 flex flex-col gap-4">
               <AnalysisHero
                 ticker={tickerUpper}
                 companyName={companyName}
@@ -346,20 +346,18 @@ export default async function AnalysisPage({ params }: PageProps) {
                 recommendation={data?.finnhubRecommendation ?? null}
               />
               {/* Mobile-only profile chips — the radar card sits deep in the
-                  scroll stack on small screens, so the five scores surface
+                  scroll stack on small screens, so the six scores surface
                   right under the hero instead. Hidden on lg+ (radar covers). */}
               {hasPillars && (
                 <div className="lg:hidden">
                   <PillarChips pillars={analysisData!.pillars!} />
                 </div>
               )}
-              {/* Top thesis block — two independent sub-columns that pack
-                  top-down instead of row-locked pairs, so a short card never
-                  leaves dead space under it: verdict+strengths in the left
-                  column, intraday+news in the right. DOM order is also the
-                  mobile stack (verdict → strengths → intraday → news). */}
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
-                <div className="flex min-w-0 flex-1 flex-col gap-3">
+              {/* Two balanced sub-columns under the Hero:
+                  Left: PMP Verdict + unified Bull Case & Risk Flags thesis card.
+                  Right: Intraday 5-min chart + What's Happening catalyst + About company. */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 items-stretch">
+                <div className="flex min-w-0 flex-col gap-4 h-full">
                   <PmpVerdict
                     pillars={analysisData?.pillars ?? null}
                     insufficientData={analysisData?.insufficientData ?? null}
@@ -381,10 +379,10 @@ export default async function AnalysisPage({ params }: PageProps) {
                     analysisData={analysisData}
                     cache={data?.analysisCache ?? null}
                     roe={roeStat}
-                    only="strengths"
+                    only="combined"
                   />
                 </div>
-                <div className="flex min-w-0 flex-1 flex-col gap-3">
+                <div className="flex min-w-0 flex-col gap-4 h-full">
                   <IntradayChart ticker={tickerUpper} />
                   <MoverInsightSection
                     ticker={tickerUpper}
@@ -398,27 +396,19 @@ export default async function AnalysisPage({ params }: PageProps) {
                     earningsDays={earningsDays}
                     lastMove={recentMoves[0] ?? null}
                   />
+                  <CompanyOverviewSection
+                    companyName={companyName}
+                    description={data?.description}
+                    headquarters={data?.headquarters}
+                    employees={data?.employees}
+                    websiteUrl={data?.websiteUrl}
+                  />
                 </div>
               </div>
             </div>
-            <div className="min-w-0 space-y-6">
+            <div className="min-w-0 flex flex-col gap-4 h-full">
               {hasPillars && <PillarsRadar pillars={analysisData!.pillars!} />}
               <TechnicalDipSection ticker={tickerUpper} />
-              {/* Risks panel — split out of ThesisCard; compact list suits the
-                  narrow rail better than sharing the wide left column. */}
-              <ThesisCard
-                analysisData={analysisData}
-                cache={data?.analysisCache ?? null}
-                roe={roeStat}
-                only="risks"
-              />
-              <CompanyOverviewSection
-                companyName={companyName}
-                description={data?.description}
-                headquarters={data?.headquarters}
-                employees={data?.employees}
-                websiteUrl={data?.websiteUrl}
-              />
             </div>
           </div>
 

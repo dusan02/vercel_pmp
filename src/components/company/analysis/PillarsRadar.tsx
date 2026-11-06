@@ -10,12 +10,11 @@ import { pillarSummary } from '@/services/analysis/pillars';
  * block below (a11y + transparency).
  */
 
-// ViewBox 260 wide: the 30° Profitability label ("start"-anchored) needs the
-// extra ~10px on the right that the six-axis hexagon geometry requires.
-const CX = 130;
-const CY = 110;
-const R = 58;
-const LABEL_R = 84;
+// ViewBox 284 wide: gives full breathing room for "PROFITABILITY" on the 30° right axis.
+const CX = 142;
+const CY = 104;
+const R = 55;
+const LABEL_R = 80;
 
 /** Axis order — clockwise from top; Moat closes the hexagon at upper-left. */
 const AXIS_ORDER = ['valuation', 'growth', 'profitability', 'health', 'quality', 'moat'] as const;
@@ -100,11 +99,11 @@ export default function PillarsRadar({ pillars }: { pillars: PillarScores }) {
 
     return (
         <section className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900" aria-label="Company profile scores">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 Profile
             </h2>
             <svg
-                viewBox="0 0 260 218"
+                viewBox="0 0 284 206"
                 className="mt-1 w-full"
                 role="img"
                 aria-label={`Radar profile: ${axes.map((p, i) => `${p?.label ?? SHORT_LABEL[AXIS_ORDER[i]!]} ${p?.score ?? 0}`).join(', ')}`}

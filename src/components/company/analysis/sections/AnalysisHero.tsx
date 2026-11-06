@@ -113,7 +113,7 @@ export function AnalysisHero({
     || earningsLabel != null;
 
   return (
-    <div className="mb-4 lg:mb-0">
+    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-5">
       <div className="flex flex-wrap items-start sm:items-end justify-between gap-2.5">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <img
@@ -260,7 +260,7 @@ export function AnalysisHero({
           structured unit, not loose text under the title. Hidden entirely
           when the ticker has no stats (otherwise an empty bordered box). */}
       {hasStats && (
-      <div className="mt-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/60 px-3 py-2 grid grid-cols-2 gap-x-5 gap-y-1.5 text-sm sm:flex sm:flex-wrap sm:gap-y-1">
+      <div className="mt-3 rounded-lg border border-gray-200/80 dark:border-gray-700/70 bg-gray-50/80 dark:bg-gray-800/60 px-3.5 py-2 grid grid-cols-2 gap-x-5 gap-y-1.5 text-sm sm:flex sm:flex-wrap sm:gap-y-1">
         {ewScore?.totalScore != null && ewScore?.maxPossible != null && (
           <span className="text-gray-600 dark:text-gray-400" title="Early Winners composite score (V5-B, current data) — fundamentals + momentum + quality">
             <span className="text-[11px] uppercase tracking-wider text-gray-500 dark:text-gray-500">EW Score </span>

@@ -63,11 +63,11 @@ export function IntradayChart({ ticker }: { ticker: string }) {
   })?.time;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
           Intraday — {data.date}
-          <span className="ml-2 text-xs font-medium text-gray-500 dark:text-gray-500">5-min, pre + regular</span>
+          <span className="ml-2 text-xs font-medium text-gray-500 dark:text-gray-400">5-min, pre + regular</span>
         </h2>
         <span className={`text-sm font-bold tabular-nums ${up ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
           {up ? '+' : ''}{changePct.toFixed(2)}% since session start

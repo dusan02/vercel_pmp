@@ -65,9 +65,9 @@ export function PmpVerdict(props: PmpVerdictProps) {
     const mc = verdict.marketContext;
 
     return (
-        <section aria-label="PMP verdict" className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/60 p-4">
+        <section aria-label="PMP verdict" className="only:flex-1 flex flex-col justify-between rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
             <div className="flex items-start justify-between gap-3 flex-wrap">
-                <h2 className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-1">
+                <h2 className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-1">
                     PMP Verdict
                 </h2>
                 <p className={`flex items-center gap-2 text-base font-semibold leading-snug ${TONE_TEXT[verdict.tone]}`}>

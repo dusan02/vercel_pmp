@@ -50,8 +50,8 @@ export function CompanyOverviewSection({
   const expandable = !!rest || !!metaLine;
 
   return (
-    <section className="mb-6 lg:mb-0" aria-label="Company overview">
-      <details className="group rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 px-4 py-3">
+    <section className="flex-1 flex flex-col" aria-label="Company overview">
+      <details className="group flex-1 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3.5">
         <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
           <span className="flex items-center justify-between gap-3">
             <h2 className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">

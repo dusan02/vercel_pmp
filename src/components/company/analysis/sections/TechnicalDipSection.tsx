@@ -84,11 +84,11 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
   return (
     <section
       aria-label="Gaussian RSI & Dip Timing"
-      className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+      className="flex-1 flex flex-col justify-between rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
     >
       {/* Top header matching PillarsRadar */}
       <div className="flex items-center justify-between gap-2 mb-2.5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        <h2 className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           Gaussian RSI &amp; Dip
         </h2>
         <div className="flex items-center gap-1.5">
