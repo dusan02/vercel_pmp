@@ -8,6 +8,7 @@ import { ExternalLink } from 'lucide-react';
 
 interface TechnicalDipSectionProps {
   ticker: string;
+  initialItem?: DipIdeaItem | null | undefined;
 }
 
 const BADGE_STYLES: Record<SemaforStatus, string> = {
@@ -28,11 +29,16 @@ const SHORT_HEADLINE: Record<SemaforStatus, string> = {
   NEUTRAL_WAIT: 'Neutral Zone',
 };
 
-export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
-  const [item, setItem] = useState<DipIdeaItem | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+export function TechnicalDipSection({ ticker, initialItem = null }: TechnicalDipSectionProps) {
+  const [item, setItem] = useState<DipIdeaItem | null>(initialItem ?? null);
+  const [loading, setLoading] = useState<boolean>(!initialItem);
 
   useEffect(() => {
+    if (initialItem && initialItem.queriedSymbol === ticker.toUpperCase()) {
+      setItem(initialItem);
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     fetch(`/api/trading-ideas/${encodeURIComponent(ticker)}`)
@@ -55,7 +61,7 @@ export function TechnicalDipSection({ ticker }: TechnicalDipSectionProps) {
     return () => {
       cancelled = true;
     };
-  }, [ticker]);
+  }, [ticker, initialItem]);
 
   if (loading) {
     return (

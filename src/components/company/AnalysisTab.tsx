@@ -30,7 +30,7 @@ export type {
  * only: the dense Key Metrics table (directly under Price History),
  * the charts grid and the controls bar.
  */
-export default function AnalysisTab({ ticker, initialAnalysisData, initialHistoryData, flowPeriods, ewScore }: AnalysisTabProps & { initialAnalysisData?: any; initialHistoryData?: any; flowPeriods?: FlowPeriods | null | undefined; ewScore?: { totalScore: number | null; maxPossible: number | null; rank: number | null; asOfDate: Date | string | null } | null | undefined }) {
+export default function AnalysisTab({ ticker, initialAnalysisData, initialHistoryData, flowPeriods, ewScore, isPageLevel = false }: AnalysisTabProps & { initialAnalysisData?: any; initialHistoryData?: any; flowPeriods?: FlowPeriods | null | undefined; ewScore?: { totalScore: number | null; maxPossible: number | null; rank: number | null; asOfDate: Date | string | null } | null | undefined; isPageLevel?: boolean }) {
     const router = useRouter();
     const {
         data,
@@ -39,7 +39,7 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
         error,
         analysisStep,
         runDeepAnalysis,
-    } = useAnalysis(ticker, initialAnalysisData, initialHistoryData);
+    } = useAnalysis(ticker, initialAnalysisData, initialHistoryData, isPageLevel ? () => router.refresh() : undefined);
 
     const effectiveFlowPeriods = useMemo(
         () => flowPeriods ?? (data?.statements?.length ? buildFlowPeriods(data.statements as any) : null),
@@ -119,10 +119,10 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
     return (
         <div className="space-y-6 p-4 bg-transparent dark:bg-gray-900 rounded-xl transition-all animate-fade-in">
             {/* ── Verdict + Radar + Key metrics — normally SSR'd at page level
-                on /analysis/[ticker]. Rendered here when inside HomeAnalysis tab
-                (or when SSR prefetch missed) so clicking a Heatmap tile into the
-                Analysis tab shows the full Verdict + 6-axis Radar + Key Metrics ── */}
-            {!initialAnalysisData && (
+                on /analysis/[ticker]. Rendered here ONLY when inside HomeAnalysis tab
+                (!isPageLevel) so clicking a Heatmap tile into the Analysis tab shows
+                the full Verdict + 6-axis Radar + Key Metrics without duplicating them on /analysis/[ticker]. ── */}
+            {!initialAnalysisData && !isPageLevel && (
                 <>
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
                         <PmpVerdict

@@ -3,6 +3,7 @@ import { verifyCronAuth } from '@/lib/utils/cronAuth';
 import { addToUniverse, getUniverse } from '@/lib/redis/operations';
 import { getAllProjectTickers } from '@/data/defaultTickers';
 import { updateCronStatus } from '@/lib/utils/cronStatus';
+import { prisma } from '@/lib/db/prisma';
 
 /**
  * Populate Redis universe sets (sp500).
@@ -25,9 +26,17 @@ export async function POST(request: NextRequest) {
   const url = new URL(request.url);
   const dryRun = url.searchParams.get('dryRun') === 'true';
 
-  const tickers = getAllProjectTickers('pmp')
-    .map(t => String(t).trim().toUpperCase())
-    .filter(Boolean);
+  const dbTickers = await prisma.ticker.findMany({
+    select: { symbol: true },
+  }).catch(() => [] as { symbol: string }[]);
+
+  const mergedSet = new Set<string>(
+    getAllProjectTickers('pmp').map(t => String(t).trim().toUpperCase()).filter(Boolean)
+  );
+  for (const row of dbTickers) {
+    if (row.symbol) mergedSet.add(row.symbol.trim().toUpperCase());
+  }
+  const tickers = Array.from(mergedSet);
 
   if (tickers.length === 0) {
     return NextResponse.json({ success: false, error: 'No tickers available' }, { status: 500 });

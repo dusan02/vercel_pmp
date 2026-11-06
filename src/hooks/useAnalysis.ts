@@ -42,7 +42,7 @@ function mergeAnalysisPayload(json: any, histJson: any = {}): AnalysisData | nul
     return { ...json, ...historyExtras, finnhub: json.finnhub ?? null } as AnalysisData;
 }
 
-export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHistoryData?: any) {
+export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHistoryData?: any, onAutoComplete?: () => void) {
     // Build initial data from SSR pre-fetched API responses
     const ssrData = useMemo(
         () => mergeAnalysisPayload(initialAnalysisData, initialHistoryData),
@@ -177,11 +177,11 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
     useEffect(() => {
         if (!loading && data === null && !analyzing && !error && autoTriggered.current !== ticker) {
             autoTriggered.current = ticker;
-            runDeepAnalysis();
+            runDeepAnalysis(true);
         }
     }, [loading, data, analyzing, error, ticker]);
 
-    const runDeepAnalysis = async () => {
+    const runDeepAnalysis = async (isAuto = false) => {
         const reqTicker = ticker;
         try {
             setAnalyzing(true);
@@ -197,6 +197,9 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
             // POST response lacks historyExtras (priceHistory, valuationHistory, etc.)
             // Fetch full data (including /history endpoint) to populate all charts correctly
             await fetchAnalysis();
+            if (isAuto && onAutoComplete) {
+                onAutoComplete();
+            }
         } catch (err: any) {
             if (tickerRef.current !== reqTicker) return;
             console.error(err);
@@ -212,6 +215,6 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
         analyzing,
         error,
         analysisStep,
-        runDeepAnalysis,
+        runDeepAnalysis: () => runDeepAnalysis(false),
     };
 }

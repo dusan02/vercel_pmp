@@ -12,29 +12,78 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data: [] });
   }
 
-  const rows = await prisma.ticker.findMany({
-    where: {
-      OR: [
-        { symbol: { startsWith: q.toUpperCase() } },
-        { symbol: { contains: q.toUpperCase() } },
-        { name: { contains: q } },
-      ],
-    },
-    orderBy: { lastMarketCap: 'desc' },
-    take: 12,
-    select: { symbol: true, name: true, lastChangePct: true },
-  });
-
-  // Prefer symbol-prefix hits over name hits, then market cap
   const upper = q.toUpperCase();
-  const ranked = rows
-    .map(r => ({
-      ...r,
-      _rank: r.symbol.startsWith(upper) ? 0 : r.symbol.includes(upper) ? 1 : 2,
-    }))
-    .sort((a, b) => a._rank - b._rank) // stable — keeps market-cap order within a rank
+  const selectFields = {
+    symbol: true,
+    name: true,
+    lastPrice: true,
+    lastChangePct: true,
+    assetType: true,
+    lastMarketCap: true,
+    tier: true,
+  } as const;
+
+  const [symbolPrefixRows, broaderRows] = await Promise.all([
+    prisma.ticker.findMany({
+      where: {
+        symbol: { startsWith: upper },
+      },
+      orderBy: [{ tier: 'asc' }, { lastMarketCap: 'desc' }],
+      take: 12,
+      select: selectFields,
+    }),
+    prisma.ticker.findMany({
+      where: {
+        NOT: { symbol: { startsWith: upper } },
+        OR: [
+          { symbol: { contains: upper } },
+          { name: { contains: q } },
+        ],
+      },
+      orderBy: [{ tier: 'asc' }, { lastMarketCap: 'desc' }],
+      take: 12,
+      select: selectFields,
+    }),
+  ]);
+
+  const combined = [...symbolPrefixRows, ...broaderRows];
+  const lowerQ = q.toLowerCase();
+
+  // Rank:
+  // 0 = exact symbol match (e.g. "F", "ON", "SO", "CAT")
+  // 1 = symbol prefix match (e.g. "SOFI", "SOXL", "FDX")
+  // 2 = company name starts with query
+  // 3 = symbol contains query
+  // 4 = company name contains query
+  const ranked = combined
+    .map((r) => {
+      const nameLower = (r.name ?? '').toLowerCase();
+      const rank =
+        r.symbol === upper
+          ? 0
+          : r.symbol.startsWith(upper)
+            ? 1
+            : nameLower.startsWith(lowerQ)
+              ? 2
+              : r.symbol.includes(upper)
+                ? 3
+                : 4;
+      return { ...r, _rank: rank };
+    })
+    .sort((a, b) => {
+      if (a._rank !== b._rank) return a._rank - b._rank;
+      const tierDiff = (a.tier ?? 3) - (b.tier ?? 3);
+      if (tierDiff !== 0) return tierDiff;
+      return (b.lastMarketCap ?? 0) - (a.lastMarketCap ?? 0);
+    })
     .slice(0, 8)
-    .map(({ symbol, name, lastChangePct }) => ({ symbol, name, lastChangePct }));
+    .map(({ symbol, name, lastPrice, lastChangePct, assetType }) => ({
+      symbol,
+      name,
+      lastPrice,
+      lastChangePct,
+      assetType,
+    }));
 
   return NextResponse.json(
     { data: ranked },

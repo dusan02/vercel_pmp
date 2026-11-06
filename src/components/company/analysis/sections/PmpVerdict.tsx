@@ -2,6 +2,7 @@ import { buildVerdict, type VerdictTone } from '@/lib/analysis/verdict';
 import type { PillarScores } from '@/services/analysis/pillars';
 import type { AnalysisData } from '../types';
 import { computeThesisPoints } from './ThesisCard';
+import type { DipIdeaItem } from '@/lib/tradingIdeas/dipEngine';
 
 interface PmpVerdictProps {
     pillars?: PillarScores | null;
@@ -29,6 +30,8 @@ interface PmpVerdictProps {
         negativeNiYears: number | null;
     } | null;
     roe?: number | null;
+    assetType?: string | null;
+    dipItem?: DipIdeaItem | null;
 }
 
 const TONE_DOT: Record<VerdictTone, string> = {
@@ -50,6 +53,105 @@ const TONE_TEXT: Record<VerdictTone, string> = {
  * bottom-line takeaway + Bull Case & Risk Flags in one dense, zero-dead-space card.
  */
 export function PmpVerdict(props: PmpVerdictProps) {
+    const isEtf = props.assetType === 'ETF' || props.assetType === 'LEVERAGED_ETF';
+
+    if (isEtf) {
+        const dip = props.dipItem ?? null;
+        const tech = dip?.masterTechnicals ?? null;
+        const isLev = props.assetType === 'LEVERAGED_ETF' || (dip?.pair.leverage ?? 1) > 1;
+        const dist200w = tech?.distWeeklySma200Pct ?? null;
+        const above200w = dist200w != null ? dist200w >= 0 : true;
+        const rsi = dip?.dailyRsi14 ?? null;
+        const wRsi = dip?.weeklyRsi14 ?? null;
+
+        const tone: VerdictTone =
+            dip?.semafor.status === 'BUY_TRANCHE_1' || dip?.semafor.status === 'WATCH_APPROACHING'
+                ? 'pos'
+                : dip?.semafor.status === 'TAKE_PROFIT_HEDGE' || dip?.semafor.status === 'BROKEN_200W_NO_CAPITULATION'
+                    ? 'warn'
+                    : 'neutral';
+
+        const headline = dip?.semafor.headlineSk
+            ?? (isLev ? 'Leveraged / Tactical ETF' : 'Index / Sector ETF');
+
+        return (
+            <section
+                aria-label="PMP ETF technical verdict"
+                className="h-full flex flex-col justify-between rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4"
+            >
+                <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                        <h2 className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-0.5">
+                            ETF Regime &amp; Strategy
+                        </h2>
+                        <p className={`flex items-center gap-1.5 text-xs sm:text-sm font-bold leading-snug ${TONE_TEXT[tone]}`}>
+                            <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${TONE_DOT[tone]}`} aria-hidden="true" />
+                            {headline}
+                        </p>
+                    </div>
+
+                    <p className="text-xs sm:text-sm font-medium text-gray-800 dark:text-gray-100 border-l-2 border-indigo-500/70 dark:border-indigo-400/70 pl-2.5 leading-snug">
+                        {dip?.semafor.actionSk
+                            ?? (isLev
+                                ? 'Daily-resetting leveraged/inverse ETF designed for tactical swing entries on master-index mean reversion rather than passive buy-and-hold.'
+                                : 'Exchange-traded fund tracking an underlying index or sector basket. Evaluated via multi-timeframe RSI, 200W SMA structural trend, and Gaussian Z-score extremes.')}
+                    </p>
+
+                    {tech && (
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="flex items-center justify-between gap-2 rounded-lg border border-gray-200/80 dark:border-gray-700/70 bg-gray-50/70 dark:bg-gray-800/40 px-2.5 py-1.5 text-xs">
+                                <span className="font-medium text-gray-600 dark:text-gray-400">Daily / Wk RSI</span>
+                                <span className="tabular-nums font-bold text-gray-900 dark:text-white">
+                                    {rsi != null ? rsi.toFixed(1) : '—'} / {wRsi != null ? wRsi.toFixed(1) : '—'}
+                                </span>
+                            </div>
+                            <div className={`flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-xs ${
+                                above200w
+                                    ? 'border-emerald-200/70 dark:border-emerald-900/50 bg-emerald-50/50 dark:bg-emerald-950/20'
+                                    : 'border-amber-200/70 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20'
+                            }`}>
+                                <span className="font-medium text-gray-700 dark:text-gray-300">vs 200W SMA</span>
+                                <span className={`tabular-nums font-bold ${
+                                    above200w ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'
+                                }`}>
+                                    {dist200w != null ? `${dist200w >= 0 ? '+' : ''}${dist200w.toFixed(1)}%` : (above200w ? 'Bull' : 'Below')}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="pt-2.5 border-t border-gray-100 dark:border-gray-800 space-y-1.5">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                            Structure &amp; Risk Notes
+                        </p>
+                        <ul className="space-y-1 text-xs text-gray-700 dark:text-gray-300 leading-snug">
+                            <li className="flex items-start gap-1.5">
+                                <span className="mt-0.5 shrink-0 font-bold text-emerald-500">✓</span>
+                                <span>
+                                    {dip?.pair.masterSymbol && dip.pair.masterSymbol !== dip.queriedSymbol
+                                        ? `Signals derived from underlying master ${dip.pair.masterSymbol} (${dip.pair.leverage}x daily target) to avoid volatility-decay distortion on moving averages.`
+                                        : 'Basket diversification eliminates single-company bankruptcy (Altman Z) and accounting manipulation (Beneish M) risk.'}
+                                </span>
+                            </li>
+                            {isLev && (
+                                <li className="flex items-start gap-1.5">
+                                    <span className="mt-0.5 shrink-0 font-bold text-amber-500">⚠</span>
+                                    <span>
+                                        Daily leverage reset causes compounding decay in choppy sideways markets — scale entries in 3 tranches at 50W/200W SMA support.
+                                    </span>
+                                </li>
+                            )}
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="mt-3 pt-2 border-t border-dashed border-gray-200 dark:border-gray-800 text-[11px] text-gray-500 dark:text-gray-400">
+                    Corporate SEC 10-K balance-sheet ratios do not apply to ETFs.
+                </div>
+            </section>
+        );
+    }
+
     const verdict = buildVerdict(props);
     if (!verdict) return null;
 

@@ -38,6 +38,7 @@ export const getTickerData = cache(async function getTickerData(symbol: string) 
       select: {
         symbol: true,
         name: true,
+        assetType: true,
         sector: true,
         industry: true,
         lastPrice: true,
@@ -339,3 +340,35 @@ export async function prefetchTopNews(symbol: string, companyName: string | null
       }
     : null;
 }
+
+/**
+ * SSR pre-fetch for Gaussian RSI & Dip card (and ETF technical verdict).
+ * Checks Redis `dip:item:v3:{symbol}` first, else computes with an 800ms
+ * timeout budget so a cold Polygon 10Y fetch never stalls the SSR render
+ * (client TechnicalDipSection falls back to /api/trading-ideas/[ticker]).
+ */
+export async function prefetchDipData(symbol: string) {
+  try {
+    const { getCachedData, setCachedData } = await import('@/lib/redis/operations');
+    const cacheKey = `dip:item:v3:${symbol}`;
+    try {
+      const cached = await getCachedData(cacheKey) as { success?: boolean; data?: any } | null;
+      if (cached?.data) return cached.data;
+    } catch {}
+
+    const { evaluateDipIdeaForSymbol } = await import('@/lib/tradingIdeas/dipEngine');
+    const item = await Promise.race([
+      evaluateDipIdeaForSymbol(symbol, false),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 800)),
+    ]);
+    if (item) {
+      try {
+        await setCachedData(cacheKey, { success: true, data: item }, 45);
+      } catch {}
+    }
+    return item;
+  } catch {
+    return null;
+  }
+}
+

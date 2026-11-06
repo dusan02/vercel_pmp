@@ -35,5 +35,5 @@ export function AnalysisTabClient({ ticker, initialAnalysisData, initialHistoryD
     } catch { /* storage unavailable */ }
   }, [ticker]);
 
-  return <AnalysisTab ticker={ticker} initialAnalysisData={initialAnalysisData} initialHistoryData={initialHistoryData} flowPeriods={flowPeriods} ewScore={ewScore} />;
+  return <AnalysisTab ticker={ticker} initialAnalysisData={initialAnalysisData} initialHistoryData={initialHistoryData} flowPeriods={flowPeriods} ewScore={ewScore} isPageLevel />;
 }

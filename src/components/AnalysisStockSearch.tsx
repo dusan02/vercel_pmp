@@ -7,7 +7,9 @@ import { Search, X } from 'lucide-react';
 interface Suggestion {
   symbol: string;
   name: string | null;
+  lastPrice?: number | null;
   lastChangePct: number | null;
+  assetType?: string | null;
 }
 
 interface AnalysisStockSearchProps {
@@ -55,7 +57,7 @@ export function AnalysisStockSearch({ onSelect, placeholder = 'Search ticker or 
         setOpen(true);
         setHighlight(-1);
       } catch { /* keep previous results */ }
-    }, 200);
+    }, 150);
     return () => clearTimeout(debounceRef.current);
   }, [query]);
 
@@ -113,28 +115,45 @@ export function AnalysisStockSearch({ onSelect, placeholder = 'Search ticker or 
         <div className={`absolute top-full left-0 right-0 mt-1 z-[200] border rounded-lg shadow-xl overflow-hidden ${
           dark ? 'bg-gray-900 border-gray-700' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
         }`}>
-          {results.map((s, i) => (
-            <button
-              key={s.symbol}
-              type="button"
-              className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${
-                i === highlight ? 'bg-blue-50 dark:bg-blue-900/30' : dark ? 'hover:bg-white/10' : 'hover:bg-gray-50 dark:hover:bg-white/5'
-              }`}
-              onMouseDown={e => { e.preventDefault(); pick(s.symbol); }}
-              onMouseEnter={() => setHighlight(i)}
-            >
-              <span className={`font-bold text-sm w-16 shrink-0 font-mono ${dark ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{s.symbol}</span>
-              <span className={`text-sm truncate flex-1 ${dark ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>{s.name ?? ''}</span>
-              {s.lastChangePct != null && (
-                <span className={`text-xs font-semibold tabular-nums shrink-0 ${
-                  s.lastChangePct > 0 ? 'text-emerald-600 dark:text-emerald-400'
-                  : s.lastChangePct < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500'
-                }`}>
-                  {s.lastChangePct > 0 ? '+' : ''}{s.lastChangePct.toFixed(1)}%
-                </span>
-              )}
-            </button>
-          ))}
+          {results.map((s, i) => {
+            const isEtf = s.assetType === 'ETF' || s.assetType === 'LEVERAGED_ETF';
+            return (
+              <button
+                key={s.symbol}
+                type="button"
+                className={`w-full text-left px-3.5 py-2 flex items-center gap-2.5 transition-colors ${
+                  i === highlight ? 'bg-blue-50 dark:bg-blue-900/30' : dark ? 'hover:bg-white/10' : 'hover:bg-gray-50 dark:hover:bg-white/5'
+                }`}
+                onMouseDown={e => { e.preventDefault(); pick(s.symbol); }}
+                onMouseEnter={() => setHighlight(i)}
+              >
+                <div className="flex items-center gap-1.5 w-20 shrink-0">
+                  <span className={`font-bold text-sm font-mono ${dark ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{s.symbol}</span>
+                  {isEtf && (
+                    <span className="px-1 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30">
+                      {s.assetType === 'LEVERAGED_ETF' ? 'LEV' : 'ETF'}
+                    </span>
+                  )}
+                </div>
+                <span className={`text-xs sm:text-sm truncate flex-1 ${dark ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>{s.name ?? ''}</span>
+                <div className="flex items-center gap-2 shrink-0 tabular-nums">
+                  {s.lastPrice != null && s.lastPrice > 0 && (
+                    <span className={`text-xs font-medium ${dark ? 'text-gray-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                      ${s.lastPrice.toFixed(2)}
+                    </span>
+                  )}
+                  {s.lastChangePct != null && (
+                    <span className={`text-xs font-semibold w-12 text-right ${
+                      s.lastChangePct > 0 ? 'text-emerald-600 dark:text-emerald-400'
+                      : s.lastChangePct < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500'
+                    }`}>
+                      {s.lastChangePct > 0 ? '+' : ''}{s.lastChangePct.toFixed(1)}%
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

@@ -18,6 +18,7 @@ import {
   prefetchAnalysisData,
   prefetchHistoryData,
   prefetchTopNews,
+  prefetchDipData,
 } from '@/lib/analysis/pageData';
 import { buildStockSchema } from '@/lib/seo/analysisSchemas';
 import { buildFlowPeriods, type StatementRow } from '@/components/company/analysis/sections/FinancialFlowsSection';
@@ -118,29 +119,33 @@ export default async function AnalysisPage({ params }: PageProps) {
   }
 
   const companyName = data?.name || getCompanyName(tickerUpper) || tickerUpper;
+  const isEtf = data?.assetType === 'ETF' || data?.assetType === 'LEVERAGED_ETF';
 
   // Fetch everything in parallel (independent queries).
-  // Includes SSR pre-fetch of analysis API + history for instant client hydration.
-  const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, similarTickers, insiderActivity, premarketData] = await Promise.all([
-    getEarningsForTicker(tickerUpper),
+  // Includes SSR pre-fetch of analysis API + history + dipData for instant hydration.
+  const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, similarTickers, insiderActivity, premarketData, dipData] = await Promise.all([
+    isEtf ? Promise.resolve({ upcoming: [], recent: [] }) : getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
     getRelatedOpportunities(tickerUpper),
-    prefetchAnalysisData(tickerUpper),
-    prefetchHistoryData(tickerUpper),
+    isEtf ? Promise.resolve(null) : prefetchAnalysisData(tickerUpper),
+    isEtf ? Promise.resolve(null) : prefetchHistoryData(tickerUpper),
     get52WeekRange(tickerUpper),
     prefetchTopNews(tickerUpper, companyName),
     getMatchedScreens(tickerUpper),
     getTickerNav(tickerUpper),
     getSimilarTickers(tickerUpper),
-    getInsiderActivity90d(tickerUpper),
+    isEtf ? Promise.resolve([]) : getInsiderActivity90d(tickerUpper),
     getTodayPremarket(tickerUpper),
+    prefetchDipData(tickerUpper),
   ]);
 
   // Reuse statements already loaded by prefetchAnalysisData; only hit the DB
   // when analysisData is absent (e.g. unanalyzed ticker).
-  const flowStatements: StatementRow[] = analysisData?.statements?.length
-    ? (analysisData.statements as StatementRow[]).filter((s) => (s.revenue ?? 0) > 0).slice(0, 16)
-    : await getFinancialFlowsData(tickerUpper);
+  const flowStatements: StatementRow[] = isEtf
+    ? []
+    : analysisData?.statements?.length
+      ? (analysisData.statements as StatementRow[]).filter((s) => (s.revenue ?? 0) > 0).slice(0, 16)
+      : await getFinancialFlowsData(tickerUpper);
 
   const peersCount = relatedOpps.groups.reduce((n, g) => n + g.items.length, 0)
     || (analysisData?.peers?.length ?? 0);
@@ -379,6 +384,8 @@ export default async function AnalysisPage({ params }: PageProps) {
               analysisData={analysisData}
               cache={data?.analysisCache ?? null}
               roe={roeStat}
+              assetType={data?.assetType ?? null}
+              dipItem={dipData}
             />
             <div className="flex min-w-0 flex-col gap-3.5 h-full">
               <IntradayChart ticker={tickerUpper} />
@@ -395,7 +402,7 @@ export default async function AnalysisPage({ params }: PageProps) {
                 lastMove={recentMoves[0] ?? null}
               />
             </div>
-            <TechnicalDipSection ticker={tickerUpper} />
+            <TechnicalDipSection ticker={tickerUpper} initialItem={dipData} />
           </div>
 
           {/* Price history — full-width section */}
@@ -411,34 +418,38 @@ export default async function AnalysisPage({ params }: PageProps) {
             />
           </div>
 
-          {/* Key metrics — SSR table directly under Price History */}
-          {analysisData && (
+          {/* Key metrics — SSR table directly under Price History (stocks only) */}
+          {!isEtf && analysisData && (
             <div id="key-metrics" className="mb-6 scroll-mt-16">
               <KeyMetricsTable data={analysisData} insiderTransactions={data.finnhubInsiderTransactions} insiderActivity={insiderActivity} />
             </div>
           )}
 
-          {/* Full interactive analysis — financial statement pairs (history bar + structure sankey), valuation, health charts */}
-          <div id="financial-charts" className="scroll-mt-16">
-            <AnalysisTabClient
-              key={tickerUpper}
-              ticker={tickerUpper}
-              initialAnalysisData={analysisData}
-              initialHistoryData={historyData}
-              flowPeriods={flowPeriods}
-              ewScore={ewScore}
-            />
-          </div>
+          {/* Full interactive analysis — financial statement pairs (history bar + structure sankey), valuation, health charts (stocks only) */}
+          {!isEtf && (
+            <>
+              <div id="financial-charts" className="scroll-mt-16">
+                <AnalysisTabClient
+                  key={tickerUpper}
+                  ticker={tickerUpper}
+                  initialAnalysisData={analysisData}
+                  initialHistoryData={historyData}
+                  flowPeriods={flowPeriods}
+                  ewScore={ewScore}
+                />
+              </div>
 
-          <p className="-mt-2 mb-6 text-xs text-gray-500 dark:text-gray-500">
-            See how {tickerUpper} ranks on the{' '}
-            <Link href="/capex-tracker" className="underline hover:text-gray-600 dark:hover:text-gray-300">Capex Tracker</Link>
-            {' '}— top 50 capital spenders compared.
-          </p>
+              <p className="-mt-2 mb-6 text-xs text-gray-500 dark:text-gray-500">
+                See how {tickerUpper} ranks on the{' '}
+                <Link href="/capex-tracker" className="underline hover:text-gray-600 dark:hover:text-gray-300">Capex Tracker</Link>
+                {' '}— top 50 capital spenders compared.
+              </p>
+            </>
+          )}
 
           {/* Earnings & Recent Unusual Moves side-by-side */}
           <div id="earnings-moves" className="grid gap-6 grid-cols-1 lg:grid-cols-[repeat(auto-fit,minmax(min(100%,32rem),1fr))] items-start scroll-mt-16">
-            <EarningsSection upcoming={earningsData.upcoming} recent={earningsData.recent} />
+            {!isEtf && <EarningsSection upcoming={earningsData.upcoming} recent={earningsData.recent} />}
             <RecentMovesSection ticker={tickerUpper} moves={recentMoves} />
           </div>
 
@@ -475,20 +486,22 @@ export default async function AnalysisPage({ params }: PageProps) {
             wide
           />
 
-          <SeoTextSection
-            ticker={tickerUpper}
-            companyName={companyName}
-            price={displayPrice}
-            changePct={displayChangePct}
-            marketCap={data?.lastMarketCap ?? null}
-            sector={data?.sector ?? null}
-            industry={data?.industry ?? null}
-            healthScore={pillarHealth ?? data?.analysisCache?.healthScore ?? null}
-            hasEarnings={earningsData.upcoming.length > 0 || earningsData.recent.length > 0}
-            hasValuation={!!data?.analysisCache}
-            hasFinancials={!!data?.analysisCache}
-            peersCount={peersCount}
-          />
+          {!isEtf && (
+            <SeoTextSection
+              ticker={tickerUpper}
+              companyName={companyName}
+              price={displayPrice}
+              changePct={displayChangePct}
+              marketCap={data?.lastMarketCap ?? null}
+              sector={data?.sector ?? null}
+              industry={data?.industry ?? null}
+              healthScore={pillarHealth ?? data?.analysisCache?.healthScore ?? null}
+              hasEarnings={earningsData.upcoming.length > 0 || earningsData.recent.length > 0}
+              hasValuation={!!data?.analysisCache}
+              hasFinancials={!!data?.analysisCache}
+              peersCount={peersCount}
+            />
+          )}
         </main>
       </div>
     </>

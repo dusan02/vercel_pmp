@@ -28,40 +28,45 @@ async function main() {
   const limit = limitArg ? parseInt(limitArg.split('=')[1]!, 10) : DEFAULT_LIMIT;
   const dryRun = args.includes('--dry-run');
 
-  // Find top tickers by market cap WITHOUT AnalysisCache
-  // Use a low threshold ($100M) to catch mid-caps, then fall back to any ticker without analysis
+  // Find top stock tickers by market cap WITHOUT AnalysisCache
+  // Note: Ticker.lastMarketCap is stored in BILLIONS (0.1 = $100M).
+  // Exclude ETFs/LEVERAGED_ETFs since they do not have corporate SEC 10-K financial statements.
   const tickers = await prisma.ticker.findMany({
     where: {
+      assetType: 'STOCK',
       analysisCache: null,
-      lastMarketCap: { gt: 100_000_000 }, // > $100M market cap
+      lastMarketCap: { gt: 0.1 }, // > $100M market cap (stored in billions)
     },
-    orderBy: { lastMarketCap: 'desc' },
+    orderBy: [{ tier: 'asc' }, { lastMarketCap: 'desc' }],
     take: limit,
     select: { symbol: true, name: true, lastMarketCap: true },
   });
 
-  // If still empty, fall back to ANY ticker without AnalysisCache (regardless of market cap)
+  // If still empty, fall back to ANY stock ticker without AnalysisCache (regardless of market cap)
   let finalTickers = tickers;
   if (tickers.length === 0) {
     finalTickers = await prisma.ticker.findMany({
-      where: { analysisCache: null },
-      orderBy: { symbol: 'asc' },
+      where: {
+        assetType: 'STOCK',
+        analysisCache: null,
+      },
+      orderBy: [{ tier: 'asc' }, { symbol: 'asc' }],
       take: limit,
       select: { symbol: true, name: true, lastMarketCap: true },
     });
   }
 
-  console.log(`Found ${finalTickers.length} tickers without AnalysisCache (limit: ${limit}, min market cap: $100M)`);
+  console.log(`Found ${finalTickers.length} stock tickers without AnalysisCache (limit: ${limit}, min market cap: $100M)`);
 
   if (finalTickers.length === 0) {
-    console.log('All eligible tickers already have AnalysisCache. Nothing to do.');
+    console.log('All eligible stock tickers already have AnalysisCache. Nothing to do.');
     return;
   }
 
   if (dryRun) {
     console.log('\n[DRY RUN] Would backfill:');
     for (const t of finalTickers) {
-      console.log(`  ${t.symbol} — ${t.name} (mcap: $${((t.lastMarketCap ?? 0) / 1e9).toFixed(1)}B)`);
+      console.log(`  ${t.symbol} — ${t.name} (mcap: $${(t.lastMarketCap ?? 0).toFixed(2)}B)`);
     }
     return;
   }
