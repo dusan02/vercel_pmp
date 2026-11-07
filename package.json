@@ -78,7 +78,9 @@
     "traffic": "tsx scripts/traffic-report.ts",
     "traffic:all": "tsx scripts/portfolio-traffic.ts",
     "traffic:humans": "tsx scripts/human-filter.ts",
-    "traffic:dash": "tsx scripts/humans-server.ts"
+    "traffic:dash": "tsx scripts/humans-server.ts",
+    "bot": "tsx scripts/trading-bot.ts",
+    "bot:chart": "tsx scripts/trading-bot.ts --chart"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

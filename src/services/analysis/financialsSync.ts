@@ -1,5 +1,21 @@
 import { prisma } from '@/lib/db/prisma';
 import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
+import {
+    extractFinancialsFromReport,
+    isValidValue,
+    extract,
+    extractByConceptSuffix,
+    extractSum,
+} from './financialsExtraction';
+
+export {
+    extractFinancialsFromReport,
+    isValidValue,
+    extract,
+    extractByConceptSuffix,
+    extractSum,
+};
+export type { ExtractedFinancials, ExtractionOptions } from './financialsExtraction';
 
 // ─── stockanalysis.com fallback for ADR/foreign tickers ──────────────
 const SA_BASE = 'https://stockanalysis.com/stocks';
@@ -219,12 +235,12 @@ export async function mergeSAPage(
                 ? saYtdSum(cashflow, ['sbcomp', 'sbc'], fiscalQuarter, fiscalYear)
                 : firstNum(cashflow, ['sbcomp', 'sbc'], ci ?? -1)),
             interestExpense: qd ? saYtdSum(income, ['interestexpense'], fiscalQuarter, fiscalYear) : saNumArr(income, 'interestexpense', i),
-            totalAssets: bi != null ? saNumArr(balance, 'assets', bi) : null,
-            totalLiabilities: bi != null ? saNumArr(balance, 'liabilities', bi) : null,
+            totalAssets: (bi != null ? saNumArr(balance, 'assets', bi) : null) ?? ((bi != null && saNumArr(balance, 'liabilities', bi) != null && saNumArr(balance, 'equity', bi) != null) ? saNumArr(balance, 'liabilities', bi)! + saNumArr(balance, 'equity', bi)! : null),
+            totalLiabilities: (bi != null ? saNumArr(balance, 'liabilities', bi) : null) ?? ((bi != null && saNumArr(balance, 'assets', bi) != null && saNumArr(balance, 'equity', bi) != null) ? saNumArr(balance, 'assets', bi)! - saNumArr(balance, 'equity', bi)! : null),
             currentAssets: bi != null ? saNumArr(balance, 'assetsc', bi) : null,
             currentLiabilities: bi != null ? saNumArr(balance, 'currentLiabilities', bi) ?? saNumArr(balance, 'liabilitiesc', bi) : null,
             retainedEarnings: bi != null ? saNumArr(balance, 'retearn', bi) ?? saNumArr(balance, 'balance_sheet_retained_earnings', bi) : null,
-            totalEquity: bi != null ? saNumArr(balance, 'equity', bi) : null,
+            totalEquity: (bi != null ? saNumArr(balance, 'equity', bi) : null) ?? ((bi != null && saNumArr(balance, 'assets', bi) != null && saNumArr(balance, 'liabilities', bi) != null) ? saNumArr(balance, 'assets', bi)! - saNumArr(balance, 'liabilities', bi)! : null),
             sharesOutstanding: sharesDirect ?? sharesFromEps ?? (bi != null ? saNumArr(balance, 'sharesOutTotalCommon', bi) : null),
             totalDebt: bi != null ? saNumArr(balance, 'debt', bi) : null,
             cashAndEquivalents: bi != null ? saNumArr(balance, 'totalcash', bi) ?? saNumArr(balance, 'cashneq', bi) : null,
@@ -351,53 +367,6 @@ async function syncFromStockAnalysis(symbol: string, mode: SaMode = 'full', trus
     return touched;
 }
 
-// ─── XBRL extraction helpers (module-level for reusability) ──────────
-
-const isValidValue = (v: any) => v !== undefined && v !== null && v !== 'N/A' && v !== '';
-
-function extract(report: any, section: string, concepts: string[]): number | null {
-    const list = report[section] || [];
-    for (const concept of concepts) {
-        const found = list.find((item: any) => item.concept === concept);
-        if (found && isValidValue(found.value)) return found.value;
-        const shortConcept = concept.replace(/^us-gaap_/, '');
-        const foundShort = list.find((item: any) => item.concept === shortConcept);
-        if (foundShort && isValidValue(foundShort.value)) return foundShort.value;
-    }
-    return null;
-}
-
-/** Match a concept by its suffix regardless of taxonomy prefix — catches
- *  company-specific tags like `psx_CapitalExpendituresAndInvestments`. */
-function extractByConceptSuffix(report: any, section: string, suffixes: string[]): number | null {
-    const list = report[section] || [];
-    for (const suffix of suffixes) {
-        const found = list.find((item: any) => item.concept?.endsWith(suffix) && isValidValue(item.value));
-        if (found) return found.value;
-    }
-    return null;
-}
-
-function extractSum(report: any, section: string, concepts: string[]): number | null {
-    const list = report[section] || [];
-    let sum = 0;
-    let found = false;
-    for (const concept of concepts) {
-        const item = list.find((i: any) => i.concept === concept);
-        if (item && isValidValue(item.value)) {
-            sum += item.value;
-            found = true;
-            continue;
-        }
-        const shortConcept = concept.replace(/^us-gaap_/, '');
-        const itemShort = list.find((i: any) => i.concept === shortConcept);
-        if (itemShort && isValidValue(itemShort.value)) {
-            sum += itemShort.value;
-            found = true;
-        }
-    }
-    return found ? sum : null;
-}
 
 /**
  * Sync financial statements from Finnhub XBRL API.
@@ -471,255 +440,19 @@ export async function syncFinancials(symbol: string): Promise<void> {
                 const fiscalPeriod = timeframe === 'annual' ? 'FY' : `Q${quarter}`;
                 if (timeframe === 'quarterly' && !quarter) continue; // Skip invalid quarterly
 
-                let revenue = extract(report, 'ic', [
-                    'us-gaap_Revenues', 'us-gaap_SalesRevenueNet', 'us-gaap_RevenuesNetOfInterestExpense',
-                    'us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax', 'us-gaap_HealthCareOrganizationRevenue',
-                    'us-gaap_RevenueFromContractWithCustomerIncludingAssessedTax',
-                    'us-gaap_SalesRevenueServicesNet', 'us-gaap_SalesRevenueGoodsNet',
-                    // Utility-specific
-                    'us-gaap_RegulatedAndUnregulatedOperatingRevenue', 'us-gaap_RegulatedOperatingRevenue',
-                    // Without us-gaap_ prefix (older filings)
-                    'Revenues', 'SalesRevenueNet', 'RevenueFromContractWithCustomerExcludingAssessedTax',
-                    'RevenueFromContractWithCustomerIncludingAssessedTax',
-                    'RegulatedAndUnregulatedOperatingRevenue', 'RegulatedOperatingRevenue',
-                    'SalesRevenueServicesNet', 'SalesRevenueGoodsNet'
-                ]);
-                // Bank fallback: sum interest income + non-interest income
-                if (revenue === null) {
-                    const interestIncome = extract(report, 'ic', [
-                        'us-gaap_InterestAndDividendIncomeOperating',
-                        'us-gaap_InterestIncomeExpenseNet',
-                        'us-gaap_InterestIncome'
-                    ]);
-                    const noninterestIncome = extract(report, 'ic', ['us-gaap_NoninterestIncome']);
-                    if (interestIncome !== null) {
-                        revenue = interestIncome + (noninterestIncome || 0);
-                    }
-                }
-                const netIncome = extract(report, 'ic', [
-                    'us-gaap_NetIncomeLoss', 'us-gaap_NetIncomeLossAvailableToCommonStockholdersBasic', 'us-gaap_ProfitLoss'
-                ]);
-                let grossProfit = extract(report, 'ic', [
-                    'us-gaap_GrossProfit',
-                    // Without prefix
-                    'GrossProfit'
-                ]);
-                // Fallback 1: compute from Revenue - COGS
-                if (grossProfit === null && revenue !== null) {
-                    const cogs = extract(report, 'ic', [
-                        'us-gaap_CostOfGoodsAndServicesSold', 'us-gaap_CostOfRevenue', 'us-gaap_CostOfGoodsSold',
-                        'us-gaap_CostOfServices', 'us-gaap_CostOfGoodsSoldExcludingDepreciationDepletionAndAmortization',
-                        // Without prefix
-                        'CostOfGoodsAndServicesSold', 'CostOfRevenue', 'CostOfGoodsSold', 'CostOfServices'
-                    ]);
-                    if (cogs !== null) {
-                        grossProfit = revenue - cogs;
-                    }
-                }
-                // Fallback 2: Revenue - COGS - SGA (some companies bundle costs)
-                if (grossProfit === null && revenue !== null) {
-                    const costsAndExpenses = extract(report, 'ic', ['us-gaap_CostsAndExpenses', 'CostsAndExpenses']);
-                    if (costsAndExpenses !== null) {
-                        grossProfit = revenue - costsAndExpenses;
-                    }
-                }
-                
-                // EBIT = OPERATING income only. The pretax-income XBRL tag
-                // (IncomeLossFromContinuingOperationsBeforeIncomeTaxes…)
-                // is deliberately NOT a fallback — it silently promoted
-                // pretax income (incl. equity earnings, gains, interest
-                // income) to "EBIT" (PSX FY25 stored 13.8B vs real opinc
-                // ~3.8B → op margin 10.7% vs real ~4%).
-                let ebit = extract(report, 'ic', [
-                    'us-gaap_OperatingIncomeLoss',
-                    'us-gaap_OperatingIncomeLossFromContinuingOperations',
-                    // Without prefix
-                    'OperatingIncomeLoss'
-                ]);
-                // True only when EBIT came from a real OperatingIncomeLoss
-                // tag. Fabricated fallbacks (GP−RnD−SGA, revenue−costs) must
-                // not clobber an existing SA-verified value on re-sync —
-                // Finnhub often lacks the opinc tag entirely (PSX).
-                const ebitIsReported = ebit !== null;
-                if (ebit === null && grossProfit !== null) {
-                    const rnde = extract(report, 'ic', ['us-gaap_ResearchAndDevelopmentExpense']) || 0;
-                    const sgae = extract(report, 'ic', ['us-gaap_SellingGeneralAndAdministrativeExpense']) || 0;
-                    ebit = grossProfit - rnde - sgae;
-                }
-                // Fallback: revenue - total costs and expenses
-                if (ebit === null && revenue !== null) {
-                    const costsAndExpenses = extract(report, 'ic', [
-                        'us-gaap_CostsAndExpenses', 'us-gaap_CostOfRevenue',
-                        'us-gaap_CostOfGoodsAndServicesSold', 'us-gaap_CostOfGoodsSold'
-                    ]);
-                    if (costsAndExpenses !== null) {
-                        ebit = revenue - costsAndExpenses;
-                    }
-                }
+                const extracted = extractFinancialsFromReport(report, { trustedShares });
+                const {
+                    revenue, netIncome, grossProfit, ebit, ebitIsReported,
+                    operatingCashFlow, capex, totalAssets, totalLiabilities,
+                    currentAssets, currentLiabilities, retainedEarnings, totalEquity,
+                    sharesOutstanding, sbc, interestExpense, interestExpenseAccrual,
+                    totalDebt, cashAndEquivalents, netPPE,
+                } = extracted;
 
-                const operatingCashFlow = extract(report, 'cf', [
-                    'us-gaap_NetCashProvidedByUsedInOperatingActivities', 'us-gaap_NetCashProvidedByUsedInOperatingActivitiesContinuing',
-                    'us-gaap_NetCashProvidedByUsedInOperatingActivitiesContinuingOperations'
-                ]);
-                const capex = extract(report, 'cf', [
-                    'us-gaap_PaymentsToAcquirePropertyPlantAndEquipment', 'us-gaap_PaymentsToAcquireOtherPropertyPlantAndEquipment',
-                    'us-gaap_PaymentsToAcquireProductiveAssets',
-                    'us-gaap_PaymentsToAcquireOtherProductiveAssets',
-                    'us-gaap_PaymentsToAcquireOilAndGasPropertyAndEquipment',
-                    'us-gaap_PaymentsToAcquireOilAndGasProperty',
-                    'us-gaap_PaymentsToAcquireFurnitureAndFixtures',
-                    'us-gaap_PaymentsToDevelopRealEstateAssetsAndPaymentsForCapitalExpenditures',
-                    'us-gaap_PaymentsToAcquireFixedAssets',
-                    'us-gaap_CapitalExpenditureIncurredForPropertyPlantAndEquipment',
-                    // Without prefix
-                    'PaymentsToAcquirePropertyPlantAndEquipment', 'PaymentsToAcquireProductiveAssets',
-                    'CapitalExpenditureIncurredForPropertyPlantAndEquipment'
-                ]) ?? extractByConceptSuffix(report, 'cf', [
-                    // Company-specific taxonomy (PSX files capex as
-                    // psx_CapitalExpendituresAndInvestments).
-                    'CapitalExpendituresAndInvestments',
-                    'PaymentsForCapitalImprovements',
-                ]);
-                
-                const totalAssets = extract(report, 'bs', ['us-gaap_Assets']);
-                let totalLiabilities = extract(report, 'bs', ['us-gaap_Liabilities']);
-                // Fallback: compute from accounting equation (Assets = Liabilities + Equity)
-                // Needed for companies like MCD that don't report us-gaap_Liabilities directly
-                if (totalLiabilities === null && totalAssets !== null) {
-                    const eq = extract(report, 'bs', [
-                        'us-gaap_StockholdersEquity', 'us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest', 'us-gaap_PartnerCapital'
-                    ]);
-                    if (eq !== null) {
-                        totalLiabilities = totalAssets - eq;
-                    }
-                }
-                const currentAssets = extract(report, 'bs', ['us-gaap_AssetsCurrent']);
-                const currentLiabilities = extract(report, 'bs', ['us-gaap_LiabilitiesCurrent']);
-                const retainedEarnings = extract(report, 'bs', ['us-gaap_RetainedEarningsAccumulatedDeficit']);
-                const totalEquity = extract(report, 'bs', [
-                    'us-gaap_StockholdersEquity', 'us-gaap_StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest', 'us-gaap_PartnerCapital'
-                ]);
-
-                let sharesOutstandingRaw = extract(report, 'bs', ['dei_EntityCommonStockSharesOutstanding'])
-                    ?? extract(report, 'ic', [
-                        'us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding', 'us-gaap_WeightedAverageNumberOfSharesOutstandingBasic'
-                    ]);
-
-                // Fallback: derive shares from NetIncome / EPS (e.g. GOOGL reports EPS but not shares count).
-                // Skip integer-truncated EPS values (Finnhub rounds GOOGL FY22 EPS=4, FY23 EPS=5,
-                // which fabricates ~15B shares vs real ~13B) and allow common split multiples so
-                // pre-split filings (e.g. 20:1 split) aren't discarded against today's trustedShares.
-                if (sharesOutstandingRaw === null || sharesOutstandingRaw <= 0) {
-                    const eps = extract(report, 'ic', [
-                        'us-gaap_EarningsPerShareDiluted', 'us-gaap_EarningsPerShareBasic'
-                    ]);
-                    const isTruncatedIntEps = eps !== null && Number.isInteger(eps) && Math.abs(eps) <= 20;
-                    if (eps && eps !== 0 && !isTruncatedIntEps && netIncome !== null && netIncome !== 0) {
-                        const derived = Math.abs(netIncome / eps);
-                        const SPLIT_MULTS = [1, 2, 3, 4, 5, 7, 8, 10, 15, 20, 25, 50];
-                        const matchesTrusted = trustedShares == null
-                            || SPLIT_MULTS.some(m => Math.abs((derived * m) / trustedShares - 1) <= 0.4);
-                        sharesOutstandingRaw = matchesTrusted ? derived : null;
-                    }
-                }
-
-                // Some companies (e.g. MCD) report shares in millions (710 = 710M)
-                // If value < 10000, assume millions and convert to absolute
-                const sharesOutstanding = (sharesOutstandingRaw !== null && sharesOutstandingRaw > 0)
-                    ? (sharesOutstandingRaw < 10000 ? sharesOutstandingRaw * 1_000_000 : sharesOutstandingRaw)
-                    : null;
-
-                const sbc = extract(report, 'cf', [
-                    'us-gaap_ShareBasedCompensation',
-                    'us-gaap_AllocatedShareBasedCompensationExpense',
-                    'us-gaap_ShareBasedCompensationArrangementByShareBasedPaymentAwardOptionsGrantsInPeriodGross'
-                ]) ?? extract(report, 'ic', [
-                    'us-gaap_AllocatedShareBasedCompensationExpense',
-                    'us-gaap_ShareBasedCompensation'
-                ]);
-
-                // Accrual interest expense first (ic section). Some issuers
-                // report it under Nonoperating/Operating variants — KKR
-                // switched tags between FY23 (us-gaap_InterestExpense) and
-                // FY24-25 (us-gaap_InterestExpenseNonoperating), so a narrow
-                // list silently wrote null for valid years. Last tier: cash
-                // interest paid from the cf section — a DIFFERENT basis
-                // (cash paid, not the accrual charge). It is written into the
-                // same column only when no accrual tag exists, and the
-                // affected rows are logged below so cash-basis values stay
-                // separately identifiable (a real provenance column is a
-                // Phase-2 schema decision).
-                const interestExpenseAccrual = extract(report, 'ic', [
-                    'us-gaap_InterestExpense', 'us-gaap_InterestExpenseDebt',
-                    'us-gaap_InterestExpenseNonoperating', 'us-gaap_InterestExpenseOperating',
-                ]);
-                const interestExpense = interestExpenseAccrual
-                    ?? extract(report, 'cf', ['us-gaap_InterestPaidNet']);
                 if (interestExpenseAccrual === null && interestExpense !== null) {
                     cashInterestFallbackRows.push(`${fiscalPeriod}${fiscalYear}`);
                 }
-                
-                const longTermDebt = extract(report, 'bs', [
-                    'us-gaap_LongTermDebtNoncurrent', 'us-gaap_LongTermDebtAndCapitalLeaseObligations', 'us-gaap_LongTermDebt',
-                    'us-gaap_LongTermDebtFairValue', 'us-gaap_LongTermLineOfCredit',
-                    'us-gaap_LongTermNotesPayable', 'us-gaap_ConvertibleDebtNoncurrent',
-                    'us-gaap_SeniorNotesNetOfDebtIssuanceCosts', 'us-gaap_SecuredDebt',
-                    // Without prefix
-                    'LongTermDebtNoncurrent', 'LongTermDebt'
-                ]);
-                const shortTermDebt = extract(report, 'bs', [
-                    'us-gaap_DebtCurrent', 'us-gaap_ShortTermBorrowings', 'us-gaap_LongTermDebtAndCapitalLeaseObligationsCurrent',
-                    'us-gaap_CommercialPaper', 'us-gaap_ShortTermDebt',
-                    'us-gaap_NotesPayableCurrent',
-                    // Without prefix
-                    'DebtCurrent', 'ShortTermBorrowings'
-                ]);
-                let totalDebt = null;
-                if (longTermDebt !== null || shortTermDebt !== null) {
-                    totalDebt = (longTermDebt || 0) + (shortTermDebt || 0);
-                }
-                // Fallback: try direct total debt concept. Combined/tag-ambiguous
-                // forms (NotesPayable, DebtInstrumentCarryingAmount) carry both
-                // tranches for some filers (e.g. PCAR). They precede the legacy
-                // LiabilitiesNoncurrent catch-all — which is NOT debt (it adds
-                // deferred revenue/tax) but is kept last to preserve existing
-                // semantics for tickers that previously resolved through it.
-                if (totalDebt === null) {
-                    totalDebt = extract(report, 'bs', [
-                        'us-gaap_DebtLongtermAndShorttermCombined', 'us-gaap_DebtAndCapitalLeaseObligations',
-                        'us-gaap_LongTermDebtAndShortTermDebt', 'us-gaap_DebtInstrumentCarryingAmount',
-                        'us-gaap_NotesPayable', 'us-gaap_LiabilitiesNoncurrent',
-                    ]);
-                }
 
-                // Cash extraction — multi-strategy for maximum coverage
-                // Strategy 1: Single combined concept (MSFT, GOOGL style)
-                let cashAndEquivalents = extract(report, 'bs', [
-                    'us-gaap_CashCashEquivalentsAndMarketableSecuritiesCurrent',
-                    'us-gaap_CashCashEquivalentsAndMarketableSecurities',
-                    'us-gaap_CashCashEquivalentsAndShortTermInvestments',
-                    'us-gaap_CashAndShortTermInvestments',
-                ]);
-                // Strategy 2: Sum cash + marketable securities (META, AAPL, NVDA split reporting)
-                if (cashAndEquivalents === null) {
-                    cashAndEquivalents = extractSum(report, 'bs', [
-                        'us-gaap_CashAndCashEquivalentsAtCarryingValue',
-                        'us-gaap_MarketableSecuritiesCurrent',
-                        'us-gaap_ShortTermInvestments',
-                        'us-gaap_AvailableForSaleSecuritiesDebtSecuritiesCurrent',
-                        'us-gaap_OtherShortTermInvestments',
-                    ]);
-                }
-                // Strategy 3: Individual cash-only concepts (last resort)
-                if (cashAndEquivalents === null) {
-                    cashAndEquivalents = extract(report, 'bs', [
-                        'us-gaap_Cash',
-                        'us-gaap_CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents',
-                        'us-gaap_CashEquivalentsAtCarryingValue',
-                    ]);
-                }
-
-                const netPPE = extract(report, 'bs', ['us-gaap_PropertyPlantAndEquipmentNet']);
 
                 const existing = await prisma.financialStatement.findUnique({
                     where: { symbol_fiscalYear_fiscalPeriod: { symbol, fiscalYear, fiscalPeriod } },

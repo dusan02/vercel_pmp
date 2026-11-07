@@ -675,6 +675,106 @@ Artifacts on VPS: `/root/fs-pre-phase1.csv`, `/root/fs-post-phase1.csv`,
 backup DB. App served from `.next` build throughout — no restart, no deploy,
 `AnalysisCache` untouched (conscious transient state per §19.6).
 
+## §20 Deploy package + post-deploy verification (prepared, not executed)
+
+**Commit `06939694`** on local main: 9 files, +2,670/−814 — exactly the
+approved scope, clean working tree, 457/0 tests + clean tsc on this commit.
+`git push origin main` = deploy trigger (CI build → artifact →
+`vps-activate.sh` `git reset --hard $SHA` + atomic `.next` swap + pm2 restart
++ health/content checks with `.next.prev` auto-rollback). The reset also puts
+the tsx cron code paths (`cron-refresh-all`, `p1-resync`) on the new source —
+they read `src/` directly, not the bundle.
+
+**`POST /api/analysis/[ticker]` rejected as probe** — its full effect:
+`syncFinancials` → FinnhubMetrics refresh → conditional `syncTickerDetails`
+→ `syncValuationHistory` (DVH writes) → **`calculateScores` without
+`skipNotify` (notification eligible)** → Redis purge (4 keys) → ISR
+`revalidatePath` (4 page types). It would partially perform the unapproved
+recompute and could emit a quality-breakout alert.
+
+**Verification layers instead:**
+
+| Layer | What | Side effects |
+|---|---|---|
+| 0a | `git rev-parse HEAD` on VPS == `06939694` | none |
+| 0b | `grep -r "cash-basis fallback" .next/server/` — unique string literal, exists only in new code | none |
+| 0c | `pm2 list` — premarketprice on new build | none |
+| 1 | `syncFinancials('T')` via tsx + pre/post dump + gate | FS upserts for T only (expect ~0 changes — already synced); `Ticker.upsert` existence no-op; `Ticker.update` bookkeeping `providerPeriodEnd`/`fundamentalsCheckedAt`. **No** AnalysisCache/FinnhubMetrics/DVH/notifications/ISR/Redis. Invariant: `T\|2022\|FY ebit` stays −4.587B — genuine discriminator (old repair would rewrite it, as historically proven) |
+
+## §21 Recompute plan — `AnalysisCache`, same 48 tickers (prepared, awaiting separate approval)
+
+`calculateScores(symbol, { skipNotify: true })` serially. Written columns:
+7 pillar scores, `verdictKey`, `fundLevel`/`valLevel`, ~16 metrics
+(`piotroskiScore`, `beneishScore`, `interestCoverage`, `revenueCagr`,
+`netIncomeCagr`, `altmanZ`, `debtRepaymentYears`, `fcfConversion`, `fcfMargin`,
+`marginStability`, `negativeNiYears`, `pePercentile`, `peVsMedian3yPct`,
+`roic`, `epsCagr5y`, `priceToCash`), `humanDebtInfo`/`humanPeInfo`, technicals
+(`rsi14`, `sma*Pct`, `perf*` — intentional refresh from current prices),
+`updatedAt`.
+
+Confirmed: `skipNotify` suppresses `notifyQualityBreakout` AND the
+`lastQualitySignalAt` write (same guard, `scoreCalculator.ts:193`) — the only
+notification path. No ISR purge, no DVH/FinnhubMetrics writes.
+
+Expected changes (from final comparison, new vs stored): **26/48 tickers with
+material pillar deltas, 8 verdict flips** (PCAR, COF, T, JNJ, AHR, AMG, THC,
+CELH); 22 float-noise only. Largest: TROW H68→93, ABT H81→37, FANG H22→47,
+CELH H88→81/profit 63→21.
+
+Post-check: **full-column** `AnalysisCache` diff for the 48 — assert changed
+columns ⊆ allowed set above (not just pillars/verdicts); verify recomputed
+values == `new_*` from comparison (same `derivePillarInputs` on write path);
+read-path parity check after.
+
+### Deploy — EXECUTED (2026-10-25, approved)
+
+| Check | Result |
+|---|---|
+| Push | `edcbc977..06939694 main` — exactly the approved commit |
+| CI→artifact→activate | `=== Done ===` — health/content checks passed |
+| **0a** VPS SHA | `06939694` ✓ (`git reset --hard` put tsx crons on new src) |
+| **0b** bundle marker | `us-gaap_DebtAndCapitalLeaseObligations` + `us-gaap_ConvertibleDebtNoncurrent` present in `.next/server/chunks/1194.js` — new-only XBRL tags prove new code deployed. (Log-string markers absent by design: `compiler.removeConsole` strips `console.log` in prod builds.) |
+| **0c** PM2 | `premarketprice` online, restarted on new build |
+| **1** probe `syncFinancials('T')` | gapfill "touched 20 rows" = value-identical no-ops; **full-DB diff: 0 changes** across 34,142 rows; invariant `T\|2022\|FY ebit = −4.587B` held — the old repair would have rewritten it (>50% divergence vs SA +28.349), the new write path structurally cannot. |
+
+Side effects were exactly as enumerated: FS upserts (all no-op) + Ticker
+bookkeeping (`providerPeriodEnd`, `fundamentalsCheckedAt`). No AnalysisCache,
+FinnhubMetrics, DVH, notification, ISR, or Redis writes.
+
+Gate caveat observed: running the resync `gate` for a single-ticker probe
+flags the other 47 tickers' ±20% expectation deviations — expected-baseline
+artifact, resolved by full-row diff (0 real changes).
+
+**Deployed state**: production app + crons now run the fixed code; all four
+EBIT write paths are protected in production. `AnalysisCache` recompute for
+the 48 tickers remains a separate pending approval.
+
+### AnalysisCache recompute — EXECUTED (2026-10-25, approved)
+
+Runner: `scripts/p1-recompute.ts` (dump/run/gate; `calculateScores(sym,
+{skipNotify:true})` serial, abort-on-fail).
+
+| Check | Result |
+|---|---|
+| Pre/post dump | 998 cache rows each — full-table diff, out-of-scope caught |
+| Run | 48/48 ok, ~0.1s/ticker, no abort |
+| Changed | 48/48 in-scope rows, 298 fields; **0 out-of-scope changes** |
+| Verdict flips | **exactly the expected 8**: PCAR strong_expensive→mixed_expensive, COF mixed_fair→weak_fair, T mixed_cheap→weak_cheap, JNJ mixed_expensive→strong_expensive, AHR mixed_fair→weak_fair, AMG strong_fair→mixed_fair, THC strong_fair→mixed_fair, CELH strong_fair→mixed_fair — no unexpected flips |
+| Forbidden cols | `verdictText`/`lastQualitySignalAt` untouched → `skipNotify` confirmed (no notifications, no quality-signal write) |
+| Parity | recomputed pillars == dry-run `new_*` values exactly (e.g. JNJ H74/V29/Q80/O64.6, AHR 24/35/55/72/46.2, CELH 81/21/60/61.8) — write path == shared derivation |
+| **Gate** | **PASS — 0 anomalies** |
+
+Tooling fix during gate: naive CSV split mis-parsed `humanDebtInfo` text
+containing a comma → false `verdictText` FORBIDDEN anomaly for CG/BN.
+`readDump` now right-aligns the 12 comma-free tail columns and joins the
+variable human-info middle; re-run → clean PASS.
+
+**Phase 1 closed**: sync fix deployed, 48-ticker resync gated clean,
+AnalysisCache recomputed and verified. Stored scores now reflect the
+corrected financial data; no transient divergence remains for this set.
+Open items: FANG VERIFY shares repairs (manual 10-Q check), broader
+backfill (separate decision), `ebitSource` provenance (proposal only).
+
 ### Side-effect semantics (explicit)
 - `AnalysisCache` score/verdict columns: **untouched** by resync — screener/SEO/OG keep stored values until a separately-approved recompute.
 - Read-path pages derive live from statements — after next ISR expiry/revalidate, affected ticker pages can show updated pillar inputs **before** any score write. Transient stored-vs-live divergence is expected and is the same class the refactor already documents; a controlled `AnalysisCache` recompute for the 48 is the separate follow-up decision.

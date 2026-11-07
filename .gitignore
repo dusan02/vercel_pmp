@@ -101,5 +101,6 @@ tsconfig.tsbuildinfo
 
 # Quant research data (large SEC/vendored datasets, not source)
 data/quant/
+data/sec/
 src/lib/heatmap/data/
 src/lib/quant/p4-engine/db/client/
