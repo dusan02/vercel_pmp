@@ -41,7 +41,7 @@ export default function AboutPage() {
 
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8 mb-4">Our Data &amp; Methodology</h2>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
-              We source market data from established financial data providers, including Finnhub and Yahoo Finance, and refresh prices continuously during the pre-market session (4:00 AM – 9:30 AM ET).
+              Our market data infrastructure is powered by institutional-grade financial feeds — including <strong>Polygon.io</strong> for US equity price and volume aggregates, <strong>Finnhub</strong> for earnings calendars, insider transactions, and analyst estimates, and <strong>SEC EDGAR (XBRL)</strong> filings for audited financial statements. Prices are refreshed continuously throughout the pre-market (4:00 AM – 9:30 AM ET), regular, and after-hours sessions.
             </p>
             <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 space-y-2 mb-6">
               <li><strong>Prices &amp; market cap:</strong> refreshed throughout the pre-market session; every page shows a &quot;last updated&quot; timestamp.</li>

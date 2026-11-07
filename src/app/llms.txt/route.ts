@@ -96,7 +96,7 @@ Top tickers: ${topTickers.map((t) => `[${t}](https://premarketprice.com/analysis
 ## Company
 
 - [About](https://premarketprice.com/about)
-- [Contact](https://premarketprice.com/contact): info@verifa.sk
+- [Contact](https://premarketprice.com/contact): support@premarketprice.com
 - [Disclaimer](https://premarketprice.com/disclaimer)
 `;
 

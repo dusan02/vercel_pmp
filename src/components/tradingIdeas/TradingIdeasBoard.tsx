@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import type { DipIdeaItem, SemaforStatus } from '@/lib/tradingIdeas/dipEngine';
 import { GaussianBellCurveChart } from './GaussianBellCurveChart';
 import { TrancheCalculatorWidget } from './TrancheCalculatorWidget';
@@ -67,8 +66,7 @@ const SEMAFOR_BADGE_STYLES: Record<
 };
 
 export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps) {
-  const searchParams = useSearchParams();
-  const urlTicker = searchParams.get('ticker')?.toUpperCase().trim() || null;
+  const [urlTicker, setUrlTicker] = useState<string | null>(null);
 
   const [items, setItems] = useState<DipIdeaItem[]>(initialData?.items ?? []);
   const [session, setSession] = useState<'pre' | 'live' | 'after' | 'closed'>(
@@ -85,8 +83,15 @@ export function TradingIdeasBoard({ initialData = null }: TradingIdeasBoardProps
   );
   const [defaultCapitalUsd, setDefaultCapitalUsd] = useState<number>(15300);
 
-  // Load saved custom tickers from localStorage
+  // Read ?ticker= query param and saved custom tickers from localStorage
   useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const t = sp.get('ticker')?.toUpperCase().trim() || null;
+      if (t) setUrlTicker(t);
+    } catch {
+      /* ignore */
+    }
     try {
       const saved = JSON.parse(localStorage.getItem('pmp:dipCustomTickers') ?? '[]');
       if (Array.isArray(saved)) {

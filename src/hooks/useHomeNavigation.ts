@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, startTransition } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 export type ActiveSection =
   | 'heatmap'
@@ -45,22 +45,14 @@ interface UseHomeNavigationOptions {
 }
 
 export function useHomeNavigation({ isMounted }: UseHomeNavigationOptions) {
-  const searchParams = useSearchParams();
   const router = useRouter();
-  // Initialize from ?tab= synchronously — makes SSR render the correct section
-  // (previously activeSection was always 'heatmap' on the server, so tabbed
-  // content like earnings was never in SSR HTML)
-  const [activeSection, setActiveSection] = useState<ActiveSection>(() => {
-    const tab = searchParams.get('tab');
-    const normalized = tab ? normalizeTab(tab) : 'heatmap';
-    return VALID_SECTIONS.includes(normalized as ActiveSection)
-      ? (normalized as ActiveSection)
-      : 'heatmap';
-  });
-  const [analysisTicker, setAnalysisTicker] = useState<string | null>(() => {
-    const t = searchParams.get('ticker');
-    return t ? t.toUpperCase() : null;
-  });
+  // Avoid useSearchParams() here: calling it in HomePage triggers Next.js
+  // BAILOUT_TO_CLIENT_SIDE_RENDERING on static/ISR `/`, which strips the
+  // entire HomePage out of SSR HTML (and previously triggered React #412 when
+  // Suspense was absent). Middleware already 301-redirects ?tab= URLs on the
+  // server; client mount syncs any residual query params via window.location.
+  const [activeSection, setActiveSection] = useState<ActiveSection>('heatmap');
+  const [analysisTicker, setAnalysisTicker] = useState<string | null>(null);
 
   const setActiveTab = useCallback((tab: string): boolean => {
     const normalized = normalizeTab(tab);
@@ -72,28 +64,23 @@ export function useHomeNavigation({ isMounted }: UseHomeNavigationOptions) {
   }, []);
 
   const parseUrlParams = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return { tab: null, ticker: null };
+    }
+    const sp = new URLSearchParams(window.location.search);
     return {
-      tab: searchParams.get('tab'),
-      ticker: searchParams.get('ticker'),
+      tab: sp.get('tab'),
+      ticker: sp.get('ticker'),
     };
-  }, [searchParams]);
+  }, []);
 
-  // Sync on initial mount (no fallback — preserve current tab if no param)
+  // Sync on initial mount (preserve default 'heatmap' if no param)
   useEffect(() => {
     if (!isMounted) return;
     const { tab, ticker } = parseUrlParams();
     if (ticker) setAnalysisTicker(ticker.toUpperCase());
     if (tab) setActiveTab(tab);
   }, [isMounted, setActiveTab, parseUrlParams]);
-
-  // Sync on searchParams change (with fallback to heatmap)
-  useEffect(() => {
-    if (!isMounted) return;
-    const { tab, ticker } = parseUrlParams();
-    if (ticker) setAnalysisTicker(ticker.toUpperCase());
-    if (tab) setActiveTab(tab);
-    else setActiveTab('heatmap');
-  }, [isMounted, parseUrlParams]);
 
   // Browser back/forward navigation
   useEffect(() => {

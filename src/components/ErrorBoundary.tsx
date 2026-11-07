@@ -48,6 +48,14 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
+    // Never swallow Next.js internal control-flow / CSR bailout / redirect / 404 exceptions
+    const digest = (error as Error & { digest?: string })?.digest;
+    if (
+      typeof digest === 'string' &&
+      (digest.startsWith('NEXT_') || digest.includes('BAILOUT_TO_CLIENT_SIDE_RENDERING'))
+    ) {
+      throw error;
+    }
     return { hasError: true, error };
   }
 
@@ -96,10 +104,10 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="error-boundary-root">
-          <h1 className="error-boundary-title">Loading Error</h1>
+        <div className="error-boundary-root" role="alert" data-nosnippet>
+          <p className="error-boundary-title">Temporary Display Issue</p>
           <p className="error-boundary-message">
-            {this.state.error?.message || 'An error occurred while loading the page'}
+            Please refresh the page to load the latest market data.
           </p>
           <button
             onClick={() => void hardReload()}

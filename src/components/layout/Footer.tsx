@@ -1,8 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 const SECTION_DESCRIPTIONS: Record<string, string> = {
   heatmap:   'See the entire US market in one view. Color-coded tiles reveal pre-market winners and losers by sector — instantly spot where momentum is building.',
@@ -15,22 +14,22 @@ const SECTION_DESCRIPTIONS: Record<string, string> = {
   default:   'Real-time pre-market stock data, earnings calendar, and market analysis for US stocks. Track market movers before the bell.',
 };
 
-function resolveDescription(pathname: string, tab: string | null): string {
+function resolveDescription(pathname: string): string {
   const d = SECTION_DESCRIPTIONS;
   if (pathname === '/heatmap')           return d['heatmap']   ?? d['default'] ?? '';
-  if (pathname === '/earnings')          return d['earnings']  ?? d['default'] ?? '';
-  if (pathname === '/stocks')            return d['allStocks'] ?? d['default'] ?? '';
+  if (pathname === '/earnings' || pathname.startsWith('/earnings/')) return d['earnings'] ?? d['default'] ?? '';
+  if (pathname === '/stocks' || pathname.startsWith('/screener'))    return d['allStocks'] ?? d['default'] ?? '';
+  if (pathname.startsWith('/analysis'))  return d['analysis']  ?? d['default'] ?? '';
+  if (pathname === '/portfolio')         return d['portfolio'] ?? d['default'] ?? '';
+  if (pathname === '/favorites')         return d['favorites'] ?? d['default'] ?? '';
   if (pathname === '/premarket-movers' || pathname === '/gainers' || pathname === '/losers')
                                          return d['movers']    ?? d['default'] ?? '';
-  if (tab) { const v = d[tab]; if (v)   return v; }
   return d['default'] ?? '';
 }
 
-function FooterContent() {
-  const pathname  = usePathname();
-  const params    = useSearchParams();
-  const tab       = params.get('tab');
-  const desc      = resolveDescription(pathname, tab);
+export function Footer() {
+  const pathname = usePathname();
+  const desc = resolveDescription(pathname);
   const currentYear = new Date().getFullYear();
 
   return (
@@ -47,6 +46,9 @@ function FooterContent() {
             </Link>
             <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
               {desc}
+            </p>
+            <p className="mt-3 text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
+              Market data powered by Polygon.io &amp; Finnhub · Fundamentals via SEC EDGAR XBRL.
             </p>
           </div>
 
@@ -164,10 +166,10 @@ function FooterContent() {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="mailto:info@verifa.sk"
+                  href="mailto:support@premarketprice.com"
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
-                  info@verifa.sk
+                  support@premarketprice.com
                 </a>
               </li>
               <li>
@@ -213,19 +215,20 @@ function FooterContent() {
         </div>
 
         {/* Bottom Section */}
-        <div className="pt-8 border-t border-gray-200 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center bg-transparent">
+        <div className="pt-8 border-t border-gray-200 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-3 bg-transparent">
           <p className="text-xs text-gray-500 dark:text-gray-400">
             &copy; {currentYear} PreMarketPrice. All rights reserved.
           </p>
-          <div className="mt-4 md:mt-0 flex items-center space-x-6">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-gray-400 dark:text-gray-500">
             <Link
               href="/zh"
               hrefLang="zh-CN"
-              className="text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >
               中文版
             </Link>
-            <span className="text-xs text-gray-400 dark:text-gray-500">
+            <span aria-hidden="true" className="text-gray-300 dark:text-gray-700">·</span>
+            <span>
               Data provided for informational purposes only.
             </span>
           </div>
@@ -235,17 +238,3 @@ function FooterContent() {
   );
 }
 
-export function Footer() {
-  return (
-    <Suspense fallback={
-      <footer className="bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 pt-12 pb-8 mt-auto">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
-          <p className="text-sm text-gray-500 dark:text-gray-400">PreMarketPrice</p>
-          <a href="/zh" hrefLang="zh-CN" className="text-xs text-gray-400 dark:text-gray-500">中文版</a>
-        </div>
-      </footer>
-    }>
-      <FooterContent />
-    </Suspense>
-  );
-}

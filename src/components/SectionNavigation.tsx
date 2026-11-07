@@ -2,14 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { SectionIcon, SectionIconType } from './SectionIcon';
 import { useFavoriteSignals } from '@/hooks/useFavoriteSignals';
 
 export interface SectionNavigationProps {
   /** Optional: called after a tab link is clicked (for side-effects like scroll reset) */
   onTabChange?: (tab: string) => void;
-  /** Deprecated: ignored — active state is now derived from the URL */
+  /** Optional: active tab override when rendered inside HomePage */
   activeTab?: string;
 }
 
@@ -33,10 +33,8 @@ const TABS: TabConfig[] = [
   { id: 'blog',      label: 'Blog',       icon: 'book',     href: '/blog' },
 ];
 
-export function SectionNavigation({ onTabChange }: SectionNavigationProps) {
-  const pathname    = usePathname();
-  const searchParams = useSearchParams();
-  const tabParam    = searchParams.get('tab');
+export function SectionNavigation({ onTabChange, activeTab }: SectionNavigationProps) {
+  const pathname = usePathname();
   const { signals, signalCount } = useFavoriteSignals();
 
   const getActiveId = (): string => {
@@ -50,7 +48,7 @@ export function SectionNavigation({ onTabChange }: SectionNavigationProps) {
     if (pathname === '/heatmap' || pathname.startsWith('/heatmap/')) return 'heatmap';
     if (pathname === '/favorites' || pathname.startsWith('/favorites/')) return 'favorites';
     if (pathname === '/portfolio' || pathname.startsWith('/portfolio/')) return 'portfolio';
-    if (pathname === '/') return tabParam ?? 'heatmap';
+    if (pathname === '/') return activeTab ?? 'heatmap';
     return '';
   };
 

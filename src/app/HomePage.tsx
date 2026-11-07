@@ -373,6 +373,7 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
                           navigation={
                             <div className="hidden lg:block">
                               <SectionNavigation
+                                activeTab={activeSection}
                                 onTabChange={(tab: string) => handleMobileNavChange(tab as any)}
                               />
                             </div>
