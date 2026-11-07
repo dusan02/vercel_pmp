@@ -142,6 +142,12 @@ export interface ExtractedFinancials {
 
 export interface ExtractionOptions {
     trustedShares?: number | null;
+    /**
+     * Set to true ONLY when caller has verified compatible dates, units, contexts, and dimensions.
+     * Raw Finnhub report payloads lack contextRef/dimension metadata, so automatic derivation
+     * is disabled by default to strictly preserve reported values and prevent false derivations.
+     */
+    allowDerivation?: boolean;
 }
 
 /**
@@ -214,11 +220,11 @@ export function extractFinancialsFromReport(report: any, options: ExtractionOpti
     // Bank fallback: Strictly prevent double counting of gross interest income!
     if (revenue === null) {
         // Preferred bank formula: Net Interest Income (NII) + Noninterest Income
+        // CRITICAL: InterestIncomeExpenseAfterProvisionForLoanLoss is strictly EXCLUDED.
+        // Provision for loan losses is a credit reserve expense, NOT a top-line revenue deduction.
         const netInterestIncome = extract(report, 'ic', [
             'us-gaap_InterestIncomeExpenseNet',
             'InterestIncomeExpenseNet',
-            'us-gaap_InterestIncomeExpenseAfterProvisionForLoanLoss',
-            'InterestIncomeExpenseAfterProvisionForLoanLoss',
         ]);
         const noninterestIncome = extract(report, 'ic', [
             'us-gaap_NoninterestIncome',
@@ -275,9 +281,9 @@ export function extractFinancialsFromReport(report: any, options: ExtractionOpti
         netIncomeCommonStatus = 'REPORTED_COMMON';
         if (netIncome === null && noncontrollingInterest !== null) {
             netIncome = netIncomeCommonReported + noncontrollingInterest;
-        } else if (netIncome === null) {
-            netIncome = netIncomeCommonReported;
         }
+        // MANDATORY RULE: Never assume NCI = 0! If consolidated net income was not
+        // reported and NCI is null, do NOT substitute common income into consolidated netIncome.
     } else if (netIncomeConsolidatedReported !== null && noncontrollingInterest !== null) {
         netIncomeCommon = netIncomeConsolidatedReported - noncontrollingInterest;
         netIncomeCommonStatus = 'COMPUTED_FROM_NCI';
@@ -430,20 +436,28 @@ export function extractFinancialsFromReport(report: any, options: ExtractionOpti
             balanceStatus = 'INCONSISTENT';
             // Do NOT silently overwrite or derive inconsistent source values!
         }
-    } else if (totalAssets !== null && totalEquity !== null && totalLiabilities === null) {
-        totalLiabilities = totalAssets - totalEquity;
-        balanceStatus = 'DERIVED_LIABILITIES';
-        balanceDerived = true;
-    } else if (totalAssets !== null && totalLiabilities !== null && totalEquity === null) {
-        totalEquity = totalAssets - totalLiabilities;
-        balanceStatus = 'DERIVED_EQUITY';
-        balanceDerived = true;
-    } else if (totalLiabilities !== null && totalEquity !== null && totalAssets === null) {
-        totalAssets = totalLiabilities + totalEquity;
-        balanceStatus = 'DERIVED_ASSETS';
-        balanceDerived = true;
+    } else if (options.allowDerivation) {
+        // Derivation permitted ONLY across verified compatible dates, units, contexts, and dimensions
+        if (totalAssets !== null && totalEquity !== null && totalLiabilities === null) {
+            totalLiabilities = totalAssets - totalEquity;
+            balanceStatus = 'DERIVED_LIABILITIES';
+            balanceDerived = true;
+        } else if (totalAssets !== null && totalLiabilities !== null && totalEquity === null) {
+            totalEquity = totalAssets - totalLiabilities;
+            balanceStatus = 'DERIVED_EQUITY';
+            balanceDerived = true;
+        } else if (totalLiabilities !== null && totalEquity !== null && totalAssets === null) {
+            totalAssets = totalLiabilities + totalEquity;
+            balanceStatus = 'DERIVED_ASSETS';
+            balanceDerived = true;
+        } else {
+            balanceStatus = 'INCOMPLETE';
+        }
     } else {
+        // Finnhub report objects lack XBRL contextRef, dimensions, and unit metadata across concepts.
+        // Automatic derivation is DISABLED to strictly preserve reported values.
         balanceStatus = 'INCOMPLETE';
+        balanceDerived = false;
     }
 
     const currentAssets = extract(report, 'bs', [

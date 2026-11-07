@@ -97,7 +97,7 @@ describe('Financials extraction concept registry & balance sheet equilibrium', (
         expect(upsertCall.update.capex).toBe(5_000_000);
     });
 
-    it('computes missing totalLiabilities from Assets and Equity', async () => {
+    it('preserves reported values without automatic derivation when totalLiabilities is missing', async () => {
         global.fetch = jest.fn().mockImplementation((url: string) => {
             if (url.includes('freq=annual')) {
                 return Promise.resolve({
@@ -128,10 +128,10 @@ describe('Financials extraction concept registry & balance sheet equilibrium', (
         const upsertCall = upsertStmt.mock.calls[0][0];
         expect(upsertCall.create.totalAssets).toBe(100_000_000);
         expect(upsertCall.create.totalEquity).toBe(30_000_000);
-        expect(upsertCall.create.totalLiabilities).toBe(70_000_000);
+        expect(upsertCall.create.totalLiabilities).toBeNull(); // Strictly preserved as reported!
     });
 
-    it('computes missing totalAssets from Liabilities and Equity', async () => {
+    it('preserves reported values without automatic derivation when totalAssets is missing', async () => {
         global.fetch = jest.fn().mockImplementation((url: string) => {
             if (url.includes('freq=annual')) {
                 return Promise.resolve({
@@ -160,10 +160,12 @@ describe('Financials extraction concept registry & balance sheet equilibrium', (
         await syncFinancials('TEST');
 
         const upsertCall = upsertStmt.mock.calls[0][0];
-        expect(upsertCall.create.totalAssets).toBe(100_000_000);
+        expect(upsertCall.create.totalAssets).toBeNull(); // Strictly preserved as reported!
+        expect(upsertCall.create.totalLiabilities).toBe(70_000_000);
+        expect(upsertCall.create.totalEquity).toBe(30_000_000);
     });
 
-    it('computes missing totalEquity from Assets and Liabilities', async () => {
+    it('preserves reported values without automatic derivation when totalEquity is missing', async () => {
         global.fetch = jest.fn().mockImplementation((url: string) => {
             if (url.includes('freq=annual')) {
                 return Promise.resolve({
@@ -192,7 +194,9 @@ describe('Financials extraction concept registry & balance sheet equilibrium', (
         await syncFinancials('TEST');
 
         const upsertCall = upsertStmt.mock.calls[0][0];
-        expect(upsertCall.create.totalEquity).toBe(40_000_000);
+        expect(upsertCall.create.totalEquity).toBeNull(); // Strictly preserved as reported!
+        expect(upsertCall.create.totalAssets).toBe(120_000_000);
+        expect(upsertCall.create.totalLiabilities).toBe(80_000_000);
     });
 
     it('supports bank and utility revenue fallbacks and custom-prefix capex/OCF', async () => {

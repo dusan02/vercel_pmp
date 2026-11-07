@@ -176,7 +176,7 @@ describe('Financial Data Quality — Rigorous Extraction & Methodology Tests', (
             expect(result.totalEquity).toBe(50_000_000); // Values preserved as reported, not clobbered!
         });
 
-        it('Scenár 3C: Jedna položka chýba -> odvodiť a explicitne označiť ako DERIVED', () => {
+        it('Scenár 3C: Finnhub payload bez metadát -> automatické odvodenie VYPNUTÉ, zachováva nahlásenú hodnotu (null)', () => {
             const mockReport = {
                 ic: [],
                 bs: [
@@ -188,6 +188,24 @@ describe('Financial Data Quality — Rigorous Extraction & Methodology Tests', (
             };
 
             const result = extractFinancialsFromReport(mockReport);
+            expect(result.totalAssets).toBe(200_000_000);
+            expect(result.totalEquity).toBe(80_000_000);
+            expect(result.totalLiabilities).toBeNull(); // Strictly preserved as reported!
+            expect(result.balanceStatus).toBe('INCOMPLETE');
+            expect(result.balanceDerived).toBe(false);
+        });
+
+        it('Scenár 3D: Overené metadáta (allowDerivation: true) -> odvodiť a explicitne označiť ako DERIVED', () => {
+            const mockReport = {
+                ic: [],
+                bs: [
+                    { concept: 'us-gaap_Assets', value: 200_000_000 },
+                    { concept: 'us-gaap_StockholdersEquity', value: 80_000_000 },
+                ],
+                cf: [],
+            };
+
+            const result = extractFinancialsFromReport(mockReport, { allowDerivation: true });
             expect(result.totalAssets).toBe(200_000_000);
             expect(result.totalEquity).toBe(80_000_000);
             expect(result.totalLiabilities).toBe(120_000_000); // 200M - 80M
