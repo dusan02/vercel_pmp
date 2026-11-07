@@ -208,6 +208,7 @@ export async function getFinancialFlowsData(symbol: string): Promise<StatementRo
         grossProfit: true,
         ebit: true,
         netIncome: true,
+        netIncomeCommon: true,
         operatingCashFlow: true,
         capex: true,
         sbc: true,

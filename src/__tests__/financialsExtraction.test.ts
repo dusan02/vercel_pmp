@@ -92,6 +92,9 @@ describe('Financials extraction concept registry & balance sheet equilibrium', (
         // netIncome in FinancialStatement stores consolidated net income (10M)
         expect(upsertCall.create.netIncome).toBe(10_000_000);
         expect(upsertCall.update.netIncome).toBe(10_000_000);
+        // netIncomeCommon stores common shareholders net income (8M)
+        expect(upsertCall.create.netIncomeCommon).toBe(8_000_000);
+        expect(upsertCall.update.netIncomeCommon).toBe(8_000_000);
         // capex should be strictly positive (absOrNull)
         expect(upsertCall.create.capex).toBe(5_000_000);
         expect(upsertCall.update.capex).toBe(5_000_000);

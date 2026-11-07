@@ -275,6 +275,7 @@ model FinancialStatement {
   fiscalPeriod       String
   revenue            Float?
   netIncome          Float?
+  netIncomeCommon    Float?
   ebit               Float?
   grossProfit        Float?
   operatingCashFlow  Float?

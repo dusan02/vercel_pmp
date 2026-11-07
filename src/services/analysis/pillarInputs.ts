@@ -41,6 +41,7 @@ export interface PillarStmt {
     endDate: Date;
     revenue: number | null;
     netIncome: number | null;
+    netIncomeCommon?: number | null;
     ebit: number | null;
     grossProfit: number | null;
     operatingCashFlow: number | null;
@@ -386,15 +387,18 @@ export function derivePillarInputs(args: DerivePillarInputsArgs): PillarDerivati
 
     // ─── PILLAR INPUTS: Valuation ────────────────────────────────────────
     const effectiveNetIncome = ttmNetIncome ?? annualStmts.find(s => s.netIncome != null)?.netIncome ?? null;
-    // EPS on the same NI/share basis as P/E; Finnhub EPS is the fallback when
-    // own shares are unusable.
-    const currentEps = (effectiveNetIncome !== null && effectiveNetIncome > 0 && currentShareCount !== null && currentShareCount > 0)
-        ? effectiveNetIncome / currentShareCount
+    const effectiveNetIncomeCommon = ttm.netIncomeCommon
+        ?? annualStmts.find(s => s.netIncomeCommon != null)?.netIncomeCommon
+        ?? effectiveNetIncome;
+    // EPS on the same NI/share basis as P/E (attributable to common shareholders);
+    // Finnhub EPS is the fallback when own shares are unusable.
+    const currentEps = (effectiveNetIncomeCommon !== null && effectiveNetIncomeCommon > 0 && currentShareCount !== null && currentShareCount > 0)
+        ? effectiveNetIncomeCommon / currentShareCount
         : (finnhubMetrics?.netIncomePerShare ?? null);
     // P/E source must match the UI (price / own TTM EPS). Finnhub's peRatio can
     // sit on a stale EPS basis.
-    let currentPe = (currentPrice > 0 && currentShareCount && currentShareCount > 0 && effectiveNetIncome && effectiveNetIncome > 0)
-        ? (currentPrice * currentShareCount) / effectiveNetIncome
+    let currentPe = (currentPrice > 0 && currentShareCount && currentShareCount > 0 && effectiveNetIncomeCommon && effectiveNetIncomeCommon > 0)
+        ? (currentPrice * currentShareCount) / effectiveNetIncomeCommon
         : (latestValuation?.peRatio || null);
     // Same loss-maker guard: no positive P/E next to a negative TTM EPS.
     if (currentPe !== null && currentEps !== null && currentEps <= 0) currentPe = null;
@@ -619,11 +623,13 @@ export function derivePillarInputs(args: DerivePillarInputsArgs): PillarDerivati
             ? latestAnnual.fiscalYear - epsBaseAnnual.fiscalYear
             : yearsBack;
         const sharesThen = saneAnnualShares(epsBaseAnnual);
+        const niNow = latestAnnual.netIncomeCommon ?? latestAnnual.netIncome;
+        const niThen = epsBaseAnnual?.netIncomeCommon ?? epsBaseAnnual?.netIncome ?? null;
         if (epsBaseAnnual && epsYearsBack > 0
-            && latestAnnual.netIncome && latestAnnual.netIncome > 0 && sharesNow && sharesNow > 0
-            && epsBaseAnnual.netIncome && epsBaseAnnual.netIncome > 0 && sharesThen && sharesThen > 0) {
-            const epsNow = latestAnnual.netIncome / sharesNow;
-            const epsThen = epsBaseAnnual.netIncome / sharesThen;
+            && niNow && niNow > 0 && sharesNow && sharesNow > 0
+            && niThen && niThen > 0 && sharesThen && sharesThen > 0) {
+            const epsNow = niNow / sharesNow;
+            const epsThen = niThen / sharesThen;
             if (epsNow > 0 && epsThen > 0) {
                 epsCagr5y = (Math.pow(epsNow / epsThen, 1 / epsYearsBack) - 1) * 100;
             }

@@ -9,6 +9,7 @@ import { FinancialStatement } from '@prisma/client';
 
 export interface TTMResult {
     netIncome: number | null;
+    netIncomeCommon?: number | null;
     revenue: number | null;
     ebit: number | null;
     grossProfit: number | null;
@@ -68,6 +69,7 @@ export function computeTTM(stmts: FinancialStatement[]): TTMResult {
 
     return {
         netIncome: ttmVal('netIncome'),
+        netIncomeCommon: ttmVal('netIncomeCommon'),
         revenue: ttmVal('revenue'),
         ebit: ttmVal('ebit'),
         grossProfit: ttmVal('grossProfit'),
@@ -95,6 +97,7 @@ export function computeTTM(stmts: FinancialStatement[]): TTMResult {
  */
 export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
     netIncome: number | null;
+    netIncomeCommon: number | null;
     revenue: number | null;
     ebit: number | null;
     operatingCashFlow: number | null;
@@ -122,7 +125,7 @@ export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
     // (missing matching FY or prevYearSameQ). Slightly stale, correct magnitude.
     const fallbackFY = annualBeforeDate[0] ?? null;
 
-    function field(name: 'netIncome' | 'revenue' | 'ebit' | 'operatingCashFlow' | 'capex', absField = false): number | null {
+    function field(name: 'netIncome' | 'netIncomeCommon' | 'revenue' | 'ebit' | 'operatingCashFlow' | 'capex', absField = false): number | null {
         if (latestQ && matchingFY && prevYearSameQ) {
             const q = latestQ[name];
             const fy = matchingFY[name];
@@ -138,6 +141,7 @@ export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
 
     return {
         netIncome: field('netIncome'),
+        netIncomeCommon: field('netIncomeCommon'),
         revenue: field('revenue'),
         ebit: field('ebit'),
         operatingCashFlow: field('operatingCashFlow'),

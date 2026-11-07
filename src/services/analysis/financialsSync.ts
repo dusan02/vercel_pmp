@@ -125,6 +125,7 @@ interface SaStmtData {
     endDate: Date;
     revenue: number | null;
     netIncome: number | null;
+    netIncomeCommon?: number | null;
     ebit: number | null;
     grossProfit: number | null;
     operatingCashFlow: number | null;
@@ -209,17 +210,19 @@ export async function mergeSAPage(
 
         const bi = balIdx.get(dateStr);
         const ci = cfIdx.get(dateStr);
-        // Discrete SA value on the row's own index (for shares derivation).
-        const niDiscrete = saNumArr(income, 'netinccmn', i);
+        // Discrete SA values: netinccmn is common shareholders, netinc is consolidated.
+        const niCommonDiscrete = saNumArr(income, 'netinccmn', i);
+        const niConsolidatedDiscrete = saNumArr(income, 'netinc', i) ?? niCommonDiscrete;
         const epsdil = saNumArr(income, 'epsdil', i);
-        const sharesFromEps = niDiscrete !== null && epsdil !== null && epsdil > 0 ? niDiscrete / epsdil : null;
+        const sharesFromEps = niCommonDiscrete !== null && epsdil !== null && epsdil > 0 ? niCommonDiscrete / epsdil : null;
         const sharesDirect = saNumArr(income, 'sharesDiluted', i) ?? saNumArr(income, 'sharesBasic', i);
 
         const qd = opts.quarterly;
         const stmtData: SaStmtData = {
             endDate,
             revenue: qd ? saYtdSum(income, ['revenue'], fiscalQuarter, fiscalYear) : saNumArr(income, 'revenue', i),
-            netIncome: qd ? saYtdSum(income, ['netinccmn'], fiscalQuarter, fiscalYear) : niDiscrete,
+            netIncome: qd ? saYtdSum(income, ['netinc', 'netinccmn'], fiscalQuarter, fiscalYear) : niConsolidatedDiscrete,
+            netIncomeCommon: qd ? saYtdSum(income, ['netinccmn'], fiscalQuarter, fiscalYear) : niCommonDiscrete,
             ebit: qd ? saYtdSum(income, ['opinc'], fiscalQuarter, fiscalYear) : saNumArr(income, 'opinc', i),
             grossProfit: qd ? saYtdSum(income, ['gp'], fiscalQuarter, fiscalYear) : saNumArr(income, 'gp', i),
             operatingCashFlow: qd
@@ -442,7 +445,7 @@ export async function syncFinancials(symbol: string): Promise<void> {
 
                 const extracted = extractFinancialsFromReport(report, { trustedShares });
                 const {
-                    revenue, netIncome, grossProfit, ebit, ebitIsReported,
+                    revenue, netIncome, netIncomeCommon, grossProfit, ebit, ebitIsReported,
                     operatingCashFlow, capex, totalAssets, totalLiabilities,
                     currentAssets, currentLiabilities, retainedEarnings, totalEquity,
                     sharesOutstanding, sbc, interestExpense, interestExpenseAccrual,
@@ -474,7 +477,7 @@ export async function syncFinancials(symbol: string): Promise<void> {
                     },
                     update: {
                         endDate: new Date(endDate),
-                        revenue, netIncome, operatingCashFlow,
+                        revenue, netIncome, netIncomeCommon, operatingCashFlow,
                         capex: absOrNull(capex),
                         totalAssets, totalLiabilities, currentAssets, currentLiabilities,
                         retainedEarnings, totalEquity, sharesOutstanding,
@@ -484,7 +487,7 @@ export async function syncFinancials(symbol: string): Promise<void> {
                     create: {
                         symbol, period: fiscalPeriod, endDate: new Date(endDate),
                         fiscalYear, fiscalPeriod,
-                        revenue, netIncome, ebit, operatingCashFlow,
+                        revenue, netIncome, netIncomeCommon, ebit, operatingCashFlow,
                         capex: absOrNull(capex),
                         totalAssets, totalLiabilities, currentAssets, currentLiabilities,
                         retainedEarnings, totalEquity, sharesOutstanding,

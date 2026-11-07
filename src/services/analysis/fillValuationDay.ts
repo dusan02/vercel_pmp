@@ -169,6 +169,9 @@ export function computeDayRatios(statements: FinancialStatement[], closePrice: n
     const equity = eqStmt?.totalEquity ?? null;
     const bs = latestWith((s) => s.totalDebt != null && s.cashAndEquivalents != null);
     const effectiveNI = ttm.netIncome ?? latestFYWith((s) => s.netIncome != null)?.netIncome;
+    const effectiveNICommon = ttm.netIncomeCommon
+        ?? latestFYWith((s) => s.netIncomeCommon != null)?.netIncomeCommon
+        ?? effectiveNI;
     const effectiveRev = ttm.revenue ?? latestFYWith((s) => s.revenue != null)?.revenue;
     const effectiveEbit = ttm.ebit ?? latestFYWith((s) => s.ebit != null)?.ebit;
     const cf = latestFYWith((s) => s.operatingCashFlow != null && s.capex != null);
@@ -194,8 +197,8 @@ export function computeDayRatios(statements: FinancialStatement[], closePrice: n
     if (shares) {
         out.marketCap = closePrice * shares;
 
-        if (effectiveNI && effectiveNI > 0) {
-            out.peRatio = closePrice / (effectiveNI / shares);
+        if (effectiveNICommon && effectiveNICommon > 0) {
+            out.peRatio = closePrice / (effectiveNICommon / shares);
         }
         if (effectiveRev && effectiveRev > 0) {
             out.psRatio = closePrice / (effectiveRev / shares);

@@ -1,5 +1,6 @@
 import { extractFinancialsFromReport } from '../services/analysis/financialsExtraction';
 import { computeDiscreteQuarter } from '../lib/utils/ttm';
+import { computeDayRatios } from '../services/analysis/fillValuationDay';
 import {
     checkBalanceIntegrity,
     checkMissingKeyFields,
@@ -331,6 +332,54 @@ describe('Financial Data Quality — Rigorous Extraction & Methodology Tests', (
             });
             expect(patch.totalLiabilities).toBe(300_000_000);
             expect(patch.capex).toBe(15_000_000);
+        });
+    });
+
+    // ── 7. NetIncomeCommon Valuation Precision (P/E & EPS) ────────────────────
+    describe('7. NetIncomeCommon Valuation Precision (P/E & EPS)', () => {
+        const asOf = new Date('2024-12-31');
+        const shares = 10_000_000;
+        const closePrice = 100; // Market Cap = 1,000,000,000
+
+        it('computeDayRatios počíta P/E z netIncomeCommon (nie konsolidovaného zisku s NCI)', () => {
+            // Spoločnosť má konsolidovaný zisk 100M, ale zisk pre kmeňových akcionárov je len 50M (50M patrí menšinám)
+            // Správne P/E: 1,000M / 50M = 20.0x
+            // Ak by rátalo z konsolidovaného: 1,000M / 100M = 10.0x (chyba 100%!)
+            const stmts: any[] = [
+                {
+                    id: '1', symbol: 'TEST', fiscalYear: 2024, fiscalPeriod: 'FY',
+                    endDate: asOf,
+                    revenue: 500_000_000,
+                    netIncome: 100_000_000, // Consolidated
+                    netIncomeCommon: 50_000_000, // Common shareholders
+                    totalEquity: 400_000_000,
+                    sharesOutstanding: shares,
+                },
+            ];
+
+            const ratios = computeDayRatios(stmts, closePrice, asOf, shares);
+            expect(ratios.peRatio).toBeCloseTo(20.0, 1);
+            // ROE naopak meria návratnosť celého kapitálu z konsolidovaného zisku: 100M / 400M = 25%
+            expect(ratios.roe).toBeCloseTo(0.25, 2);
+        });
+
+        it('computeDayRatios pri chýbajúcom netIncomeCommon bezpečne použije netIncome ako fallback', () => {
+            const stmts: any[] = [
+                {
+                    id: '1', symbol: 'TEST', fiscalYear: 2024, fiscalPeriod: 'FY',
+                    endDate: asOf,
+                    revenue: 500_000_000,
+                    netIncome: 50_000_000,
+                    netIncomeCommon: null, // Legacy row without netIncomeCommon
+                    totalEquity: 250_000_000,
+                    sharesOutstanding: shares,
+                },
+            ];
+
+            const ratios = computeDayRatios(stmts, closePrice, asOf, shares);
+            // 1,000M / 50M = 20.0x
+            expect(ratios.peRatio).toBeCloseTo(20.0, 1);
+            expect(ratios.roe).toBeCloseTo(0.20, 2);
         });
     });
 });

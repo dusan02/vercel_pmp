@@ -85,6 +85,7 @@ export async function getFinancialStatements(symbol: string) {
         fiscalPeriod: true,
         revenue: true,
         netIncome: true,
+        netIncomeCommon: true,
         ebit: true,
         grossProfit: true,
         operatingCashFlow: true,

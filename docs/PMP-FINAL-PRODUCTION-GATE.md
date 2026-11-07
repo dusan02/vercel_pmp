@@ -72,13 +72,25 @@ Zároveň platí opačné pravidlo: ak je k dispozícii iba konsolidovaný zisk 
 
 Podľa pravidiel `AGENTS.md` nie je produkčná SQLite databáza riadená cez `prisma migrate deploy` a akékoľvek zmeny schémy vyžadujú manuálny `ALTER TABLE` a koordináciu so StockCV.
 
-**Riešenie pre Fázu 1 (okamžité, nulové riziko):**
-- V databáze `FinancialStatement.netIncome` sa zachováva sémantika **konsolidovaného čistého zisku skupiny** (Group Consolidated Net Income). To garantuje 100 % spätnú kompatibilitu pre Income Statement zobrazenia, ROA a externé aplikácie StockCV a GainersLosers.
-- V pamäťovej extrakcii a v rozhraní `ExtractedFinancials` sú explicitne prítomné obe polia: `netIncome` a `netIncomeCommon`, vrátane diagnostického poľa `netIncomeCommonStatus`.
+### C. Implementovaná aditívna perzistencia a zapojenie do valuácií
 
-**Návrh pre Fázu 2 (aditívna schéma):**
-- Po nasadení kódu pridať do SQLite cez `ALTER TABLE FinancialStatement ADD COLUMN netIncomeCommon REAL;` a aktualizovať `schema.prisma`.
-- Valuačný engine (`fillValuationDay.ts`) a výpočet EPS (`pillarInputs.ts`) budú následne prioritne čítať `s.netIncomeCommon ?? s.netIncome`.
+Na základe požiadavky na plnú funkčnosť opravených údajov priamo v produkčných valuáciách bola perzistencia `netIncomeCommon` implementovaná aditívne bez narušenia existujúceho stavu:
+
+1. **Prisma schémy:** Do `model FinancialStatement` v `schema.prisma` a `schema.postgres.prisma` bol pridaný stĺpec `netIncomeCommon Float?`. Spustený `npx prisma generate`.
+2. **Dokumentačná migrácia:** Vytvorený migračný súbor `prisma/migrations/20261108_add_net_income_common/migration.sql` s SQL príkazom `ALTER TABLE "FinancialStatement" ADD COLUMN "netIncomeCommon" REAL;`.
+3. **Lokálne databázy:** Príkaz `ALTER TABLE` bol bezpečne aplikovaný na `prisma/data/premarket.db` a `prisma/test.db`. Všetkých 22 120 existujúcich riadkov zostalo nedotknutých.
+4. **Synchronizácia (`financialsSync.ts`):** Finnhub upsert aj StockAnalysis fallback zapisujú `netIncomeCommon` do `FinancialStatement`.
+5. **TTM výpočty (`ttm.ts`):** `TTMResult`, `computeTTM` aj `computeTTMAtDate` podporujú a počítajú `netIncomeCommon`.
+6. **Valuačný engine (`fillValuationDay.ts`):**
+   - Výpočet P/E pomeru prioritne používa:
+     `effectiveNICommon = ttm.netIncomeCommon ?? latestFYWith((s) => s.netIncomeCommon != null)?.netIncomeCommon ?? effectiveNI;`
+     `out.peRatio = closePrice / (effectiveNICommon / shares);`
+   - Ak `netIncomeCommon` nie je k dispozícii (napr. staršie historické výkazy bez NCI dát), systém transparentne a bezpečne použije `effectiveNI` (`netIncome`).
+   - ROA a ROE naďalej merajú celkovú rentabilitu kapitálu/aktív z konsolidovaného zisku skupiny.
+7. **Pillar inputs (`pillarInputs.ts`):** `currentEps` a `currentPe` využívajú `effectiveNetIncomeCommon`, a EPS CAGR využíva zisk kmeňových akcionárov.
+8. **Overenie spätnej kompatibility externých aplikácií:**
+   - **StockCV (`stockcv/src/lib/db.ts`):** Overené. StockCV v `getStatements` používa explicitný zoznam stĺpcov (`SELECT symbol, period, endDate, fiscalYear, fiscalPeriod, revenue, netIncome...`) a neobsahuje `SELECT *`. Pridanie nullable stĺpca v SQLite nijako neovplyvňuje StockCV.
+   - **GainersLosers (`gainerslosers/src/lib/dataContract.ts`):** Overené. GainersLosers vôbec nečíta tabuľku `FinancialStatement` (číta iba `Ticker`, `DailyRef`, `SessionPrice`, `DailyValuationHistory`, `EarningsCalendar`, `AnalysisCache`). Kontrakt je 100 % zachovaný.
 
 ---
 
