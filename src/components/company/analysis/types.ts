@@ -68,6 +68,8 @@ export interface AnalysisMetrics {
     fcfYieldSource?: 'ttm' | 'history' | 'finnhub' | null;
     currentEps: number | null;
     currentPe: number | null;
+    /** Distinguishes P/E calculated from common shareholders net income from consolidated fallback */
+    peBasis?: 'COMMON' | 'CONSOLIDATED_FALLBACK' | null;
     /** Own TTM P/S (mcap / TTM revenue) — null when TTM revenue unavailable. */
     psRatio: number | null;
     /** Own TTM EV/EBIT — D&A not in our data, so EBIT not EBITDA. */
@@ -136,6 +138,7 @@ export interface BalanceSheetSummary {
 
 export interface TTMData {
     netIncome: number | null;
+    netIncomeCommon?: number | null;
     revenue: number | null;
     ebit: number | null;
     grossProfit: number | null;

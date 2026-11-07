@@ -359,11 +359,12 @@ describe('Financial Data Quality — Rigorous Extraction & Methodology Tests', (
 
             const ratios = computeDayRatios(stmts, closePrice, asOf, shares);
             expect(ratios.peRatio).toBeCloseTo(20.0, 1);
+            expect(ratios.peBasis).toBe('COMMON');
             // ROE naopak meria návratnosť celého kapitálu z konsolidovaného zisku: 100M / 400M = 25%
             expect(ratios.roe).toBeCloseTo(0.25, 2);
         });
 
-        it('computeDayRatios pri chýbajúcom netIncomeCommon bezpečne použije netIncome ako fallback', () => {
+        it('computeDayRatios pri chýbajúcom netIncomeCommon bezpečne použije netIncome ako fallback a označí peBasis', () => {
             const stmts: any[] = [
                 {
                     id: '1', symbol: 'TEST', fiscalYear: 2024, fiscalPeriod: 'FY',
@@ -379,7 +380,55 @@ describe('Financial Data Quality — Rigorous Extraction & Methodology Tests', (
             const ratios = computeDayRatios(stmts, closePrice, asOf, shares);
             // 1,000M / 50M = 20.0x
             expect(ratios.peRatio).toBeCloseTo(20.0, 1);
+            expect(ratios.peBasis).toBe('CONSOLIDATED_FALLBACK');
             expect(ratios.roe).toBeCloseTo(0.20, 2);
+        });
+
+        it('derivePillarInputs explicitne rozlišuje peRatioBasis medzi COMMON a CONSOLIDATED_FALLBACK', async () => {
+            const { derivePillarInputs } = await import('@/services/analysis/pillarInputs');
+            const commonStmt = {
+                fiscalPeriod: 'FY',
+                fiscalYear: 2024,
+                endDate: asOf,
+                revenue: 500_000_000,
+                netIncome: 100_000_000,
+                netIncomeCommon: 50_000_000,
+                ebit: 80_000_000,
+                grossProfit: 200_000_000,
+                operatingCashFlow: 90_000_000,
+                capex: 20_000_000,
+                sbc: 5_000_000,
+                totalAssets: 600_000_000,
+                totalLiabilities: 200_000_000,
+                currentAssets: 150_000_000,
+                currentLiabilities: 50_000_000,
+                retainedEarnings: 100_000_000,
+                totalEquity: 400_000_000,
+                sharesOutstanding: shares,
+                interestExpense: 5_000_000,
+                totalDebt: 50_000_000,
+                cashAndEquivalents: 40_000_000,
+                netPPE: 200_000_000,
+            };
+
+            const dCommon = derivePillarInputs({
+                stmts: [commonStmt],
+                tickerData: { lastPrice: closePrice, lastMarketCap: null, sharesOutstanding: shares },
+                finnhubMetrics: null,
+                valuationRows: [],
+            });
+            expect(dCommon.peRatioBasis).toBe('COMMON');
+            expect(dCommon.currentEps).toBe(5); // 50M / 10M shares
+
+            const fallbackStmt = { ...commonStmt, netIncomeCommon: null };
+            const dFallback = derivePillarInputs({
+                stmts: [fallbackStmt],
+                tickerData: { lastPrice: closePrice, lastMarketCap: null, sharesOutstanding: shares },
+                finnhubMetrics: null,
+                valuationRows: [],
+            });
+            expect(dFallback.peRatioBasis).toBe('CONSOLIDATED_FALLBACK');
+            expect(dFallback.currentEps).toBe(10); // 100M / 10M shares
         });
     });
 });

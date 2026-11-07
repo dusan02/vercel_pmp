@@ -257,6 +257,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         },
         ttm: {
             netIncome: ttmNetIncome,
+            netIncomeCommon: ttm.netIncomeCommon,
             revenue: ttmRevenue,
             ebit: ttmEbit,
             grossProfit: ttmGrossProfit,
@@ -272,6 +273,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
             fcfYieldSource,
             currentEps,
             currentPe,
+            peBasis: d.peRatioBasis,
             psRatio: currentPs,
             evEbit: currentEvEbit,
             forwardPe,

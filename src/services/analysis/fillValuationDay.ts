@@ -68,6 +68,8 @@ export function resolvePeForward(
 export interface DayRatios {
     marketCap: number | null;
     peRatio: number | null;
+    /** Tracks whether P/E was computed from common shareholders NI or fallback consolidated NI */
+    peBasis?: 'COMMON' | 'CONSOLIDATED_FALLBACK' | null;
     psRatio: number | null;
     evEbitda: number | null;
     fcfYield: number | null;
@@ -169,9 +171,10 @@ export function computeDayRatios(statements: FinancialStatement[], closePrice: n
     const equity = eqStmt?.totalEquity ?? null;
     const bs = latestWith((s) => s.totalDebt != null && s.cashAndEquivalents != null);
     const effectiveNI = ttm.netIncome ?? latestFYWith((s) => s.netIncome != null)?.netIncome;
-    const effectiveNICommon = ttm.netIncomeCommon
-        ?? latestFYWith((s) => s.netIncomeCommon != null)?.netIncomeCommon
-        ?? effectiveNI;
+    const commonCandidate = ttm.netIncomeCommon ?? latestFYWith((s) => s.netIncomeCommon != null)?.netIncomeCommon;
+    const effectiveNICommon = commonCandidate ?? effectiveNI;
+    const peBasis: 'COMMON' | 'CONSOLIDATED_FALLBACK' | null =
+        commonCandidate != null ? 'COMMON' : (effectiveNI != null ? 'CONSOLIDATED_FALLBACK' : null);
     const effectiveRev = ttm.revenue ?? latestFYWith((s) => s.revenue != null)?.revenue;
     const effectiveEbit = ttm.ebit ?? latestFYWith((s) => s.ebit != null)?.ebit;
     const cf = latestFYWith((s) => s.operatingCashFlow != null && s.capex != null);
@@ -199,6 +202,7 @@ export function computeDayRatios(statements: FinancialStatement[], closePrice: n
 
         if (effectiveNICommon && effectiveNICommon > 0) {
             out.peRatio = closePrice / (effectiveNICommon / shares);
+            out.peBasis = peBasis;
         }
         if (effectiveRev && effectiveRev > 0) {
             out.psRatio = closePrice / (effectiveRev / shares);

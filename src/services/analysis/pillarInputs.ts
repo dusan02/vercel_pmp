@@ -159,6 +159,8 @@ export function selectInterestCoverage(
     };
 }
 
+export type PeRatioBasis = 'COMMON' | 'CONSOLIDATED_FALLBACK';
+
 export interface PillarDerivation {
     // Core scoring outputs
     pillarsInput: PillarInputs;
@@ -202,6 +204,7 @@ export interface PillarDerivation {
     mcapNow: number | null;
     currentShareCount: number | null;
     currentPe: number | null;
+    peRatioBasis: PeRatioBasis | null;
     currentEps: number | null;
     currentPs: number | null;
     currentEvEbit: number | null;
@@ -387,9 +390,12 @@ export function derivePillarInputs(args: DerivePillarInputsArgs): PillarDerivati
 
     // ─── PILLAR INPUTS: Valuation ────────────────────────────────────────
     const effectiveNetIncome = ttmNetIncome ?? annualStmts.find(s => s.netIncome != null)?.netIncome ?? null;
-    const effectiveNetIncomeCommon = ttm.netIncomeCommon
+    const commonCandidate = ttm.netIncomeCommon
         ?? annualStmts.find(s => s.netIncomeCommon != null)?.netIncomeCommon
-        ?? effectiveNetIncome;
+        ?? null;
+    const effectiveNetIncomeCommon = commonCandidate ?? effectiveNetIncome;
+    const peRatioBasis: PeRatioBasis | null =
+        commonCandidate != null ? 'COMMON' : (effectiveNetIncome != null ? 'CONSOLIDATED_FALLBACK' : null);
     // EPS on the same NI/share basis as P/E (attributable to common shareholders);
     // Finnhub EPS is the fallback when own shares are unusable.
     const currentEps = (effectiveNetIncomeCommon !== null && effectiveNetIncomeCommon > 0 && currentShareCount !== null && currentShareCount > 0)
@@ -703,7 +709,7 @@ export function derivePillarInputs(args: DerivePillarInputsArgs): PillarDerivati
         roic: pillarRoic, insufficientData,
         latestStmt, bsStmt, annualStmts, ttm, moatDerived,
         currentPrice, marketCap, mcapNow, currentShareCount,
-        currentPe, currentEps, currentPs, currentEvEbit, currentFcfYield,
+        currentPe, peRatioBasis, currentEps, currentPs, currentEvEbit, currentFcfYield,
         evNow, netDebt, forwardPe, forwardImpliedGrowth, investedCapital,
         latestValuation, valuationHistoryStats,
     };

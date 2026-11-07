@@ -171,12 +171,19 @@ export function buildMetrics(data: AnalysisData) {
         primary = false
     ): MetricCardDef => ({ label, value, statusType, statusLabel, hint, primary });
 
+    const peBasis = m?.peBasis ?? null;
+    const peBasisTip = peBasis === 'COMMON'
+        ? ' (common shareholders NI)'
+        : peBasis === 'CONSOLIDATED_FALLBACK'
+        ? ' (fallback: consolidated NI, NCI unseparated)'
+        : '';
+
     // Grouped by the five pillars — the first rows of each group are the
     // actual leg inputs that produce that pillar's radar score.
     const valuation: MetricCardDef[] = [
         peDistorted
-            ? def('P/E (TTM)', `${pe!.toFixed(0)}x`, 'warn', 'Distorted', `TTM earnings are temporarily depressed — this multiple overstates expensiveness. Forward P/E is a better guide${histTip(vh?.pe, 'x')}`, true)
-            : def('P/E (TTM)', pe != null ? `${pe.toFixed(1)}x` : 'N/A', pe == null ? 'neutral' : pe < 15 ? 'good' : pe <= 25 ? 'neutral' : pe <= 35 ? 'warn' : 'bad', pe == null ? '-' : pe < 15 ? 'Cheap' : pe <= 25 ? 'Fair' : 'Expensive', `Price / TTM EPS (own statements)${histTip(vh?.pe, 'x')}`, true),
+            ? def('P/E (TTM)', `${pe!.toFixed(0)}x`, 'warn', 'Distorted', `TTM earnings are temporarily depressed — this multiple overstates expensiveness. Forward P/E is a better guide${peBasisTip}${histTip(vh?.pe, 'x')}`, true)
+            : def('P/E (TTM)', pe != null ? `${pe.toFixed(1)}x` : 'N/A', pe == null ? 'neutral' : pe < 15 ? 'good' : pe <= 25 ? 'neutral' : pe <= 35 ? 'warn' : 'bad', pe == null ? '-' : pe < 15 ? 'Cheap' : pe <= 25 ? 'Fair' : 'Expensive', `Price / TTM EPS (own statements)${peBasisTip}${histTip(vh?.pe, 'x')}`, true),
         def('P/FCF', pfcf != null ? `${pfcf.toFixed(1)}x` : 'N/A', pfcf == null ? 'neutral' : pfcf < 0 ? 'bad' : pfcf < 15 ? 'good' : pfcf <= 30 ? 'neutral' : pfcf <= 45 ? 'warn' : 'bad', pfcf == null ? '-' : pfcf < 0 ? 'Negative FCF' : pfcf < 15 ? 'Cheap' : pfcf <= 30 ? 'Fair' : 'Expensive', `Price / Free Cash Flow per share (Finnhub). Inverse of FCF yield — negative when FCF is negative${capexTip}`),
         def('FCF Yield', pct(fcfY), fcfY == null ? 'neutral' : fcfY > 0.05 ? 'good' : fcfY < 0 ? 'bad' : 'warn', fcfY == null ? '-' : fcfY > 0.05 ? 'Value' : fcfY < 0 ? 'Negative' : 'Low', `${m?.fcfYieldSource === 'finnhub' ? 'Inverse of Finnhub P/FCF (own TTM FCF unavailable)' : m?.fcfYieldSource === 'history' ? 'Latest stored TTM FCF / Market Cap' : 'TTM (OCF − CapEx) / Market Cap'}${histTip(vh?.fcfYield, '%')}${capexTip}`),
         def('P/S (TTM)', psRatio != null ? `${psRatio.toFixed(2)}x` : 'N/A', psRatio == null ? 'neutral' : psRatio < 2 ? 'good' : psRatio <= 5 ? 'neutral' : psRatio <= 10 ? 'warn' : 'bad', psRatio == null ? '-' : psRatio < 2 ? 'Cheap' : psRatio <= 5 ? 'Fair' : 'Expensive', `Price / TTM Revenue (own statements)${histTip(vh?.ps, 'x')}`),
