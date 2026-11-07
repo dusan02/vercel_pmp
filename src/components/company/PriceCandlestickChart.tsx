@@ -605,9 +605,10 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     ];
     // Skip periods that don't trim the series (~5+ weeks) or are too short
     // to draw (~4 weekly candles), plus dedupe YTD when it equals 1Y.
+    // Allow 5Y when the available span covers at least ~4.5 years (Polygon Starter ~4.95Y span).
     const fixed = candidates.filter(
       (p, i, arr) =>
-        p.years < spanYears - 0.1 &&
+        (p.years < spanYears - 0.1 || (p.label === '5Y' && spanYears >= 4.5)) &&
         p.years > 0.08 &&
         (p.label !== 'YTD' || Math.abs(p.years - 1) > 0.12) &&
         (i === 0 || p.years - arr[i - 1]!.years > 0.03),

@@ -84,6 +84,20 @@ export interface FinnhubMetric {
     week52Low: number | null;
 }
 
+export interface FinnhubSeriesPoint {
+    period: string; // YYYY-MM-DD
+    v: number;
+}
+
+export interface FinnhubMetricSeries {
+    peTTM?: FinnhubSeriesPoint[];
+    psTTM?: FinnhubSeriesPoint[];
+    pb?: FinnhubSeriesPoint[];
+    pfcfTTM?: FinnhubSeriesPoint[];
+    evRevenueTTM?: FinnhubSeriesPoint[];
+    evEbitdaTTM?: FinnhubSeriesPoint[];
+}
+
 export interface FinnhubEarningsItem {
     symbol: string;
     date: string;
@@ -242,6 +256,31 @@ export class FinnhubClient {
             // 52-week range — powers the Quality Selloff screen
             week52High: m['52WeekHigh'] ?? null,
             week52Low: m['52WeekLow'] ?? null,
+        };
+    }
+
+    /**
+     * Fetch historical quarterly metric series (PE, PS, PB, PFCF, etc.)
+     * Endpoint: /stock/metric?symbol=...&metric=all
+     */
+    async fetchMetricSeries(symbol: string, options: FetchOptions = {}): Promise<FinnhubMetricSeries | null> {
+        const url = `https://finnhub.io/api/v1/stock/metric?symbol=${symbol}&metric=all&token=${this.apiKey}`;
+        const data = await this.fetchWithRetry<{ series?: { quarterly?: Record<string, FinnhubSeriesPoint[]> } }>(
+            url,
+            options.timeout || this.timeout,
+            options.signal
+        );
+
+        const q = data?.series?.quarterly;
+        if (!q) return null;
+
+        return {
+            peTTM: q.peTTM ?? [],
+            psTTM: q.psTTM ?? [],
+            pb: q.pb ?? [],
+            pfcfTTM: q.pfcfTTM ?? [],
+            evRevenueTTM: q.evRevenueTTM ?? [],
+            evEbitdaTTM: q.evEbitdaTTM ?? [],
         };
     }
 

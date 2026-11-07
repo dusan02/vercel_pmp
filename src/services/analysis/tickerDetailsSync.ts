@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db/prisma';
 import { getSectorFromSic, toTitleCase } from '@/lib/utils/sectorMapping';
-import { computeDayRatios } from '@/services/analysis/fillValuationDay';
+import { computeDayRatios, type DayRatios } from '@/services/analysis/fillValuationDay';
+import { getFinnhubClient, type FinnhubMetricSeries } from '@/lib/clients/finnhubClient';
 
 const POLYGON_API_KEY = process.env.POLYGON_API_KEY;
 
@@ -134,11 +135,133 @@ export async function syncTickerDetails(symbol: string): Promise<void> {
     }
 }
 
+interface FinnhubValuationAnchor {
+    date: number; // ms
+    eps?: number | null;
+    sps?: number | null;
+    bv?: number | null;
+    fcf?: number | null;
+}
+
+function buildFinnhubAnchors(
+    aggs: { t: number; c: number }[],
+    series: FinnhubMetricSeries
+): FinnhubValuationAnchor[] {
+    const anchorsMap = new Map<number, FinnhubValuationAnchor>();
+
+    const getOrCreate = (d: number) => {
+        let a = anchorsMap.get(d);
+        if (!a) {
+            a = { date: d };
+            anchorsMap.set(d, a);
+        }
+        return a;
+    };
+
+    const findNearestClose = (targetMs: number): number | null => {
+        let bestDist = Infinity;
+        let bestClose: number | null = null;
+        for (const agg of aggs) {
+            const dist = Math.abs(agg.t - targetMs);
+            if (dist < bestDist && dist <= 7 * 86_400_000) {
+                bestDist = dist;
+                bestClose = agg.c;
+            }
+        }
+        return bestClose;
+    };
+
+    if (series.peTTM) {
+        for (const pt of series.peTTM) {
+            if (!pt.period || !pt.v || pt.v <= 0) continue;
+            const ms = new Date(pt.period + 'T00:00:00Z').getTime();
+            const close = findNearestClose(ms);
+            if (close && close > 0) {
+                getOrCreate(ms).eps = close / pt.v;
+            }
+        }
+    }
+
+    if (series.psTTM) {
+        for (const pt of series.psTTM) {
+            if (!pt.period || !pt.v || pt.v <= 0) continue;
+            const ms = new Date(pt.period + 'T00:00:00Z').getTime();
+            const close = findNearestClose(ms);
+            if (close && close > 0) {
+                getOrCreate(ms).sps = close / pt.v;
+            }
+        }
+    }
+
+    if (series.pb) {
+        for (const pt of series.pb) {
+            if (!pt.period || !pt.v || pt.v <= 0) continue;
+            const ms = new Date(pt.period + 'T00:00:00Z').getTime();
+            const close = findNearestClose(ms);
+            if (close && close > 0) {
+                getOrCreate(ms).bv = close / pt.v;
+            }
+        }
+    }
+
+    if (series.pfcfTTM) {
+        for (const pt of series.pfcfTTM) {
+            if (!pt.period || !pt.v || pt.v <= 0) continue;
+            const ms = new Date(pt.period + 'T00:00:00Z').getTime();
+            const close = findNearestClose(ms);
+            if (close && close > 0) {
+                getOrCreate(ms).fcf = close / pt.v;
+            }
+        }
+    }
+
+    return Array.from(anchorsMap.values()).sort((a, b) => a.date - b.date);
+}
+
+function resolveFinnhubRatios(
+    dateMs: number,
+    closePrice: number,
+    anchors: FinnhubValuationAnchor[],
+    shares: number | null
+): Partial<DayRatios> {
+    const out: Partial<DayRatios> = {
+        marketCap: shares && shares > 0 && closePrice > 0 ? closePrice * shares : null,
+        peRatio: null,
+        psRatio: null,
+        pbRatio: null,
+        fcfYield: null,
+    };
+    if (!anchors.length || closePrice <= 0) return out;
+
+    let anchor: FinnhubValuationAnchor | null = null;
+    for (let i = anchors.length - 1; i >= 0; i--) {
+        if (anchors[i]!.date <= dateMs) {
+            anchor = anchors[i]!;
+            break;
+        }
+    }
+    if (!anchor) anchor = anchors[0]!;
+
+    if (anchor.eps && anchor.eps > 0) {
+        out.peRatio = closePrice / anchor.eps;
+    }
+    if (anchor.sps && anchor.sps > 0) {
+        out.psRatio = closePrice / anchor.sps;
+    }
+    if (anchor.bv && anchor.bv > 0) {
+        out.pbRatio = closePrice / anchor.bv;
+    }
+    if (anchor.fcf && anchor.fcf > 0) {
+        out.fcfYield = anchor.fcf / closePrice;
+    }
+    return out;
+}
+
 /**
  * Sync 10Y daily valuation history (P/E, P/S, EV/EBITDA, FCF Yield) from Polygon aggs.
  * Uses incremental sync: only fetches data since last stored record.
  */
-export async function syncValuationHistory(symbol: string): Promise<void> {
+export async function syncValuationHistory(symbol: string, force: boolean = false): Promise<void> {
     if (!POLYGON_API_KEY) throw new Error('Chýba Polygon API Key');
 
     const toDate = new Date();
@@ -148,9 +271,10 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
     const lastRecord = await prisma.dailyValuationHistory.findFirst({
         where: { symbol },
         orderBy: { date: 'desc' },
-        select: { date: true },
+        select: { date: true, peRatio: true },
     });
-    const fromDate = lastRecord
+    const needsFullBackfill = force || (lastRecord && lastRecord.peRatio === null);
+    const fromDate = (lastRecord && !needsFullBackfill)
         ? new Date(lastRecord.date.getTime() + 86_400_000)
         : tenYearsAgo;
 
@@ -161,7 +285,7 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
 
     const fromStr = fromDate.toISOString().slice(0, 10);
     const toStr   = toDate.toISOString().slice(0, 10);
-    console.log(`[syncValuationHistory] ${symbol}: fetching ${fromStr} → ${toStr} (${lastRecord ? 'incremental' : 'full 10Y'})`);
+    console.log(`[syncValuationHistory] ${symbol}: fetching ${fromStr} → ${toStr} (${lastRecord && !needsFullBackfill ? 'incremental' : 'full backfill'})`);
 
     const url = `https://api.polygon.io/v2/aggs/ticker/${symbol}/range/1/day/${fromStr}/${toStr}?apiKey=${POLYGON_API_KEY}`;
 
@@ -182,8 +306,21 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
             orderBy: { endDate: 'desc' },
         });
 
+        let finnhubAnchors: FinnhubValuationAnchor[] = [];
         if (statements.length === 0) {
-            console.warn(`No financials available for ${symbol}, can't calculate complete multiples.`);
+            console.warn(`No financials available for ${symbol}, fetching Finnhub metric series fallback...`);
+            try {
+                const finnhub = getFinnhubClient();
+                const series = await finnhub.fetchMetricSeries(symbol);
+                if (series) {
+                    finnhubAnchors = buildFinnhubAnchors(aggs, series);
+                    if (finnhubAnchors.length > 0) {
+                        console.log(`[syncValuationHistory] ${symbol}: built ${finnhubAnchors.length} valuation anchors from Finnhub series`);
+                    }
+                }
+            } catch (err) {
+                console.warn(`[syncValuationHistory] ${symbol}: Finnhub metric series fallback failed:`, err);
+            }
         }
 
         // Trusted share count for the current valuation point — computeDayRatios
@@ -218,8 +355,9 @@ export async function syncValuationHistory(symbol: string): Promise<void> {
             // current values shown in Key Metrics. computeDayRatios is the
             // single implementation shared with fillValuationDay (EV leg is
             // EV/EBIT — D&A not available from Finnhub).
-            const ratios =
-                computeDayRatios(statements, closePrice, date, ticker?.sharesOutstanding ?? null);
+            const ratios: Partial<DayRatios> = statements.length > 0
+                ? computeDayRatios(statements, closePrice, date, ticker?.sharesOutstanding ?? null)
+                : resolveFinnhubRatios(agg.t, closePrice, finnhubAnchors, ticker?.sharesOutstanding ?? null);
 
             transactions.push(
                 prisma.dailyValuationHistory.upsert({
