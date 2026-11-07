@@ -1002,7 +1002,7 @@ async function fetchTradingViewBatchQuotes(symbols: string[]): Promise<Map<strin
       headers: { 'User-Agent': TV_UA, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(8000),
-      cache: 'no-store',
+      next: { revalidate: 30 },
     });
     if (!res.ok) return out;
 
