@@ -207,20 +207,35 @@ export default function RootLayout({
             />
             <Script id="google-analytics" strategy="afterInteractive">
               {`
-                window.dataLayer = window.dataLayer || [];
-                if (!window.gtag) {
-                  window.gtag = function gtag(){window.dataLayer.push(arguments);};
-                }
-                if (!window.__gaConfigured) {
-                  const debugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
-                  window.gtag('js', new Date());
-                  window.gtag('config', '${GA_ID}', {
-                    send_page_view: false,
-                    anonymize_ip: true,
-                    debug_mode: debugMode
-                  });
-                  window.__gaConfigured = true;
-                }
+                (function() {
+                  var debugMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug');
+                  var sw = typeof window !== 'undefined' && window.screen ? window.screen.width : 0;
+                  var sh = typeof window !== 'undefined' && window.screen ? window.screen.height : 0;
+                  var ua = typeof navigator !== 'undefined' ? (navigator.userAgent || '') : '';
+                  var isBot = !debugMode && (
+                    (typeof navigator !== 'undefined' && navigator.webdriver === true) ||
+                    /HeadlessChrome|PhantomJS|Puppeteer|Playwright/i.test(ua) ||
+                    (sw >= 800 && sw === sh)
+                  );
+                  if (isBot) {
+                    window['ga-disable-${GA_ID}'] = true;
+                    window.__gaBotBlocked = true;
+                    return;
+                  }
+                  window.dataLayer = window.dataLayer || [];
+                  if (!window.gtag) {
+                    window.gtag = function gtag(){window.dataLayer.push(arguments);};
+                  }
+                  if (!window.__gaConfigured) {
+                    window.gtag('js', new Date());
+                    window.gtag('config', '${GA_ID}', {
+                      send_page_view: false,
+                      anonymize_ip: true,
+                      debug_mode: debugMode
+                    });
+                    window.__gaConfigured = true;
+                  }
+                })();
               `}
             </Script>
           </>

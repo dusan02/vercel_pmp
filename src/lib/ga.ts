@@ -12,11 +12,43 @@ declare global {
     dataLayer: any[];
     gtag: (...args: any[]) => void;
     __gaConfigured?: boolean;
+    __gaBotBlocked?: boolean;
+    [key: `ga-disable-${string}`]: boolean | undefined;
   }
 }
 
+/**
+ * Detects automated headless scraping farms before sending GA4 telemetry:
+ *  - navigator.webdriver === true
+ *  - HeadlessChrome / PhantomJS / Puppeteer / Playwright UA
+ *  - Synthetic 1:1 square screen resolution >= 800px (e.g. 1366x1366, 1600x1600)
+ * Bypassed when `?debug` is present in the URL.
+ */
+export function isAutomatedBot(): boolean {
+  if (typeof window === 'undefined') return true;
+  if (window.__gaBotBlocked) return true;
+  if (new URLSearchParams(window.location.search).has('debug')) return false;
+
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+  const sw = window.screen?.width ?? 0;
+  const sh = window.screen?.height ?? 0;
+
+  if (
+    (typeof navigator !== 'undefined' && navigator.webdriver === true) ||
+    /HeadlessChrome|PhantomJS|Puppeteer|Playwright/i.test(ua) ||
+    (sw >= 800 && sw === sh)
+  ) {
+    window.__gaBotBlocked = true;
+    if (GA_ID) {
+      window[`ga-disable-${GA_ID}`] = true;
+    }
+    return true;
+  }
+  return false;
+}
+
 function ensureGtag(): ((...args: any[]) => void) | null {
-  if (typeof window === 'undefined' || !GA_ID) {
+  if (typeof window === 'undefined' || !GA_ID || isAutomatedBot()) {
     return null;
   }
   window.dataLayer = window.dataLayer || [];
@@ -81,7 +113,7 @@ export function event(name: string, params?: Record<string, any>): void {
  * dwells (≥3s) still count.
  */
 export function initHumanSignal(): () => void {
-  if (typeof window === 'undefined') return () => {};
+  if (typeof window === 'undefined' || isAutomatedBot()) return () => {};
   const t0 = Date.now();
   const st = { mouse: false, scroll: false, input: 'none', sent: false };
 
