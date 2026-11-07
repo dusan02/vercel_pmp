@@ -83,20 +83,54 @@ export function absOrNull(v: number | null): number | null {
     return v === null || v === undefined || Number.isNaN(v) ? null : Math.abs(v);
 }
 
+export type RevenueModel =
+    | 'COMMERCIAL'
+    | 'BANK_NET_INTEREST'
+    | 'BANK_GROSS_MINUS_EXPENSE'
+    | 'UNKNOWN';
+
+export type NetIncomeCommonStatus =
+    | 'REPORTED_COMMON'
+    | 'COMPUTED_FROM_NCI'
+    | 'REPORTED_CONSOLIDATED_ONLY'
+    | 'NOT_AVAILABLE';
+
+export type BalanceStatus =
+    | 'VALID_CONSISTENT'
+    | 'DERIVED_LIABILITIES'
+    | 'DERIVED_EQUITY'
+    | 'DERIVED_ASSETS'
+    | 'INCONSISTENT'
+    | 'INCOMPLETE';
+
+export type CapexSignTransformation =
+    | 'REPORTED_POSITIVE'
+    | 'INVERTED_FROM_OUTFLOW'
+    | 'NULL';
+
 export interface ExtractedFinancials {
     revenue: number | null;
-    netIncome: number | null;
+    revenueModel: RevenueModel;
+    netIncome: number | null; // Consolidated group profit/loss
+    netIncomeCommon: number | null; // Profit/loss attributable specifically to common shareholders
+    noncontrollingInterest: number | null;
+    netIncomeCommonStatus: NetIncomeCommonStatus;
     grossProfit: number | null;
     ebit: number | null;
     ebitIsReported: boolean;
     operatingCashFlow: number | null;
-    capex: number | null;
+    capex: number | null; // Normalized positive expenditure convention for FCF = OCF - Capex
+    capexRaw: number | null;
+    capexSignTransformation: CapexSignTransformation;
     totalAssets: number | null;
     totalLiabilities: number | null;
     currentAssets: number | null;
     currentLiabilities: number | null;
     retainedEarnings: number | null;
     totalEquity: number | null;
+    balanceStatus: BalanceStatus;
+    balanceDerived: boolean;
+    balanceDiff: number;
     sharesOutstanding: number | null;
     sbc: number | null;
     interestExpense: number | null;
@@ -117,18 +151,27 @@ export function extractFinancialsFromReport(report: any, options: ExtractionOpti
     if (!report || typeof report !== 'object') {
         return {
             revenue: null,
+            revenueModel: 'UNKNOWN',
             netIncome: null,
+            netIncomeCommon: null,
+            noncontrollingInterest: null,
+            netIncomeCommonStatus: 'NOT_AVAILABLE',
             grossProfit: null,
             ebit: null,
             ebitIsReported: false,
             operatingCashFlow: null,
             capex: null,
+            capexRaw: null,
+            capexSignTransformation: 'NULL',
             totalAssets: null,
             totalLiabilities: null,
             currentAssets: null,
             currentLiabilities: null,
             retainedEarnings: null,
             totalEquity: null,
+            balanceStatus: 'INCOMPLETE',
+            balanceDerived: false,
+            balanceDiff: 0,
             sharesOutstanding: null,
             sbc: null,
             interestExpense: null,
@@ -139,49 +182,113 @@ export function extractFinancialsFromReport(report: any, options: ExtractionOpti
         };
     }
 
-    // ── 1. Revenue ──
+    // ── 1. Revenue: Commercial Sales vs. Bank Net/Gross Protection ──
     let revenue = extract(report, 'ic', [
-        'us-gaap_Revenues', 'us-gaap_SalesRevenueNet', 'us-gaap_RevenuesNetOfInterestExpense',
-        'us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax', 'us-gaap_HealthCareOrganizationRevenue',
+        'us-gaap_RevenueFromContractWithCustomerExcludingAssessedTax',
+        'RevenueFromContractWithCustomerExcludingAssessedTax',
+        'us-gaap_SalesRevenueNet',
+        'SalesRevenueNet',
+        'us-gaap_Revenues',
+        'Revenues',
+        'us-gaap_TotalRevenuesAndOtherIncome',
+        'TotalRevenuesAndOtherIncome',
+        'us-gaap_RevenuesNetOfInterestExpense',
+        'RevenuesNetOfInterestExpense',
+        'us-gaap_HealthCareOrganizationRevenue',
+        'HealthCareOrganizationRevenue',
         'us-gaap_RevenueFromContractWithCustomerIncludingAssessedTax',
-        'us-gaap_SalesRevenueServicesNet', 'us-gaap_SalesRevenueGoodsNet',
-        // Utility-specific
-        'us-gaap_RegulatedAndUnregulatedOperatingRevenue', 'us-gaap_RegulatedOperatingRevenue',
-        // Without us-gaap_ prefix (older filings)
-        'Revenues', 'SalesRevenueNet', 'RevenueFromContractWithCustomerExcludingAssessedTax',
         'RevenueFromContractWithCustomerIncludingAssessedTax',
-        'RegulatedAndUnregulatedOperatingRevenue', 'RegulatedOperatingRevenue',
-        'SalesRevenueServicesNet', 'SalesRevenueGoodsNet'
+        'us-gaap_SalesRevenueServicesNet',
+        'SalesRevenueServicesNet',
+        'us-gaap_SalesRevenueGoodsNet',
+        'SalesRevenueGoodsNet',
+        // Utility-specific
+        'us-gaap_RegulatedAndUnregulatedOperatingRevenue',
+        'RegulatedAndUnregulatedOperatingRevenue',
+        'us-gaap_RegulatedOperatingRevenue',
+        'RegulatedOperatingRevenue',
     ]);
-    // Bank fallback: sum interest income + non-interest income
+
+    let revenueModel: RevenueModel = revenue !== null ? 'COMMERCIAL' : 'UNKNOWN';
+
+    // Bank fallback: Strictly prevent double counting of gross interest income!
     if (revenue === null) {
-        const interestIncome = extract(report, 'ic', [
-            'us-gaap_InterestAndDividendIncomeOperating',
+        // Preferred bank formula: Net Interest Income (NII) + Noninterest Income
+        const netInterestIncome = extract(report, 'ic', [
             'us-gaap_InterestIncomeExpenseNet',
-            'us-gaap_InterestIncome',
-            'InterestAndDividendIncomeOperating',
             'InterestIncomeExpenseNet',
-            'InterestIncome',
+            'us-gaap_InterestIncomeExpenseAfterProvisionForLoanLoss',
+            'InterestIncomeExpenseAfterProvisionForLoanLoss',
         ]);
         const noninterestIncome = extract(report, 'ic', [
             'us-gaap_NoninterestIncome',
             'NoninterestIncome',
         ]);
-        if (interestIncome !== null) {
-            revenue = interestIncome + (noninterestIncome || 0);
+
+        if (netInterestIncome !== null) {
+            revenue = netInterestIncome + (noninterestIncome || 0);
+            revenueModel = 'BANK_NET_INTEREST';
+        } else {
+            // Secondary fallback: Gross interest income MINUS interest expense + noninterest income
+            const grossInterestIncome = extract(report, 'ic', [
+                'us-gaap_InterestAndDividendIncomeOperating',
+                'InterestAndDividendIncomeOperating',
+                'us-gaap_InterestIncome',
+                'InterestIncome',
+            ]);
+            const interestExpense = extract(report, 'ic', [
+                'us-gaap_InterestExpense',
+                'InterestExpense',
+                'us-gaap_InterestExpenseDebt',
+                'InterestExpenseDebt',
+            ]);
+
+            if (grossInterestIncome !== null && interestExpense !== null) {
+                revenue = (grossInterestIncome - interestExpense) + (noninterestIncome || 0);
+                revenueModel = 'BANK_GROSS_MINUS_EXPENSE';
+            }
+            // CRITICAL: We NEVER sum gross interest without deducting interest expense!
         }
     }
 
-    // ── 2. Net Income ──
-    // Prioritize NetIncomeLossAvailableToCommonStockholdersBasic for companies with noncontrolling interests
-    const netIncome = extract(report, 'ic', [
+    // ── 2. Net Income: Consolidated vs. Common Shareholders Distinction ──
+    const netIncomeCommonReported = extract(report, 'ic', [
         'us-gaap_NetIncomeLossAvailableToCommonStockholdersBasic',
-        'us-gaap_NetIncomeLoss',
-        'us-gaap_ProfitLoss',
         'NetIncomeLossAvailableToCommonStockholdersBasic',
+    ]);
+    const netIncomeConsolidatedReported = extract(report, 'ic', [
+        'us-gaap_NetIncomeLoss',
         'NetIncomeLoss',
+        'us-gaap_ProfitLoss',
         'ProfitLoss',
     ]);
+    const noncontrollingInterest = extract(report, 'ic', [
+        'us-gaap_NetIncomeLossAttributableToNoncontrollingInterest',
+        'NetIncomeLossAttributableToNoncontrollingInterest',
+    ]);
+
+    let netIncome: number | null = netIncomeConsolidatedReported;
+    let netIncomeCommon: number | null = netIncomeCommonReported;
+    let netIncomeCommonStatus: NetIncomeCommonStatus;
+
+    if (netIncomeCommonReported !== null) {
+        netIncomeCommonStatus = 'REPORTED_COMMON';
+        if (netIncome === null && noncontrollingInterest !== null) {
+            netIncome = netIncomeCommonReported + noncontrollingInterest;
+        } else if (netIncome === null) {
+            netIncome = netIncomeCommonReported;
+        }
+    } else if (netIncomeConsolidatedReported !== null && noncontrollingInterest !== null) {
+        netIncomeCommon = netIncomeConsolidatedReported - noncontrollingInterest;
+        netIncomeCommonStatus = 'COMPUTED_FROM_NCI';
+    } else if (netIncomeConsolidatedReported !== null) {
+        // MANDATORY RULE: Never assume missing NCI means zero!
+        // Do not silently substitute consolidated Net Income for common Net Income.
+        netIncomeCommon = null;
+        netIncomeCommonStatus = 'REPORTED_CONSOLIDATED_ONLY';
+    } else {
+        netIncomeCommonStatus = 'NOT_AVAILABLE';
+    }
 
     // ── 3. Gross Profit ──
     let grossProfit = extract(report, 'ic', [
@@ -252,11 +359,13 @@ export function extractFinancialsFromReport(report: any, options: ExtractionOpti
         'NetCashProvidedByUsedInOperatingActivitiesContinuingOperations',
     ]);
 
-    // ── 6. Capex (normalized to positive magnitude) ──
+    // ── 6. Capex (normalized to positive expenditure convention) ──
     const capexRaw = extract(report, 'cf', [
         'us-gaap_PaymentsToAcquirePropertyPlantAndEquipment',
-        'us-gaap_PaymentsToAcquireOtherPropertyPlantAndEquipment',
+        'PaymentsToAcquirePropertyPlantAndEquipment',
         'us-gaap_PaymentsToAcquireProductiveAssets',
+        'PaymentsToAcquireProductiveAssets',
+        'us-gaap_PaymentsToAcquireOtherPropertyPlantAndEquipment',
         'us-gaap_PaymentsToAcquireOtherProductiveAssets',
         'us-gaap_PaymentsToAcquireOilAndGasPropertyAndEquipment',
         'us-gaap_PaymentsToAcquireOilAndGasProperty',
@@ -264,14 +373,27 @@ export function extractFinancialsFromReport(report: any, options: ExtractionOpti
         'us-gaap_PaymentsToDevelopRealEstateAssetsAndPaymentsForCapitalExpenditures',
         'us-gaap_PaymentsToAcquireFixedAssets',
         'us-gaap_CapitalExpenditureIncurredForPropertyPlantAndEquipment',
-        'PaymentsToAcquirePropertyPlantAndEquipment',
-        'PaymentsToAcquireProductiveAssets',
         'CapitalExpenditureIncurredForPropertyPlantAndEquipment',
     ]) ?? extractByConceptSuffix(report, 'cf', [
         'CapitalExpendituresAndInvestments',
         'PaymentsForCapitalImprovements',
     ]);
-    const capex = absOrNull(capexRaw);
+
+    let capex: number | null = null;
+    let capexSignTransformation: CapexSignTransformation = 'NULL';
+
+    if (capexRaw !== null) {
+        if (capexRaw > 0) {
+            capex = capexRaw;
+            capexSignTransformation = 'REPORTED_POSITIVE';
+        } else if (capexRaw < 0) {
+            capex = Math.abs(capexRaw);
+            capexSignTransformation = 'INVERTED_FROM_OUTFLOW';
+        } else {
+            capex = 0;
+            capexSignTransformation = 'REPORTED_POSITIVE';
+        }
+    }
 
     // ── 7. Balance Sheet Assets, Liabilities, Equity ──
     let totalAssets = extract(report, 'bs', [
@@ -293,13 +415,35 @@ export function extractFinancialsFromReport(report: any, options: ExtractionOpti
         'CommonStockholdersEquity',
     ]);
 
-    // Balance sheet equilibrium (Assets = Liabilities + Equity)
-    if (totalAssets === null && totalLiabilities !== null && totalEquity !== null) {
-        totalAssets = totalLiabilities + totalEquity;
-    } else if (totalLiabilities === null && totalAssets !== null && totalEquity !== null) {
+    let balanceStatus: BalanceStatus = 'INCOMPLETE';
+    let balanceDerived = false;
+    let balanceDiff = 0;
+
+    // Validate Assets = Liabilities + Equity
+    // Note: Legitimate negative equity (MCD, PM) is fully preserved!
+    if (totalAssets !== null && totalLiabilities !== null && totalEquity !== null) {
+        balanceDiff = Math.abs(totalAssets - (totalLiabilities + totalEquity));
+        const tolerance = Math.max(1000, Math.abs(totalAssets) * 0.01); // 1% or $1,000 rounding
+        if (balanceDiff <= tolerance) {
+            balanceStatus = 'VALID_CONSISTENT';
+        } else {
+            balanceStatus = 'INCONSISTENT';
+            // Do NOT silently overwrite or derive inconsistent source values!
+        }
+    } else if (totalAssets !== null && totalEquity !== null && totalLiabilities === null) {
         totalLiabilities = totalAssets - totalEquity;
-    } else if (totalEquity === null && totalAssets !== null && totalLiabilities !== null) {
+        balanceStatus = 'DERIVED_LIABILITIES';
+        balanceDerived = true;
+    } else if (totalAssets !== null && totalLiabilities !== null && totalEquity === null) {
         totalEquity = totalAssets - totalLiabilities;
+        balanceStatus = 'DERIVED_EQUITY';
+        balanceDerived = true;
+    } else if (totalLiabilities !== null && totalEquity !== null && totalAssets === null) {
+        totalAssets = totalLiabilities + totalEquity;
+        balanceStatus = 'DERIVED_ASSETS';
+        balanceDerived = true;
+    } else {
+        balanceStatus = 'INCOMPLETE';
     }
 
     const currentAssets = extract(report, 'bs', [
@@ -446,18 +590,27 @@ export function extractFinancialsFromReport(report: any, options: ExtractionOpti
 
     return {
         revenue,
+        revenueModel,
         netIncome,
+        netIncomeCommon,
+        noncontrollingInterest,
+        netIncomeCommonStatus,
         grossProfit,
         ebit,
         ebitIsReported,
         operatingCashFlow,
         capex,
+        capexRaw,
+        capexSignTransformation,
         totalAssets,
         totalLiabilities,
         currentAssets,
         currentLiabilities,
         retainedEarnings,
         totalEquity,
+        balanceStatus,
+        balanceDerived,
+        balanceDiff,
         sharesOutstanding,
         sbc,
         interestExpense,

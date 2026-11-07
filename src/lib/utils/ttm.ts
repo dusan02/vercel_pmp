@@ -144,3 +144,80 @@ export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
         capex: field('capex', true),
     };
 }
+
+/**
+ * Normalizes cumulative quarterly statements into discrete quarters (Q1, Q2, Q3, Q4).
+ * Finnhub reports cumulative YTD flows: Q1 = 3M, Q2 = 6M, Q3 = 9M, FY = 12M.
+ * Returns an object of discrete quarterly values or null if a contiguous link is missing.
+ */
+export function computeDiscreteQuarter(
+    currentStmt: FinancialStatement,
+    allStmts: FinancialStatement[]
+): {
+    discreteRevenue: number | null;
+    discreteNetIncome: number | null;
+    discreteOperatingCashFlow: number | null;
+    discreteCapex: number | null;
+    isContiguous: boolean;
+} {
+    const p = currentStmt.fiscalPeriod;
+    const y = currentStmt.fiscalYear;
+
+    // Q1 is inherently discrete (first 3 months of fiscal year)
+    if (p === 'Q1') {
+        return {
+            discreteRevenue: currentStmt.revenue,
+            discreteNetIncome: currentStmt.netIncome,
+            discreteOperatingCashFlow: currentStmt.operatingCashFlow,
+            discreteCapex: currentStmt.capex != null ? Math.abs(currentStmt.capex) : null,
+            isContiguous: true,
+        };
+    }
+
+    // For Q2: need Q1 of same fiscal year -> Q2_discrete = Q2_cum - Q1_cum
+    if (p === 'Q2') {
+        const q1 = allStmts.find(s => s.fiscalYear === y && s.fiscalPeriod === 'Q1');
+        if (!q1) {
+            return { discreteRevenue: null, discreteNetIncome: null, discreteOperatingCashFlow: null, discreteCapex: null, isContiguous: false };
+        }
+        return {
+            discreteRevenue: currentStmt.revenue != null && q1.revenue != null ? currentStmt.revenue - q1.revenue : null,
+            discreteNetIncome: currentStmt.netIncome != null && q1.netIncome != null ? currentStmt.netIncome - q1.netIncome : null,
+            discreteOperatingCashFlow: currentStmt.operatingCashFlow != null && q1.operatingCashFlow != null ? currentStmt.operatingCashFlow - q1.operatingCashFlow : null,
+            discreteCapex: currentStmt.capex != null && q1.capex != null ? Math.abs(currentStmt.capex) - Math.abs(q1.capex) : null,
+            isContiguous: true,
+        };
+    }
+
+    // For Q3: need Q2 of same fiscal year -> Q3_discrete = Q3_cum - Q2_cum
+    if (p === 'Q3') {
+        const q2 = allStmts.find(s => s.fiscalYear === y && s.fiscalPeriod === 'Q2');
+        if (!q2) {
+            return { discreteRevenue: null, discreteNetIncome: null, discreteOperatingCashFlow: null, discreteCapex: null, isContiguous: false };
+        }
+        return {
+            discreteRevenue: currentStmt.revenue != null && q2.revenue != null ? currentStmt.revenue - q2.revenue : null,
+            discreteNetIncome: currentStmt.netIncome != null && q2.netIncome != null ? currentStmt.netIncome - q2.netIncome : null,
+            discreteOperatingCashFlow: currentStmt.operatingCashFlow != null && q2.operatingCashFlow != null ? currentStmt.operatingCashFlow - q2.operatingCashFlow : null,
+            discreteCapex: currentStmt.capex != null && q2.capex != null ? Math.abs(currentStmt.capex) - Math.abs(q2.capex) : null,
+            isContiguous: true,
+        };
+    }
+
+    // For Q4 (embedded in FY): need FY and Q3 of same fiscal year -> Q4_discrete = FY - Q3_cum
+    if (p === 'FY') {
+        const q3 = allStmts.find(s => s.fiscalYear === y && s.fiscalPeriod === 'Q3');
+        if (!q3) {
+            return { discreteRevenue: null, discreteNetIncome: null, discreteOperatingCashFlow: null, discreteCapex: null, isContiguous: false };
+        }
+        return {
+            discreteRevenue: currentStmt.revenue != null && q3.revenue != null ? currentStmt.revenue - q3.revenue : null,
+            discreteNetIncome: currentStmt.netIncome != null && q3.netIncome != null ? currentStmt.netIncome - q3.netIncome : null,
+            discreteOperatingCashFlow: currentStmt.operatingCashFlow != null && q3.operatingCashFlow != null ? currentStmt.operatingCashFlow - q3.operatingCashFlow : null,
+            discreteCapex: currentStmt.capex != null && q3.capex != null ? Math.abs(currentStmt.capex) - Math.abs(q3.capex) : null,
+            isContiguous: true,
+        };
+    }
+
+    return { discreteRevenue: null, discreteNetIncome: null, discreteOperatingCashFlow: null, discreteCapex: null, isContiguous: false };
+}

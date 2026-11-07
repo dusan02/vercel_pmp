@@ -89,9 +89,9 @@ describe('Financials extraction concept registry & balance sheet equilibrium', (
 
         expect(upsertStmt).toHaveBeenCalled();
         const upsertCall = upsertStmt.mock.calls[0][0];
-        // netIncome should be 8,000,000 (common stockholders), not 10,000,000
-        expect(upsertCall.create.netIncome).toBe(8_000_000);
-        expect(upsertCall.update.netIncome).toBe(8_000_000);
+        // netIncome in FinancialStatement stores consolidated net income (10M)
+        expect(upsertCall.create.netIncome).toBe(10_000_000);
+        expect(upsertCall.update.netIncome).toBe(10_000_000);
         // capex should be strictly positive (absOrNull)
         expect(upsertCall.create.capex).toBe(5_000_000);
         expect(upsertCall.update.capex).toBe(5_000_000);
@@ -206,7 +206,7 @@ describe('Financials extraction concept registry & balance sheet equilibrium', (
                             endDate: '2023-12-31',
                             report: {
                                 ic: [
-                                    { concept: 'us-gaap_InterestAndDividendIncomeOperating', value: 15_000_000 },
+                                    { concept: 'us-gaap_InterestIncomeExpenseNet', value: 15_000_000 },
                                     { concept: 'us-gaap_NoninterestIncome', value: 5_000_000 },
                                     { concept: 'us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding', value: 50_000_000 },
                                 ],
