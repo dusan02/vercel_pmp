@@ -46,6 +46,8 @@ import { PmpVerdict } from '@/components/company/analysis/sections/PmpVerdict';
 import { getMatchedScreens } from '@/lib/analysis/matchedScreens';
 import { renderPresetIcon } from '@/lib/utils/screenerIcons';
 import { TechnicalDipSection } from '@/components/company/analysis/sections/TechnicalDipSection';
+import { EtfBasketSection } from '@/components/company/analysis/sections/EtfBasketSection';
+import { getEtfBasket } from '@/lib/analysis/etfBaskets';
 
 // Lazy client chunks — keeps recharts/finnhub-fetch code out of the initial bundle
 const IntradayChart = dynamic(() => import('@/components/company/IntradayChart').then((m) => m.IntradayChart));
@@ -123,7 +125,7 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   // Fetch everything in parallel (independent queries).
   // Includes SSR pre-fetch of analysis API + history + dipData for instant hydration.
-  const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, similarTickers, insiderActivity, premarketData, dipData] = await Promise.all([
+  const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, similarTickers, insiderActivity, premarketData, dipData, etfBasket] = await Promise.all([
     isEtf ? Promise.resolve({ upcoming: [], recent: [] }) : getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
     getRelatedOpportunities(tickerUpper),
@@ -137,6 +139,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     isEtf ? Promise.resolve([]) : getInsiderActivity90d(tickerUpper),
     getTodayPremarket(tickerUpper),
     prefetchDipData(tickerUpper),
+    isEtf ? getEtfBasket(tickerUpper) : Promise.resolve(null),
   ]);
 
   // Reuse statements already loaded by prefetchAnalysisData; only hit the DB
@@ -417,6 +420,9 @@ export default async function AnalysisPage({ params }: PageProps) {
               changeLabel={marketSession === 'closed' ? 'at last close' : marketSession === 'pre' ? 'pre-market' : marketSession === 'after' ? 'after-hours' : 'day'}
             />
           </div>
+
+          {/* ETF related basket — constituents / sector leaders / underlying (ETFs only) */}
+          {isEtf && etfBasket && <EtfBasketSection ticker={tickerUpper} basket={etfBasket} />}
 
           {/* Key metrics — SSR table directly under Price History (stocks only) */}
           {!isEtf && analysisData && (

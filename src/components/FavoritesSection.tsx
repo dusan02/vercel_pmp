@@ -3,6 +3,7 @@
  */
 
 import React from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SortKey } from '@/hooks/useSortableData';
 import { SectionIcon } from './SectionIcon';
@@ -17,6 +18,7 @@ import { getCompanyName } from '@/lib/companyNames';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { Star } from 'lucide-react';
 import { AddFavoriteSearch } from './AddFavoriteSearch';
+import { useFavoriteSignals } from '@/hooks/useFavoriteSignals';
 
 interface FavoritesSectionProps {
   favoriteStocks: StockData[];
@@ -41,6 +43,7 @@ export function FavoritesSection({
 }: FavoritesSectionProps) {
   const router = useRouter();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const { signals } = useFavoriteSignals();
 
   const handleBrowseStocks = () => {
     // Straight to the canonical screener page — works identically from the
@@ -256,6 +259,36 @@ export function FavoritesSection({
           />
         </div>
       </div>
+
+      {signals.length > 0 && (
+        <div className="mx-4 mb-4 p-3 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.04] dark:bg-emerald-500/[0.06] flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mr-1">
+            Active Signals ({signals.length}):
+          </span>
+          {signals.map((sig) => {
+            const toneCls =
+              sig.tone === 'emerald'
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                : sig.tone === 'amber'
+                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                  : sig.tone === 'rose'
+                    ? 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300'
+                    : 'border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300';
+            return (
+              <Link
+                key={sig.symbol}
+                href={`/analysis/${sig.symbol}`}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700/80 bg-white dark:bg-gray-900/80 hover:border-blue-400 dark:hover:border-blue-500 transition-colors text-xs"
+              >
+                <span className="font-bold text-gray-900 dark:text-white">{sig.symbol}</span>
+                <span className={`px-1.5 py-0.5 rounded font-semibold text-[11px] border ${toneCls}`}>
+                  {sig.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
 
       <UniversalTable
         data={favoriteStocks}

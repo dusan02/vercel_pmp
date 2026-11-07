@@ -23,6 +23,7 @@ export const getMatchedScreens = cache(async (symbol: string): Promise<MatchedSc
             lastPrice: true,
             lastChangePct: true,
             lastMarketCap: true,
+            latestMoversRVOL: true,
             analysisCache: {
                 select: {
                     healthScore: true, profitabilityScore: true, valuationScore: true,
@@ -31,6 +32,7 @@ export const getMatchedScreens = cache(async (symbol: string): Promise<MatchedSc
                     pePercentile: true, peVsMedian3yPct: true,
                     peVsMedian1yPct: true, peVsMedian5yPct: true, peVsMedian10yPct: true,
                     fundLevel: true, valLevel: true, verdictKey: true,
+                    rsi14: true, sma200Pct: true,
                 },
             },
             finnhubMetrics: {
@@ -61,6 +63,7 @@ export const getMatchedScreens = cache(async (symbol: string): Promise<MatchedSc
             price: t.lastPrice,
             changePct: t.lastChangePct,
             marketCapB: t.lastMarketCap,
+            rvol: t.latestMoversRVOL,
         },
     };
     return QUICK_SCREENS

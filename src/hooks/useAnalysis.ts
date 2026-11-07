@@ -172,10 +172,11 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
         fetchAnalysis();
     }, [ticker, fetchAnalysis]);
 
-    // Auto-run deep analysis when no cached data exists for this ticker.
+    // Auto-run deep analysis when no cached data exists for this ticker (or stub cache with 0 statements).
     // Use per-ticker guard to avoid re-triggering on the same ticker.
     useEffect(() => {
-        if (!loading && data === null && !analyzing && !error && autoTriggered.current !== ticker) {
+        const needsBackfill = data === null || (Boolean(data.insufficientData) && (data.statements?.length ?? 0) === 0);
+        if (!loading && needsBackfill && !analyzing && !error && autoTriggered.current !== ticker) {
             autoTriggered.current = ticker;
             runDeepAnalysis(true);
         }

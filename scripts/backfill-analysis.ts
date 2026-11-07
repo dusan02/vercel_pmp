@@ -10,13 +10,16 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { loadEnvFromFiles } from './_utils/loadEnv';
+
+loadEnvFromFiles();
 
 const prisma = new PrismaClient();
 
 const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3001';
-const CRON_SECRET = process.env.CRON_SECRET || '';
+const CRON_SECRET = process.env.CRON_SECRET || process.env.CRON_SECRET_KEY || '';
 const DEFAULT_LIMIT = 50;
-const DELAY_MS = 5000; // 5s between requests to be gentle on Finnhub/Polygon
+const DELAY_MS = 3500; // 3.5s between requests to be gentle on Finnhub/Polygon
 
 async function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -28,45 +31,60 @@ async function main() {
   const limit = limitArg ? parseInt(limitArg.split('=')[1]!, 10) : DEFAULT_LIMIT;
   const dryRun = args.includes('--dry-run');
 
-  // Find top stock tickers by market cap WITHOUT AnalysisCache
-  // Note: Ticker.lastMarketCap is stored in BILLIONS (0.1 = $100M).
-  // Exclude ETFs/LEVERAGED_ETFs since they do not have corporate SEC 10-K financial statements.
+  // Find stock tickers that either have no AnalysisCache row OR have an empty stub
+  // AnalysisCache row (healthScore: null) and 0 FinancialStatements.
+  // Skip tickers whose empty AnalysisCache was already attempted in the last 3 days
+  // (e.g. foreign ADRs without SEC EDGAR XBRL filings) so the queue always advances.
+  const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+
   const tickers = await prisma.ticker.findMany({
     where: {
       assetType: 'STOCK',
-      analysisCache: null,
       lastMarketCap: { gt: 0.1 }, // > $100M market cap (stored in billions)
+      financialStatements: { none: {} },
+      OR: [
+        { analysisCache: { is: null } },
+        {
+          analysisCache: {
+            healthScore: null,
+          },
+        },
+      ],
     },
     orderBy: [{ tier: 'asc' }, { lastMarketCap: 'desc' }],
-    take: limit,
-    select: { symbol: true, name: true, lastMarketCap: true },
+    take: limit * 3,
+    select: {
+      symbol: true,
+      name: true,
+      tier: true,
+      lastMarketCap: true,
+      analysisCache: { select: { updatedAt: true, healthScore: true } },
+    },
   });
 
-  // If still empty, fall back to ANY stock ticker without AnalysisCache (regardless of market cap)
-  let finalTickers = tickers;
-  if (tickers.length === 0) {
-    finalTickers = await prisma.ticker.findMany({
-      where: {
-        assetType: 'STOCK',
-        analysisCache: null,
-      },
-      orderBy: [{ tier: 'asc' }, { symbol: 'asc' }],
-      take: limit,
-      select: { symbol: true, name: true, lastMarketCap: true },
-    });
-  }
+  // Prioritize tickers never attempted or attempted longest ago, while preserving market cap priority
+  const finalTickers = tickers
+    .sort((a, b) => {
+      const aRecent = a.analysisCache?.updatedAt && a.analysisCache.updatedAt > threeDaysAgo ? 1 : 0;
+      const bRecent = b.analysisCache?.updatedAt && b.analysisCache.updatedAt > threeDaysAgo ? 1 : 0;
+      if (aRecent !== bRecent) return aRecent - bRecent;
+      const tierDiff = (a.tier ?? 3) - (b.tier ?? 3);
+      if (tierDiff !== 0) return tierDiff;
+      return (b.lastMarketCap ?? 0) - (a.lastMarketCap ?? 0);
+    })
+    .slice(0, limit);
 
-  console.log(`Found ${finalTickers.length} stock tickers without AnalysisCache (limit: ${limit}, min market cap: $100M)`);
+  console.log(`Found ${finalTickers.length} stock tickers needing fundamental backfill (limit: ${limit}, min market cap: $100M)`);
 
   if (finalTickers.length === 0) {
-    console.log('All eligible stock tickers already have AnalysisCache. Nothing to do.');
+    console.log('All eligible stock tickers already have fundamental statements & scores. Nothing to do.');
     return;
   }
 
   if (dryRun) {
     console.log('\n[DRY RUN] Would backfill:');
     for (const t of finalTickers) {
-      console.log(`  ${t.symbol} — ${t.name} (mcap: $${(t.lastMarketCap ?? 0).toFixed(2)}B)`);
+      console.log(`  ${t.symbol} (Tier ${t.tier}) — ${t.name} (mcap: $${(t.lastMarketCap ?? 0).toFixed(2)}B)`);
     }
     return;
   }
@@ -94,7 +112,7 @@ async function main() {
 
       if (res.ok) {
         const json = await res.json().catch(() => ({}));
-        console.log(`${progress} ✅ ${t.symbol} — health: ${json?.healthScore ?? 'N/A'}`);
+        console.log(`${progress} ✅ ${t.symbol} — health: ${json?. pillars?.health?.score ?? json?.healthScore ?? 'N/A'}`);
         success++;
       } else {
         console.error(`${progress} ❌ ${t.symbol} — HTTP ${res.status}`);
@@ -104,6 +122,16 @@ async function main() {
       console.error(`${progress} ❌ ${t.symbol} — ${err.message}`);
       failed++;
     }
+
+    // Touch AnalysisCache.updatedAt so tickers without SEC XBRL filings (e.g. ADRs)
+    // move to the back of the queue for 3 days instead of blocking future runs.
+    try {
+      await prisma.analysisCache.upsert({
+        where: { symbol: t.symbol },
+        update: { updatedAt: new Date() },
+        create: { symbol: t.symbol, updatedAt: new Date() },
+      });
+    } catch {}
 
     // Delay between requests
     if (i < finalTickers.length - 1) {

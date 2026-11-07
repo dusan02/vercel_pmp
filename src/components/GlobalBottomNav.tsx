@@ -12,6 +12,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutGrid, BarChart3, PieChart, Star, Calendar, Zap, Globe } from 'lucide-react';
+import { useFavoriteSignals } from '@/hooks/useFavoriteSignals';
 
 const NAV_ITEMS = [
   { label: 'Heatmap', icon: LayoutGrid, path: '/', match: (p: string) => p === '/' || p.startsWith('/heatmap') },
@@ -49,6 +50,7 @@ const NAV_ITEMS = [
 
 export function GlobalBottomNav() {
   const pathname = usePathname();
+  const { signalCount } = useFavoriteSignals();
 
   // Homepage renders its own section-switching BottomNavigation
   if (pathname === '/') return null;
@@ -70,6 +72,7 @@ export function GlobalBottomNav() {
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = item.match(pathname);
+          const showFavBadge = item.label === 'Favorites' && signalCount > 0;
 
           return (
             <Link
@@ -77,14 +80,21 @@ export function GlobalBottomNav() {
               href={item.path}
               aria-label={item.label}
               aria-current={active ? 'page' : undefined}
-              className={`flex flex-col items-center justify-center w-full h-full transition-all rounded-lg gap-0.5
+              className={`relative flex flex-col items-center justify-center w-full h-full transition-all rounded-lg gap-0.5
                 ${active
                   ? 'text-blue-600 bg-blue-600/10'
                   : 'text-gray-500 dark:text-gray-400 active:bg-gray-100 dark:active:bg-gray-800'
                 }`}
               style={{ minWidth: 0, minHeight: '44px' }}
             >
-              <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+              <div className="relative">
+                <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+                {showFavBadge && (
+                  <span className="absolute -top-1.5 -right-2.5 inline-flex items-center justify-center min-w-[15px] h-[15px] px-1 text-[9px] font-bold rounded-full bg-emerald-500 text-white tabular-nums">
+                    {signalCount}
+                  </span>
+                )}
+              </div>
               <span className={`text-[10px] sm:text-xs leading-none truncate max-w-full px-0.5 ${active ? 'font-semibold' : 'font-normal'}`}>
                 {item.label}
               </span>

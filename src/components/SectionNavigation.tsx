@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { SectionIcon, SectionIconType } from './SectionIcon';
+import { useFavoriteSignals } from '@/hooks/useFavoriteSignals';
 
 export interface SectionNavigationProps {
   /** Optional: called after a tab link is clicked (for side-effects like scroll reset) */
@@ -36,6 +37,7 @@ export function SectionNavigation({ onTabChange }: SectionNavigationProps) {
   const pathname    = usePathname();
   const searchParams = useSearchParams();
   const tabParam    = searchParams.get('tab');
+  const { signals, signalCount } = useFavoriteSignals();
 
   const getActiveId = (): string => {
     if (pathname === '/brief') return 'brief';
@@ -46,11 +48,17 @@ export function SectionNavigation({ onTabChange }: SectionNavigationProps) {
     if (pathname === '/earnings' || pathname.startsWith('/earnings/')) return 'earnings';
     if (pathname === '/premarket-movers' || pathname.startsWith('/premarket-movers/')) return 'movers';
     if (pathname === '/heatmap' || pathname.startsWith('/heatmap/')) return 'heatmap';
+    if (pathname === '/favorites' || pathname.startsWith('/favorites/')) return 'favorites';
+    if (pathname === '/portfolio' || pathname.startsWith('/portfolio/')) return 'portfolio';
     if (pathname === '/') return tabParam ?? 'heatmap';
     return '';
   };
 
   const activeId = getActiveId();
+  const favSignalTitle =
+    signalCount > 0
+      ? `Active signals: ${signals.map((s) => `${s.symbol} (${s.label})`).join(', ')}`
+      : undefined;
 
   return (
     <nav className="w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800" aria-label="Section navigation">
@@ -59,10 +67,12 @@ export function SectionNavigation({ onTabChange }: SectionNavigationProps) {
       <div className="flex flex-row">
         {TABS.map((tab) => {
           const isActive = activeId === tab.id;
+          const showFavBadge = tab.id === 'favorites' && signalCount > 0;
           return (
             <Link
               key={tab.id}
               href={tab.href}
+              title={showFavBadge ? favSignalTitle : undefined}
               onClick={(e) => {
                 // When onTabChange is provided (homepage), do client-side tab
                 // switching via pushState instead of a full Next.js navigation.
@@ -84,6 +94,11 @@ export function SectionNavigation({ onTabChange }: SectionNavigationProps) {
             >
               <SectionIcon type={tab.icon} size={16} />
               <span>{tab.label}</span>
+              {showFavBadge && (
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 tabular-nums">
+                  {signalCount}
+                </span>
+              )}
               {isActive && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
               )}
