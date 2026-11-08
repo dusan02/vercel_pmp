@@ -3,12 +3,15 @@
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import CompanyLogo from '@/components/CompanyLogo';
-import { formatCompactNumber, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
+import { formatCompactNumber, formatMarketCap, formatMarketCapDiff, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
 import { SIGMA_LABELS, type SigmaLevel } from '@/services/movers/classify';
 import { isMicrocap } from '@/services/movers/liquidity';
 import type { MoverRecord } from '@/services/movers/getMovers';
 import { event } from '@/lib/ga';
+
+export type MoversSortField = 'pct' | 'mcapDiff' | 'volume' | 'sigma';
+export type SortDirection = 'asc' | 'desc';
 
 // ─── Filters ────────────────────────────────────────────────────────────────
 interface MoversFilters {
@@ -76,6 +79,8 @@ function computeStandouts(movers: MoverRecord[]): Standout[] {
     sorted.find(m => !used.has(m.symbol)) ?? sorted[0];
 
   const byAbsMove = [...liquid].sort((a, b) => Math.abs(b.lastChangePct ?? 0) - Math.abs(a.lastChangePct ?? 0));
+  const byMcapDiff = [...liquid].filter(m => m.marketCapDiff !== null && Math.abs(m.marketCapDiff) > 0)
+    .sort((a, b) => Math.abs(b.marketCapDiff ?? 0) - Math.abs(a.marketCapDiff ?? 0));
   const bySigma = [...liquid].filter(m => m.latestMoversZScore !== null).sort((a, b) => Math.abs(b.latestMoversZScore!) - Math.abs(a.latestMoversZScore!));
   const byRvol = [...liquid].filter(m => (m.latestMoversRVOL ?? 0) >= 1.5).sort((a, b) => (b.latestMoversRVOL ?? 0) - (a.latestMoversRVOL ?? 0));
   const byExcess = [...liquid].filter(m => m.analysis?.excessMovePct !== null && m.analysis?.excessMovePct !== undefined)
@@ -90,6 +95,7 @@ function computeStandouts(movers: MoverRecord[]): Standout[] {
   };
 
   add('🔥', 'Largest move', m => formatPercent(Math.abs(m.lastChangePct ?? 0)), byAbsMove);
+  add('💰', 'Largest MCap Δ', m => formatMarketCapDiff(m.marketCapDiff ?? undefined), byMcapDiff);
   add('📊', 'Most unusual', m => `${Math.abs(m.latestMoversZScore!).toFixed(1)}σ`, bySigma);
   add('📈', 'Highest RVOL', m => `${(m.latestMoversRVOL ?? 0).toFixed(1)}× vol`, byRvol);
   add('⚡', 'Biggest vs sector', m => `${(m.analysis!.excessMovePct!) >= 0 ? '+' : ''}${m.analysis!.excessMovePct!.toFixed(1)}% excess`, byExcess);
@@ -223,7 +229,16 @@ function PillarDetail({ mover }: { mover: MoverRecord }) {
   );
 }
 
-function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: MoverRecord[]; eligibleAnalysis: Set<string> }) {
+interface MoversTableProps {
+  title: string;
+  rows: MoverRecord[];
+  eligibleAnalysis: Set<string>;
+  sortBy: MoversSortField;
+  sortDir: SortDirection;
+  onSort: (field: MoversSortField) => void;
+}
+
+function MoversTable({ title, rows, eligibleAnalysis, sortBy, sortDir, onSort }: MoversTableProps) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const toggle = (sym: string) =>
     setExpanded(prev => {
@@ -243,8 +258,42 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
           <thead className="bg-slate-50 dark:bg-slate-950">
             <tr className="text-left text-slate-600 dark:text-slate-400">
               <th className="px-2.5 sm:px-3 py-2">Stock</th>
-              <th className="px-2.5 sm:px-3 py-2 text-right">Move</th>
-              <th className="px-2 sm:px-3 py-2 text-center" title="σ (z-score) — how unusual today's move is relative to this stock's own volatility. A +9% move can be 'Normal' for a high-volatility stock.">σ</th>
+              <th
+                className="px-2.5 sm:px-3 py-2 text-right cursor-pointer select-none hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+                onClick={() => onSort('pct')}
+                title="Sort by % Move"
+              >
+                <span className="inline-flex items-center gap-1 justify-end">
+                  Move
+                  {sortBy === 'pct' && (
+                    <span className="text-[10px] text-blue-500 font-bold">{sortDir === 'desc' ? '▼' : '▲'}</span>
+                  )}
+                </span>
+              </th>
+              <th
+                className="px-2.5 sm:px-3 py-2 text-right cursor-pointer select-none hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+                onClick={() => onSort('mcapDiff')}
+                title="Sort by Market Cap Diff"
+              >
+                <span className="inline-flex items-center gap-1 justify-end">
+                  MCap Δ
+                  {sortBy === 'mcapDiff' && (
+                    <span className="text-[10px] text-blue-500 font-bold">{sortDir === 'desc' ? '▼' : '▲'}</span>
+                  )}
+                </span>
+              </th>
+              <th
+                className="px-2 sm:px-3 py-2 text-center cursor-pointer select-none hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+                onClick={() => onSort('sigma')}
+                title="σ (z-score) — how unusual today's move is relative to this stock's own volatility."
+              >
+                <span className="inline-flex items-center gap-1 justify-center">
+                  σ
+                  {sortBy === 'sigma' && (
+                    <span className="text-[10px] text-blue-500 font-bold">{sortDir === 'desc' ? '▼' : '▲'}</span>
+                  )}
+                </span>
+              </th>
               <th className="px-3 py-2 hidden sm:table-cell">Catalyst</th>
               <th className="w-7 sm:w-8"></th>
             </tr>
@@ -318,6 +367,25 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
                       )}
                     </div>
                   </td>
+                  {/* MCap Δ: formatted diff + market cap underneath */}
+                  <td className="px-2.5 sm:px-3 py-2.5 text-right whitespace-nowrap">
+                    <div className={`tabular-nums font-semibold text-sm leading-tight ${
+                      (r.marketCapDiff ?? 0) > 0
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : (r.marketCapDiff ?? 0) < 0
+                          ? 'text-rose-600 dark:text-rose-400'
+                          : 'text-slate-400'
+                    }`}>
+                      {r.marketCapDiff != null && Math.abs(r.marketCapDiff) > 0
+                        ? formatMarketCapDiff(r.marketCapDiff)
+                        : '—'}
+                    </div>
+                    {r.marketCap != null && r.marketCap > 0 && (
+                      <div className="tabular-nums text-[10px] text-slate-400 dark:text-slate-500 leading-tight mt-0.5" title={`Market cap: $${formatMarketCap(r.marketCap)}`}>
+                        ${formatMarketCap(r.marketCap)} cap
+                      </div>
+                    )}
+                  </td>
                   {/* σ: badge + plain-language tier */}
                   <td className="px-2 sm:px-3 py-2.5 text-center">
                     <span
@@ -348,7 +416,7 @@ function MoversTable({ title, rows, eligibleAnalysis }: { title: string; rows: M
                 </tr>
                 {expanded.has(r.symbol) && (
                   <tr className="border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60">
-                    <td colSpan={5} className="px-4 py-2.5">
+                    <td colSpan={6} className="px-4 py-2.5">
                       <PillarDetail mover={r} />
                     </td>
                   </tr>
@@ -407,19 +475,77 @@ type MoversView = 'gainers' | 'losers' | 'active';
 export function MoversExplorer({ gainers, losers, eligibleSymbols }: MoversExplorerProps) {
   const [filters, setFilters] = useState<MoversFilters>(DEFAULT_FILTERS);
   const [view, setView] = useState<MoversView>('gainers');
+  const [sortBy, setSortBy] = useState<MoversSortField>('pct');
+  const [sortDir, setSortDir] = useState<SortDirection>('desc');
   const eligibleAnalysis = useMemo(() => new Set(eligibleSymbols), [eligibleSymbols]);
 
   const allMovers = useMemo(() => [...gainers, ...losers], [gainers, losers]);
 
   const standouts = useMemo(() => computeStandouts(allMovers), [allMovers]);
 
-  const filteredGainers = useMemo(() => gainers.filter(m => matchesFilters(m, filters)), [gainers, filters]);
-  const filteredLosers = useMemo(() => losers.filter(m => matchesFilters(m, filters)), [losers, filters]);
-  const mostActive = useMemo(() =>
-    [...filteredGainers, ...filteredLosers]
-      .sort((a, b) => ((b.lastVolume ?? 0) * (b.lastPrice ?? 0)) - ((a.lastVolume ?? 0) * (a.lastPrice ?? 0)))
-      .slice(0, 25),
-    [filteredGainers, filteredLosers]);
+  const handleSort = (field: MoversSortField) => {
+    let nextDir: SortDirection = 'desc';
+    if (sortBy === field) {
+      nextDir = sortDir === 'desc' ? 'asc' : 'desc';
+    } else {
+      nextDir = 'desc';
+    }
+    setSortBy(field);
+    setSortDir(nextDir);
+    event('movers_sort', { sort_by: field, sort_dir: nextDir });
+  };
+
+  const filteredGainers = useMemo(() => {
+    const list = gainers.filter(m => matchesFilters(m, filters));
+    return list.sort((a, b) => {
+      let diff = 0;
+      if (sortBy === 'mcapDiff') {
+        diff = (b.marketCapDiff ?? 0) - (a.marketCapDiff ?? 0);
+      } else if (sortBy === 'volume') {
+        diff = ((b.lastVolume ?? 0) * (b.lastPrice ?? 0)) - ((a.lastVolume ?? 0) * (a.lastPrice ?? 0));
+      } else if (sortBy === 'sigma') {
+        diff = Math.abs(b.latestMoversZScore ?? 0) - Math.abs(a.latestMoversZScore ?? 0);
+      } else {
+        diff = (b.lastChangePct ?? 0) - (a.lastChangePct ?? 0);
+      }
+      return sortDir === 'desc' ? diff : -diff;
+    });
+  }, [gainers, filters, sortBy, sortDir]);
+
+  const filteredLosers = useMemo(() => {
+    const list = losers.filter(m => matchesFilters(m, filters));
+    return list.sort((a, b) => {
+      let diff = 0;
+      if (sortBy === 'mcapDiff') {
+        diff = (a.marketCapDiff ?? 0) - (b.marketCapDiff ?? 0);
+      } else if (sortBy === 'volume') {
+        diff = ((b.lastVolume ?? 0) * (b.lastPrice ?? 0)) - ((a.lastVolume ?? 0) * (a.lastPrice ?? 0));
+      } else if (sortBy === 'sigma') {
+        diff = Math.abs(b.latestMoversZScore ?? 0) - Math.abs(a.latestMoversZScore ?? 0);
+      } else {
+        diff = (a.lastChangePct ?? 0) - (b.lastChangePct ?? 0);
+      }
+      return sortDir === 'desc' ? diff : -diff;
+    });
+  }, [losers, filters, sortBy, sortDir]);
+
+  const mostActive = useMemo(() => {
+    const list = [...gainers, ...losers].filter(m => matchesFilters(m, filters));
+    return list.sort((a, b) => {
+      let diff = 0;
+      if (sortBy === 'mcapDiff') {
+        diff = Math.abs(b.marketCapDiff ?? 0) - Math.abs(a.marketCapDiff ?? 0);
+      } else if (sortBy === 'pct') {
+        diff = Math.abs(b.lastChangePct ?? 0) - Math.abs(a.lastChangePct ?? 0);
+      } else if (sortBy === 'sigma') {
+        diff = Math.abs(b.latestMoversZScore ?? 0) - Math.abs(a.latestMoversZScore ?? 0);
+      } else {
+        diff = ((b.lastVolume ?? 0) * (b.lastPrice ?? 0)) - ((a.lastVolume ?? 0) * (a.lastPrice ?? 0));
+      }
+      return sortDir === 'desc' ? diff : -diff;
+    }).slice(0, 50);
+  }, [gainers, losers, filters, sortBy, sortDir]);
+
   const hiddenMicrocaps = useMemo(
     () => (filters.showMicrocaps ? 0 : allMovers.filter(m => isMicrocap(m) && matchesFilters(m, { ...filters, showMicrocaps: true })).length),
     [allMovers, filters]);
@@ -493,34 +619,79 @@ export function MoversExplorer({ gainers, losers, eligibleSymbols }: MoversExplo
         )}
       </div>
 
-      {/* View tabs — all three tables stay in the DOM (SEO links intact),
-          only the active one is visible */}
-      <div className="flex gap-1.5 mb-3">
-        {([
-          ['gainers', `Gainers ${filteredGainers.length}`],
-          ['losers', `Losers ${filteredLosers.length}`],
-          ['active', `Most Active ${mostActive.length}`],
-        ] as [MoversView, string][]).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => { setView(key); event('movers_view', { view: key }); }}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-colors ${view === key
-                ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900'
-                : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400 dark:bg-transparent dark:text-slate-400 dark:border-white/10'
+      {/* View tabs and Sort controls */}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div className="flex gap-1.5">
+          {([
+            ['gainers', `Gainers ${filteredGainers.length}`],
+            ['losers', `Losers ${filteredLosers.length}`],
+            ['active', `Most Active ${mostActive.length}`],
+          ] as [MoversView, string][]).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => { setView(key); event('movers_view', { view: key }); }}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-colors ${view === key
+                  ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900'
+                  : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400 dark:bg-transparent dark:text-slate-400 dark:border-white/10'
+                }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+          <span className="text-[11px] font-medium hidden sm:inline">Sort:</span>
+          {([
+            ['pct', '% Move'],
+            ['mcapDiff', 'MCap Δ'],
+            ['volume', 'Volume'],
+            ['sigma', 'σ (Z-score)'],
+          ] as [MoversSortField, string][]).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => handleSort(key)}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
+                sortBy === key
+                  ? 'bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700 font-semibold'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 dark:bg-slate-900 dark:text-slate-400 dark:border-slate-800'
               }`}
-          >
-            {label}
-          </button>
-        ))}
+            >
+              {label} {sortBy === key ? (sortDir === 'desc' ? '↓' : '↑') : ''}
+            </button>
+          ))}
+        </div>
       </div>
+
       <div className={view === 'gainers' ? '' : 'hidden'}>
-        <MoversTable title="Top Gainers" rows={filteredGainers} eligibleAnalysis={eligibleAnalysis} />
+        <MoversTable
+          title="Top Gainers"
+          rows={filteredGainers}
+          eligibleAnalysis={eligibleAnalysis}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          onSort={handleSort}
+        />
       </div>
       <div className={view === 'losers' ? '' : 'hidden'}>
-        <MoversTable title="Top Losers" rows={filteredLosers} eligibleAnalysis={eligibleAnalysis} />
+        <MoversTable
+          title="Top Losers"
+          rows={filteredLosers}
+          eligibleAnalysis={eligibleAnalysis}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          onSort={handleSort}
+        />
       </div>
       <div className={view === 'active' ? '' : 'hidden'}>
-        <MoversTable title="Most Active" rows={mostActive} eligibleAnalysis={eligibleAnalysis} />
+        <MoversTable
+          title="Most Active"
+          rows={mostActive}
+          eligibleAnalysis={eligibleAnalysis}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          onSort={handleSort}
+        />
       </div>
 
       {hiddenMicrocaps > 0 && (

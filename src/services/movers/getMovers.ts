@@ -30,6 +30,7 @@ export interface MoverRecord {
     lastChangePct: number;
     lastVolume: number | null;
     marketCap: number | null;
+    marketCapDiff: number | null;
     latestMoversZScore: number | null;
     latestMoversRVOL: number | null;
     moversReason: string | null;
@@ -70,6 +71,8 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
         lastChangePct: true,
         lastVolume: true,
         lastMarketCap: true,
+        lastMarketCapDiff: true,
+        sharesOutstanding: true,
         latestPrevClose: true,
         latestPrevCloseDate: true,
         lastPriceUpdated: true,
@@ -84,10 +87,10 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
         ...freshToday,
     };
 
-    // Parallel fetch targeting top gainers, losers, extreme Z-scores, and RVOL spikes.
+    // Parallel fetch targeting top gainers, losers, heavyweight MCap movers, extreme Z-scores, and RVOL spikes.
     // Explicit orderBy prevents SQLite from taking only 'A' tickers by primary key.
     const candidateLimit = Math.max(limit, 50);
-    const [gainers, losers, zHigh, zLow, rvolSpikes] = await Promise.all([
+    const [gainers, losers, mcapGainers, mcapLosers, zHigh, zLow, rvolSpikes] = await Promise.all([
         prisma.ticker.findMany({
             where: { ...baseWhere, lastChangePct: { gte: 3.0 } },
             orderBy: { lastChangePct: 'desc' },
@@ -98,6 +101,18 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
             where: { ...baseWhere, lastChangePct: { lte: -3.0 } },
             orderBy: { lastChangePct: 'asc' },
             take: candidateLimit,
+            select,
+        }),
+        prisma.ticker.findMany({
+            where: { ...baseWhere, lastMarketCapDiff: { gt: 0 } },
+            orderBy: { lastMarketCapDiff: 'desc' },
+            take: Math.min(candidateLimit, 40),
+            select,
+        }),
+        prisma.ticker.findMany({
+            where: { ...baseWhere, lastMarketCapDiff: { lt: 0 } },
+            orderBy: { lastMarketCapDiff: 'asc' },
+            take: Math.min(candidateLimit, 40),
             select,
         }),
         prisma.ticker.findMany({
@@ -121,7 +136,7 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
     ]);
 
     const candidateMap = new Map<string, (typeof gainers)[0]>();
-    for (const list of [gainers, losers, zHigh, zLow, rvolSpikes]) {
+    for (const list of [gainers, losers, mcapGainers, mcapLosers, zHigh, zLow, rvolSpikes]) {
         for (const item of list) candidateMap.set(item.symbol, item);
     }
     const topMovers = Array.from(candidateMap.values());
@@ -226,6 +241,11 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
             lastChangePct,
             lastVolume: m.lastVolume ?? null,
             marketCap: m.lastMarketCap ?? null,
+            marketCapDiff: (m.sharesOutstanding && currentPrice > 0 && previousClose > 0)
+                ? Number((((currentPrice - previousClose) * m.sharesOutstanding) / 1e9).toFixed(2))
+                : (m.lastMarketCap != null && m.lastMarketCap > 0 && lastChangePct !== 0)
+                    ? Number((m.lastMarketCap * (lastChangePct / 100)).toFixed(2))
+                    : (m.lastMarketCapDiff ?? null),
             latestMoversZScore: m.latestMoversZScore,
             latestMoversRVOL: m.latestMoversRVOL,
             moversReason: m.moversReason,
@@ -235,16 +255,21 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
 
     // ── Step 4b: Post-filter on the FRESH recomputed move ─────────────────
     // Candidate selection uses stored fields that can lag a session boundary;
-    // a "mover" must actually be moving NOW. |fresh %| >= 1.5 drops yesterday's
-    // leftovers whose price merely drifted overnight.
+    // a "mover" must actually be moving NOW:
+    //  - |fresh %| >= 1.5% drops yesterday's leftovers whose price merely drifted
+    //  - OR |marketCapDiff| >= $1.0B qualifies mega-caps whose percentage move
+    //    is modest but whose dollar impact on the market is massive.
     const MIN_FRESH_MOVE_PCT = 1.5;
+    const MIN_FRESH_MCAP_DIFF = 1.0;
     const significantMovers = enrichedMovers.filter(m =>
-        Math.abs(m.lastChangePct || 0) >= MIN_FRESH_MOVE_PCT
+        Math.abs(m.lastChangePct || 0) >= MIN_FRESH_MOVE_PCT ||
+        Math.abs(m.marketCapDiff || 0) >= MIN_FRESH_MCAP_DIFF
     );
 
     // ── Step 5: Sort by combined significance score ───────────────────────
     // Ensure balanced representation: retain top gainers and top losers
-    // up to `limit` each so surfaces can populate both sides without starvation.
+    // up to `limit` each (both % and $ MCap diff) so surfaces can populate
+    // both sides without starvation.
     const sortedGainers = significantMovers
         .filter(m => (m.lastChangePct || 0) > 0)
         .sort((a, b) => (b.lastChangePct || 0) - (a.lastChangePct || 0))
@@ -253,15 +278,29 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
         .filter(m => (m.lastChangePct || 0) < 0)
         .sort((a, b) => (a.lastChangePct || 0) - (b.lastChangePct || 0))
         .slice(0, limit);
+    const sortedMcapGainers = significantMovers
+        .filter(m => (m.marketCapDiff || 0) > 0)
+        .sort((a, b) => (b.marketCapDiff || 0) - (a.marketCapDiff || 0))
+        .slice(0, limit);
+    const sortedMcapLosers = significantMovers
+        .filter(m => (m.marketCapDiff || 0) < 0)
+        .sort((a, b) => (a.marketCapDiff || 0) - (b.marketCapDiff || 0))
+        .slice(0, limit);
 
     // Merge and sort by significance score
     const finalMoversMap = new Map<string, (typeof significantMovers)[0]>();
-    for (const m of [...sortedGainers, ...sortedLosers, ...significantMovers.slice(0, limit)]) {
+    for (const m of [
+        ...sortedGainers,
+        ...sortedLosers,
+        ...sortedMcapGainers,
+        ...sortedMcapLosers,
+        ...significantMovers.slice(0, limit),
+    ]) {
         finalMoversMap.set(m.symbol, m);
     }
     const finalMovers = Array.from(finalMoversMap.values()).sort((a, b) => {
-        const sigA = Math.abs(a.latestMoversZScore || 0) + (Math.abs(a.lastChangePct || 0) / 2) + (a.latestMoversRVOL || 0);
-        const sigB = Math.abs(b.latestMoversZScore || 0) + (Math.abs(b.lastChangePct || 0) / 2) + (b.latestMoversRVOL || 0);
+        const sigA = Math.abs(a.latestMoversZScore || 0) + (Math.abs(a.lastChangePct || 0) / 2) + (a.latestMoversRVOL || 0) + Math.min(Math.abs(a.marketCapDiff || 0) / 10, 5);
+        const sigB = Math.abs(b.latestMoversZScore || 0) + (Math.abs(b.lastChangePct || 0) / 2) + (b.latestMoversRVOL || 0) + Math.min(Math.abs(b.marketCapDiff || 0) / 10, 5);
         return sigB - sigA;
     });
 

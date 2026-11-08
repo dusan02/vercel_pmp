@@ -74,4 +74,19 @@ describe('movers surface parity', () => {
         expect(pageSrc).toContain('No unusual movers');
         expect(pageSrc).toContain('during market sessions');
     });
+
+    it('MoversExplorer supports MCap Δ sorting and renders MCap Δ column', () => {
+        const explorerSrc = readFileSync(join(__dirname, '../components/movers/MoversExplorer.tsx'), 'utf8');
+        expect(explorerSrc).toContain('mcapDiff');
+        expect(explorerSrc).toContain('MCap Δ');
+        expect(explorerSrc).toContain('formatMarketCapDiff');
+    });
+
+    it('getMoversData includes lastMarketCapDiff and retains MCap movers', () => {
+        const serviceSrc = readFileSync(join(__dirname, '../services/movers/getMovers.ts'), 'utf8');
+        expect(serviceSrc).toContain('lastMarketCapDiff');
+        expect(serviceSrc).toContain('marketCapDiff');
+        expect(serviceSrc).toContain('sortedMcapGainers');
+        expect(serviceSrc).toContain('sortedMcapLosers');
+    });
 });
