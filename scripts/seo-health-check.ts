@@ -200,7 +200,7 @@ async function main(): Promise<void> {
     ...TICKERS.map((t) => `/analysis/${t}`),
     `/valuation/${TICKERS[0]}`,
     `/financials/${TICKERS[0]}`,
-    `/movers/${TICKERS[0]}`,
+    `/premarket/${TICKERS[0]}`,
   ];
 
   const reports: PageReport[] = [];

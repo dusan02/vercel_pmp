@@ -36,9 +36,9 @@ export function Footer() {
     <footer className="bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800 pt-12 pb-8 mt-auto">
       {/* 96rem cap + px-4/sm:px-6 — same rhythm as PageHeader inner row and <main> */}
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           {/* Brand Section */}
-          <div className="col-span-1 md:col-span-1">
+          <div className="col-span-1 sm:col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center">
               <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
                 PreMarketPrice
@@ -59,6 +59,11 @@ export function Footer() {
             </h3>
             <ul className="space-y-2">
               <li>
+                <Link href="/premarket-movers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Premarket Movers
+                </Link>
+              </li>
+              <li>
                 <Link href="/gainers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   Top Gainers
                 </Link>
@@ -69,20 +74,44 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/earnings" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Top Earnings
-                </Link>
-              </li>
-              <li>
-                <Link href="/earnings" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  All Earnings
-                </Link>
-              </li>
-              <li>
                 <Link href="/heatmap" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   Market Heatmap
                 </Link>
               </li>
+              <li>
+                <Link href="/earnings" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Earnings Calendar
+                </Link>
+              </li>
+              <li>
+                <Link href="/sectors" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Sector Performance
+                </Link>
+              </li>
+              <li>
+                <Link href="/stocks" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  All Stocks
+                </Link>
+              </li>
+              <li>
+                <Link href="/capex-tracker" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Capex Tracker
+                </Link>
+              </li>
+              <li>
+                <Link href="/biggest-movers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Biggest Daily Moves
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Screeners & Views */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+              Screens &amp; Views
+            </h3>
+            <ul className="space-y-2">
               <li>
                 <Link href="/screener" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   Stock Screener
@@ -94,18 +123,33 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/capex-tracker" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Capex Tracker
+                <Link href="/screener/most-undervalued" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Most Undervalued
                 </Link>
               </li>
               <li>
-                <Link href="/stocks" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  All Stocks
+                <Link href="/screener/highest-growth" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Highest Growth
                 </Link>
               </li>
               <li>
-                <Link href="/biggest-movers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Biggest Daily Moves
+                <Link href="/screener/insider-buying" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Insider Buying
+                </Link>
+              </li>
+              <li>
+                <Link href="/screener/quality-compounders" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Quality Compounders
+                </Link>
+              </li>
+              <li>
+                <Link href="/heatmap/pe-ratio" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  P/E Ratio Heatmap
+                </Link>
+              </li>
+              <li>
+                <Link href="/heatmap/dividend-yield" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Dividend Heatmap
                 </Link>
               </li>
             </ul>

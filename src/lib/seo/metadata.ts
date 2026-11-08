@@ -70,24 +70,38 @@ export function generateCompanyMetadata({
     ? `Market Cap: $${marketCap.toFixed(1)}B`
     : '';
 
-  // CTR-optimized title: include price + change for search intent match
-  // "Premarket" is intentional: GSC shows "{ticker} premarket" queries ranking
-  // ~20-30 positions better than "{ticker} stock" — it's our differentiator.
-  // Uses shortName to keep full title (incl. " | PreMarketPrice") under ~60 chars
-  const maxTitleLen = 60 - ` | ${siteName}`.length; // 60 total incl. suffix
-  const withChange = `${ticker} Premarket Stock ${priceText}${changeText ? ` (${changeText})` : ''} — ${short}`;
-  const withoutChange = `${ticker} Premarket Stock ${priceText} — ${short}`;
-  const noPrice = `${ticker} Premarket Stock Price — ${short}`;
-  // Hard cap: if even the shortest variant overflows, drop the company name.
-  const title = priceText
-    ? (withChange.length <= maxTitleLen
-        ? withChange
-        : withoutChange.length <= maxTitleLen
-          ? withoutChange
-          : `${ticker} Premarket Stock ${priceText}`.length <= maxTitleLen
-            ? `${ticker} Premarket Stock ${priceText}`
-            : `${ticker} Premarket Stock`)
-    : (noPrice.length <= maxTitleLen ? noPrice : `${ticker} Premarket Stock Price`);
+  // CTR-optimized title: balances "Stock Analysis" (high volume queries) and
+  // "Premarket" (our key ranking differentiator) while staying strictly <= 60 chars.
+  // maxTitleLen: 60 total minus " | PreMarketPrice" suffix (17 chars) = 43 chars budget.
+  const maxTitleLen = 60 - ` | ${siteName}`.length;
+  const compactPrice = price ? `$${Math.round(price)}` : '';
+
+  const withAnalysisAndPrice = priceText
+    ? `${ticker} Analysis & Premarket ${priceText} — ${short}`
+    : '';
+  const withCompactPrice = compactPrice
+    ? `${ticker} Analysis & Premarket ${compactPrice} — ${short}`
+    : '';
+  const withAnalysisNoPrice = `${ticker} Stock Analysis & Premarket — ${short}`;
+  const withAnalysisPriceOnly = priceText
+    ? `${ticker} Analysis & Premarket ${priceText}`
+    : '';
+  const genericAnalysis = `${ticker} Stock Analysis & Premarket Price`;
+  const fallbackShort = `${ticker} Stock Analysis — ${short}`;
+
+  const title = (withAnalysisAndPrice && withAnalysisAndPrice.length <= maxTitleLen)
+    ? withAnalysisAndPrice
+    : (withCompactPrice && withCompactPrice.length <= maxTitleLen)
+      ? withCompactPrice
+      : (withAnalysisNoPrice.length <= maxTitleLen)
+        ? withAnalysisNoPrice
+        : (withAnalysisPriceOnly && withAnalysisPriceOnly.length <= maxTitleLen)
+          ? withAnalysisPriceOnly
+          : (genericAnalysis.length <= maxTitleLen)
+            ? genericAnalysis
+            : (fallbackShort.length <= maxTitleLen)
+              ? fallbackShort
+              : `${ticker} Stock Analysis`;
   const fullTitle = `${title} | ${siteName}`;
 
   // Keyword-rich description matching search intent

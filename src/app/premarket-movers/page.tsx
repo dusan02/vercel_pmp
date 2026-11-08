@@ -44,8 +44,24 @@ export async function generateMetadata(): Promise<Metadata> {
   } catch {
     // Data unavailable at build/render — fall back to static title
   }
+
+  // Budget: 43 chars max so total with " | PreMarketPrice" (17) is strictly <= 60 chars.
+  const dateStr = getTodayShort();
+  let title = `Premarket Movers Today${moversSnippet}`;
+  if (title.length > 43 && moversSnippet.includes(',')) {
+    // Fall back to just top gainer if two movers overflow
+    const firstMover = moversSnippet.split(',')[0] ?? '';
+    title = `Premarket Movers Today${firstMover}`;
+  }
+  if (title.length > 43) {
+    title = `Premarket Movers Today (${dateStr})`;
+  }
+  if (title.length > 43) {
+    title = 'Premarket Movers Today';
+  }
+
   return generatePageMetadata({
-    title: `Premarket Movers Today${moversSnippet} (${getTodayShort()})`,
+    title,
     description:
       `Biggest pre-market stock movers for ${today} — top gainers and losers ranked by % change with Z-scores, catalysts and momentum insights. Real-time data from NYSE & NASDAQ.`,
     path: '/premarket-movers',

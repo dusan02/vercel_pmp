@@ -211,15 +211,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ],
   });
 
-  // Thin content → noindex
-  if (!hasEnoughData) {
-    return {
-      ...metadata,
-      robots: { index: false, follow: true },
-    };
-  }
-
-  return metadata;
+  // Canonicalize to /analysis/[ticker] to eliminate keyword cannibalization in Google
+  // (both pages cover premarket moves and fundamentals; consolidating onto /analysis
+  // prevents splitting ranking signals and lifts both to top 5).
+  return {
+    ...metadata,
+    alternates: {
+      canonical: `${baseUrl}/analysis/${tickerUpper}`,
+    },
+    ...(!hasEnoughData ? { robots: { index: false, follow: true } } : {}),
+  };
 }
 
 function tickerLower(t: string): string {

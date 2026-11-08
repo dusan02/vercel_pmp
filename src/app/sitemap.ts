@@ -465,7 +465,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...analysisPages,
     ...valuationPages,
     ...financialsPages,
-    ...moverPages,
     ...sectorPages,
     ...archivePages,
     ...earningsPages,
