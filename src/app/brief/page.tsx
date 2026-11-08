@@ -10,6 +10,8 @@ import { formatPercent, formatPrice, formatMarketCap } from '@/lib/utils/heatmap
 import { shortName } from '@/lib/seo/metadata';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 import { SsrFreshnessGuard } from '@/components/SsrFreshnessGuard';
+import { getMoversData, type MoverRecord } from '@/services/movers/getMovers';
+import { isMicrocap } from '@/services/movers/liquidity';
 
 const baseUrl = 'https://premarketprice.com';
 
@@ -47,7 +49,15 @@ const SESSION_PILL: Record<string, { label: string; cls: string; dot: string }> 
   closed: { label: 'CLOSED',      cls: 'bg-gray-100 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-700',          dot: 'bg-gray-400' },
 };
 
-function MoverRow({ r, eligible }: { r: HeatmapPayloadRow; eligible: Set<string> }) {
+interface BriefMoverItem {
+  ticker: string;
+  companyName: string;
+  currentPrice: number;
+  percentChange: number;
+  marketCap?: number | null;
+}
+
+function MoverRow({ r, eligible }: { r: BriefMoverItem; eligible: Set<string> }) {
   const up = r.percentChange >= 0;
   const body = (
     <div className="flex items-center justify-between gap-3 py-1.5 px-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors">
@@ -89,16 +99,16 @@ export default async function BriefPage() {
   const dateLabel = new Date(todayStr + 'T12:00:00Z')
     .toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-  const [heatmap, earningsGroups, eligible] = await Promise.all([
+  const [heatmap, earningsGroups, eligible, moversData] = await Promise.all([
     getHeatmapData(),
     getEarningsRange(todayStr, todayStr).catch(() => []),
     getEligibleAnalysisSet().catch(() => new Set<string>()),
+    getMoversData(50, 2.0).catch(() => null),
   ]);
 
   const rows: HeatmapPayloadRow[] = heatmap.ok
     ? (heatmap.payload as HeatmapPayloadRow[]).filter((r) => r.currentPrice > 0 && r.marketCap > 0)
     : [];
-  const notable = rows.filter((r) => r.marketCap >= 0.5); // ≥$500M — skip micro-cap noise
 
   // --- Breadth -----------------------------------------------------------
   const advancers = rows.filter((r) => r.percentChange > 0.05).length;
@@ -127,15 +137,26 @@ export default async function BriefPage() {
     .sort((a, b) => b.avg - a.avg);
   const maxAbsSector = Math.max(1, ...sectors.map((s) => Math.abs(s.avg)));
 
-  // --- Top movers ---------------------------------------------------------
-  const pick = (pool: HeatmapPayloadRow[], n: number, dir: 'up' | 'down') =>
-    [...pool]
-      .sort((a, b) => (dir === 'up' ? b.percentChange - a.percentChange : a.percentChange - b.percentChange))
-      .slice(0, n);
-  const gainers = pick(notable.length >= 8 ? notable : rows, 8, 'up')
-    .filter((r) => r.percentChange > 0.05);
-  const losers = pick(notable.length >= 8 ? notable : rows, 8, 'down')
-    .filter((r) => r.percentChange < -0.05);
+  // --- Top movers (shared Movers 2.0 pipeline, liquid movers only) ---------
+  const toBriefItem = (m: MoverRecord): BriefMoverItem => ({
+    ticker: m.symbol,
+    companyName: m.name ?? m.symbol,
+    currentPrice: m.lastPrice,
+    percentChange: m.lastChangePct,
+    marketCap: m.marketCap,
+  });
+
+  const liquidMovers = (moversData?.movers ?? []).filter((m) => !isMicrocap(m));
+  const gainers: BriefMoverItem[] = liquidMovers
+    .filter((m) => (m.lastChangePct ?? 0) > 0.01)
+    .sort((a, b) => (b.lastChangePct ?? 0) - (a.lastChangePct ?? 0))
+    .slice(0, 8)
+    .map(toBriefItem);
+  const losers: BriefMoverItem[] = liquidMovers
+    .filter((m) => (m.lastChangePct ?? 0) < -0.01)
+    .sort((a, b) => (a.lastChangePct ?? 0) - (b.lastChangePct ?? 0))
+    .slice(0, 8)
+    .map(toBriefItem);
 
   // --- Earnings today -----------------------------------------------------
   const todayGroup = earningsGroups.find((g) => g.date === todayStr);
@@ -155,7 +176,7 @@ export default async function BriefPage() {
       .map((r, i) => ({
         '@type': 'ListItem',
         position: i + 1,
-        name: `${r.companyName} (${r.ticker})`,
+        name: `${r.companyName} (${r.ticker}) — ${formatPercent(r.percentChange)}`,
         url: `${baseUrl}/analysis/${r.ticker}`,
       })),
   };
@@ -208,7 +229,7 @@ export default async function BriefPage() {
           label="Biggest mover"
           value={gainers[0] ? `${gainers[0].ticker} ${formatPercent(gainers[0].percentChange)}` : '—'}
           tone="up"
-          sub={gainers[0] ? formatMarketCap(gainers[0].marketCap) : undefined}
+          sub={gainers[0]?.marketCap ? formatMarketCap(gainers[0].marketCap) : undefined}
         />
       </section>
 
@@ -253,7 +274,7 @@ export default async function BriefPage() {
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3">
               <div className="flex items-baseline justify-between px-2 mb-2">
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white">Top gainers</h2>
-                <Link href="/gainers" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">All</Link>
+                <Link href="/premarket-movers" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">All</Link>
               </div>
               {gainers.map((r) => <MoverRow key={r.ticker} r={r} eligible={eligible} />)}
               {gainers.length === 0 && <div className="px-2 py-4 text-sm text-slate-500">No notable gainers.</div>}
@@ -261,7 +282,7 @@ export default async function BriefPage() {
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3">
               <div className="flex items-baseline justify-between px-2 mb-2">
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white">Top losers</h2>
-                <Link href="/losers" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">All</Link>
+                <Link href="/premarket-movers" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">All</Link>
               </div>
               {losers.map((r) => <MoverRow key={r.ticker} r={r} eligible={eligible} />)}
               {losers.length === 0 && <div className="px-2 py-4 text-sm text-slate-500">No notable losers.</div>}

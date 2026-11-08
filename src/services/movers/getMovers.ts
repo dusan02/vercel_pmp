@@ -29,6 +29,7 @@ export interface MoverRecord {
     lastPrice: number;
     lastChangePct: number;
     lastVolume: number | null;
+    marketCap: number | null;
     latestMoversZScore: number | null;
     latestMoversRVOL: number | null;
     moversReason: string | null;
@@ -61,36 +62,69 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
     // through the weekend while dropping tickers with no prints in the session.
     const todayStartET = getTradingDay(etNow);
     const freshToday = { lastPriceUpdated: { gte: todayStartET } };
-    const topMovers = await prisma.ticker.findMany({
-        where: {
-            lastPrice: { gt: 0 },
-            ...freshToday,
-            OR: [
-                { latestMoversZScore: { gte: minZScore } },
-                { latestMoversZScore: { lte: -minZScore } },
-                { lastChangePct: { gte: 5.0 } },
-                { lastChangePct: { lte: -5.0 } },
-                { latestMoversRVOL: { gte: 3.0 } }
-            ]
-        },
-        take: limit * 2, // Fetch more for ranking
-        select: {
-            symbol: true,
-            name: true,
-            sector: true,
-            lastPrice: true,
-            lastChangePct: true,
-            lastVolume: true,
-            latestPrevClose: true,
-            latestPrevCloseDate: true,
-            lastPriceUpdated: true,
-            updatedAt: true,
-            latestMoversZScore: true,
-            latestMoversRVOL: true,
-            moversReason: true,
-            moversCategory: true,
-        }
-    });
+    const select = {
+        symbol: true,
+        name: true,
+        sector: true,
+        lastPrice: true,
+        lastChangePct: true,
+        lastVolume: true,
+        lastMarketCap: true,
+        latestPrevClose: true,
+        latestPrevCloseDate: true,
+        lastPriceUpdated: true,
+        updatedAt: true,
+        latestMoversZScore: true,
+        latestMoversRVOL: true,
+        moversReason: true,
+        moversCategory: true,
+    };
+    const baseWhere = {
+        lastPrice: { gt: 0 },
+        ...freshToday,
+    };
+
+    // Parallel fetch targeting top gainers, losers, extreme Z-scores, and RVOL spikes.
+    // Explicit orderBy prevents SQLite from taking only 'A' tickers by primary key.
+    const candidateLimit = Math.max(limit, 50);
+    const [gainers, losers, zHigh, zLow, rvolSpikes] = await Promise.all([
+        prisma.ticker.findMany({
+            where: { ...baseWhere, lastChangePct: { gte: 3.0 } },
+            orderBy: { lastChangePct: 'desc' },
+            take: candidateLimit,
+            select,
+        }),
+        prisma.ticker.findMany({
+            where: { ...baseWhere, lastChangePct: { lte: -3.0 } },
+            orderBy: { lastChangePct: 'asc' },
+            take: candidateLimit,
+            select,
+        }),
+        prisma.ticker.findMany({
+            where: { ...baseWhere, latestMoversZScore: { gte: minZScore } },
+            orderBy: { latestMoversZScore: 'desc' },
+            take: Math.min(candidateLimit, 30),
+            select,
+        }),
+        prisma.ticker.findMany({
+            where: { ...baseWhere, latestMoversZScore: { lte: -minZScore } },
+            orderBy: { latestMoversZScore: 'asc' },
+            take: Math.min(candidateLimit, 30),
+            select,
+        }),
+        prisma.ticker.findMany({
+            where: { ...baseWhere, latestMoversRVOL: { gte: 3.0 } },
+            orderBy: { latestMoversRVOL: 'desc' },
+            take: Math.min(candidateLimit, 30),
+            select,
+        }),
+    ]);
+
+    const candidateMap = new Map<string, (typeof gainers)[0]>();
+    for (const list of [gainers, losers, zHigh, zLow, rvolSpikes]) {
+        for (const item of list) candidateMap.set(item.symbol, item);
+    }
+    const topMovers = Array.from(candidateMap.values());
 
     const symbols = topMovers.map(m => m.symbol);
 
@@ -191,6 +225,7 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
             lastPrice: currentPrice,
             lastChangePct,
             lastVolume: m.lastVolume ?? null,
+            marketCap: m.lastMarketCap ?? null,
             latestMoversZScore: m.latestMoversZScore,
             latestMoversRVOL: m.latestMoversRVOL,
             moversReason: m.moversReason,
@@ -208,13 +243,27 @@ export async function getMoversData(limit: number, minZScore: number): Promise<M
     );
 
     // ── Step 5: Sort by combined significance score ───────────────────────
-    significantMovers.sort((a, b) => {
+    // Ensure balanced representation: retain top gainers and top losers
+    // up to `limit` each so surfaces can populate both sides without starvation.
+    const sortedGainers = significantMovers
+        .filter(m => (m.lastChangePct || 0) > 0)
+        .sort((a, b) => (b.lastChangePct || 0) - (a.lastChangePct || 0))
+        .slice(0, limit);
+    const sortedLosers = significantMovers
+        .filter(m => (m.lastChangePct || 0) < 0)
+        .sort((a, b) => (a.lastChangePct || 0) - (b.lastChangePct || 0))
+        .slice(0, limit);
+
+    // Merge and sort by significance score
+    const finalMoversMap = new Map<string, (typeof significantMovers)[0]>();
+    for (const m of [...sortedGainers, ...sortedLosers, ...significantMovers.slice(0, limit)]) {
+        finalMoversMap.set(m.symbol, m);
+    }
+    const finalMovers = Array.from(finalMoversMap.values()).sort((a, b) => {
         const sigA = Math.abs(a.latestMoversZScore || 0) + (Math.abs(a.lastChangePct || 0) / 2) + (a.latestMoversRVOL || 0);
         const sigB = Math.abs(b.latestMoversZScore || 0) + (Math.abs(b.lastChangePct || 0) / 2) + (b.latestMoversRVOL || 0);
         return sigB - sigA;
     });
-
-    const finalMovers = significantMovers.slice(0, limit);
 
     // ── Step 6: Movers 2.0 analysis — sigma level, market/sector context,
     // deterministic catalyst detection, pillar strip. List-level Redis cache

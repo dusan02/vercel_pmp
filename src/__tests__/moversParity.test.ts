@@ -15,6 +15,7 @@ import { join } from 'path';
 const API_ROUTE = join(__dirname, '../app/api/stocks/movers/route.ts');
 const SSR_PAGE = join(__dirname, '../app/premarket-movers/page.tsx');
 const ZH_PAGE = join(__dirname, '../app/zh/premarket-movers/page.tsx');
+const BRIEF_PAGE = join(__dirname, '../app/brief/page.tsx');
 
 const SHARED_SERVICE = "@/services/movers/getMovers";
 // Old pipeline pieces that must not reappear on the SSR page.
@@ -34,6 +35,12 @@ describe('movers surface parity', () => {
     it('SSR /premarket-movers page uses the same shared pipeline', () => {
         expect(pageSrc).toContain(SHARED_SERVICE);
         expect(pageSrc).toMatch(/getMoversData\(|getMovers\(/);
+    });
+
+    it('SSR /brief page uses the same shared pipeline', () => {
+        const briefSrc = readFileSync(BRIEF_PAGE, 'utf8');
+        expect(briefSrc).toContain(SHARED_SERVICE);
+        expect(briefSrc).toMatch(/getMoversData\(/);
     });
 
     it('SSR page does not reintroduce the old Redis-rank mover pipeline', () => {

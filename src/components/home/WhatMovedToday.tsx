@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import CompanyLogo from '@/components/CompanyLogo';
+import { isMicrocap } from '@/services/movers/liquidity';
 
 interface MoverData {
   symbol: string;
@@ -11,6 +12,7 @@ interface MoverData {
   changePct?: number;
   lastPrice?: number;
   lastChangePct?: number;
+  lastVolume?: number | null;
   marketCap?: number;
 }
 
@@ -21,27 +23,28 @@ interface WhatMovedTodayProps {
 
 /**
  * Server-rendered "What moved today" section for the homepage.
- * Shows top 5 gainers and losers from SSR-fetched movers data.
+ * Shows top 5 liquid gainers and losers from SSR-fetched movers data.
  * Visible immediately on page load — improves dwell time and gives
  * Google substantial text content above the fold.
  */
 export function WhatMovedToday({ movers, eligibleTickers }: WhatMovedTodayProps) {
   if (!movers || movers.length === 0) return null;
 
-  // Sort by absolute change to get biggest movers
-  const sorted = [...movers]
-    .filter((m) => {
-      const pct = m.changePct ?? m.lastChangePct;
-      return pct != null && m.symbol;
-    })
-    .sort((a, b) => {
-      const aPct = Math.abs(a.changePct ?? a.lastChangePct ?? 0);
-      const bPct = Math.abs(b.changePct ?? b.lastChangePct ?? 0);
-      return bPct - aPct;
-    });
+  // Filter out microcap / penny-stock noise, matching /premarket-movers
+  const valid = movers.filter((m) => {
+    const pct = m.lastChangePct ?? m.changePct;
+    return pct != null && m.symbol && !isMicrocap(m);
+  });
 
-  const gainers = sorted.filter((m) => (m.changePct ?? m.lastChangePct ?? 0) > 0).slice(0, 5);
-  const losers = sorted.filter((m) => (m.changePct ?? m.lastChangePct ?? 0) < 0).slice(0, 5);
+  const gainers = valid
+    .filter((m) => (m.lastChangePct ?? m.changePct ?? 0) > 0)
+    .sort((a, b) => (b.lastChangePct ?? b.changePct ?? 0) - (a.lastChangePct ?? a.changePct ?? 0))
+    .slice(0, 5);
+
+  const losers = valid
+    .filter((m) => (m.lastChangePct ?? m.changePct ?? 0) < 0)
+    .sort((a, b) => (a.lastChangePct ?? a.changePct ?? 0) - (b.lastChangePct ?? b.changePct ?? 0))
+    .slice(0, 5);
 
   if (gainers.length === 0 && losers.length === 0) return null;
 

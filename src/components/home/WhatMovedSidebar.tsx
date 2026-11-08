@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { isMicrocap } from '@/services/movers/liquidity';
 
 interface MoverData {
   symbol: string;
@@ -9,6 +10,7 @@ interface MoverData {
   changePct?: number;
   lastPrice?: number;
   lastChangePct?: number;
+  lastVolume?: number | null;
 }
 
 interface WhatMovedSidebarProps {
@@ -18,25 +20,27 @@ interface WhatMovedSidebarProps {
 
 /**
  * Sidebar "What Moved Today" for desktop heatmap layout.
- * Shows top 3 gainers and losers in a vertical column
+ * Shows top 3 liquid gainers and losers in a vertical column
  * next to the heatmap.
  */
 export function WhatMovedSidebar({ movers, eligibleTickers }: WhatMovedSidebarProps) {
   if (!movers || movers.length === 0) return null;
 
-  const sorted = [...movers]
-    .filter((m) => {
-      const pct = m.changePct ?? m.lastChangePct;
-      return pct != null && m.symbol;
-    })
-    .sort((a, b) => {
-      const aPct = Math.abs(a.changePct ?? a.lastChangePct ?? 0);
-      const bPct = Math.abs(b.changePct ?? b.lastChangePct ?? 0);
-      return bPct - aPct;
-    });
+  // Filter out microcap / penny-stock noise, matching /premarket-movers
+  const valid = movers.filter((m) => {
+    const pct = m.lastChangePct ?? m.changePct;
+    return pct != null && m.symbol && !isMicrocap(m);
+  });
 
-  const gainers = sorted.filter((m) => (m.changePct ?? m.lastChangePct ?? 0) > 0).slice(0, 3);
-  const losers = sorted.filter((m) => (m.changePct ?? m.lastChangePct ?? 0) < 0).slice(0, 3);
+  const gainers = valid
+    .filter((m) => (m.lastChangePct ?? m.changePct ?? 0) > 0)
+    .sort((a, b) => (b.lastChangePct ?? b.changePct ?? 0) - (a.lastChangePct ?? a.changePct ?? 0))
+    .slice(0, 3);
+
+  const losers = valid
+    .filter((m) => (m.lastChangePct ?? m.changePct ?? 0) < 0)
+    .sort((a, b) => (a.lastChangePct ?? a.changePct ?? 0) - (b.lastChangePct ?? b.changePct ?? 0))
+    .slice(0, 3);
 
   if (gainers.length === 0 && losers.length === 0) return null;
 

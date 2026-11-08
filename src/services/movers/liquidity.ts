@@ -8,11 +8,13 @@ export const MIN_MOVER_PRICE = 5;
 export const MIN_MOVER_DOLLAR_VOL = 1_000_000;
 
 export interface MoverLiquidityInput {
-  lastPrice: number | null;
-  lastVolume: number | null;
+  lastPrice?: number | null;
+  lastVolume?: number | null;
+  price?: number | null;
 }
 
 export function isMicrocap(m: MoverLiquidityInput): boolean {
-  const dollarVol = (m.lastVolume ?? 0) * (m.lastPrice ?? 0);
-  return (m.lastPrice ?? 0) < MIN_MOVER_PRICE || dollarVol < MIN_MOVER_DOLLAR_VOL;
+  const price = m.lastPrice ?? m.price ?? 0;
+  const dollarVol = (m.lastVolume ?? 0) * price;
+  return price < MIN_MOVER_PRICE || dollarVol < MIN_MOVER_DOLLAR_VOL;
 }
