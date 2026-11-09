@@ -134,8 +134,7 @@ export async function resolvePrevCloses(
       const refRows = await prisma.dailyRef.findMany({
         where: {
           symbol: { in: missingBeforeBootstrap },
-          date: closeRefDay,
-          regularClose: { not: null }
+          date: closeRefDay
         },
         select: { symbol: true, regularClose: true }
       });

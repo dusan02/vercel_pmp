@@ -61,8 +61,7 @@ export async function bootstrapPreviousCloses(
     const refRows = await prisma.dailyRef.findMany({
       where: {
         symbol: { in: tickersToProcess },
-        date: prevTradingDay,
-        regularClose: { not: null }
+        date: prevTradingDay
       },
       select: { symbol: true, regularClose: true }
     });

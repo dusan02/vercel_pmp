@@ -11,8 +11,8 @@
 
 import { getUniverse, getPrevClose } from '@/lib/redis/operations';
 import { redisClient } from '@/lib/redis';
-import { getDateET, createETDate, toET } from '@/lib/utils/dateET';
-import { getLastTradingDay, getTradingDay } from '@/lib/utils/timeUtils';
+import { getDateET, createETDate, toET, isWeekendET, nowET } from '@/lib/utils/dateET';
+import { getLastTradingDay, getTradingDay, isMarketHoliday } from '@/lib/utils/timeUtils';
 
 import { saveRegularClose } from './polygon/saveRegularClose';
 import { ingestBatch } from './polygon/ingestBatch';
@@ -125,12 +125,29 @@ async function runRefsScheduler(apiKey: string): Promise<void> {
  */
 function runSnapshotLoop(apiKey: string): void {
   const runIngestLoop = async () => {
+    const loopStartTime = Date.now();
     try {
       await ingestLoop(apiKey);
     } catch (error) {
       console.error('Unhandled error in ingestLoop:', error);
     } finally {
-      setTimeout(runIngestLoop, 60000);
+      const elapsed = Date.now() - loopStartTime;
+      const etNow = nowET();
+      const etParts = toET(etNow);
+
+      let waitMs = Math.max(5000, 60000 - elapsed);
+
+      // If market is closed on a weekday morning within 2 minutes of 04:00 ET premarket open,
+      // target waking up right at 04:00:02 ET so the first premarket batch runs immediately.
+      if (!isWeekendET(etNow) && !isMarketHoliday(etNow) && etParts.hour === 3 && etParts.minute >= 58) {
+        const msUntil4am = ((59 - etParts.minute) * 60 + (60 - etParts.second) + 2) * 1000;
+        if (msUntil4am > 1000 && msUntil4am < 130000) {
+          waitMs = msUntil4am;
+          console.log(`⏰ Scheduled next ingest pass in ${(waitMs / 1000).toFixed(0)}s to align with 04:00:02 ET premarket open`);
+        }
+      }
+
+      setTimeout(runIngestLoop, waitMs);
     }
   };
   runIngestLoop();

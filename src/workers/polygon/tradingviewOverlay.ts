@@ -49,6 +49,67 @@ const COLUMNS: Record<OverlaySession, { price: string; volume: string; ts: strin
 let cooldownUntil = 0;
 let consecutiveFailures = 0;
 
+async function fetchCnbcBatch(
+  symbols: string[],
+  session: OverlaySession,
+  out: Map<string, { price: number; volume?: number; barTimeMs?: number }>
+): Promise<'ok' | 'error'> {
+  if (process.env.CNBC_OVERLAY === '0') return 'ok';
+  if (symbols.length === 0) return 'ok';
+  const url = `https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols=${encodeURIComponent(symbols.join('|'))}&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json&events=1`;
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': UA },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return 'error';
+    const data = await res.json();
+    const quotes: any[] = data?.FormattedQuoteResult?.FormattedQuote ?? [];
+    for (const q of quotes) {
+      const symbol = q?.symbol;
+      if (!symbol || q?.code !== 0) continue;
+
+      let priceVal: number | undefined;
+      let volVal: number | undefined;
+      let timeStr: string | undefined;
+
+      if (session === 'pre') {
+        const ext = q?.ExtendedMktQuote;
+        if (ext && ext.type === 'PRE_MKT' && ext.last) {
+          priceVal = parseFloat(String(ext.last).replace(/,/g, ''));
+          volVal = ext.volume ? parseInt(String(ext.volume).replace(/,/g, ''), 10) : undefined;
+          timeStr = ext.last_time;
+        }
+      } else if (session === 'after') {
+        const ext = q?.ExtendedMktQuote;
+        if (ext && ext.type === 'POST_MKT' && ext.last) {
+          priceVal = parseFloat(String(ext.last).replace(/,/g, ''));
+          volVal = ext.volume ? parseInt(String(ext.volume).replace(/,/g, ''), 10) : undefined;
+          timeStr = ext.last_time;
+        }
+      } else if (session === 'live') {
+        if (q?.last) {
+          priceVal = parseFloat(String(q.last).replace(/,/g, ''));
+          volVal = q.volume ? parseInt(String(q.volume).replace(/,/g, ''), 10) : undefined;
+          timeStr = q.last_time;
+        }
+      }
+
+      if (typeof priceVal === 'number' && priceVal > 0 && !isNaN(priceVal)) {
+        const barTimeMs = timeStr ? new Date(timeStr).getTime() : NaN;
+        out.set(symbol, {
+          price: priceVal,
+          ...(typeof volVal === 'number' && volVal > 0 && !isNaN(volVal) ? { volume: volVal } : {}),
+          ...(!isNaN(barTimeMs) && barTimeMs > 0 ? { barTimeMs } : {}),
+        });
+      }
+    }
+    return 'ok';
+  } catch {
+    return 'error';
+  }
+}
+
 async function fetchScanBatch(
   symbols: string[],
   session: OverlaySession,
@@ -100,8 +161,9 @@ async function fetchScanBatch(
 }
 
 /**
- * Fetch TradingView real-time prices and merge them into the Polygon
- * snapshots (mutates `snapshots` in place). Returns overlaid count.
+ * Fetch real-time prices via CNBC (0-delay extended-hours & live) +
+ * TradingView scanner fallback, and merge them into Polygon snapshots.
+ * Returns overlaid count.
  */
 export async function applyRealtimeOverlay(
   snapshots: PolygonSnapshot[],
@@ -117,17 +179,25 @@ export async function applyRealtimeOverlay(
 
   for (let i = 0; i < tickers.length; i += BATCH_SIZE) {
     const batch = tickers.slice(i, i + BATCH_SIZE);
-    const status = await fetchScanBatch(batch, session, quotes);
-    if (status === 'rate_limited') {
-      sawRateLimit = true;
-      break;
-    }
-    if (status === 'error') {
-      consecutiveFailures++;
-      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-        cooldownUntil = Date.now() + COOLDOWN_MS;
-        console.warn(`⚠️ TV overlay: ${consecutiveFailures} consecutive failures, cooling down ${COOLDOWN_MS / 60000}min`);
-        return 0;
+
+    // 1. Try CNBC first (real-time 0-delay from NASDAQ Last Sale / CTA, active from 04:00 ET)
+    await fetchCnbcBatch(batch, session, quotes);
+
+    // 2. For symbols not returned by CNBC, fall back to TradingView scanner
+    const missingFromCnbc = batch.filter(sym => !quotes.has(sym));
+    if (missingFromCnbc.length > 0) {
+      const status = await fetchScanBatch(missingFromCnbc, session, quotes);
+      if (status === 'rate_limited') {
+        sawRateLimit = true;
+        break;
+      }
+      if (status === 'error') {
+        consecutiveFailures++;
+        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+          cooldownUntil = Date.now() + COOLDOWN_MS;
+          console.warn(`⚠️ TV overlay: ${consecutiveFailures} consecutive failures, cooling down ${COOLDOWN_MS / 60000}min`);
+          return 0;
+        }
       }
     }
   }

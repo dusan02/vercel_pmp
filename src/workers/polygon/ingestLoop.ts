@@ -321,11 +321,20 @@ export async function ingestLoop(apiKey: string): Promise<void> {
     // Capture today's regular close once it is final (≥16:20 ET, 'after' session)
     await maybeSaveRegularClose(tickers, apiKey, etNow, session);
 
+    // Respect pricing state: overnight (20:00-04:00 ET on weekdays) has canIngest: false.
+    // Ingesting during this window produces fake errors and wastes CPU/sleep time.
+    const { getPricingState } = await import('@/lib/utils/pricingStateMachine');
+    const pricingState = getPricingState(etNow);
+    if (!pricingState.canIngest) {
+      console.log(`🌙 Pricing state: ${pricingState.state} (canIngest: false) - skipping price ingestion.`);
+      await updateWorkerStatus();
+      await recordSuccess('ingestLoop', 0);
+      return;
+    }
+
     // Session logging
     if (session === 'pre' || session === 'after') {
       console.log(`🌅 Pre-market/After-hours mode (session: ${session}) - ingesting prices...`);
-    } else if (session === 'closed' && !isWeekendOrHoliday) {
-      console.log(`🌙 Off-hours (session: ${session}) - ingesting available prices...`);
     } else {
       console.log(`📊 Market open (session: ${session}), ingesting with prioritization...`);
     }
@@ -349,10 +358,13 @@ export async function ingestLoop(apiKey: string): Promise<void> {
     }
 
     // Rate-limit config
+    // 1 batch of 100 tickers is 1 HTTP request to Polygon snapshot API.
+    // To stay safely under Polygon rate limit (e.g. 250 req/min), a short delay (e.g. 1000ms)
+    // between batches is more than sufficient and lets 9 batches finish in ~15s instead of ~4min.
     const envLimit = parseInt(process.env.POLYGON_MAX_REQUESTS_PER_MINUTE || '250', 10);
     const envBatchSize = parseInt(process.env.POLYGON_MAX_BATCH_SIZE || '100', 10);
     const batchSize = Math.min(100, Math.max(1, envBatchSize));
-    const delayBetweenBatches = Math.ceil((60 * 1000) / (envLimit / batchSize));
+    const delayBetweenBatches = Math.max(1000, Math.ceil((60 * 1000) / envLimit));
 
     // Batch processing
     for (let i = 0; i < processedTickers.length; i += batchSize) {

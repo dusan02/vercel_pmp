@@ -158,4 +158,85 @@ describe('applyRealtimeOverlay stale-bar guard', () => {
     expect(applied).toBe(0);
     expect(snap.lastTrade).toBeUndefined();
   });
+
+  it('pre: applies CNBC real-time premarket trade directly', async () => {
+    const todayIso = new Date().toISOString();
+    global.fetch = jest.fn(async (url: any) => {
+      if (typeof url === 'string' && url.includes('quote.cnbc.com')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            FormattedQuoteResult: {
+              FormattedQuote: [
+                {
+                  symbol: 'NVDA',
+                  code: 0,
+                  ExtendedMktQuote: {
+                    type: 'PRE_MKT',
+                    last: '177.50',
+                    volume: '3,000,000',
+                    last_time: todayIso,
+                  },
+                },
+              ],
+            },
+          }),
+        };
+      }
+      return scanResponse([]);
+    }) as any;
+
+    const snap = polygonSnap('NVDA', 0);
+    const applied = await applyRealtimeOverlay(
+      [snap],
+      ['NVDA'],
+      'pre',
+      new Map([['NVDA', 186.64]])
+    );
+
+    expect(applied).toBe(1);
+    expect(snap.lastTrade?.p).toBe(177.5);
+    expect(snap.min?.c).toBe(177.5);
+    expect(snap.min?.v).toBe(3000000);
+  });
+
+  it('pre: skips CNBC quote when ExtendedMktQuote is from previous day', async () => {
+    const yesterdayIso = new Date(Date.now() - 86400_000).toISOString();
+    global.fetch = jest.fn(async (url: any) => {
+      if (typeof url === 'string' && url.includes('quote.cnbc.com')) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            FormattedQuoteResult: {
+              FormattedQuote: [
+                {
+                  symbol: 'NVDA',
+                  code: 0,
+                  ExtendedMktQuote: {
+                    type: 'POST_MKT_PREV',
+                    last: '185.00',
+                    last_time: yesterdayIso,
+                  },
+                },
+              ],
+            },
+          }),
+        };
+      }
+      return scanResponse([]);
+    }) as any;
+
+    const snap = polygonSnap('NVDA', 0);
+    const applied = await applyRealtimeOverlay(
+      [snap],
+      ['NVDA'],
+      'pre',
+      new Map([['NVDA', 186.64]])
+    );
+
+    expect(applied).toBe(0);
+    expect(snap.lastTrade).toBeUndefined();
+  });
 });
