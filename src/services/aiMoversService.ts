@@ -55,19 +55,43 @@ export class AiMoversService {
             topSymbols = tickers.map(t => t.symbol);
         }
 
+        // Always prioritize Mega-Cap movers ($50B+) with significant moves (|changePct| >= 3% or |marketCapDiff| >= $15B)
+        const megaCaps = await prisma.ticker.findMany({
+            where: {
+                lastMarketCap: { gte: 50_000_000_000 },
+                OR: [
+                    { lastChangePct: { gte: 3.0 } },
+                    { lastChangePct: { lte: -3.0 } },
+                    { lastMarketCapDiff: { gte: 15_000_000_000 } },
+                    { lastMarketCapDiff: { lte: -15_000_000_000 } },
+                ]
+            },
+            select: { symbol: true },
+            take: 10
+        });
+        const megaSymbols = megaCaps.map(t => t.symbol);
+        topSymbols = [...new Set([...megaSymbols, ...topSymbols])];
+
         if (topSymbols.length === 0) {
             console.log('ℹ️ AiMoversService: No movers found');
             return { success: 0, failed: 0 };
         }
 
-        // Filter for significant movers: |Z| >= 2.5 OR RVOL >= 2.0
+        // Filter for significant movers: |Z| >= 2.5 OR RVOL >= 2.0 OR Mega-Cap with >= 3% move
         const tickers = await prisma.ticker.findMany({
             where: {
                 symbol: { in: topSymbols },
                 OR: [
                     { latestMoversZScore: { gte: AI_ZSCORE_THRESHOLD } },
                     { latestMoversZScore: { lte: -AI_ZSCORE_THRESHOLD } },
-                    { latestMoversRVOL: { gte: 2.0 } }
+                    { latestMoversRVOL: { gte: 2.0 } },
+                    {
+                        lastMarketCap: { gte: 50_000_000_000 },
+                        OR: [
+                            { lastChangePct: { gte: 3.0 } },
+                            { lastChangePct: { lte: -3.0 } }
+                        ]
+                    }
                 ]
             },
             select: {
@@ -77,6 +101,7 @@ export class AiMoversService {
                 latestMoversRVOL: true,
                 lastChangePct: true,
                 lastPrice: true,
+                lastMarketCap: true,
                 sector: true,
                 moversReason: true,
             }
@@ -140,10 +165,11 @@ export class AiMoversService {
             latestMoversRVOL: number | null;
             lastChangePct: number | null;
             lastPrice: number | null;
+            lastMarketCap?: number | null;
             sector: string | null;
         }
     ): Promise<MoverInsight | null> {
-        const { symbol, name, latestMoversZScore, latestMoversRVOL, lastChangePct, sector } = ticker;
+        const { symbol, name, latestMoversZScore, latestMoversRVOL, lastChangePct, lastMarketCap, sector } = ticker;
 
         // Format quantitative context for the prompt
         const direction = (lastChangePct ?? 0) >= 0 ? 'up' : 'down';
@@ -178,7 +204,7 @@ export class AiMoversService {
 
             if (!newsSummary) {
                 // Smart fallback: use the quantitative data to construct a meaningful reason
-                return this.buildNoNewsFallback(symbol, direction, changePctStr, zStr, rvolStr, sector);
+                return this.buildNoNewsFallback(symbol, direction, changePctStr, zStr, rvolStr, sector, lastMarketCap);
             }
 
             // 2. Build enriched prompt with full quantitative context
@@ -190,6 +216,7 @@ PRICE ACTION:
 - Today's move: ${changePctStr} (${direction})
 - Z-score: ${zStr} standard deviations from 20-day mean (extreme = unusual)
 - Relative Volume (RVOL): ${rvolStr} of normal daily volume
+${lastMarketCap && lastMarketCap >= 50_000_000_000 ? `- Market Cap: $${(lastMarketCap / 1e9).toFixed(1)}B (Mega/Large Cap)` : ''}
 
 RECENT NEWS (last 6 hours):
 ${newsSummary}
@@ -214,12 +241,12 @@ Return strictly valid JSON:
 
             const insight = await this.callLLM(prompt);
             // If LLM fails (no API key, timeout, etc.), fall back to smart fallback
-            return insight ?? this.buildNoNewsFallback(symbol, direction, changePctStr, zStr, rvolStr, sector);
+            return insight ?? this.buildNoNewsFallback(symbol, direction, changePctStr, zStr, rvolStr, sector, lastMarketCap);
 
         } catch (error) {
             console.error(`❌ AiMoversService: Error for ${symbol}:`, error);
             // Return smart fallback instead of null so we always have something
-            return this.buildNoNewsFallback(symbol, direction, changePctStr, zStr, rvolStr, sector);
+            return this.buildNoNewsFallback(symbol, direction, changePctStr, zStr, rvolStr, sector, lastMarketCap);
         }
     }
 
@@ -233,7 +260,8 @@ Return strictly valid JSON:
         changePctStr: string,
         zStr: string,
         rvolStr: string,
-        sector: string | null
+        sector: string | null,
+        lastMarketCap?: number | null
     ): MoverInsight {
         const absZ = Math.abs(parseFloat(zStr) || 0);
         // rvolStr can be 'N/A' when latestMoversRVOL is null — safe parse
@@ -251,6 +279,10 @@ Return strictly valid JSON:
             reason = `${changePctStr} on ${rvolStr} relative volume with no immediate news – elevated institutional interest in ${sector || 'sector'}.`;
             category = 'Technical';
             aiConfidence = 60;
+        } else if (lastMarketCap && lastMarketCap >= 50_000_000_000) {
+            reason = `Mega-cap ${direction}ward move of ${changePctStr} driven by broader ${sector || 'market'} sentiment without specific company news.`;
+            category = 'Macro';
+            aiConfidence = 65;
         } else {
             reason = `${changePctStr} statistical outlier (Z: ${zStr}) driven by broader ${sector || 'market'} sentiment without specific news catalyst.`;
             aiConfidence = 55;
@@ -265,7 +297,11 @@ Return strictly valid JSON:
             !isNaN(rvolNum) && rvolNum > 0 ? `Volume ${rvolNum.toFixed(1)}× normal` : '',
             absZ > 0 ? `~${absZ.toFixed(1)}× its typical daily move` : '',
         ].filter(Boolean).join(' · ');
-        const catalyst = absZ >= 4 ? 'extreme move, no clear catalyst' : 'elevated activity, no clear catalyst';
+        const catalyst = absZ >= 4
+            ? 'extreme move, no clear catalyst'
+            : (lastMarketCap && lastMarketCap >= 50_000_000_000)
+                ? 'mega-cap momentum, broader sentiment'
+                : 'elevated activity, no clear catalyst';
         const sectorTag = (sector || 'Stocks').replace(/[^A-Za-z]/g, '');
         const lines = [`${direction === 'up' ? '📈' : '📉'} $${symbol} ${changePctStr} — ${catalyst}`];
         if (statsLine) lines.push(statsLine);

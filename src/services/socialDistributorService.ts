@@ -51,18 +51,36 @@ export class SocialDistributorService {
                     // Volume-driven mover without extreme z-score
                     { latestMoversRVOL: { gte: 4.0 }, lastChangePct: { gte: 5.0 } },
                     { latestMoversRVOL: { gte: 4.0 }, lastChangePct: { lte: -5.0 } },
+                    // Mega-cap mover: large market cap ($50B+) with significant move (>= 3%)
+                    {
+                        lastMarketCap: { gte: 50_000_000_000 },
+                        OR: [
+                            { lastChangePct: { gte: 3.0 } },
+                            { lastChangePct: { lte: -3.0 } },
+                        ]
+                    }
                 ]
             },
-            orderBy: [
-                { latestMoversZScore: 'desc' }
-            ],
-            take: 10 // Consider top 10 for distribution
+            take: 20 // Consider top 20 for distribution
         });
 
         if (movers.length === 0) {
             console.log('ℹ️ SocialDistributorService: No suitable alpha signals found today');
             return results;
         }
+
+        // Sort movers: Mega-Caps ($100B+) moving >= 3% get absolute first priority,
+        // followed by highest absolute impact (|Z-score|), so big drops aren't eclipsed by mild gainers.
+        movers.sort((a, b) => {
+            const aMega = (a.lastMarketCap ?? 0) >= 100_000_000_000 && Math.abs(a.lastChangePct ?? 0) >= 3.0;
+            const bMega = (b.lastMarketCap ?? 0) >= 100_000_000_000 && Math.abs(b.lastChangePct ?? 0) >= 3.0;
+            if (aMega && !bMega) return -1;
+            if (!aMega && bMega) return 1;
+
+            const aZ = Math.abs(a.latestMoversZScore ?? 0);
+            const bZ = Math.abs(b.latestMoversZScore ?? 0);
+            return bZ - aZ;
+        });
 
         // 2. Filter for those not already posted today
         const toPost = [];
@@ -212,7 +230,7 @@ export class SocialDistributorService {
             moversReason: true, socialCopy: true, moversCategory: true,
             isSbcAlert: true, aiConfidence: true
         } as const;
-        const [gainers, losers] = await Promise.all([
+        const [gainers, losers, megaCaps] = await Promise.all([
             prisma.ticker.findMany({
                 where: { lastPrice: { gte: 1 }, lastChangePct: { gt: 0, lte: 100 } },
                 orderBy: { lastChangePct: 'desc' }, take: 3, select
@@ -221,10 +239,36 @@ export class SocialDistributorService {
                 where: { lastPrice: { gte: 1 }, lastChangePct: { lt: 0, gte: -100 } },
                 orderBy: { lastChangePct: 'asc' }, take: 2, select
             }),
+            prisma.ticker.findMany({
+                where: {
+                    lastMarketCap: { gte: 100_000_000_000 },
+                    lastPrice: { gte: 1 },
+                    OR: [
+                        { lastChangePct: { gte: 3.0 } },
+                        { lastChangePct: { lte: -3.0 } },
+                    ]
+                },
+                orderBy: { lastMarketCap: 'desc' },
+                take: 2,
+                select
+            }),
         ]);
-        const movers = [...gainers, ...losers]
-            .sort((a, b) => Math.abs(b.lastChangePct ?? 0) - Math.abs(a.lastChangePct ?? 0))
-            .slice(0, 4);
+
+        const pctMovers = [...gainers, ...losers]
+            .sort((a, b) => Math.abs(b.lastChangePct ?? 0) - Math.abs(a.lastChangePct ?? 0));
+
+        // When a mega-cap ($100B+) moves significantly, reserve a spot in the recap
+        // because mega-caps drive outsized social engagement compared to micro-caps.
+        const moversMap = new Map<string, typeof pctMovers[0]>();
+        for (const mc of megaCaps || []) {
+            moversMap.set(mc.symbol, mc);
+            if (moversMap.size >= 1) break; // Reserve at most 1 spot for top mega-cap mover
+        }
+        for (const m of pctMovers) {
+            if (moversMap.size >= 4) break;
+            moversMap.set(m.symbol, m);
+        }
+        const movers = Array.from(moversMap.values()).slice(0, 4);
 
         if (movers.length === 0) {
             console.log('ℹ️ SocialDistributorService: no movers for recap digest');

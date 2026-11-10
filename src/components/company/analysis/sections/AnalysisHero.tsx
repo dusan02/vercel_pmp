@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { FileText } from 'lucide-react';
 import { formatPrice, formatPercent, formatMarketCap } from '@/lib/utils/format';
 import { isPeDistorted } from '@/lib/analysis/peDistortion';
 import { AddToWatchlist } from '@/components/company/AddToWatchlist';
@@ -147,7 +148,26 @@ export function AnalysisHero({
             </h1>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <a
+            href={`https://stockcv.com/${ticker}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={`Check full company CV & fundamentals of ${companyName} (${ticker}) on StockCV`}
+            className="group inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800/80 bg-gradient-to-r from-indigo-50/90 to-blue-50/70 dark:from-indigo-950/40 dark:to-blue-950/30 text-indigo-900 dark:text-indigo-200 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-sm transition-all"
+          >
+            <div className="w-6 h-6 rounded bg-indigo-100 dark:bg-indigo-900/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 group-hover:scale-110 transition-transform">
+              <FileText className="w-3.5 h-3.5" />
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 dark:text-indigo-400 leading-none">
+                StockCV ↗
+              </span>
+              <span className="text-xs font-semibold text-gray-900 dark:text-white leading-tight">
+                Check CV of this company
+              </span>
+            </div>
+          </a>
           <AddToWatchlist ticker={ticker} />
           <MoveAlertButton symbol={ticker} />
         </div>

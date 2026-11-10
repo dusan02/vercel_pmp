@@ -251,6 +251,31 @@ describe('digest end-to-end (Bluesky only)', () => {
         expect(captured.record.embed.external.uri).toContain('premarket-movers');
         expect(captured.record.embed.external.uri).toContain('utm_source=bluesky');
     });
+
+    it('prioritizes mega-cap movers in daily recap even when smaller caps have larger % moves', async () => {
+        process.env.BLUESKY_HANDLE = 'h';
+        process.env.BLUESKY_APP_PASSWORD = 'p';
+        (global as any).fetch = fetchMock;
+        (prisma as any).dailyBlogSnapshot.findUnique.mockResolvedValue(null);
+        ticker.findMany
+            .mockResolvedValueOnce([
+                { symbol: 'SMALL1', name: 'Small Cap 1', lastPrice: 10, lastChangePct: 45.0, socialCopy: '📈 $SMALL1 +45%', moversReason: 'earnings beat', latestMoversRVOL: 4, latestMoversZScore: 6 },
+                { symbol: 'SMALL2', name: 'Small Cap 2', lastPrice: 5, lastChangePct: 35.0, socialCopy: '📈 $SMALL2 +35%', moversReason: 'merger', latestMoversRVOL: 3, latestMoversZScore: 5 },
+                { symbol: 'SMALL3', name: 'Small Cap 3', lastPrice: 12, lastChangePct: 25.0, socialCopy: '📈 $SMALL3 +25%', moversReason: 'contract', latestMoversRVOL: 2, latestMoversZScore: 4 },
+            ])
+            .mockResolvedValueOnce([
+                { symbol: 'DROP1', name: 'Drop 1', lastPrice: 8, lastChangePct: -30.0, socialCopy: '📉 $DROP1 -30%', moversReason: 'guidance cut', latestMoversRVOL: 5, latestMoversZScore: -6 },
+                { symbol: 'DROP2', name: 'Drop 2', lastPrice: 4, lastChangePct: -22.0, socialCopy: '📉 $DROP2 -22%', moversReason: 'offering', latestMoversRVOL: 3, latestMoversZScore: -4 },
+            ])
+            .mockResolvedValueOnce([
+                { symbol: 'NVDA', name: 'Nvidia Corp', lastPrice: 178, lastChangePct: -4.2, socialCopy: '📉 $NVDA -4.2%', moversReason: 'AI chip concerns', latestMoversRVOL: 3.8, latestMoversZScore: -1.2 },
+            ]);
+        etNow = { ...etNow, hour: 16, minute: 5 };
+        const res = await service.postDailyRecap();
+        // NVDA gets reserved spot 1, remaining 3 spots filled by biggest absolute % moves (SMALL1 45%, DROP1 30%, SMALL2 35%)
+        expect(res.posted).toContain('NVDA');
+        expect(res.posted.length).toBe(4);
+    });
 });
 
 describe('Buffer channel lookup', () => {

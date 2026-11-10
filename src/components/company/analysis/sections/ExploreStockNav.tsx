@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { FileText } from 'lucide-react';
 
 type PageKind = 'analysis' | 'valuation' | 'financials' | 'premarket';
 
@@ -27,6 +28,16 @@ export function ExploreStockNav({ ticker, current }: { ticker: string; current: 
           {r.label}
         </Link>
       ))}
+      <a
+        href={`https://stockcv.com/${ticker}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:border-indigo-300 font-medium transition-colors"
+        title={`Check Company CV on StockCV`}
+      >
+        <FileText className="w-3.5 h-3.5" />
+        <span>Company CV ↗</span>
+      </a>
     </nav>
   );
 }
