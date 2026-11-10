@@ -138,7 +138,9 @@ describe('movers-insights reprocessing after reset', () => {
 
     it('skips tickers that already have moversReason; processes those without', async () => {
         redis.zRange.mockResolvedValueOnce(['NVDA', 'OLD']);
-        ticker.findMany.mockResolvedValueOnce([mover('NVDA', null), mover('OLD', 'stale reason')]);
+        ticker.findMany
+            .mockResolvedValueOnce([]) // megaCaps query
+            .mockResolvedValueOnce([mover('NVDA', null), mover('OLD', 'stale reason')]);
         const { success } = await aiMoversService.processMoversInsights();
         expect(success).toBe(1);
         expect(ticker.update).toHaveBeenCalledTimes(1);
@@ -147,7 +149,9 @@ describe('movers-insights reprocessing after reset', () => {
 
     it('after reset (moversReason=null) the same ticker is processed again', async () => {
         redis.zRange.mockResolvedValueOnce(['OLD']);
-        ticker.findMany.mockResolvedValueOnce([mover('OLD', null)]);
+        ticker.findMany
+            .mockResolvedValueOnce([]) // megaCaps query
+            .mockResolvedValueOnce([mover('OLD', null)]);
         const { success } = await aiMoversService.processMoversInsights();
         expect(success).toBe(1);
         expect(ticker.update).toHaveBeenCalledWith(

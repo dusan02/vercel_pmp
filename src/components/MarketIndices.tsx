@@ -25,6 +25,9 @@ interface DjiaData {
     dollarChange: number;
     percentChange: number;
     intraday: { ts: string; price: number }[];
+    session?: 'pre' | 'live' | 'after' | 'closed';
+    ah?: { price: number; pct: number } | null;
+    pre?: { price: number; pct: number } | null;
 }
 
 export function MarketIndices() {
@@ -98,7 +101,7 @@ export function MarketIndices() {
         };
 
         fetchIndices();
-        const interval = setInterval(fetchIndices, 5 * 60_000);
+        const interval = setInterval(fetchIndices, 60_000);
         return () => {
             clearInterval(interval);
             abortController?.abort();
@@ -112,13 +115,15 @@ export function MarketIndices() {
         percentChg: number | null;
         pts: { ts: string; price: number }[];
         isIndex?: boolean;
+        session?: 'pre' | 'live' | 'after' | 'closed' | undefined;
         /** Post-close: live after-hours price drifting off the pinned close */
-        ah?: { price: number; pct: number } | null;
+        ah?: { price: number; pct: number } | null | undefined;
     };
 
-    const renderCard = ({ label, price, dollarChg, percentChg, pts, isIndex, ah }: CardProps) => {
+    const renderCard = ({ label, price, dollarChg, percentChg, pts, isIndex, session, ah }: CardProps) => {
         const isPositive = (percentChg ?? 0) >= 0;
         const hasData = price != null && price > 0;
+        const isPre = session === 'pre';
 
         // Slim horizontal card: [label+price] [sparkline] [%+$ change] — one
         // row ~52px tall instead of the previous 3-row ~100px card.
@@ -139,11 +144,18 @@ export function MarketIndices() {
                 `}
                 title={label}
             >
-                {/* Left: label + price (+ AH drift once the day result is pinned) */}
+                {/* Left: label + price (+ PRE badge or AH drift) */}
                 <div className="flex flex-col justify-center shrink-0">
-                    <span className="text-[10px] font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400 leading-tight">
-                        {label}
-                    </span>
+                    <div className="flex items-center gap-1.5 leading-tight">
+                        <span className="text-[10px] font-bold tracking-widest uppercase text-gray-500 dark:text-gray-400">
+                            {label}
+                        </span>
+                        {isPre && (
+                            <span className="text-[9px] font-semibold tracking-wider px-1 py-0.2 rounded leading-tight bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                                PRE
+                            </span>
+                        )}
+                    </div>
                     {loading && !hasData ? (
                         <span className="animate-pulse bg-gray-200 dark:bg-gray-700 h-4 w-16 rounded mt-0.5" />
                     ) : (
@@ -212,6 +224,8 @@ export function MarketIndices() {
                         percentChg: idx.percentChange ?? null,
                         pts: idx.intraday ?? [],
                         isIndex: true,
+                        session: idx.session,
+                        ah: idx.ah,
                     });
                 })
             ) : (
