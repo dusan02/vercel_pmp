@@ -16,6 +16,9 @@ import { UniversalTable, ColumnDef } from './UniversalTable';
 import { PortfolioSectorDistributionChart } from './PortfolioSectorDistributionChart';
 import { PortfolioStockDistributionChart } from './PortfolioStockDistributionChart';
 import { PortfolioPerformanceTreemap } from './PortfolioTreemapNew';
+import { PortfolioMobileSummary } from './portfolio/PortfolioMobileSummary';
+import { PortfolioMobileHoldings } from './portfolio/PortfolioMobileHoldings';
+import { PortfolioMobileCharts } from './portfolio/PortfolioMobileCharts';
 import { formatCurrencyCompact, formatPercent, formatPrice, formatSectorName } from '@/lib/utils/format';
 import { scoreColor } from '@/lib/utils/screener';
 import { event } from '@/lib/ga';
@@ -63,6 +66,7 @@ export function PortfolioSection({
   const [showPortfolioSearch, setShowPortfolioSearch] = useState(false);
   const [trendUniverse, setTrendUniverse] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'holdings' | 'charts'>('holdings');
   const { data: session } = useSession();
   const router = useRouter();
 
@@ -265,8 +269,8 @@ export function PortfolioSection({
       )
     },
     {
-      key: isDesktop ? 'currentPrice' : 'value',
-      header: isDesktop ? 'Price' : 'Value',
+      key: 'currentPrice',
+      header: 'Price',
       sortable: true,
       align: 'right',
       className: 'text-right',
@@ -313,7 +317,7 @@ export function PortfolioSection({
     {
       key: 'positionValue',
       header: 'Value',
-      sortable: isDesktop,
+      sortable: true,
       align: 'right',
       className: 'text-right hidden md:table-cell',
       showInMobileSort: false,
@@ -350,7 +354,7 @@ export function PortfolioSection({
     {
       key: 'overallScore',
       header: 'Score',
-      sortable: isDesktop,
+      sortable: true,
       align: 'right',
       className: 'text-right hidden md:table-cell',
       disableRowClick: true,
@@ -363,7 +367,7 @@ export function PortfolioSection({
     {
       key: 'percentChange',
       header: '% Change',
-      sortable: isDesktop,
+      sortable: true,
       align: 'right',
       className: 'text-right hidden md:table-cell',
       disableRowClick: true,
@@ -379,7 +383,7 @@ export function PortfolioSection({
     {
       key: 'dailyPnl',
       header: 'Daily P&L',
-      sortable: isDesktop,
+      sortable: true,
       align: 'right',
       disableRowClick: true,
       render: (stock) => {
@@ -394,7 +398,7 @@ export function PortfolioSection({
     {
       key: 'totalPnl',
       header: 'Total P&L',
-      sortable: isDesktop,
+      sortable: true,
       align: 'right',
       className: 'hidden lg:table-cell text-right',
       disableRowClick: true,
@@ -489,226 +493,258 @@ export function PortfolioSection({
 
   return (
     <section className="portfolio">
-      <div className="flex items-center justify-between mb-4 px-4">
-        <div className="flex items-center">
-          <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
-            <SectionIcon type="pie" size={28} className="text-gray-900 dark:text-white shrink-0" />
-            <span>Portfolio</span>
-          </h2>
+      {/* Mobile Presentation (< 1024px) */}
+      <div className="lg:hidden">
+        {/* Mobile Header Title */}
+        <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex items-center gap-2.5">
+            <SectionIcon type="pie" size={26} className="text-gray-900 dark:text-white shrink-0" />
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+              Portfolio
+            </h1>
+          </div>
         </div>
 
-        {/* Desktop Stats (Header) */}
-        {portfolioStocks.length > 0 && (
-          <div className="portfolio-stats hidden md:flex gap-8 items-baseline">
-            <div className="flex gap-2 items-baseline">
-              <span className="text-[var(--clr-subtext)] text-base">Total Value:</span>
-              <span className="text-2xl font-bold">{formatCurrencyCompact(totalPortfolioValue, true)}</span>
-            </div>
-            <div className="flex gap-2 items-baseline">
-              <span className="text-[var(--clr-subtext)] text-base">Daily Change:</span>
-              <span className={`text-2xl font-bold ${totalDailyChange >= 0 ? 'positive' : 'negative'}`}>
-                {formatCurrencyCompact(totalDailyChange, true)} <span className="text-lg font-medium text-opacity-80">({formatPercent(weightedDailyChangePercent)})</span>
-              </span>
-            </div>
-            {hasCostBasis && (
+        {/* Mobile Hero Summary Card & Segmented Control */}
+        <PortfolioMobileSummary
+          totalPortfolioValue={totalPortfolioValue}
+          totalDailyChange={totalDailyChange}
+          weightedDailyChangePercent={weightedDailyChangePercent}
+          totalPnl={totalPnl}
+          totalReturnPct={totalReturnPct}
+          hasCostBasis={hasCostBasis}
+          holdingsCount={portfolioStocks.length}
+          insights={insights}
+          activeTab={mobileTab}
+          onTabChange={setMobileTab}
+          onAddStockClick={() => setMobileTab('holdings')}
+          onExportCsv={exportCsv}
+          onCopyShareLink={copyShareLink}
+          isCopied={copied}
+          isAuthenticated={!!session?.user}
+        />
+
+        {/* Tab 1: Holdings */}
+        {mobileTab === 'holdings' && (
+          <PortfolioMobileHoldings
+            stocks={sortedPortfolioStocks}
+            allStocks={allStocks}
+            portfolioHoldings={portfolioHoldings}
+            costBasis={costBasis}
+            totalPortfolioValue={totalPortfolioValue}
+            sortKey={sortKey}
+            ascending={ascending}
+            onSort={requestSort}
+            onUpdateQuantity={onUpdateQuantity}
+            onUpdateCostBasis={onUpdateCostBasis}
+            onRemoveStock={onRemoveStock}
+            onAddStock={onAddStock}
+            trendUniverse={trendUniverse}
+          />
+        )}
+
+        {/* Tab 2: Analytics & Charts */}
+        {mobileTab === 'charts' && (
+          <PortfolioMobileCharts
+            holdings={portfolioHoldings}
+            chartData={chartData}
+          />
+        )}
+      </div>
+
+      {/* Desktop Presentation (>= 1024px) */}
+      <div className="hidden lg:block">
+        <div className="flex items-center justify-between mb-4 px-4">
+          <div className="flex items-center">
+            <h2 className="flex items-center gap-3 text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white m-0 relative -top-1.5">
+              <SectionIcon type="pie" size={28} className="text-gray-900 dark:text-white shrink-0" />
+              <span>Portfolio</span>
+            </h2>
+          </div>
+
+          {/* Desktop Stats (Header) */}
+          {portfolioStocks.length > 0 && (
+            <div className="portfolio-stats hidden md:flex gap-8 items-baseline">
               <div className="flex gap-2 items-baseline">
-                <span className="text-[var(--clr-subtext)] text-base">Total P&L:</span>
-                <span className={`text-2xl font-bold ${totalPnl >= 0 ? 'positive' : 'negative'}`}>
-                  {formatCurrencyCompact(totalPnl, true)} <span className="text-lg font-medium text-opacity-80">({formatPercent(totalReturnPct)})</span>
+                <span className="text-[var(--clr-subtext)] text-base">Total Value:</span>
+                <span className="text-2xl font-bold">{formatCurrencyCompact(totalPortfolioValue, true)}</span>
+              </div>
+              <div className="flex gap-2 items-baseline">
+                <span className="text-[var(--clr-subtext)] text-base">Daily Change:</span>
+                <span className={`text-2xl font-bold ${totalDailyChange >= 0 ? 'positive' : 'negative'}`}>
+                  {formatCurrencyCompact(totalDailyChange, true)} <span className="text-lg font-medium text-opacity-80">({formatPercent(weightedDailyChangePercent)})</span>
                 </span>
               </div>
+              {hasCostBasis && (
+                <div className="flex gap-2 items-baseline">
+                  <span className="text-[var(--clr-subtext)] text-base">Total P&L:</span>
+                  <span className={`text-2xl font-bold ${totalPnl >= 0 ? 'positive' : 'negative'}`}>
+                    {formatCurrencyCompact(totalPnl, true)} <span className="text-lg font-medium text-opacity-80">({formatPercent(totalReturnPct)})</span>
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Export / share actions */}
+          {portfolioStocks.length > 0 && (
+            <div className="flex gap-1.5">
+              <button
+                onClick={exportCsv}
+                className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title="Export portfolio to CSV"
+                aria-label="Export CSV"
+              >
+                <Download size={18} />
+              </button>
+              <button
+                onClick={copyShareLink}
+                className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title={copied ? 'Copied!' : 'Copy share link'}
+                aria-label="Copy share link"
+              >
+                {copied ? <span className="text-xs font-bold text-emerald-500">✓</span> : <Link2 size={18} />}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Sign-in sync nudge for anonymous users */}
+        {!session?.user && portfolioStocks.length >= 3 && (
+          <div className="mx-4 mb-4 px-4 py-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-sm text-blue-800 dark:text-blue-300">
+              Your portfolio is saved only in this browser — sign in to sync it across devices.
+            </p>
+            <button
+              onClick={() => signIn('google')}
+              className="text-xs font-bold px-3 py-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors shrink-0"
+            >
+              Sign in
+            </button>
+          </div>
+        )}
+
+        {/* Insights strip */}
+        {insights && (
+          <div className="mx-4 mb-4 flex flex-wrap gap-2">
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${insights.top.weight > 30 ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`} title="Largest position weight">
+              Top: {insights.top.ticker} {insights.top.weight.toFixed(0)}%
+            </span>
+            {insights.topSector && (
+              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${(insights.topSector[1] / Math.max(1, totalPortfolioValue)) * 100 > 50 ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`} title="Largest sector weight">
+                {formatSectorName(insights.topSector[0])} {((insights.topSector[1] / Math.max(1, totalPortfolioValue)) * 100).toFixed(0)}%
+              </span>
+            )}
+            {insights.earningSoon.length > 0 && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400" title={insights.earningSoon.map(s => `${s.ticker} (${s.earningsDays}d)`).join(', ')}>
+                Earnings ≤7d: {insights.earningSoon.length}
+              </span>
+            )}
+            {insights.avgScore !== null && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400" title="Average PMP Composite Score">
+                Avg score: {insights.avgScore}
+              </span>
+            )}
+            {trendUniverse.size > 0 && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400" title="Holdings passing the Trend × Fundamentals signal">
+                T×F: {insights.trendCount}/{insights.n}
+              </span>
             )}
           </div>
         )}
 
-        {/* Export / share actions */}
-        {portfolioStocks.length > 0 && (
-          <div className="flex gap-1.5">
-            <button
-              onClick={exportCsv}
-              className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              title="Export portfolio to CSV"
-              aria-label="Export CSV"
-            >
-              <Download size={18} />
-            </button>
-            <button
-              onClick={copyShareLink}
-              className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              title={copied ? 'Copied!' : 'Copy share link'}
-              aria-label="Copy share link"
-            >
-              {copied ? <span className="text-xs font-bold text-emerald-500">✓</span> : <Link2 size={18} />}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Sign-in sync nudge for anonymous users */}
-      {!session?.user && portfolioStocks.length >= 3 && (
-        <div className="mx-4 mb-4 px-4 py-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 flex items-center justify-between gap-3 flex-wrap">
-          <p className="text-sm text-blue-800 dark:text-blue-300">
-            Your portfolio is saved only in this browser — sign in to sync it across devices.
-          </p>
-          <button
-            onClick={() => signIn('google')}
-            className="text-xs font-bold px-3 py-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors shrink-0"
-          >
-            Sign in
-          </button>
-        </div>
-      )}
-
-      {/* Insights strip */}
-      {insights && (
-        <div className="mx-4 mb-4 flex flex-wrap gap-2">
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${insights.top.weight > 30 ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`} title="Largest position weight">
-            Top: {insights.top.ticker} {insights.top.weight.toFixed(0)}%
-          </span>
-          {insights.topSector && (
-            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${(insights.topSector[1] / Math.max(1, totalPortfolioValue)) * 100 > 50 ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400' : 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'}`} title="Largest sector weight">
-              {formatSectorName(insights.topSector[0])} {((insights.topSector[1] / Math.max(1, totalPortfolioValue)) * 100).toFixed(0)}%
-            </span>
-          )}
-          {insights.earningSoon.length > 0 && (
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400" title={insights.earningSoon.map(s => `${s.ticker} (${s.earningsDays}d)`).join(', ')}>
-              Earnings ≤7d: {insights.earningSoon.length}
-            </span>
-          )}
-          {insights.avgScore !== null && (
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400" title="Average PMP Composite Score">
-              Avg score: {insights.avgScore}
-            </span>
-          )}
-          {trendUniverse.size > 0 && (
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full border bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400" title="Holdings passing the Trend × Fundamentals signal">
-              T×F: {insights.trendCount}/{insights.n}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Mobile Stats Card (since table footer logic is desktop only) */}
-      {portfolioStocks.length > 0 && (
-        <div className="lg:hidden bg-white dark:bg-white/5 mx-3 mb-4 rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800">
-          <div className="grid grid-cols-2 divide-x divide-gray-100 dark:divide-gray-800">
-            <div className="pr-4">
-              <div className="text-xs text-[var(--clr-subtext)] mb-1">Total Value</div>
-              <div className="text-lg font-bold">{formatCurrencyCompact(totalPortfolioValue, true)}</div>
+        {/* 3. Search Bar - Above Table */}
+        <div className="px-4 mb-4 relative mt-2">
+          <div className="relative group">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </div>
-            <div className="pl-4">
-              <div className="text-xs text-[var(--clr-subtext)] mb-1">Daily Change</div>
-              <div className={`text-lg font-bold ${totalDailyChange >= 0 ? 'positive' : 'negative'}`}>
-                {formatCurrencyCompact(totalDailyChange, true)} <span className="text-sm font-medium">({formatPercent(weightedDailyChangePercent)})</span>
+            <input
+              type="text"
+              placeholder="Search stocks to add..."
+              value={portfolioSearchTerm}
+              onChange={(e) => setPortfolioSearchTerm(e.target.value)}
+              onFocus={() => setShowPortfolioSearch(true)}
+              onBlur={() => setTimeout(() => setShowPortfolioSearch(false), 200)}
+              className="pmp-input h-11 sm:h-12 text-base !pl-10 !pr-9"
+            />
+            {portfolioSearchTerm && (
+              <button
+                type="button"
+                onClick={() => setPortfolioSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                aria-label="Clear search"
+              >
+                <X size={16} />
+              </button>
+            )}
+
+            {showPortfolioSearch && portfolioSearchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 pmp-dropdown-menu mt-2">
+                {portfolioSearchResults.map((stock) => (
+                  <button
+                    key={stock.ticker}
+                    className="pmp-dropdown-option border-b last:border-0 border-gray-100 dark:border-gray-700/50"
+                    onClick={() => {
+                      onAddStock(stock.ticker);
+                      setPortfolioSearchTerm('');
+                    }}
+                  >
+                    <span className="font-bold text-blue-600 dark:text-blue-400 w-16 shrink-0">{stock.ticker}</span>
+                    <span className="text-gray-300 mx-2 shrink-0">|</span>
+                    <span className="text-sm font-medium truncate flex-1 min-w-0">{stock.companyName || getCompanyName(stock.ticker)}</span>
+                    <Plus size={18} className="text-gray-400 ml-2 shrink-0" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 4. Desktop UniversalTable */}
+        <UniversalTable
+          data={sortedPortfolioStocks}
+          columns={columns}
+          keyExtractor={(item) => item.ticker}
+          isLoading={loading}
+          sortKey={sortKey}
+          ascending={ascending}
+          onSort={requestSort}
+          onRowClick={handleRowClick}
+          forceTable={true}
+          emptyMessage={
+            <div className="empty-portfolio text-center py-8">
+              <div className="text-3xl mb-3 opacity-50">💼</div>
+              <h3 className="text-base font-semibold mb-1">Your portfolio is empty</h3>
+              <p className="text-sm text-[var(--clr-subtext)] mb-4">Add stocks to track your performance — or start with a sample:</p>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {['NVDA', 'AAPL', 'MSFT'].map(t => (
+                  <button
+                    key={t}
+                    onClick={() => onAddStock(t, 1)}
+                    className="text-xs px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-semibold"
+                  >
+                    + {t}
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          }
+          tfootRows={footerRow}
+        />
 
-
-
-      {/* 3. Search Bar - Above Table */}
-      <div className="px-4 mb-4 relative mt-2">
-        <div className="relative group">
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          </div>
-          <input
-            type="text"
-            placeholder="Search stocks to add..."
-            value={portfolioSearchTerm}
-            onChange={(e) => setPortfolioSearchTerm(e.target.value)}
-            onFocus={() => setShowPortfolioSearch(true)}
-            onBlur={() => setTimeout(() => setShowPortfolioSearch(false), 200)}
-            className="pmp-input h-11 sm:h-12 text-base !pl-10 !pr-9"
-          />
-          {portfolioSearchTerm && (
-            <button
-              type="button"
-              onClick={() => setPortfolioSearchTerm('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-              aria-label="Clear search"
-            >
-              <X size={16} />
-            </button>
-          )}
-
-          {showPortfolioSearch && portfolioSearchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 pmp-dropdown-menu mt-2">
-              {portfolioSearchResults.map((stock) => (
-                <button
-                  key={stock.ticker}
-                  className="pmp-dropdown-option border-b last:border-0 border-gray-100 dark:border-gray-700/50"
-                  onClick={() => {
-                    onAddStock(stock.ticker);
-                    setPortfolioSearchTerm('');
-                  }}
-                >
-                  <span className="font-bold text-blue-600 dark:text-blue-400 w-16 shrink-0">{stock.ticker}</span>
-                  <span className="text-gray-300 mx-2 shrink-0">|</span>
-                  <span className="text-sm font-medium truncate flex-1 min-w-0">{stock.companyName || getCompanyName(stock.ticker)}</span>
-                  <Plus size={18} className="text-gray-400 ml-2 shrink-0" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-      {/* 4. Table */}
-      <UniversalTable
-        data={sortedPortfolioStocks}
-        columns={columns}
-        keyExtractor={(item) => item.ticker}
-        isLoading={loading}
-        sortKey={sortKey}
-        ascending={ascending}
-        onSort={requestSort}
-        onRowClick={handleRowClick}
-        emptyMessage={
-          <div className="empty-portfolio text-center py-8">
-            <div className="text-3xl mb-3 opacity-50">💼</div>
-            <h3 className="text-base font-semibold mb-1">Your portfolio is empty</h3>
-            <p className="text-sm text-[var(--clr-subtext)] mb-4">Add stocks to track your performance — or start with a sample:</p>
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {['NVDA', 'AAPL', 'MSFT'].map(t => (
-                <button
-                  key={t}
-                  onClick={() => onAddStock(t, 1)}
-                  className="text-xs px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-semibold"
-                >
-                  + {t}
-                </button>
-              ))}
+        {/* Desktop Visualizations */}
+        {portfolioStocks.length > 0 && (
+          <div className="mb-8 space-y-8 px-4 mt-8">
+            <PortfolioPerformanceChart holdings={portfolioHoldings} />
+            <PortfolioPerformanceTreemap data={chartData} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <PortfolioSectorDistributionChart data={chartData} />
+              <PortfolioStockDistributionChart data={chartData} />
             </div>
           </div>
-        }
-        renderMobileCard={(stock) => (
-          <PortfolioCardMobile
-            stock={stock}
-            quantity={portfolioHoldings[stock.ticker] || 0}
-            avgCost={costBasis[stock.ticker] || 0}
-            onUpdateQuantity={onUpdateQuantity}
-            onUpdateCostBasis={onUpdateCostBasis}
-            onRemove={onRemoveStock}
-            calculateValue={calculatePortfolioValue}
-          />
         )}
-        // forceTable={true} // REMOVED to enable mobile cards
-        tfootRows={footerRow}
-      />
-
-      {/* Visualizations: Heatmap first, then 2x pie charts at the bottom */}
-      {portfolioStocks.length > 0 && (
-        <div className="mb-8 space-y-8 px-4 mt-8">
-          <PortfolioPerformanceChart holdings={portfolioHoldings} />
-          <PortfolioPerformanceTreemap data={chartData} />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <PortfolioSectorDistributionChart data={chartData} />
-            <PortfolioStockDistributionChart data={chartData} />
-          </div>
-        </div>
-      )}
+      </div>
     </section>
   );
 }
