@@ -244,6 +244,8 @@ export interface AnalysisData {
 
     // Five-pillar profile (radar) — read-time computed, shared definitions
     pillars?: PillarScores | null;
+    /** Same six scores re-derived on the inputs of ~30 days ago (radar ghost). */
+    pillarsPrev?: { asOf: string; scores: Record<string, number> } | null;
 
     // EPS CAGR (historical, from per-share earnings history)
     epsCagr3y?: number | null;

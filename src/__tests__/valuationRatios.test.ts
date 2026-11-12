@@ -313,3 +313,12 @@ describe('computeDayRatios — Finnhub ×1000/÷1000 unit glitches & corrupt-row
         expect(rBefore.marketCap! / rAfter.marketCap!).toBeCloseTo(15.377 / 15.522, 2);
     });
 });
+
+describe('toDvhRatios — DVH write payload', () => {
+    it('strips peBasis (not a DailyValuationHistory column — Prisma rejected every write)', () => {
+        const { toDvhRatios } = require('@/services/analysis/fillValuationDay');
+        const out = toDvhRatios({ peRatio: 20, psRatio: 5, peBasis: 'COMMON' });
+        expect(out).toEqual({ peRatio: 20, psRatio: 5 });
+        expect('peBasis' in out).toBe(false);
+    });
+});

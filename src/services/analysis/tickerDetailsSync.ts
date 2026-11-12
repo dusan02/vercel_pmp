@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { getSectorFromSic, toTitleCase } from '@/lib/utils/sectorMapping';
-import { computeDayRatios, type DayRatios } from '@/services/analysis/fillValuationDay';
+import { computeDayRatios, toDvhRatios, type DayRatios } from '@/services/analysis/fillValuationDay';
 import { getFinnhubClient, type FinnhubMetricSeries } from '@/lib/clients/finnhubClient';
 
 const POLYGON_API_KEY = process.env.POLYGON_API_KEY;
@@ -355,9 +355,9 @@ export async function syncValuationHistory(symbol: string, force: boolean = fals
             // current values shown in Key Metrics. computeDayRatios is the
             // single implementation shared with fillValuationDay (EV leg is
             // EV/EBIT — D&A not available from Finnhub).
-            const ratios: Partial<DayRatios> = statements.length > 0
+            const ratios = toDvhRatios(statements.length > 0
                 ? computeDayRatios(statements, closePrice, date, ticker?.sharesOutstanding ?? null)
-                : resolveFinnhubRatios(agg.t, closePrice, finnhubAnchors, ticker?.sharesOutstanding ?? null);
+                : resolveFinnhubRatios(agg.t, closePrice, finnhubAnchors, ticker?.sharesOutstanding ?? null));
 
             transactions.push(
                 prisma.dailyValuationHistory.upsert({

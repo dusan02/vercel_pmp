@@ -69,7 +69,7 @@ function percentile(sorted: number[], p: number): number {
   return sorted[idx] ?? 0;
 }
 
-function computeStats(values: (number | null | undefined)[]) {
+function computeStats(values: (number | null | undefined)[], liveCurrent?: number | null) {
   const valid = values.filter((v): v is number => v != null && v > 0 && isFinite(v));
   if (valid.length === 0) return null;
   const sorted = [...valid].sort((a, b) => a - b);
@@ -78,7 +78,11 @@ function computeStats(values: (number | null | undefined)[]) {
   const median = percentile(sorted, 0.5);
   const p25 = percentile(sorted, 0.25);
   const p75 = percentile(sorted, 0.75);
-  const current = valid[valid.length - 1] ?? sorted[sorted.length - 1] ?? 0; // last value chronologically
+  // Live multiple when supplied (same "current" the analysis page ranks),
+  // else the last stored value chronologically.
+  const current = (liveCurrent != null && isFinite(liveCurrent) && liveCurrent > 0)
+    ? liveCurrent
+    : (valid[valid.length - 1] ?? sorted[sorted.length - 1] ?? 0);
   // Percentile rank of current value within historical range
   const below = sorted.filter((v) => v < current).length;
   const currentPercentile = Math.round((below / sorted.length) * 100);
@@ -185,8 +189,16 @@ export default async function ValuationPage({ params }: PageProps) {
   }
 
   // Compute stats for each metric
-  const peStats = computeStats(history.map((h) => h.peRatio));
-  const psStats = computeStats(history.map((h) => h.psRatio));
+  // Price-linear multiples scaled from the last stored close to the live
+  // quote — the analysis page ranks the live P/E, so both pages print one
+  // percentile for the same ticker.
+  const liveScale = (pick: (h: (typeof history)[number]) => number | null | undefined): number | null => {
+    const last = [...history].reverse().find((h) => (pick(h) ?? 0) > 0 && (h.closePrice ?? 0) > 0);
+    if (!last || data?.lastPrice == null || data.lastPrice <= 0) return null;
+    return pick(last)! * (data.lastPrice / last.closePrice!);
+  };
+  const peStats = computeStats(history.map((h) => h.peRatio), liveScale((h) => h.peRatio));
+  const psStats = computeStats(history.map((h) => h.psRatio), liveScale((h) => h.psRatio));
   const evEbitdaStats = computeStats(history.map((h) => h.evEbitda));
   const fcfYieldStats = computeStats(history.map((h) => h.fcfYield));
   const dividendYieldStats = computeStats(history.map((h) => h.dividendYield));

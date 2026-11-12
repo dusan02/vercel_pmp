@@ -1,6 +1,6 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { computePillars, deriveMoatInputs, pillarSummary, type MoatStatement, type PillarInputs } from '@/services/analysis/pillars';
+import { computePillars, deriveMoatInputs, pillarSummary, interpolate, pegGrowth, type MoatStatement, type PillarInputs } from '@/services/analysis/pillars';
 import PillarsRadar, { PillarChips } from '@/components/company/analysis/PillarsRadar';
 
 const base: PillarInputs = {
@@ -12,41 +12,45 @@ const base: PillarInputs = {
     moatRoicDurability: null, moatGmMedian: null, moatFcfDurability: null, moatMarginFloor: null,
 };
 
-describe('computePillars — MU-like inputs (prod snapshot)', () => {
+describe('computePillars — MU-like inputs (prod snapshot, continuous model)', () => {
     const mu = computePillars({
         ...base,
         pePercentile: 15, fcfYield: 0.023, psRatio: 12.7, evEbit: 19,
+        currentPe: 22, forwardPe: 5.87,
         revenueCagr: 7.77, netIncomeCagr: 9.86, epsCagr5y: 69.3, forwardImpliedGrowth: 292,
         roic: 0.582, roe: 0.501, netMargin: 0.559, operatingMargin: 0.656,
         altmanZ: 10.2, currentRatio: 2.5, interestCoverage: null, netCash: true, debtRatio: null,
         piotroski: 7, beneish: -2.906, fcfConversion: 0.519, marginStability: 0.242,
     });
 
-    it('Profitability = 100 (ROIC/ROE/NM/OM all top band)', () => {
+    it('Profitability = 100 (all four legs above their ceilings)', () => {
         expect(mu.profitability.score).toBe(100);
         expect(mu.profitability.legs.map(l => l.points)).toEqual([25, 25, 25, 25]);
     });
 
-    it('Growth = 74 (12 + 12 + 25 + 25)', () => {
-        expect(mu.growth.score).toBe(74);
-        expect(mu.growth.legs.map(l => l.points)).toEqual([12, 12, 25, 25]);
+    it('Growth = 79 — interpolated, not stepped (7.8% rev CAGR → 13, not 12)', () => {
+        expect(mu.growth.legs.map(l => l.points)).toEqual([13, 16, 25, 25]);
+        expect(mu.growth.score).toBe(79);
     });
 
-    it('Quality = 68 (22 + 25 + 15 + 6)', () => {
-        expect(mu.quality.score).toBe(68);
-        expect(mu.quality.legs.map(l => l.points)).toEqual([22, 25, 15, 6]);
+    it('Quality = 62 (σ fallback when no downside stat is supplied)', () => {
+        expect(mu.quality.legs.map(l => l.points)).toEqual([21, 25, 13, 3]);
+        expect(mu.quality.score).toBe(62);
     });
 
-    it('Valuation = 47 (pct 25 + fcfY 5 + ps 5 + evEbit 12)', () => {
-        expect(mu.valuation.score).toBe(47);
-        expect(mu.valuation.legs.map(l => l.points)).toEqual([25, 5, 5, 12]);
+    it('Valuation uses PEG (profitable) instead of P/S — median growth capped at 40%', () => {
+        const peg = mu.valuation.legs[2]!;
+        expect(peg.key).toBe('peg');
+        // median(292, 69.3, 7.77) = 69.3 → cap 40 → 5.87 / 40 ≈ 0.15 → 25
+        expect(peg.points).toBe(25);
+        expect(mu.valuation.score).toBe(70);
     });
 });
 
 describe('computePillars — real zero floor (no "else 5")', () => {
     const bad = computePillars({
         ...base,
-        piotroski: 1, beneish: 0.5, fcfConversion: -0.3, marginStability: 0.4,
+        piotroski: 0, beneish: 0.5, fcfConversion: -0.3, marginStability: 0.4,
         roic: -0.1, roe: -0.2, netMargin: -0.05, operatingMargin: -0.1,
         revenueCagr: -10, netIncomeCagr: -20, epsCagr5y: -30, forwardImpliedGrowth: -50,
     });
@@ -62,6 +66,81 @@ describe('computePillars — real zero floor (no "else 5")', () => {
     });
 });
 
+describe('interpolate — continuous leg scoring', () => {
+    const A = [[0, 0], [10, 20], [20, 25]] as const;
+    it('clamps below/above the anchor range', () => {
+        expect(interpolate(-5, A)).toBe(0);
+        expect(interpolate(99, A)).toBe(25);
+    });
+    it('interpolates linearly between anchors (no cliffs)', () => {
+        expect(interpolate(5, A)).toBe(10);
+        expect(interpolate(15, A)).toBe(23);
+    });
+    it('supports lower-is-better tables', () => {
+        expect(interpolate(0.75, [[0.5, 25], [1.0, 20]])).toBe(23);
+    });
+});
+
+describe('Valuation — PEG / P/S selection (NVDA case)', () => {
+    const nvda = computePillars({
+        ...base,
+        pePercentile: 0.08, fcfYield: 0.033, psRatio: 12.66, evEbit: 19.3,
+        currentPe: 19.9, forwardPe: 14.47,
+        revenueCagr: 68.3, epsCagr5y: 88.9, forwardImpliedGrowth: 37.4,
+    });
+
+    it('NVDA: PEG 0.36 → full points; Valuation rises from the old 54 to 75', () => {
+        const peg = nvda.valuation.legs[2]!;
+        expect(peg.key).toBe('peg');
+        expect(peg.value).toBeCloseTo(14.47 / 40, 3);
+        expect(nvda.valuation.score).toBe(75);
+        expect(nvda.valuation.legs[0]!.display).toBe('lowest in history');
+    });
+
+    it('loss-maker keeps the P/S leg', () => {
+        const p = computePillars({ ...base, currentPe: null, psRatio: 3 });
+        expect(p.valuation.legs[2]!.key).toBe('psRatio');
+        expect(p.valuation.legs[2]!.label).toContain('no earnings');
+    });
+
+    it('pegGrowth = median of the three reads (one distorted read cannot decide)', () => {
+        // GOOGL-like: fwd implied −44% (one-off gains in TTM EPS)
+        expect(pegGrowth({ forwardImpliedGrowth: -44, epsCagr5y: 18, revenueCagr: 12 })).toBe(12);
+        expect(pegGrowth({ forwardImpliedGrowth: 292, epsCagr5y: 69, revenueCagr: 8 })).toBe(40);
+        expect(pegGrowth({ forwardImpliedGrowth: null, epsCagr5y: 10, revenueCagr: 20 })).toBe(15);
+    });
+
+    it('flat grower: growth floored at 5% — P/E 6 still reads cheap, P/E 25 rich', () => {
+        const cheap = computePillars({ ...base, currentPe: 6, revenueCagr: 0, epsCagr5y: -3 });
+        const rich = computePillars({ ...base, currentPe: 25, revenueCagr: 0, epsCagr5y: -3 });
+        expect(cheap.valuation.legs[2]!.points).toBeGreaterThanOrEqual(17);
+        expect(rich.valuation.legs[2]!.points).toBe(0);
+    });
+});
+
+describe('Quality — Beneish hyper-growth guard + downside-only margins', () => {
+    it('Beneish above the flag line at +65% revenue growth → neutral 13 + note', () => {
+        const p = computePillars({ ...base, beneish: -1.14, revenueGrowthYoY: 65 });
+        const b = p.quality.legs.find(l => l.key === 'beneish')!;
+        expect(b.points).toBe(13);
+        expect(b.note).toMatch(/Not meaningful/);
+    });
+
+    it('same Beneish at normal growth is scored and flagged normally', () => {
+        const p = computePillars({ ...base, beneish: -1.14, revenueGrowthYoY: 10 });
+        const b = p.quality.legs.find(l => l.key === 'beneish')!;
+        expect(b.note).toBeUndefined();
+        expect(b.points).toBeLessThan(10);
+    });
+
+    it('margin leg prefers downside RMS — expansion is not instability', () => {
+        const p = computePillars({ ...base, marginStability: 0.175, marginDownside: 0 });
+        const m = p.quality.legs.find(l => l.key === 'marginStability')!;
+        expect(m.points).toBe(25);
+        expect(m.display).toBe('no drops');
+    });
+});
+
 describe('computePillars — missing data handling', () => {
     it('all-null inputs: Valuation gets neutral 40 (4 × 10 legacy convention), others 0', () => {
         const p = computePillars(base);
@@ -73,13 +152,14 @@ describe('computePillars — missing data handling', () => {
 
     it('interestCoverage null → +25 (no interest expense = fully covered)', () => {
         const p = computePillars({ ...base, altmanZ: 3.5, currentRatio: 2.5, netCash: true });
-        // 25 (altman) + 25 (cr) + 25 (ic null) + 25 (net cash) = 100
-        expect(p.health.score).toBe(100);
+        // 24 (altman 3.5) + 24 (cr 2.5) + 25 (ic null) + 25 (net cash) = 97
+        expect(p.health.legs.find(l => l.key === 'interestCoverage')!.points).toBe(25);
+        expect(p.health.score).toBe(97);
     });
 
     it('netDebtRatio used only when not net-cash', () => {
         const p = computePillars({ ...base, netCash: false, debtRatio: 0.2 });
-        expect(p.health.legs.find(l => l.key === 'balance')!.points).toBe(12);
+        expect(p.health.legs.find(l => l.key === 'balance')!.points).toBe(15);
     });
 });
 
@@ -97,9 +177,10 @@ describe('computePillars — leg metadata for "Why?" breakdowns', () => {
         }
     });
 
-    it('boundary: ROE exactly 0.25 falls into the 20 band (strict >)', () => {
+    it('ROE 25% sits on its anchor (22), full points only at 40%', () => {
         const p = computePillars({ ...base, roe: 0.25 });
-        expect(p.profitability.legs.find(l => l.key === 'roe')!.points).toBe(20);
+        expect(p.profitability.legs.find(l => l.key === 'roe')!.points).toBe(22);
+        expect(computePillars({ ...base, roe: 0.4 }).profitability.legs.find(l => l.key === 'roe')!.points).toBe(25);
     });
 
     it('formats pePercentile with proper English ordinals (1st, 2nd, 3rd, 12th)', () => {
@@ -243,8 +324,9 @@ describe('computePillars — moat axis', () => {
             moatRoicDurability: m.roicDurability, moatGmMedian: m.gmMedian,
             moatFcfDurability: m.fcfDurability, moatMarginFloor: m.marginFloor,
         });
-        expect(p.moat.score).toBe(100);
-        expect(p.moat.legs.map(l => l.points)).toEqual([25, 25, 25, 25]);
+        // GM 65% sits just below the 70% ceiling
+        expect(p.moat.legs.map(l => l.points)).toEqual([25, 24, 25, 25]);
+        expect(p.moat.score).toBe(99);
     });
 
     it('narrow moat (WMT-like) lands mid-scale, not at a floor', () => {
@@ -253,9 +335,10 @@ describe('computePillars — moat axis', () => {
             moatRoicDurability: { good: 6, total: 10 },  // 60% → 13
             moatGmMedian: 0.25,                          // → 6
             moatFcfDurability: { good: 9, total: 10 },   // 90% → 18
-            moatMarginFloor: 0.03,                       // → 18
+            moatMarginFloor: 0.03,                       // → 14
         });
-        expect(p.moat.score).toBe(49);
+        expect(p.moat.score).toBeGreaterThan(40);
+        expect(p.moat.score).toBeLessThan(70);
     });
 
     it('no moat → near 0', () => {
@@ -318,7 +401,7 @@ describe('PillarsRadar — six axes', () => {
         for (const label of ['Valuation', 'Growth', 'Profitability', 'Health', 'Quality', 'Moat']) {
             expect(html).toContain(`>${label}<`);
         }
-        expect(html).toContain('Moat 100'); // aria-label summary
+        expect(html).toContain('Moat 97'); // aria-label summary (GM 60% just under the 70% ceiling)
     });
 
     it('details block lists the moat leg breakdown', () => {
@@ -330,7 +413,7 @@ describe('PillarsRadar — six axes', () => {
     it('PillarChips renders the sixth M chip', () => {
         const chips = renderToStaticMarkup(React.createElement(PillarChips, { pillars }));
         expect(chips).toContain('>m<');
-        expect(chips).toContain('Moat: 100/100');
+        expect(chips).toContain('Moat: 97/100');
     });
 
     it('stale 5-axis payload (Redis analysis:cache) renders axis at 0 — no crash', () => {
@@ -339,5 +422,31 @@ describe('PillarsRadar — six axes', () => {
         expect(stale).toContain('>Moat<');
         const chips = renderToStaticMarkup(React.createElement(PillarChips, { pillars: fiveKey as never }));
         expect(chips).toContain('>m<');
+    });
+});
+
+describe('PillarsRadar — peer median + 30-day overlays', () => {
+    const pillars = computePillars({ ...base, roic: 0.3, roe: 0.3, netMargin: 0.25, operatingMargin: 0.3 });
+    const all = (v: number) => ({ valuation: v, growth: v, profitability: v, health: v, quality: v, moat: v });
+
+    it('renders legend, deltas and peer medians when overlays are supplied', () => {
+        const html = renderToStaticMarkup(React.createElement(PillarsRadar, {
+            pillars,
+            previous: { asOf: '2026-10-13', scores: { ...all(0), valuation: 20 } },
+            peer: { label: 'Semiconductors', n: 24, scores: all(50) },
+        }));
+        expect(html).toContain('Semiconductors median');
+        expect(html).toContain('30 days ago');
+        expect(html).toContain('vs 30d');
+        expect(html).toContain('peers 50');
+    });
+
+    it('omits overlays when absent or identical (no-change ghost)', () => {
+        const scores = Object.fromEntries(Object.entries(pillars).map(([k, v]) => [k, v.score]));
+        const html = renderToStaticMarkup(React.createElement(PillarsRadar, {
+            pillars, previous: { asOf: '2026-10-13', scores },
+        }));
+        expect(html).not.toContain('30 days ago');
+        expect(html).not.toContain('median');
     });
 });

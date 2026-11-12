@@ -101,7 +101,10 @@ export function computeThesisPoints({
     if (altmanZ != null && altmanZ < 1.8) {
         risks.push(`Altman Z ${fmt(altmanZ)} — distress-zone balance sheet`);
     }
-    if (beneish != null && beneish > -1.78) {
+    // Hyper-growth guard: the Quality pillar marks Beneish "n/m" when revenue
+    // growth dominates the model (SGI) — no manipulation flag in that case.
+    const beneishNm = !!analysisData?.pillars?.quality?.legs?.find((l) => l.key === 'beneish')?.note;
+    if (beneish != null && beneish > -1.78 && !beneishNm) {
         risks.push(`Beneish M ${fmt(beneish, 2)} — earnings-manipulation flag`);
     }
     if (fcfMargin != null && fcfMargin < 0) {

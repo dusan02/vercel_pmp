@@ -138,7 +138,7 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
                             revenueCagr={data.revenueCagr ?? null}
                             changePct={data.ticker?.lastChangePct ?? null}
                         />
-                        {hasPillars && <PillarsRadar pillars={data.pillars!} />}
+                        {hasPillars && <PillarsRadar pillars={data.pillars!} previous={data.pillarsPrev ?? null} />}
                     </div>
                     <TechnicalDipSection ticker={ticker} />
                     <KeyMetricsTable data={data} />

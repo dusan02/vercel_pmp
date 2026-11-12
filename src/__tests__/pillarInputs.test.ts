@@ -221,9 +221,10 @@ describe('selectInterestCoverage — annual-first selection', () => {
 describe('derivePillarInputs — KKR fixture', () => {
     const d = derivePillarInputs(KKR);
 
-    it('interest coverage leg scores on the FY row (2.56x → 10 pts), not Finnhub', () => {
+    it('interest coverage leg scores on the FY row (2.56x → 9 pts), not Finnhub', () => {
         const leg = d.pillars.health.legs.find(l => l.key === 'interestCoverage')!;
-        expect(leg.points).toBe(10);
+        // continuous anchors: 2x → 8, 5x → 15 ⇒ 2.56x ≈ 9
+        expect(leg.points).toBe(9);
         expect(d.interestCoverage).toBeCloseTo(2.557, 2);
     });
 
@@ -353,7 +354,9 @@ describe('derivePillarInputs — P/E vs trailing median windows', () => {
     const run = (days: number) => derivePillarInputs({ ...KKR, valuationRows: rows(days) });
 
     it('each window compares today’s P/E with its own trailing median (negative = cheaper)', () => {
-        const r = run(3835);
+        // "Today" = the stored 18x row (live P/E is ranked only when price/EPS
+        // are known; this fixture has no ticker price → stored row).
+        const r = derivePillarInputs({ ...KKR, tickerData: null, valuationRows: rows(3835) });
         expect(r.peVsMedian1yPct).toBeCloseTo(-10, 0);   // vs 20x
         expect(r.peVsMedian3yPct).toBeCloseTo(-40, 0);   // vs 30x
         expect(r.peVsMedian5yPct).toBeCloseTo(-40, 0);   // 1826 rows: median falls in the 30x block

@@ -12,8 +12,9 @@
  * - Moat measures DURABILITY of economics over FY history — never the same
  *   number as Profitability's current-period level (ROIC share-of-years vs
  *   TTM ROIC, margin floor vs margin σ, FCF-positive years vs FCF conversion)
- * - laddered thresholds reach a real 0 — no "else 5" floor that makes
- *   20/100 the practical minimum
+ * - continuous (piecewise-linear) leg scoring that reaches a real 0 — no
+ *   step cliffs, no "else 5" floor, ceilings set above "merely good"
+ * - Valuation is growth-aware: PEG replaces P/S for profitable companies
  * - missing leg data: +10 neutral inside Valuation (legacy convention),
  *   0 pts elsewhere — a data gap is not a good score. For Moat a short FY
  *   history (<3 computable years) scores 0 = "unproven", which is honest:
@@ -31,6 +32,8 @@ export interface PillarLeg {
     display: string;
     points: number;
     max: number;
+    /** Optional plain-English caveat (e.g. "not meaningful at +65% growth"). */
+    note?: string;
 }
 
 export interface Pillar {
@@ -46,6 +49,10 @@ export interface PillarInputs {
     fcfYield: number | null;       // decimal
     psRatio: number | null;
     evEbit: number | null;
+    /** TTM P/E (live). Positive ⇒ profitable ⇒ PEG leg; null/≤0 ⇒ P/S leg. */
+    currentPe?: number | null;
+    /** Consensus forward P/E (Finnhub). Preferred PEG numerator. */
+    forwardPe?: number | null;
     // Growth
     revenueCagr: number | null;    // percent
     netIncomeCagr: number | null;  // percent
@@ -68,7 +75,12 @@ export interface PillarInputs {
     piotroski: number | null;      // 0–9
     beneish: number | null;        // lower = safer
     fcfConversion: number | null;  // decimal
-    marginStability: number | null;// decimal stddev
+    marginStability: number | null;// decimal stddev of FY operating margins (display/persisted)
+    /** RMS of year-over-year operating-margin DECLINES (decimal). Margin
+     *  expansion is not instability — only drops count. Preferred leg input. */
+    marginDownside?: number | null;
+    /** Latest FY revenue growth vs prior FY, percent — Beneish growth guard. */
+    revenueGrowthYoY?: number | null;
     // Moat — multi-year durability stats from deriveMoatInputs(FY rows).
     // Share-legs carry {good, total} so the breakdown can display "8/10 yrs".
     moatRoicDurability: MoatShare | null;   // FYs with ROIC > 12%
@@ -83,6 +95,12 @@ export interface MoatShare { good: number; total: number }
 const LEG_MAX = 25;
 /** Neutral points for a missing valuation leg (matches legacy scoreCalculator). */
 const V_MISSING = 10;
+/** Beneish is unreliable above this YoY revenue growth (SGI dominates). */
+export const BENEISH_GROWTH_GUARD_PCT = 40;
+/** Neutral points for a Beneish reading the growth guard declares not meaningful. */
+const BENEISH_NEUTRAL = 13;
+/** Max growth credited inside PEG — caps one-off rebounds. */
+const PEG_GROWTH_CAP = 40;
 
 const fmtPct = (v: number | null, d = 1) => v == null ? 'n/a' : `${(v * 100).toFixed(d)}%`;
 const fmtX = (v: number | null) => v == null ? 'n/a' : `${v.toFixed(1)}x`;
@@ -90,212 +108,155 @@ const fmtNum = (v: number | null, d = 2) => v == null ? 'n/a' : v.toFixed(d);
 function fmtOrdPct(v: number | null): string {
     if (v == null) return 'n/a';
     const n = Math.round(v);
+    if (n <= 0) return 'lowest in history';
+    if (n >= 100) return 'highest in history';
     const s = ['th', 'st', 'nd', 'rd'];
     const mod100 = n % 100;
     return `${n}${s[(mod100 - 20) % 10] ?? s[mod100] ?? s[0] ?? 'th'} pct`;
 }
 
-function leg(key: string, label: string, value: number | null, points: number, display: string): PillarLeg {
-    return { key, label, value, points, max: LEG_MAX, display };
+function leg(key: string, label: string, value: number | null, points: number, display: string, note?: string): PillarLeg {
+    return { key, label, value, points, max: LEG_MAX, display, ...(note ? { note } : {}) };
 }
 
-// ── Leg scorers (higher input = better unless noted) ─────────────────────────
-
-function pePercentilePoints(p: number | null): number {
-    if (p == null) return V_MISSING;
-    if (p < 20) return 25;
-    if (p < 40) return 20;
-    if (p < 60) return 12;
-    if (p < 80) return 5;
-    return 0;
-}
-function fcfYieldPoints(v: number | null): number {
-    if (v == null) return V_MISSING;
-    if (v > 0.08) return 25;
-    if (v > 0.05) return 20;
-    if (v > 0.03) return 12;
-    if (v > 0) return 5;
-    return 0;
-}
-function psPoints(v: number | null): number {
-    if (v == null) return V_MISSING;
-    if (v < 2) return 25;
-    if (v < 5) return 20;
-    if (v < 10) return 12;
-    if (v < 20) return 5;
-    return 0;
-}
-function evEbitPoints(v: number | null): number {
-    if (v == null) return V_MISSING;
-    if (v < 10) return 25;
-    if (v < 15) return 20;
-    if (v < 25) return 12;
-    if (v < 40) return 5;
-    return 0;
+/**
+ * Continuous leg scoring — piecewise-linear interpolation between anchor
+ * points (x, pts), clamped at both ends. Replaces the old step bands, whose
+ * cliffs made scores sticky (a 20% price drop moved P/S 12.7→10.2 and the
+ * leg stayed at 5) and saturated megacaps at 100. Anchors may be given in
+ * either x order; "lower is better" legs simply have descending points.
+ * Result is rounded to an integer for display.
+ */
+export function interpolate(v: number, anchors: readonly (readonly [number, number])[]): number {
+    const a = [...anchors].sort((p, q) => p[0] - q[0]);
+    if (v <= a[0]![0]) return Math.round(a[0]![1]);
+    const last = a[a.length - 1]!;
+    if (v >= last[0]) return Math.round(last[1]);
+    for (let i = 1; i < a.length; i++) {
+        const [x1, y1] = a[i]!;
+        if (v <= x1) {
+            const [x0, y0] = a[i - 1]!;
+            return Math.round(y0 + ((v - x0) / (x1 - x0)) * (y1 - y0));
+        }
+    }
+    return Math.round(last[1]);
 }
 
-function cagrPoints(v: number | null): number {
-    if (v == null) return 0;
-    if (v > 20) return 25;
-    if (v > 10) return 20;
-    if (v > 5) return 12;
-    if (v > 0) return 6;
-    return 0;
-}
-function fwdGrowthPoints(v: number | null): number {
-    if (v == null) return 0;
-    if (v > 30) return 25;
-    if (v > 15) return 20;
-    if (v > 5) return 12;
-    if (v > 0) return 5;
-    return 0;
-}
+const score = (v: number | null, anchors: readonly (readonly [number, number])[], missing = 0): number =>
+    v == null || !Number.isFinite(v) ? missing : interpolate(v, anchors);
 
-function roicPoints(v: number | null): number {
-    if (v == null) return 0;
-    if (v > 0.25) return 25;
-    if (v > 0.15) return 20;
-    if (v > 0.08) return 12;
-    if (v > 0) return 5;
-    return 0;
-}
-function roePoints(v: number | null): number {
-    if (v == null) return 0;
-    if (v > 0.25) return 25;
-    if (v > 0.15) return 20;
-    if (v > 0.08) return 12;
-    if (v > 0) return 5;
-    return 0;
-}
-function netMarginPoints(v: number | null): number {
-    if (v == null) return 0;
-    if (v > 0.20) return 25;
-    if (v > 0.10) return 20;
-    if (v > 0.05) return 13;
-    if (v > 0) return 6;
-    return 0;
-}
-function opMarginPoints(v: number | null): number {
-    if (v == null) return 0;
-    if (v > 0.25) return 25;
-    if (v > 0.15) return 20;
-    if (v > 0.08) return 12;
-    if (v > 0) return 5;
-    return 0;
-}
+// ── Anchor tables (x → points). Old step thresholds sit on ~their old values
+// with the 25-point ceiling pushed higher so strong-but-not-exceptional
+// companies stop tying at 100. ─────────────────────────────────────────────
 
-function altmanPoints(z: number | null): number {
-    if (z == null) return 0;
-    if (z > 3.0) return 25;
-    if (z >= 2.0) return 18;
-    if (z >= 1.5) return 10;
-    return 3;
-}
-function currentRatioPoints(cr: number | null): number {
-    if (cr == null) return 0;
-    if (cr >= 2.0) return 25;
-    if (cr >= 1.5) return 18;
-    if (cr >= 1.0) return 12;
-    if (cr >= 0.7) return 6;
-    return 0;
-}
+// Valuation
+const PE_PCT = [[0, 25], [20, 22], [40, 17], [60, 10], [80, 4], [100, 0]] as const;            // lower = cheaper
+const FCF_YIELD = [[0, 0], [0.03, 10], [0.05, 17], [0.08, 22], [0.12, 25]] as const;
+const PEG = [[0.5, 25], [1.0, 20], [1.5, 14], [2.0, 9], [3.0, 4], [5.0, 0]] as const;          // lower = cheaper
+const PS = [[1, 25], [2, 22], [5, 15], [10, 8], [20, 3], [30, 0]] as const;                   // loss-makers only
+const EV_EBIT = [[8, 25], [12, 21], [18, 15], [25, 10], [40, 3], [60, 0]] as const;
+// Growth (percent)
+const CAGR = [[0, 0], [5, 10], [10, 16], [20, 21], [35, 25]] as const;
+const FWD_GROWTH = [[0, 0], [5, 10], [15, 17], [30, 22], [50, 25]] as const;
+// Profitability (decimal)
+const ROIC = [[0, 0], [0.08, 11], [0.15, 18], [0.25, 22], [0.40, 25]] as const;
+const ROE = [[0, 0], [0.08, 11], [0.15, 18], [0.25, 22], [0.40, 25]] as const;
+const NET_MARGIN = [[0, 0], [0.05, 11], [0.10, 17], [0.20, 22], [0.30, 25]] as const;
+const OP_MARGIN = [[0, 0], [0.08, 11], [0.15, 17], [0.25, 22], [0.35, 25]] as const;
+// Health
+const ALTMAN = [[1.0, 0], [1.5, 8], [2.0, 15], [3.0, 22], [5.0, 25]] as const;
+const CURRENT_RATIO = [[0.5, 0], [0.7, 5], [1.0, 11], [1.5, 17], [2.0, 22], [3.0, 25]] as const;
+const INTEREST_COV = [[0, 0], [2, 8], [5, 15], [10, 21], [20, 25]] as const;
+const DEBT_RATIO = [[0, 24], [0.10, 19], [0.30, 11], [0.50, 4], [0.70, 0]] as const;        // net debt / assets
+// Quality
+const PIOTROSKI = [[0, 0], [2, 4], [4, 10], [5, 14], [6, 17], [7, 21], [8, 24], [9, 25]] as const;
+const BENEISH = [[-3.0, 25], [-2.5, 23], [-2.22, 19], [-1.78, 12], [-1.0, 5], [0, 0]] as const; // lower = safer
+const FCF_CONV = [[0, 0], [0.2, 6], [0.5, 13], [0.8, 20], [1.0, 23], [1.2, 25]] as const;
+const MARGIN_DOWNSIDE = [[0.01, 25], [0.03, 22], [0.06, 17], [0.10, 12], [0.18, 5], [0.30, 0]] as const;
+const MARGIN_SIGMA = [[0.02, 25], [0.05, 21], [0.08, 16], [0.15, 9], [0.25, 3], [0.35, 0]] as const; // fallback
+// Moat
+const ROIC_DUR = [[0, 0], [0.3, 6], [0.5, 13], [0.7, 19], [0.9, 24], [1.0, 25]] as const;
+const GM_MEDIAN = [[0.10, 0], [0.18, 5], [0.30, 12], [0.42, 18], [0.55, 22], [0.70, 25]] as const;
+const FCF_DUR = [[0, 0], [0.4, 5], [0.6, 10], [0.8, 17], [1.0, 25]] as const;
+const MARGIN_FLOOR = [[-0.10, 0], [-0.05, 3], [0, 10], [0.05, 16], [0.10, 21], [0.20, 25]] as const;
+
 function interestCoveragePoints(ic: number | null): number {
     // null = no interest expense reported → no interest burden → full points
     // (preserves the legacy scoreCalculator convention).
     if (ic == null) return 25;
-    if (ic > 10) return 25;
-    if (ic > 5) return 18;
-    if (ic > 2) return 10;
-    if (ic > 0) return 3;
-    return 0;
+    return interpolate(ic, INTEREST_COV);
 }
 function balanceSheetPoints(netCash: boolean | null, debtRatio: number | null): number {
     if (netCash === true) return 25;
-    if (debtRatio == null) return 0;
-    if (debtRatio < 0.10) return 20;
-    if (debtRatio < 0.30) return 12;
-    if (debtRatio < 0.50) return 5;
-    return 0;
+    return score(debtRatio, DEBT_RATIO);
 }
 
-function piotroskiPoints(v: number | null): number {
-    if (v == null) return 0;
-    if (v >= 8) return 25;
-    if (v >= 7) return 22;
-    if (v >= 5) return 15;
-    if (v >= 4) return 10;
-    if (v >= 2) return 5;
-    return 0;
-}
-function beneishPoints(v: number | null): number {
-    if (v == null) return 0;
-    if (v <= -2.5) return 25;
-    if (v <= -2.22) return 20;
-    if (v <= -1.78) return 12;
-    if (v < 0) return 6;
-    return 0;
-}
-function fcfConversionPoints(v: number | null): number {
-    if (v == null) return 0;
-    if (v > 1.0) return 25;
-    if (v > 0.8) return 22;
-    if (v > 0.5) return 15;
-    if (v > 0.2) return 8;
-    if (v > 0) return 3;
-    return 0;
-}
-function marginStabilityPoints(v: number | null): number {
-    if (v == null) return 0;
-    if (v < 0.05) return 25;
-    if (v < 0.08) return 20;
-    if (v < 0.15) return 12;
-    if (v < 0.25) return 6;
-    return 0;
+/**
+ * Growth credited inside PEG — the MEDIAN of the three growth reads we have
+ * (market-implied 1Y EPS growth, realized 5Y EPS CAGR, 5Y revenue CAGR),
+ * capped at PEG_GROWTH_CAP. The median survives one distorted read: a TTM
+ * EPS inflated by one-off gains (GOOGL fwd-implied −44%) or a cyclical
+ * rebound (MU fwd +292%) no longer decides the leg on its own.
+ */
+export function pegGrowth(i: Pick<PillarInputs, 'forwardImpliedGrowth' | 'epsCagr5y' | 'revenueCagr'>): number | null {
+    const g = [i.forwardImpliedGrowth, i.epsCagr5y, i.revenueCagr]
+        .filter((v): v is number => v != null && Number.isFinite(v))
+        .sort((a, b) => a - b);
+    if (g.length === 0) return null;
+    const m = g.length % 2 ? g[g.length >> 1]! : (g[g.length / 2 - 1]! + g[g.length / 2]!) / 2;
+    return Math.min(PEG_GROWTH_CAP, m);
 }
 
-// ── Moat legs ────────────────────────────────────────────────────────────────
-// Every leg is a *history* statistic — a company needs several years of
-// financial statements before any of these can score. Thresholds calibrated so
-// MSFT/KO ≈ 90–100 (wide), WMT ≈ 50–65 (narrow), airlines/cyclicals < 30.
+/** Growth floor inside the PEG divisor — a flat/shrinking business is valued
+ *  as P/E ÷ 5 (P/E 6 → PEG 1.2 still reads cheap; P/E 25 → 5 reads rich)
+ *  instead of exploding or hard-zeroing deep-value names. */
+const PEG_GROWTH_FLOOR = 5;
 
-/** Share of years with ROIC > 12% — sustained returns above a typical WACC. */
-function roicDurabilityPoints(s: MoatShare | null): number {
-    if (s == null || s.total < 3) return 0;
-    const f = s.good / s.total;
-    if (f >= 0.9) return 25;
-    if (f >= 0.7) return 20;
-    if (f >= 0.5) return 13;
-    if (f >= 0.3) return 6;
-    return 0;
+/**
+ * Third valuation leg. Profitable companies: PEG = P/E ÷ growth (forward
+ * consensus P/E when available) — the growth-aware multiple the old model
+ * lacked. P/S for a profitable company is just P/E × net margin, so it
+ * double-counted price while penalizing high margins (NVDA 64% NM → P/S 12.7
+ * scored 5/25 at a 20× P/E). P/S remains the yardstick only when there are no
+ * earnings to divide by.
+ */
+function valuationThirdLeg(i: PillarInputs): PillarLeg {
+    const profitable = i.currentPe != null && i.currentPe > 0;
+    if (!profitable) {
+        return leg('psRatio', 'P/S (no earnings)', i.psRatio, score(i.psRatio, PS, V_MISSING), fmtX(i.psRatio));
+    }
+    const pe = i.forwardPe != null && i.forwardPe > 0 ? i.forwardPe : i.currentPe!;
+    const g = pegGrowth(i);
+    if (g == null) {
+        return leg('peg', 'PEG (P/E ÷ growth)', null, V_MISSING, 'n/a');
+    }
+    const div = Math.max(g, PEG_GROWTH_FLOOR);
+    const peg = pe / div;
+    return leg('peg', 'PEG (P/E ÷ growth)', peg, interpolate(peg, PEG),
+        `${peg.toFixed(2)} · ${pe.toFixed(1)}× ÷ ${g < PEG_GROWTH_FLOOR ? `${PEG_GROWTH_FLOOR}% floor` : `${g.toFixed(0)}%`}`);
 }
-/** Median annual gross margin — pricing power (deliberately level, not σ:
-    Quality already owns margin stability). */
-function moatGmPoints(v: number | null): number {
-    if (v == null) return 0;
-    if (v > 0.55) return 25;
-    if (v > 0.42) return 20;
-    if (v > 0.30) return 13;
-    if (v > 0.18) return 6;
-    return 0;
+
+/** Beneish leg with the hyper-growth guard (see BENEISH_GROWTH_GUARD_PCT). */
+export function beneishGrowthDistorted(i: Pick<PillarInputs, 'beneish' | 'revenueGrowthYoY'>): boolean {
+    return i.beneish != null && i.revenueGrowthYoY != null && i.revenueGrowthYoY > BENEISH_GROWTH_GUARD_PCT;
 }
-/** Share of years with FCF > 0 — the business never needed external funding. */
-function fcfDurabilityPoints(s: MoatShare | null): number {
-    if (s == null || s.total < 3) return 0;
-    const f = s.good / s.total;
-    if (f >= 1.0) return 25;
-    if (f >= 0.8) return 18;
-    if (f >= 0.6) return 10;
-    if (f >= 0.4) return 5;
-    return 0;
+
+function beneishLeg(i: PillarInputs): PillarLeg {
+    if (beneishGrowthDistorted(i)) {
+        return leg('beneish', 'Beneish M', i.beneish, BENEISH_NEUTRAL, `${fmtNum(i.beneish)} · n/m`,
+            `Not meaningful at +${i.revenueGrowthYoY!.toFixed(0)}% revenue growth — the model reads fast growth itself as a manipulation signal; scored neutral.`);
+    }
+    return leg('beneish', 'Beneish M', i.beneish, score(i.beneish, BENEISH), fmtNum(i.beneish));
 }
-/** Weakest annual net margin — stayed profitable even in the bad year. */
-function marginFloorPoints(v: number | null): number {
-    if (v == null) return 0;
-    if (v > 0.10) return 25;
-    if (v > 0.05) return 18;
-    if (v > 0) return 12;
-    if (v > -0.05) return 5;
-    return 0;
+
+function marginLeg(i: PillarInputs): PillarLeg {
+    if (i.marginDownside != null) {
+        return leg('marginStability', 'Margin stability (drops)', i.marginDownside,
+            interpolate(i.marginDownside, MARGIN_DOWNSIDE),
+            i.marginDownside < 0.005 ? 'no drops' : `drops σ ${(i.marginDownside * 100).toFixed(1)}%`);
+    }
+    return leg('marginStability', 'Margin stability', i.marginStability, score(i.marginStability, MARGIN_SIGMA),
+        i.marginStability == null ? 'n/a' : `σ ${(i.marginStability * 100).toFixed(1)}%`);
 }
 
 // ── Pillar assembly ──────────────────────────────────────────────────────────
@@ -316,46 +277,47 @@ export interface PillarScores {
 
 const shareValue = (s: MoatShare | null): number | null => (s == null || s.total < 3 ? null : s.good / s.total);
 const shareDisplay = (s: MoatShare | null): string => (s == null ? 'n/a' : `${s.good}/${s.total} yrs`);
+const pctDisplay = (v: number | null) => (v == null ? 'n/a' : `${v.toFixed(1)}%`);
 
 export function computePillars(i: PillarInputs): PillarScores {
     return {
         valuation: assemble('valuation', 'Valuation', [
-            leg('pePercentile', 'P/E vs own history', i.pePercentile, pePercentilePoints(i.pePercentile),
+            leg('pePercentile', 'P/E vs own history', i.pePercentile, score(i.pePercentile, PE_PCT, V_MISSING),
                 fmtOrdPct(i.pePercentile)),
-            leg('fcfYield', 'FCF yield', i.fcfYield, fcfYieldPoints(i.fcfYield), fmtPct(i.fcfYield)),
-            leg('psRatio', 'P/S', i.psRatio, psPoints(i.psRatio), fmtX(i.psRatio)),
-            leg('evEbit', 'EV/EBIT', i.evEbit, evEbitPoints(i.evEbit), fmtX(i.evEbit)),
+            leg('fcfYield', 'FCF yield', i.fcfYield, score(i.fcfYield, FCF_YIELD, V_MISSING), fmtPct(i.fcfYield)),
+            valuationThirdLeg(i),
+            leg('evEbit', 'EV/EBIT', i.evEbit, score(i.evEbit, EV_EBIT, V_MISSING), fmtX(i.evEbit)),
         ]),
         growth: assemble('growth', 'Growth', [
-            leg('revenueCagr', 'Revenue CAGR', i.revenueCagr, cagrPoints(i.revenueCagr), i.revenueCagr == null ? 'n/a' : `${i.revenueCagr.toFixed(1)}%`),
-            leg('netIncomeCagr', 'Net income CAGR', i.netIncomeCagr, cagrPoints(i.netIncomeCagr), i.netIncomeCagr == null ? 'n/a' : `${i.netIncomeCagr.toFixed(1)}%`),
-            leg('epsCagr5y', 'EPS CAGR 5Y', i.epsCagr5y, cagrPoints(i.epsCagr5y), i.epsCagr5y == null ? 'n/a' : `${i.epsCagr5y.toFixed(1)}%`),
-            leg('forwardImpliedGrowth', 'Fwd implied growth', i.forwardImpliedGrowth, fwdGrowthPoints(i.forwardImpliedGrowth), i.forwardImpliedGrowth == null ? 'n/a' : `${i.forwardImpliedGrowth.toFixed(1)}%`),
+            leg('revenueCagr', 'Revenue CAGR', i.revenueCagr, score(i.revenueCagr, CAGR), pctDisplay(i.revenueCagr)),
+            leg('netIncomeCagr', 'Net income CAGR', i.netIncomeCagr, score(i.netIncomeCagr, CAGR), pctDisplay(i.netIncomeCagr)),
+            leg('epsCagr5y', 'EPS CAGR 5Y', i.epsCagr5y, score(i.epsCagr5y, CAGR), pctDisplay(i.epsCagr5y)),
+            leg('forwardImpliedGrowth', 'Fwd implied growth', i.forwardImpliedGrowth, score(i.forwardImpliedGrowth, FWD_GROWTH), pctDisplay(i.forwardImpliedGrowth)),
         ]),
         profitability: assemble('profitability', 'Profitability', [
-            leg('roic', 'ROIC', i.roic, roicPoints(i.roic), fmtPct(i.roic)),
-            leg('roe', 'ROE', i.roe, roePoints(i.roe), fmtPct(i.roe)),
-            leg('netMargin', 'Net margin', i.netMargin, netMarginPoints(i.netMargin), fmtPct(i.netMargin)),
-            leg('operatingMargin', 'Operating margin', i.operatingMargin, opMarginPoints(i.operatingMargin), fmtPct(i.operatingMargin)),
+            leg('roic', 'ROIC', i.roic, score(i.roic, ROIC), fmtPct(i.roic)),
+            leg('roe', 'ROE', i.roe, score(i.roe, ROE), fmtPct(i.roe)),
+            leg('netMargin', 'Net margin', i.netMargin, score(i.netMargin, NET_MARGIN), fmtPct(i.netMargin)),
+            leg('operatingMargin', 'Operating margin', i.operatingMargin, score(i.operatingMargin, OP_MARGIN), fmtPct(i.operatingMargin)),
         ]),
         health: assemble('health', 'Financial Health', [
-            leg('altmanZ', 'Altman Z', i.altmanZ, altmanPoints(i.altmanZ), fmtNum(i.altmanZ)),
-            leg('currentRatio', 'Current ratio', i.currentRatio, currentRatioPoints(i.currentRatio), fmtNum(i.currentRatio)),
+            leg('altmanZ', 'Altman Z', i.altmanZ, score(i.altmanZ, ALTMAN), fmtNum(i.altmanZ)),
+            leg('currentRatio', 'Current ratio', i.currentRatio, score(i.currentRatio, CURRENT_RATIO), fmtNum(i.currentRatio)),
             leg('interestCoverage', 'Interest coverage', i.interestCoverage, interestCoveragePoints(i.interestCoverage), i.interestCoverage == null ? 'no interest expense' : `${i.interestCoverage.toFixed(1)}x`),
             leg('balance', 'Net cash / debt', i.debtRatio, balanceSheetPoints(i.netCash, i.debtRatio),
                 i.netCash === true ? 'Net cash' : i.debtRatio == null ? 'n/a' : `D/A ${(i.debtRatio * 100).toFixed(0)}%`),
         ]),
         quality: assemble('quality', 'Quality', [
-            leg('piotroski', 'Piotroski F', i.piotroski, piotroskiPoints(i.piotroski), i.piotroski == null ? 'n/a' : `${i.piotroski}/9`),
-            leg('beneish', 'Beneish M', i.beneish, beneishPoints(i.beneish), fmtNum(i.beneish)),
-            leg('fcfConversion', 'FCF conversion', i.fcfConversion, fcfConversionPoints(i.fcfConversion), fmtPct(i.fcfConversion, 0)),
-            leg('marginStability', 'Margin stability', i.marginStability, marginStabilityPoints(i.marginStability), i.marginStability == null ? 'n/a' : `σ ${(i.marginStability * 100).toFixed(1)}%`),
+            leg('piotroski', 'Piotroski F', i.piotroski, score(i.piotroski, PIOTROSKI), i.piotroski == null ? 'n/a' : `${i.piotroski}/9`),
+            beneishLeg(i),
+            leg('fcfConversion', 'FCF conversion', i.fcfConversion, score(i.fcfConversion, FCF_CONV), fmtPct(i.fcfConversion, 0)),
+            marginLeg(i),
         ]),
         moat: assemble('moat', 'Moat', [
-            leg('roicDurability', 'ROIC >12% years', shareValue(i.moatRoicDurability), roicDurabilityPoints(i.moatRoicDurability), shareDisplay(i.moatRoicDurability)),
-            leg('gmMedian', 'Median gross margin', i.moatGmMedian, moatGmPoints(i.moatGmMedian), fmtPct(i.moatGmMedian)),
-            leg('fcfDurability', 'FCF-positive years', shareValue(i.moatFcfDurability), fcfDurabilityPoints(i.moatFcfDurability), shareDisplay(i.moatFcfDurability)),
-            leg('marginFloor', 'Worst-year net margin', i.moatMarginFloor, marginFloorPoints(i.moatMarginFloor), i.moatMarginFloor == null ? 'n/a' : `worst ${fmtPct(i.moatMarginFloor)}`),
+            leg('roicDurability', 'ROIC >12% years', shareValue(i.moatRoicDurability), score(shareValue(i.moatRoicDurability), ROIC_DUR), shareDisplay(i.moatRoicDurability)),
+            leg('gmMedian', 'Median gross margin', i.moatGmMedian, score(i.moatGmMedian, GM_MEDIAN), fmtPct(i.moatGmMedian)),
+            leg('fcfDurability', 'FCF-positive years', shareValue(i.moatFcfDurability), score(shareValue(i.moatFcfDurability), FCF_DUR), shareDisplay(i.moatFcfDurability)),
+            leg('marginFloor', 'Worst-year net margin', i.moatMarginFloor, score(i.moatMarginFloor, MARGIN_FLOOR), i.moatMarginFloor == null ? 'n/a' : `worst ${fmtPct(i.moatMarginFloor)}`),
         ]),
     };
 }

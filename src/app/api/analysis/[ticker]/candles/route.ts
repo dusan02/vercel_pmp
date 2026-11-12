@@ -202,7 +202,10 @@ export async function GET(
           // a valuation row up to 4 days after t still belongs to this week.
           const end = c.t + 4 * 24 * 60 * 60 * 1000;
           while (vi < times.length - 1 && times[vi + 1]! <= end) vi++;
-          if (times[vi]! <= end) {
+          // The row must fall inside THIS candle's week — otherwise a week
+          // without valuation coverage inherits last week's P/E next to this
+          // week's close (NVDA: $173.73 ÷ stale 23.4× → fake $7.44 EPS).
+          if (times[vi]! <= end && times[vi]! >= c.t - 2 * 24 * 60 * 60 * 1000) {
             const r = valRows[vi]!;
             c.pe = r.peRatio; c.ps = r.psRatio; c.pb = r.pbRatio;
             c.evEbit = r.evEbitda; c.fcfYield = r.fcfYield; c.mcap = r.marketCap;

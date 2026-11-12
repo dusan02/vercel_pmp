@@ -30,6 +30,7 @@ import { CompanyOverviewSection } from '@/components/company/analysis/sections/C
 import { KeyInsightsSection } from '@/components/company/analysis/sections/KeyInsightsSection';
 import { MoverInsightSection } from '@/components/company/analysis/sections/MoverInsightSection';
 import PillarsRadar, { PillarChips } from '@/components/company/analysis/PillarsRadar';
+import { getPeerPillars } from '@/lib/analysis/peerPillars';
 import { EarningsSection } from '@/components/company/analysis/sections/EarningsSection';
 import { EarningsBanner } from '@/components/company/analysis/sections/EarningsBanner';
 import { RecentMovesSection } from '@/components/company/analysis/sections/RecentMovesSection';
@@ -125,7 +126,7 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   // Fetch everything in parallel (independent queries).
   // Includes SSR pre-fetch of analysis API + history + dipData for instant hydration.
-  const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, similarTickers, insiderActivity, premarketData, dipData, etfBasket] = await Promise.all([
+  const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, similarTickers, insiderActivity, premarketData, dipData, etfBasket, peerPillars] = await Promise.all([
     isEtf ? Promise.resolve({ upcoming: [], recent: [] }) : getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
     getRelatedOpportunities(tickerUpper),
@@ -140,6 +141,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     getTodayPremarket(tickerUpper),
     prefetchDipData(tickerUpper),
     isEtf ? getEtfBasket(tickerUpper) : Promise.resolve(null),
+    isEtf ? Promise.resolve(null) : getPeerPillars(data?.sector ?? null, data?.industry ?? null),
   ]);
 
   // Reuse statements already loaded by prefetchAnalysisData; only hit the DB
@@ -353,7 +355,7 @@ export default async function AnalysisPage({ params }: PageProps) {
               employees={data?.employees ?? null}
               websiteUrl={data?.websiteUrl ?? null}
             />
-            {hasPillars && <PillarsRadar pillars={analysisData!.pillars!} />}
+            {hasPillars && <PillarsRadar pillars={analysisData!.pillars!} previous={analysisData?.pillarsPrev ?? null} peer={peerPillars} />}
           </div>
 
           {/* Mobile-only profile chips — quick score strip right under the hero on phones */}

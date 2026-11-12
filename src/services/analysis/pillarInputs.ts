@@ -88,6 +88,8 @@ export interface PillarValuationRow {
     psRatio: number | null;
     evEbitda: number | null;
     fcfYield: number | null;
+    /** Finnhub consensus forward P/E stamped on that day (point-in-time). */
+    peForward?: number | null;
 }
 
 export interface DerivePillarInputsArgs {
@@ -354,6 +356,20 @@ export function derivePillarInputs(args: DerivePillarInputsArgs): PillarDerivati
         const variance = margins.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / margins.length;
         marginStability = Math.sqrt(variance);
     }
+    // Downside-only variant for the Quality leg: RMS of year-over-year margin
+    // DECLINES. σ of levels punished margin expansion as "instability" (NVDA
+    // 37%→65% read as σ 17.5%); only drops are a predictability problem.
+    // Annual rows only — the quarterly fallback mixes YTD-cumulative periods.
+    let marginDownside: number | null = null;
+    if (fyMargins.length >= 3) {
+        const chrono = [...fyMargins].reverse();
+        let sq = 0;
+        for (let i = 1; i < chrono.length; i++) {
+            const d = chrono[i]! - chrono[i - 1]!;
+            if (d < 0) sq += d * d;
+        }
+        marginDownside = Math.sqrt(sq / (chrono.length - 1));
+    }
 
     // --- Interest Coverage (annual-first selection; see selectInterestCoverage) ---
     const { coverage: interestCoverage } = selectInterestCoverage(stmts, annualStmts, finnhubMetrics?.interestCoverage);
@@ -429,7 +445,11 @@ export function derivePillarInputs(args: DerivePillarInputsArgs): PillarDerivati
         if (valuationRows[i]!.peRatio != null) { latestPeRow = valuationRows[i]!; break; }
     }
     const peValues = valuationRows.map(r => r.peRatio).filter((v): v is number => v != null).sort((a, b) => a - b);
-    const peForPct = latestPeRow?.peRatio ?? currentPe;
+    // One P/E truth: the live multiple (price / own TTM EPS — what Key Metrics,
+    // the hero and the verdict print) is ranked against the stored close-basis
+    // history. Ranking yesterday's (or, with a DVH gap, last week's) stored
+    // P/E printed a different number next to the live one (NVDA 23.4× vs 19.9×).
+    const peForPct = currentPe ?? latestPeRow?.peRatio ?? null;
     const peMedian = peValues.length > 0 ? medianOf(peValues) : null;
     const peDistortedNow = isPeDistorted(peForPct, peMedian);
     let pePercentile: number | null = null;
@@ -480,10 +500,10 @@ export function derivePillarInputs(args: DerivePillarInputsArgs): PillarDerivati
     // Display stats block (read path renders it; identical series semantics).
     const valuationHistoryStats = valuationRows.length > 0
         ? buildValuationHistory(valuationRows, {
-            pe: latestValuation?.peRatio ?? currentPe,
-            ps: latestValuation?.psRatio ?? currentPs ?? null,
-            evEbit: latestValuation?.evEbitda ?? currentEvEbit ?? null,
-            fcfYield: latestValuation?.fcfYield ?? currentFcfYield ?? null,
+            pe: peForPct,
+            ps: currentPs ?? latestValuation?.psRatio ?? null,
+            evEbit: currentEvEbit ?? latestValuation?.evEbitda ?? null,
+            fcfYield: currentFcfYield ?? latestValuation?.fcfYield ?? null,
         })
         : null;
 
@@ -524,6 +544,10 @@ export function derivePillarInputs(args: DerivePillarInputsArgs): PillarDerivati
 
     let piotroskiScore = 0;
     const prevAnnual = annualStmts[1] || null;
+    // Latest FY revenue growth — feeds the Beneish hyper-growth guard.
+    const revenueGrowthYoY = (latestAnnual?.revenue && prevAnnual?.revenue && prevAnnual.revenue > 0)
+        ? (latestAnnual.revenue / prevAnnual.revenue - 1) * 100
+        : null;
     if (latestAnnual && prevAnnual) {
         const lA = latestAnnual;
         const pA = prevAnnual;
@@ -670,6 +694,8 @@ export function derivePillarInputs(args: DerivePillarInputsArgs): PillarDerivati
 
     const pillarsInput: PillarInputs = {
         pePercentile,
+        currentPe,
+        forwardPe,
         fcfYield: pillarFcfYield,
         psRatio: pillarPs,
         evEbit: pillarEvEbit,
@@ -690,6 +716,8 @@ export function derivePillarInputs(args: DerivePillarInputsArgs): PillarDerivati
         beneish: beneishScore,
         fcfConversion,
         marginStability,
+        marginDownside,
+        revenueGrowthYoY,
         moatRoicDurability: moatDerived.roicDurability,
         moatGmMedian: moatDerived.gmMedian,
         moatFcfDurability: moatDerived.fcfDurability,
@@ -713,4 +741,38 @@ export function derivePillarInputs(args: DerivePillarInputsArgs): PillarDerivati
         evNow, netDebt, forwardPe, forwardImpliedGrowth, investedCapital,
         latestValuation, valuationHistoryStats,
     };
+}
+
+/** Reporting lag before a period's statement is assumed public (10-Q ≤40d, 10-K ≤60d). */
+const QUARTER_LAG_MS = 45 * 86_400_000;
+const ANNUAL_LAG_MS = 75 * 86_400_000;
+
+/**
+ * Point-in-time pillar scores as of `daysAgo` — the "30 days ago" ghost on
+ * the radar. Re-runs the same derivation on the inputs that existed then:
+ * statements already public (period end + filing lag), valuation history up
+ * to that day, that day's close as price, and the forward P/E stamped on
+ * that day (falling back to today's consensus when no snapshot was stored).
+ * Returns null when there is no valuation row old enough.
+ */
+export function derivePillarsAsOf(args: DerivePillarInputsArgs, daysAgo: number): { asOf: Date; pillars: PillarScores } | null {
+    const cutoff = Date.now() - daysAgo * 86_400_000;
+    const rows = args.valuationRows.filter(r => r.date.getTime() <= cutoff);
+    const at = rows[rows.length - 1];
+    if (!at || at.closePrice == null || at.closePrice <= 0) return null;
+    // Reject a stale anchor: the newest row before the cutoff must be within ~10 days of it.
+    if (cutoff - at.date.getTime() > 10 * 86_400_000) return null;
+    const asOfMs = at.date.getTime();
+    const stmts = args.stmts.filter(s =>
+        s.endDate.getTime() + (isAnnualPeriod(s.fiscalPeriod) ? ANNUAL_LAG_MS : QUARTER_LAG_MS) <= asOfMs);
+    if (stmts.length === 0) return null;
+    const d = derivePillarInputs({
+        stmts,
+        tickerData: args.tickerData ? { lastPrice: at.closePrice, lastMarketCap: null, sharesOutstanding: args.tickerData.sharesOutstanding } : null,
+        finnhubMetrics: args.finnhubMetrics
+            ? { ...args.finnhubMetrics, forwardPe: at.peForward ?? args.finnhubMetrics.forwardPe }
+            : null,
+        valuationRows: rows,
+    });
+    return { asOf: at.date, pillars: d.pillars };
 }

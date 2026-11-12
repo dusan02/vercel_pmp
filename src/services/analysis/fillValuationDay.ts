@@ -225,6 +225,17 @@ export function computeDayRatios(statements: FinancialStatement[], closePrice: n
     return out;
 }
 
+/**
+ * DVH-persistable subset of DayRatios. `peBasis` is computation metadata, not
+ * a DailyValuationHistory column — spreading it into create/upsert made
+ * Prisma reject every write ("Unknown argument `peBasis`") and froze DVH at
+ * 2026-11-06 while the cron still reported the rows as created.
+ */
+export function toDvhRatios(r: Partial<DayRatios>): Omit<Partial<DayRatios>, 'peBasis'> {
+    const { peBasis: _peBasis, ...rest } = r;
+    return rest;
+}
+
 export async function fillValuationDay(dateET: string): Promise<FillValuationDayResult> {
     const DAY_START = new Date(dateET + 'T00:00:00Z');
     const DAY_END = new Date(DAY_START.getTime() + 86_400_000);
@@ -314,7 +325,7 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
             if (ratios.peRatio === null && ratios.psRatio === null) result.priceOnly++;
 
             const row: ValuationRow = {
-                symbol: ref.symbol, date: ref.date, closePrice, ...ratios,
+                symbol: ref.symbol, date: ref.date, closePrice, ...(toDvhRatios(ratios) as Omit<DayRatios, 'peBasis'>),
                 peForward: resolvePeForward(
                     fwdPeBySymbol.get(ref.symbol),
                     dayInstant.getTime(),
@@ -343,13 +354,18 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
     }
 
     const writeChunk = 500;
+    // dbWrite returns null on a failed batch — count those rows as failed so
+    // the cron summary can't report "created" for rows that never landed.
     for (let i = 0; i < inserts.length; i += writeChunk) {
-        await dbWrite(() => prisma.dailyValuationHistory.createMany({
-            data: inserts.slice(i, i + writeChunk),
+        const batch = inserts.slice(i, i + writeChunk);
+        const res = await dbWrite(() => prisma.dailyValuationHistory.createMany({
+            data: batch,
         }), 'fillValuationDay.createMany');
+        if (res == null) { result.filled -= batch.length; result.failed += batch.length; }
     }
     for (let i = 0; i < updates.length; i += writeChunk) {
-        await dbWrite(() => prisma.$transaction(
+        const batchLen = Math.min(writeChunk, updates.length - i);
+        const res = await dbWrite(() => prisma.$transaction(
             updates.slice(i, i + writeChunk).map(u => prisma.dailyValuationHistory.update({
                 where: { symbol_date: { symbol: u.symbol, date: u.date } },
                 data: {
@@ -361,6 +377,7 @@ export async function fillValuationDay(dateET: string): Promise<FillValuationDay
                 },
             }))
         ), 'fillValuationDay.update');
+        if (res == null) { result.updated -= batchLen; result.failed += batchLen; }
     }
 
     // Refresh 52W-range position on FinnhubMetrics from OUR OWN closes —

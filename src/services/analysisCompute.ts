@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db/prisma';
 import { applySplitAdjustments, applyPostSplitAdjustment } from '@/lib/utils/splitAdjustment';
 import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
 import { dedupeShareClasses } from '@/lib/companyNames';
-import { derivePillarInputs } from '@/services/analysis/pillarInputs';
+import { derivePillarInputs, derivePillarsAsOf } from '@/services/analysis/pillarInputs';
 
 /**
  * Shared analysis computation used by both:
@@ -94,7 +94,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
     const valuationRows = await prisma.dailyValuationHistory.findMany({
         where: { symbol },
         orderBy: { date: 'asc' },
-        select: { date: true, closePrice: true, marketCap: true, peRatio: true, psRatio: true, evEbitda: true, fcfYield: true },
+        select: { date: true, closePrice: true, marketCap: true, peRatio: true, psRatio: true, evEbitda: true, fcfYield: true, peForward: true },
     });
     const latestValuation = valuationRows.length > 0 ? valuationRows[valuationRows.length - 1]! : null;
 
@@ -111,7 +111,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         where: { symbol },
         select: { lastPrice: true, lastMarketCap: true, sharesOutstanding: true },
     });
-    const d = derivePillarInputs({
+    const deriveArgs = {
         stmts,
         tickerData: tickerForDerive
             ? {
@@ -122,8 +122,21 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
             : null,
         finnhubMetrics,
         valuationRows,
-    });
+    };
+    const d = derivePillarInputs(deriveArgs);
     const pillars = d.pillars;
+    // Same derivation on the inputs that existed ~30 days ago — the radar's
+    // "what changed" ghost. Non-critical: any failure just omits the overlay.
+    let pillarsPrev: { asOf: string; scores: Record<string, number> } | null = null;
+    try {
+        const prev = derivePillarsAsOf(deriveArgs, 30);
+        if (prev) {
+            pillarsPrev = {
+                asOf: prev.asOf.toISOString().slice(0, 10),
+                scores: Object.fromEntries(Object.entries(prev.pillars).map(([k, v]) => [k, v.score])),
+            };
+        }
+    } catch { /* overlay is optional */ }
 
     // ─── Display-only fields (not pillar inputs) ──────────────────────────
     const bsStmt = d.bsStmt;
@@ -285,6 +298,7 @@ export async function computeMetrics(symbol: string, tickerRecord?: any) {
         },
         valuationHistoryStats,
         pillars,
+        pillarsPrev,
         finnhub: finnhubMetrics ? {
             peRatio: finnhubMetrics.peRatio,
             forwardPe: finnhubMetrics.forwardPe,
