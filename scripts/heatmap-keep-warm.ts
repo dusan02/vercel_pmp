@@ -48,7 +48,7 @@ async function main() {
       try {
         await fetch(`${BASE_URL}${p}`, {
           headers: { 'Accept': 'text/html' },
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(25000),
         });
       } catch {
         // Best-effort warmup — never fail the cron on a single page timeout

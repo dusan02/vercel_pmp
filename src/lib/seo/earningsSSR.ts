@@ -148,56 +148,89 @@ async function enrichEarningsRows(
   refEnd.setUTCDate(refEnd.getUTCDate() + 5);
 
   const mcapLookback = new Date(Date.now() - 14 * 86400_000);
+
+  // Helper: Chunk symbols to avoid SQLite 999 parameter limit on IN queries,
+  // especially when combined with inequality filters where Prisma cannot split queries.
+  const chunkQuery = async <T>(
+    symList: string[],
+    fn: (chunk: string[]) => Promise<T[]>,
+    chunkSize = 150
+  ): Promise<T[]> => {
+    if (symList.length === 0) return [];
+    if (symList.length <= chunkSize) return fn(symList);
+    const results: T[] = [];
+    for (let i = 0; i < symList.length; i += chunkSize) {
+      const chunk = symList.slice(i, i + chunkSize);
+      const part = await fn(chunk);
+      results.push(...part);
+    }
+    return results;
+  };
+
   const [tickers, mcaps, caches, ews, dailyRefs, fhMetrics, fhRecs] = await Promise.all([
-    prisma.ticker.findMany({
-      where: { symbol: { in: symbols } },
-      select: {
-        symbol: true, name: true, sector: true, stdDevReturn20d: true,
-        lastPrice: true, lastChangePct: true, lastMarketCap: true, lastMarketCapDiff: true,
-        moversReason: true, moversCategory: true, latestMoversRVOL: true,
-      },
-    }),
+    chunkQuery(symbols, (chunk) =>
+      prisma.ticker.findMany({
+        where: { symbol: { in: chunk } },
+        select: {
+          symbol: true, name: true, sector: true, stdDevReturn20d: true,
+          lastPrice: true, lastChangePct: true, lastMarketCap: true, lastMarketCapDiff: true,
+          moversReason: true, moversCategory: true, latestMoversRVOL: true,
+        },
+      })
+    ),
     // DailyValuationHistory is the live market-cap source (Ticker.lastMarketCap
     // and EarningsCalendar.marketCap are both unpopulated).
-    prisma.dailyValuationHistory.findMany({
-      where: { symbol: { in: symbols }, date: { gte: mcapLookback }, marketCap: { not: null } },
-      orderBy: { date: 'desc' },
-      select: { symbol: true, marketCap: true },
-    }),
-    prisma.analysisCache.findMany({
-      where: { symbol: { in: symbols } },
-      select: {
-        symbol: true, overallScore: true, valuationScore: true, growthScore: true,
-        profitabilityScore: true, healthScore: true, qualityScore: true,
-      },
-    }),
-    prisma.ewScoreSnapshot.findMany({
-      where: { symbol: { in: symbols } },
-      orderBy: { asOfDate: 'desc' },
-      select: { symbol: true, totalScore: true, maxPossible: true },
-    }),
-    prisma.dailyRef.findMany({
-      where: {
-        symbol: { in: symbols },
-        regularClose: { not: null },
-        date: { gte: refStart, lte: refEnd },
-      },
-      orderBy: { date: 'asc' },
-      select: { symbol: true, date: true, previousClose: true, regularClose: true },
-    }),
-    prisma.finnhubMetrics.findMany({
-      where: { symbol: { in: symbols } },
-      select: {
-        symbol: true, peRatio: true, forwardPe: true,
-        week52High: true, week52Low: true, week52Position: true,
-      },
-    }),
-    prisma.finnhubRecommendation.findMany({
-      where: { symbol: { in: symbols } },
-      select: {
-        symbol: true, strongBuy: true, buy: true, hold: true, sell: true, strongSell: true,
-      },
-    }),
+    chunkQuery(symbols, (chunk) =>
+      prisma.dailyValuationHistory.findMany({
+        where: { symbol: { in: chunk }, date: { gte: mcapLookback }, marketCap: { gt: 0 } },
+        orderBy: { date: 'desc' },
+        select: { symbol: true, marketCap: true },
+      })
+    ),
+    chunkQuery(symbols, (chunk) =>
+      prisma.analysisCache.findMany({
+        where: { symbol: { in: chunk } },
+        select: {
+          symbol: true, overallScore: true, valuationScore: true, growthScore: true,
+          profitabilityScore: true, healthScore: true, qualityScore: true,
+        },
+      })
+    ),
+    chunkQuery(symbols, (chunk) =>
+      prisma.ewScoreSnapshot.findMany({
+        where: { symbol: { in: chunk } },
+        orderBy: { asOfDate: 'desc' },
+        select: { symbol: true, totalScore: true, maxPossible: true },
+      })
+    ),
+    chunkQuery(symbols, (chunk) =>
+      prisma.dailyRef.findMany({
+        where: {
+          symbol: { in: chunk },
+          regularClose: { gt: 0 },
+          date: { gte: refStart, lte: refEnd },
+        },
+        orderBy: { date: 'asc' },
+        select: { symbol: true, date: true, previousClose: true, regularClose: true },
+      })
+    ),
+    chunkQuery(symbols, (chunk) =>
+      prisma.finnhubMetrics.findMany({
+        where: { symbol: { in: chunk } },
+        select: {
+          symbol: true, peRatio: true, forwardPe: true,
+          week52High: true, week52Low: true, week52Position: true,
+        },
+      })
+    ),
+    chunkQuery(symbols, (chunk) =>
+      prisma.finnhubRecommendation.findMany({
+        where: { symbol: { in: chunk } },
+        select: {
+          symbol: true, strongBuy: true, buy: true, hold: true, sell: true, strongSell: true,
+        },
+      })
+    ),
   ]);
 
   const tickerBy = new Map(tickers.map((t) => [t.symbol, t]));

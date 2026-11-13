@@ -91,6 +91,9 @@ find .next/cache -name '*sitemap*' -delete 2>/dev/null || true
 # real production data instead of serving the empty CI shell until revalidate expires.
 rm -rf .next/server/app/earnings.html .next/server/app/earnings.rsc .next/server/app/earnings.meta .next/server/app/earnings.segments 2>/dev/null || true
 rm -rf .next/server/app/brief.html .next/server/app/brief.rsc .next/server/app/brief.meta .next/server/app/brief.segments 2>/dev/null || true
+rm -rf .next/server/app/premarket-movers.html .next/server/app/premarket-movers.rsc .next/server/app/premarket-movers.meta .next/server/app/premarket-movers.segments 2>/dev/null || true
+rm -rf .next/server/app/gainers.html .next/server/app/gainers.rsc .next/server/app/gainers.meta .next/server/app/gainers.segments 2>/dev/null || true
+rm -rf .next/server/app/losers.html .next/server/app/losers.rsc .next/server/app/losers.meta .next/server/app/losers.segments 2>/dev/null || true
 
 rollback() {
   echo "❌ Rolling back to previous build"

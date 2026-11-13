@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
+import useSWR from 'swr';
 import CompanyLogo from '@/components/CompanyLogo';
 import { formatCompactNumber, formatMarketCap, formatMarketCapDiff, formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 import { formatSectorName } from '@/lib/utils/format';
@@ -472,6 +473,8 @@ interface MoversExplorerProps {
 
 type MoversView = 'gainers' | 'losers' | 'active';
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export function MoversExplorer({ gainers, losers, eligibleSymbols }: MoversExplorerProps) {
   const [filters, setFilters] = useState<MoversFilters>(DEFAULT_FILTERS);
   const [view, setView] = useState<MoversView>('gainers');
@@ -479,7 +482,31 @@ export function MoversExplorer({ gainers, losers, eligibleSymbols }: MoversExplo
   const [sortDir, setSortDir] = useState<SortDirection>('desc');
   const eligibleAnalysis = useMemo(() => new Set(eligibleSymbols), [eligibleSymbols]);
 
-  const allMovers = useMemo(() => [...gainers, ...losers], [gainers, losers]);
+  // Client-side SWR poll keeps the table fresh and self-heals across session boundaries or stale ISR cache
+  const { data } = useSWR<{ movers?: MoverRecord[] }>(
+    '/api/stocks/movers?limit=100',
+    fetcher,
+    {
+      refreshInterval: 30000,
+      revalidateOnFocus: true,
+    }
+  );
+
+  const effectiveGainers = useMemo(() => {
+    if (data?.movers && Array.isArray(data.movers) && data.movers.length > 0) {
+      return data.movers.filter(m => (m.lastChangePct ?? 0) > 0.01);
+    }
+    return gainers;
+  }, [data, gainers]);
+
+  const effectiveLosers = useMemo(() => {
+    if (data?.movers && Array.isArray(data.movers) && data.movers.length > 0) {
+      return data.movers.filter(m => (m.lastChangePct ?? 0) < -0.01);
+    }
+    return losers;
+  }, [data, losers]);
+
+  const allMovers = useMemo(() => [...effectiveGainers, ...effectiveLosers], [effectiveGainers, effectiveLosers]);
 
   const standouts = useMemo(() => computeStandouts(allMovers), [allMovers]);
 
@@ -496,7 +523,7 @@ export function MoversExplorer({ gainers, losers, eligibleSymbols }: MoversExplo
   };
 
   const filteredGainers = useMemo(() => {
-    const list = gainers.filter(m => matchesFilters(m, filters));
+    const list = effectiveGainers.filter(m => matchesFilters(m, filters));
     return list.sort((a, b) => {
       let diff = 0;
       if (sortBy === 'mcapDiff') {
@@ -510,10 +537,10 @@ export function MoversExplorer({ gainers, losers, eligibleSymbols }: MoversExplo
       }
       return sortDir === 'desc' ? diff : -diff;
     });
-  }, [gainers, filters, sortBy, sortDir]);
+  }, [effectiveGainers, filters, sortBy, sortDir]);
 
   const filteredLosers = useMemo(() => {
-    const list = losers.filter(m => matchesFilters(m, filters));
+    const list = effectiveLosers.filter(m => matchesFilters(m, filters));
     return list.sort((a, b) => {
       let diff = 0;
       if (sortBy === 'mcapDiff') {
@@ -527,10 +554,10 @@ export function MoversExplorer({ gainers, losers, eligibleSymbols }: MoversExplo
       }
       return sortDir === 'desc' ? diff : -diff;
     });
-  }, [losers, filters, sortBy, sortDir]);
+  }, [effectiveLosers, filters, sortBy, sortDir]);
 
   const mostActive = useMemo(() => {
-    const list = [...gainers, ...losers].filter(m => matchesFilters(m, filters));
+    const list = [...effectiveGainers, ...effectiveLosers].filter(m => matchesFilters(m, filters));
     return list.sort((a, b) => {
       let diff = 0;
       if (sortBy === 'mcapDiff') {
@@ -544,7 +571,7 @@ export function MoversExplorer({ gainers, losers, eligibleSymbols }: MoversExplo
       }
       return sortDir === 'desc' ? diff : -diff;
     }).slice(0, 50);
-  }, [gainers, losers, filters, sortBy, sortDir]);
+  }, [effectiveGainers, effectiveLosers, filters, sortBy, sortDir]);
 
   const hiddenMicrocaps = useMemo(
     () => (filters.showMicrocaps ? 0 : allMovers.filter(m => isMicrocap(m) && matchesFilters(m, { ...filters, showMicrocaps: true })).length),
