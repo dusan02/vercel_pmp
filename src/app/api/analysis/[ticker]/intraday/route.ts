@@ -19,18 +19,32 @@ export async function GET(
     const apiKey = process.env.POLYGON_API_KEY;
 
     if (!apiKey || apiKey.startsWith('dummy')) {
-        return NextResponse.json({ points: [], date: null, session: 'closed' });
+        return NextResponse.json({
+            points: [],
+            date: null,
+            session: 'closed',
+            sessionVwap: null,
+            dollarVolume: null,
+            totalTrades: null,
+        });
     }
 
-    const cacheKey = `intraday:${symbol}`;
+    const cacheKey = `intraday:v2:${symbol}`;
     try {
         const cached = await getCachedData(cacheKey);
         if (cached) return NextResponse.json(cached);
     } catch {}
 
-    const { points, date, session } = await getSessionIntraday(symbol, apiKey);
+    const { points, date, session, sessionVwap, dollarVolume, totalTrades } = await getSessionIntraday(symbol, apiKey);
 
-    const response = { points, date, session };
+    const response = {
+        points,
+        date,
+        session,
+        sessionVwap: sessionVwap ?? null,
+        dollarVolume: dollarVolume ?? null,
+        totalTrades: totalTrades ?? null,
+    };
     const ttl = points.length > 0 ? (session === 'closed' ? CACHE_TTL_CLOSED : CACHE_TTL_SESSION) : 60;
     try {
         await setCachedData(cacheKey, response, ttl);

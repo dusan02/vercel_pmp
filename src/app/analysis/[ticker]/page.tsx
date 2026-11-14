@@ -19,6 +19,7 @@ import {
   prefetchHistoryData,
   prefetchTopNews,
   prefetchDipData,
+  prefetchMarketProfile,
 } from '@/lib/analysis/pageData';
 import { buildStockSchema } from '@/lib/seo/analysisSchemas';
 import { buildFlowPeriods, type StatementRow } from '@/components/company/analysis/sections/FinancialFlowsSection';
@@ -49,6 +50,7 @@ import { renderPresetIcon } from '@/lib/utils/screenerIcons';
 import { TechnicalDipSection } from '@/components/company/analysis/sections/TechnicalDipSection';
 import { EtfBasketSection } from '@/components/company/analysis/sections/EtfBasketSection';
 import { getEtfBasket } from '@/lib/analysis/etfBaskets';
+import { MarketProfileSection } from '@/components/company/analysis/sections/MarketProfileSection';
 
 // Lazy client chunks — keeps recharts/finnhub-fetch code out of the initial bundle
 const IntradayChart = dynamic(() => import('@/components/company/IntradayChart').then((m) => m.IntradayChart));
@@ -126,7 +128,7 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   // Fetch everything in parallel (independent queries).
   // Includes SSR pre-fetch of analysis API + history + dipData for instant hydration.
-  const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, similarTickers, insiderActivity, premarketData, dipData, etfBasket, peerPillars] = await Promise.all([
+  const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, similarTickers, insiderActivity, premarketData, dipData, etfBasket, peerPillars, marketProfile] = await Promise.all([
     isEtf ? Promise.resolve({ upcoming: [], recent: [] }) : getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
     getRelatedOpportunities(tickerUpper),
@@ -142,6 +144,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     prefetchDipData(tickerUpper),
     isEtf ? getEtfBasket(tickerUpper) : Promise.resolve(null),
     isEtf ? Promise.resolve(null) : getPeerPillars(data?.sector ?? null, data?.industry ?? null),
+    prefetchMarketProfile(tickerUpper),
   ]);
 
   // Reuse statements already loaded by prefetchAnalysisData; only hit the DB
@@ -422,6 +425,14 @@ export default async function AnalysisPage({ params }: PageProps) {
               changeLabel={marketSession === 'closed' ? 'at last close' : marketSession === 'pre' ? 'pre-market' : marketSession === 'after' ? 'after-hours' : 'day'}
             />
           </div>
+
+          {/* S&P 500 Alpha Matrix, 1Y Risk, Industry Peers & Split-Adjusted Dividends */}
+          <MarketProfileSection
+            ticker={tickerUpper}
+            companyName={companyName}
+            initialData={marketProfile}
+            isEtf={isEtf}
+          />
 
           {/* ETF related basket — constituents / sector leaders / underlying (ETFs only) */}
           {isEtf && etfBasket && <EtfBasketSection ticker={tickerUpper} basket={etfBasket} />}

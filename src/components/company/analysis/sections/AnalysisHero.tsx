@@ -534,6 +534,8 @@ export function AnalysisHero({
               <div className="hidden sm:flex items-center gap-2 text-gray-400 dark:text-gray-500">
                 <a href="#price-chart" className="hover:text-blue-600 dark:hover:text-blue-400">Chart ↓</a>
                 <span>·</span>
+                <a href="#market-profile" className="hover:text-blue-600 dark:hover:text-blue-400">Peers &amp; Alpha ↓</a>
+                <span>·</span>
                 <a href="#key-metrics" className="hover:text-blue-600 dark:hover:text-blue-400">Metrics ↓</a>
                 <span>·</span>
                 <a href="#financial-charts" className="hover:text-blue-600 dark:hover:text-blue-400">Sankey ↓</a>

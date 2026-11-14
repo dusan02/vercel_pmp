@@ -1,9 +1,11 @@
 import { detectSession } from '@/lib/utils/timeUtils';
 import { getDateET } from '@/lib/utils/dateET';
+import { attachSessionVwap, type IntradayBar } from '@/lib/analysis/marketProfileMath';
 
 export interface IntradayPoint {
   ts: string;
   price: number;
+  vwap?: number | null;
 }
 
 export type MarketSession = 'pre' | 'live' | 'after' | 'closed';
@@ -12,6 +14,9 @@ export interface IntradaySeries {
   points: IntradayPoint[];
   date: string | null;
   session: MarketSession;
+  sessionVwap?: number | null;
+  dollarVolume?: number | null;
+  totalTrades?: number | null;
 }
 
 /**
@@ -39,20 +44,44 @@ export async function getSessionIntraday(symbol: string, apiKey: string): Promis
             const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(15000) });
             if (!res.ok) continue;
             const json = await res.json();
-            const pts: IntradayPoint[] = Array.isArray(json?.results)
-                ? (json.results as any[])
-                    .filter((p) => typeof p.c === 'number' && p.c > 0)
-                    .map((p) => ({ ts: new Date(p.t).toISOString(), price: p.c }))
+            const rawBars = Array.isArray(json?.results)
+                ? (json.results as Array<IntradayBar & { n?: number }>).filter(
+                    (p) => typeof p.c === 'number' && p.c > 0 && typeof p.t === 'number',
+                )
                 : [];
-            if (pts.length > 0) {
-                return { points: pts, date: dateIso, session };
+            if (rawBars.length > 0) {
+                const vwaps = attachSessionVwap(rawBars);
+                let dollarVol = 0;
+                let trades = 0;
+                let sessionVwap: number | null = null;
+                const pts: IntradayPoint[] = rawBars.map((p, i) => {
+                    const vw = vwaps[i] ?? null;
+                    if (vw != null) sessionVwap = vw;
+                    const barVol = Number(p.v) || 0;
+                    const barPx = Number(p.vw) > 0 ? Number(p.vw) : p.c;
+                    if (barVol > 0 && barPx > 0) dollarVol += barPx * barVol;
+                    if (typeof p.n === 'number' && p.n > 0) trades += p.n;
+                    return {
+                        ts: new Date(p.t).toISOString(),
+                        price: p.c,
+                        vwap: vw,
+                    };
+                });
+                return {
+                    points: pts,
+                    date: dateIso,
+                    session,
+                    sessionVwap,
+                    dollarVolume: dollarVol > 0 ? Math.round(dollarVol) : null,
+                    totalTrades: trades > 0 ? trades : null,
+                };
             }
         } catch {
             // try next date
         }
     }
 
-    return { points: [], date: null, session };
+    return { points: [], date: null, session, sessionVwap: null, dollarVolume: null, totalTrades: null };
 }
 
 function getLastTradingDayIso(todayIso: string): string {

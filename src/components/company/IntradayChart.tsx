@@ -3,23 +3,34 @@
 import { useEffect, useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { CHART_FONT } from '@/components/charts/chartTheme';
+import { formatCurrencyCompact } from '@/lib/utils/format';
 
 interface Point {
   ts: string;
   price: number;
+  vwap?: number | null;
 }
 
 interface IntradayData {
   points: Point[];
   date: string | null;
   session: string;
+  sessionVwap?: number | null;
+  dollarVolume?: number | null;
+  totalTrades?: number | null;
+}
+
+function formatTradesCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M trades`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(n >= 100_000 ? 0 : 1)}k trades`;
+  return `${n.toLocaleString('en-US')} trades`;
 }
 
 /**
  * Today's intraday price series (5-minute bars) for one ticker — including
  * the pre-market session, which no other free source shows per-ticker.
- * Rendered on /analysis/[ticker] under the hero. Client-fetches
- * /api/analysis/[ticker]/intraday (Polygon 5-min aggs, cached 5 min).
+ * Overlaid with cumulative session VWAP, dollar volume, and trade count
+ * from Polygon 5-min aggregates.
  */
 export function IntradayChart({ ticker }: { ticker: string }) {
   const [data, setData] = useState<IntradayData | null>(null);
@@ -47,14 +58,19 @@ export function IntradayChart({ ticker }: { ticker: string }) {
       timeZone: 'America/New_York',
     }),
     price: p.price,
+    vwap: p.vwap ?? null,
     ts: p.ts,
   }));
 
+  const hasVwap = chartData.some((d) => d.vwap != null);
   const first = data.points[0]!.price;
   const last = data.points[data.points.length - 1]!.price;
   const changePct = (last / first - 1) * 100;
   const up = changePct >= 0;
   const stroke = up ? '#059669' : '#e11d48';
+
+  const vwap = data.sessionVwap != null && data.sessionVwap > 0 ? data.sessionVwap : null;
+  const vwapDiffPct = vwap != null ? ((last / vwap) - 1) * 100 : null;
 
   // Regular-session open marker (9:30 AM ET)
   const openTime = chartData.find((d) => {
@@ -64,7 +80,7 @@ export function IntradayChart({ ticker }: { ticker: string }) {
 
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
           Intraday — {data.date}
           <span className="ml-2 text-xs font-medium text-gray-500 dark:text-gray-400">5-min, pre + regular</span>
@@ -73,6 +89,31 @@ export function IntradayChart({ ticker }: { ticker: string }) {
           {up ? '+' : ''}{changePct.toFixed(2)}% since session start
         </span>
       </div>
+      {(vwap != null || (data.dollarVolume != null && data.dollarVolume > 0) || (data.totalTrades != null && data.totalTrades > 0)) && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
+          {vwap != null && vwapDiffPct != null && (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-block w-3 border-t-2 border-dashed border-indigo-500" aria-hidden />
+              <span>
+                VWAP <strong className="font-semibold text-gray-800 dark:text-gray-200">${vwap.toFixed(vwap < 10 ? 3 : 2)}</strong>
+              </span>
+              <span className={`font-medium ${vwapDiffPct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                ({vwapDiffPct >= 0 ? '+' : ''}{vwapDiffPct.toFixed(2)}% {vwapDiffPct >= 0 ? 'above' : 'below'})
+              </span>
+            </span>
+          )}
+          {data.dollarVolume != null && data.dollarVolume > 0 && (
+            <span>
+              $ Vol <strong className="font-semibold text-gray-700 dark:text-gray-300">{formatCurrencyCompact(data.dollarVolume)}</strong>
+            </span>
+          )}
+          {data.totalTrades != null && data.totalTrades > 0 && (
+            <span>
+              <strong className="font-semibold text-gray-700 dark:text-gray-300">{formatTradesCount(data.totalTrades)}</strong>
+            </span>
+          )}
+        </div>
+      )}
       <div>
         <ResponsiveContainer width="100%" height={160}>
           <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
@@ -94,7 +135,10 @@ export function IntradayChart({ ticker }: { ticker: string }) {
             <Tooltip
               contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12 }}
               labelStyle={{ color: '#6B7280', fontSize: CHART_FONT.axis }}
-              formatter={(v: unknown) => [`$${Number(v).toFixed(2)}`, 'Price'] as [string, string]}
+              formatter={(v: unknown, name: unknown) => [
+                v != null ? `$${Number(v).toFixed(2)}` : '—',
+                name === 'vwap' ? 'VWAP' : 'Price',
+              ] as [string, string]}
             />
             {openTime && (
               <ReferenceLine
@@ -105,6 +149,9 @@ export function IntradayChart({ ticker }: { ticker: string }) {
               />
             )}
             <Area type="monotone" dataKey="price" stroke={stroke} strokeWidth={2} fill={`url(#intradayGrad-${ticker})`} isAnimationActive={false} />
+            {hasVwap && (
+              <Area type="monotone" dataKey="vwap" stroke="#6366f1" strokeWidth={1.5} strokeDasharray="4 3" fill="none" dot={false} isAnimationActive={false} connectNulls />
+            )}
           </AreaChart>
         </ResponsiveContainer>
       </div>

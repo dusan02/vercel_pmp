@@ -373,3 +373,22 @@ export async function prefetchDipData(symbol: string) {
   }
 }
 
+/**
+ * SSR pre-fetch for Market Profile (S&P 500 relative performance, 1Y risk,
+ * Finnhub peers, split-adjusted dividends, Polygon listing/SEC facts).
+ * Bounded by a 1500ms timeout budget so cold external calls never stall SSR
+ * (MarketProfileSection hydrates from /api/analysis/[ticker]/market-profile).
+ */
+export async function prefetchMarketProfile(symbol: string) {
+  if (process.env.NEXT_PHASE === 'phase-production-build') return null;
+  try {
+    const { getMarketProfile } = await import('./marketProfile');
+    return await Promise.race([
+      getMarketProfile(symbol),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
+    ]);
+  } catch {
+    return null;
+  }
+}
+
