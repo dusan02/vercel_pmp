@@ -1,5 +1,6 @@
 import type { PillarScores, PillarKey } from '@/services/analysis/pillars';
 import { isPeDistorted } from '@/lib/analysis/peDistortion';
+import { formatOrdinal as ordinal } from '@/lib/utils/format';
 
 /**
  * PMP Verdict 2.0 — deterministic decision layer over data the page already
@@ -190,13 +191,6 @@ function valLevel(
 
 function fmtSigned(v: number, suffix = '%') {
     return `${v >= 0 ? '+' : ''}${v.toFixed(1)}${suffix}`;
-}
-
-function ordinal(n: number): string {
-    const v = Math.round(n);
-    const s = ['th', 'st', 'nd', 'rd'];
-    const mod100 = v % 100;
-    return `${v}${s[(mod100 - 20) % 10] || s[mod100] || s[0]}`;
 }
 
 export interface VerdictClass {

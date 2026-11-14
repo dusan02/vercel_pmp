@@ -131,4 +131,14 @@ export function formatSectorName(sector: string | null | undefined): string {
   };
   
   return sectorMap[sector] || sector;
-} 
+}
+
+/**
+ * Formats an integer (or rounded float) as an English ordinal string (1 -> "1st", 11 -> "11th", 72 -> "72nd").
+ */
+export function formatOrdinal(n: number): string {
+  const v = Math.round(n);
+  const s = ['th', 'st', 'nd', 'rd'];
+  const mod100 = Math.abs(v) % 100;
+  return `${v}${s[(mod100 - 20) % 10] ?? s[mod100] ?? s[0] ?? 'th'}`;
+}

@@ -7,9 +7,13 @@ import {
   exchangeLabel,
   securityTypeLabel,
   edgarUrl,
+  formatListedLabel,
+  formatDivAmount,
   type DailyClose,
   type IntradayBar,
 } from '@/lib/analysis/marketProfileMath';
+import { formatOrdinal } from '@/lib/utils/format';
+import { chunkQuery } from '@/lib/db/chunkQuery';
 
 function makeDailySeries(
   startDate: string,
@@ -208,5 +212,41 @@ describe('fact formatters', () => {
     expect(edgarUrl('0000320193')).toBe('https://www.sec.gov/edgar/browse/?CIK=320193');
     expect(edgarUrl('bad')).toBeNull();
     expect(edgarUrl(null)).toBeNull();
+  });
+
+  it('formats listing labels and dividend currency amounts', () => {
+    expect(formatListedLabel('1980-12-12', 2026)).toBe('Listed Dec 1980 · 46y');
+    expect(formatListedLabel('2026-03-01', 2026)).toBe('Listed Mar 2026');
+    expect(formatDivAmount(0.25)).toBe('$0.25');
+    expect(formatDivAmount(0.0825)).toBe('$0.0825');
+    expect(formatDivAmount(1.5, 'EUR')).toBe('EUR 1.50');
+  });
+
+  it('formats ordinal numbers accurately across edge cases', () => {
+    expect(formatOrdinal(1)).toBe('1st');
+    expect(formatOrdinal(2)).toBe('2nd');
+    expect(formatOrdinal(3)).toBe('3rd');
+    expect(formatOrdinal(4)).toBe('4th');
+    expect(formatOrdinal(11)).toBe('11th');
+    expect(formatOrdinal(12)).toBe('12th');
+    expect(formatOrdinal(13)).toBe('13th');
+    expect(formatOrdinal(21)).toBe('21st');
+    expect(formatOrdinal(72.4)).toBe('72nd');
+  });
+});
+
+describe('chunkQuery', () => {
+  it('returns empty for empty input, runs single batch when under limit, and chunks larger inputs', async () => {
+    const emptyFn = jest.fn(async () => []);
+    expect(await chunkQuery([], emptyFn)).toEqual([]);
+    expect(emptyFn).not.toHaveBeenCalled();
+
+    const batches: string[][] = [];
+    const res = await chunkQuery(['A', 'B', 'C', 'D', 'E'], async (chunk) => {
+      batches.push(chunk);
+      return chunk.map((s) => `${s}!`);
+    }, 2);
+    expect(batches).toEqual([['A', 'B'], ['C', 'D'], ['E']]);
+    expect(res).toEqual(['A!', 'B!', 'C!', 'D!', 'E!']);
   });
 });

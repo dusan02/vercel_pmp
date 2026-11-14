@@ -34,6 +34,13 @@ export interface TickerNav {
     industry: NavModeResult;
 }
 
+export interface TickerNavSeed {
+    lastMarketCap: number | null;
+    sector: string | null;
+    industry: string | null;
+    hasAnalysisCache: boolean;
+}
+
 const EMPTY: NavModeResult = { available: false, label: null, prev: null, next: null };
 
 const ELIGIBLE = { analysisCache: { isNot: null }, lastMarketCap: { gt: 0 } } as const;
@@ -86,15 +93,27 @@ async function mode(symbol: string, mcap: number, extraWhere: object, label: str
     return { available: true, label, prev, next };
 }
 
-export async function getTickerNav(symbol: string): Promise<TickerNav | null> {
+async function resolveNavSeed(symbol: string, seed?: TickerNavSeed): Promise<TickerNavSeed | null> {
+    if (seed) return seed;
     const t = await prisma.ticker.findUnique({
         where: { symbol },
         select: { lastMarketCap: true, sector: true, industry: true, analysisCache: { select: { symbol: true } } },
     });
+    if (!t) return null;
+    return {
+        lastMarketCap: t.lastMarketCap,
+        sector: t.sector,
+        industry: t.industry,
+        hasAnalysisCache: t.analysisCache != null,
+    };
+}
+
+export async function getTickerNav(symbol: string, seed?: TickerNavSeed): Promise<TickerNav | null> {
+    const t = await resolveNavSeed(symbol, seed);
     // Ticker not in the eligible universe or no market cap → no navigator.
     // (AnalysisCache is our "real fundamental data" proxy — ETFs like SPY
     // have a Ticker row but no statements, so they drop out here.)
-    if (!t?.analysisCache || !t.lastMarketCap || t.lastMarketCap <= 0) return null;
+    if (!t?.hasAnalysisCache || !t.lastMarketCap || t.lastMarketCap <= 0) return null;
 
     const mcap = t.lastMarketCap;
     const [mc, sec, ind] = await Promise.all([
@@ -146,12 +165,9 @@ async function nearestByCap(symbol: string, mcap: number, extraWhere: object, n:
 
 /** Similar-cap peers for the in-chart "similar tickers" chips — same
  *  eligible universe as getTickerNav; null when the ticker isn't eligible. */
-export async function getSimilarTickers(symbol: string): Promise<SimilarTickers | null> {
-    const t = await prisma.ticker.findUnique({
-        where: { symbol },
-        select: { lastMarketCap: true, sector: true, industry: true, analysisCache: { select: { symbol: true } } },
-    });
-    if (!t?.analysisCache || !t.lastMarketCap || t.lastMarketCap <= 0) return null;
+export async function getSimilarTickers(symbol: string, seed?: TickerNavSeed): Promise<SimilarTickers | null> {
+    const t = await resolveNavSeed(symbol, seed);
+    if (!t?.hasAnalysisCache || !t.lastMarketCap || t.lastMarketCap <= 0) return null;
     const mcap = t.lastMarketCap;
     const [mc, sec, ind] = await Promise.all([
         nearestByCap(symbol, mcap, {}, SIMILAR_N),

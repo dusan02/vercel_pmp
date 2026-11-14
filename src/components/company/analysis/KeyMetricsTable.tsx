@@ -5,15 +5,10 @@ import { AnalysisData, ValuationHistoryStat } from './types';
 import { MetricCardDef, StatusType, StatusBadge, VALUE_COLORS } from '../shared/MetricCard';
 import { summarizeLossYears, capexCycleContext } from '@/lib/utils/analysisMath';
 import { isPeDistorted } from '@/lib/analysis/peDistortion';
+import { formatOrdinal } from '@/lib/utils/format';
 import { buildSnapshotCells } from './sections/FinancialSnapshot';
 import { InsiderTransactionsBody, InsiderActivitySummary, type InsiderTransactionData } from './sections/InsiderTransactionsSection';
 import type { InsiderTxLike } from '@/lib/utils/analysisMath';
-
-function ordinalSuffix(n: number): string {
-    const s = ['th', 'st', 'nd', 'rd'];
-    const v = n % 100;
-    return n + (s[(v - 20) % 10] ?? s[v] ?? s[0] ?? 'th');
-}
 
 /** Tooltip suffix: "10Y range 5.5x–50.1x · 72nd percentile" (own TTM basis). */
 function histTip(stat: ValuationHistoryStat | undefined, unit: 'x' | '%'): string {
@@ -23,7 +18,7 @@ function histTip(stat: ValuationHistoryStat | undefined, unit: 'x' | '%'): strin
         : `${v.toFixed(1)}x`;
     const yrs = stat.years != null && stat.years >= 1 ? `${Math.round(stat.years)}Y` : 'hist.';
     const p = stat.percentile;
-    const pctText = p >= 99 ? 'highest in history' : p <= 1 ? 'lowest in history' : `${ordinalSuffix(Math.round(p))} pct`;
+    const pctText = p >= 99 ? 'highest in history' : p <= 1 ? 'lowest in history' : `${formatOrdinal(p)} pct`;
     return ` — vs own ${yrs} history: ${f(stat.min)}–${f(stat.max)} · ${pctText}`;
 }
 
@@ -444,7 +439,7 @@ function HistBar({ stat }: { stat: ValuationHistoryStat | undefined }) {
     const label = p >= 67 ? 'Above average' : p <= 33 ? 'Below average' : 'In range';
     const barColor = p >= 67 ? 'bg-rose-400 dark:bg-rose-500' : p <= 33 ? 'bg-emerald-400 dark:bg-emerald-500' : 'bg-amber-400 dark:bg-amber-500';
     const yrs = stat.years != null && stat.years >= 1 ? `${Math.round(stat.years)}Y` : 'hist.';
-    const pctText = p >= 99 ? 'highest in history' : p <= 1 ? 'lowest in history' : `${ordinalSuffix(Math.round(p))} pct`;
+    const pctText = p >= 99 ? 'highest in history' : p <= 1 ? 'lowest in history' : `${formatOrdinal(p)} pct`;
     return (
         <div className="mt-2 px-3 pb-2">
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-[11px] font-medium text-gray-500 dark:text-gray-400">

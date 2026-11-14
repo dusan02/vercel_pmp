@@ -126,25 +126,47 @@ export default async function AnalysisPage({ params }: PageProps) {
   const companyName = data?.name || getCompanyName(tickerUpper) || tickerUpper;
   const isEtf = data?.assetType === 'ETF' || data?.assetType === 'LEVERAGED_ETF';
 
+  // Reuse metadata already fetched by getTickerData() instead of re-querying
+  // prisma.ticker.findUnique across helper modules.
+  const navSeed = {
+    lastMarketCap: data.lastMarketCap ?? null,
+    sector: data.sector ?? null,
+    industry: data.industry ?? null,
+    hasAnalysisCache: data.analysisCache != null,
+  };
+  const relatedSeed = {
+    sector: data.sector ?? null,
+    industry: data.industry ?? null,
+    overallScore: data.analysisCache?.overallScore ?? null,
+    valuationScore: data.analysisCache?.valuationScore ?? null,
+  };
+  const profileSeed = {
+    name: data.name ?? null,
+    assetType: data.assetType ?? null,
+    sector: data.sector ?? null,
+    industry: data.industry ?? null,
+    payoutRatio: data.finnhubMetrics?.payoutRatio ?? null,
+  };
+
   // Fetch everything in parallel (independent queries).
   // Includes SSR pre-fetch of analysis API + history + dipData for instant hydration.
   const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, similarTickers, insiderActivity, premarketData, dipData, etfBasket, peerPillars, marketProfile] = await Promise.all([
     isEtf ? Promise.resolve({ upcoming: [], recent: [] }) : getEarningsForTicker(tickerUpper),
     getRecentSignificantMoves(tickerUpper),
-    getRelatedOpportunities(tickerUpper),
+    getRelatedOpportunities(tickerUpper, relatedSeed),
     isEtf ? Promise.resolve(null) : prefetchAnalysisData(tickerUpper),
     isEtf ? Promise.resolve(null) : prefetchHistoryData(tickerUpper),
     get52WeekRange(tickerUpper),
     prefetchTopNews(tickerUpper, companyName),
     getMatchedScreens(tickerUpper),
-    getTickerNav(tickerUpper),
-    getSimilarTickers(tickerUpper),
+    getTickerNav(tickerUpper, navSeed),
+    getSimilarTickers(tickerUpper, navSeed),
     isEtf ? Promise.resolve([]) : getInsiderActivity90d(tickerUpper),
     getTodayPremarket(tickerUpper),
     prefetchDipData(tickerUpper),
     isEtf ? getEtfBasket(tickerUpper) : Promise.resolve(null),
     isEtf ? Promise.resolve(null) : getPeerPillars(data?.sector ?? null, data?.industry ?? null),
-    prefetchMarketProfile(tickerUpper),
+    prefetchMarketProfile(tickerUpper, profileSeed),
   ]);
 
   // Reuse statements already loaded by prefetchAnalysisData; only hit the DB

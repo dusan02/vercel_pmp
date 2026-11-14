@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
+import { chunkQuery } from '@/lib/db/chunkQuery';
 import { getDateET } from '@/lib/utils/dateET';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { getPreviousClose } from '@/lib/utils/marketCapUtils';
@@ -148,24 +149,6 @@ async function enrichEarningsRows(
   refEnd.setUTCDate(refEnd.getUTCDate() + 5);
 
   const mcapLookback = new Date(Date.now() - 14 * 86400_000);
-
-  // Helper: Chunk symbols to avoid SQLite 999 parameter limit on IN queries,
-  // especially when combined with inequality filters where Prisma cannot split queries.
-  const chunkQuery = async <T>(
-    symList: string[],
-    fn: (chunk: string[]) => Promise<T[]>,
-    chunkSize = 150
-  ): Promise<T[]> => {
-    if (symList.length === 0) return [];
-    if (symList.length <= chunkSize) return fn(symList);
-    const results: T[] = [];
-    for (let i = 0; i < symList.length; i += chunkSize) {
-      const chunk = symList.slice(i, i + chunkSize);
-      const part = await fn(chunk);
-      results.push(...part);
-    }
-    return results;
-  };
 
   const [tickers, mcaps, caches, ews, dailyRefs, fhMetrics, fhRecs] = await Promise.all([
     chunkQuery(symbols, (chunk) =>

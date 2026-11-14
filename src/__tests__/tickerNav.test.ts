@@ -193,4 +193,20 @@ describe('getSimilarTickers', () => {
         expect(await getSimilarTickers('GONE')).toBeNull();
         expect(await getSimilarTickers('NOPE')).toBeNull();
     });
+
+    it('skips prisma.ticker.findUnique when pre-fetched seed is supplied', async () => {
+        tickerFindUnique.mockClear();
+        const seed = {
+            lastMarketCap: 1700,
+            sector: 'Communication Services',
+            industry: 'Internet Content',
+            hasAnalysisCache: true,
+        };
+        const nav = (await getTickerNav('META', seed))!;
+        const sim = (await getSimilarTickers('META', seed))!;
+        expect(tickerFindUnique).not.toHaveBeenCalled();
+        expect(nav.market_cap.prev?.symbol).toBe('NVDA');
+        expect(nav.market_cap.next?.symbol).toBe('SHOP');
+        expect(sim.market_cap.map(x => x.symbol).slice(0, 3)).toEqual(['NVDA', 'MSFT', 'AAPL']);
+    });
 });

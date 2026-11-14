@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { FileText } from 'lucide-react';
-import { formatPrice, formatPercent, formatMarketCap } from '@/lib/utils/format';
+import { formatPrice, formatPercent, formatMarketCap, formatOrdinal } from '@/lib/utils/format';
 import { isPeDistorted } from '@/lib/analysis/peDistortion';
 import { AddToWatchlist } from '@/components/company/AddToWatchlist';
 import { MoveAlertButton } from '@/components/notifications/MoveAlertButton';
@@ -93,11 +93,6 @@ export function AnalysisHero({
 }: AnalysisHeroProps) {
   const isClosed = marketSession === 'closed';
   const isPre = marketSession === 'pre';
-  const formatOrdinal = (n: number) => {
-    const r = Math.round(n);
-    const s = ['th', 'st', 'nd', 'rd'][(r % 100 >= 11 && r % 100 <= 13) ? 0 : r % 10] || 'th';
-    return `${r}${s}`;
-  };
   const earningsLabel =
     earningsDate && earningsDays != null
       ? earningsDays === 0

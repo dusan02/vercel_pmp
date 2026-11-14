@@ -24,6 +24,7 @@
 import { computeTTM, isAnnualPeriod, type TTMResult } from '@/lib/utils/ttm';
 import { summarizeLossYears } from '@/lib/utils/analysisMath';
 import { isSuspiciousShareCount } from '@/lib/utils/shareCount';
+import { formatOrdinal } from '@/lib/utils/format';
 import {
     medianOf, percentileBelow, buildValuationHistory,
     type ValuationHistoryStats,
@@ -101,11 +102,7 @@ export interface DerivePillarInputsArgs {
     valuationRows: PillarValuationRow[];
 }
 
-export function ordinal(n: number): string {
-    const s = ['th', 'st', 'nd', 'rd'];
-    const v = n % 100;
-    return n + (s[(v - 20) % 10] ?? s[v] ?? s[0] ?? 'th');
-}
+export const ordinal = formatOrdinal;
 
 /**
  * Human-readable P/E percentile vs the stock's own valuation history.

@@ -7,6 +7,7 @@ import { createETDate, getDateET, nowET } from '@/lib/utils/dateET';
 import { getAnalysisResponse } from './analysisResponse';
 import { getHistoryResponse } from './historyResponse';
 import { getTickerNews, isAboutTicker } from './newsService';
+import type { MarketProfileSeed } from './marketProfile';
 
 export const getAnalysisQuote = cache((data: {
   lastPrice: number | null;
@@ -57,6 +58,7 @@ export const getTickerData = cache(async function getTickerData(symbol: string) 
         isSbcAlert: true,
         analysisCache: {
           select: {
+            overallScore: true,
             healthScore: true,
             valuationScore: true,
             verdictText: true,
@@ -78,6 +80,7 @@ export const getTickerData = cache(async function getTickerData(symbol: string) 
             peRatio: true,
             dividendYield: true,
             roe: true,
+            payoutRatio: true,
           },
         },
         finnhubPriceTarget: {
@@ -379,12 +382,12 @@ export async function prefetchDipData(symbol: string) {
  * Bounded by a 1500ms timeout budget so cold external calls never stall SSR
  * (MarketProfileSection hydrates from /api/analysis/[ticker]/market-profile).
  */
-export async function prefetchMarketProfile(symbol: string) {
+export async function prefetchMarketProfile(symbol: string, seed?: MarketProfileSeed) {
   if (process.env.NEXT_PHASE === 'phase-production-build') return null;
   try {
     const { getMarketProfile } = await import('./marketProfile');
     return await Promise.race([
-      getMarketProfile(symbol),
+      getMarketProfile(symbol, seed),
       new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
     ]);
   } catch {

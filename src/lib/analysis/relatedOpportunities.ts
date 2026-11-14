@@ -93,22 +93,40 @@ export function assembleRelatedGroups(c: RelatedCandidates): RelatedOpportunitie
 // groups rather than an error (discovery must never break the host page).
 // ---------------------------------------------------------------------------
 
-export async function getRelatedOpportunities(symbol: string): Promise<RelatedOpportunities> {
+export interface RelatedOpportunitiesSeed {
+  sector: string | null;
+  industry: string | null;
+  overallScore?: number | null;
+  valuationScore?: number | null;
+}
+
+export async function getRelatedOpportunities(
+  symbol: string,
+  seed?: RelatedOpportunitiesSeed,
+): Promise<RelatedOpportunities> {
   const empty: RelatedOpportunities = { sector: null, industry: null, groups: [] };
   try {
-    const ticker = await prisma.ticker.findUnique({
-      where: { symbol },
-      select: { sector: true, industry: true },
-    });
+    const ticker = seed
+      ? { sector: seed.sector, industry: seed.industry }
+      : await prisma.ticker.findUnique({
+          where: { symbol },
+          select: { sector: true, industry: true },
+        });
     if (!ticker?.sector || ticker.sector === 'Other') return empty;
 
     const sector = ticker.sector;
     const industry = ticker.industry && ticker.industry !== 'Other' ? ticker.industry : null;
 
-    const self = await prisma.analysisCache.findUnique({
-      where: { symbol },
-      select: { overallScore: true, valuationScore: true },
-    });
+    const self =
+      seed && (seed.overallScore !== undefined || seed.valuationScore !== undefined)
+        ? {
+            overallScore: seed.overallScore ?? null,
+            valuationScore: seed.valuationScore ?? null,
+          }
+        : await prisma.analysisCache.findUnique({
+            where: { symbol },
+            select: { overallScore: true, valuationScore: true },
+          });
 
     const [moversRaw, industryRaw] = await Promise.all([
       sector === 'ETF'

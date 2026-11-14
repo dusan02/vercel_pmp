@@ -333,7 +333,15 @@ async function resolvePeerRows(
   return { peers: rows, peersPending };
 }
 
-export async function getMarketProfile(rawSymbol: string): Promise<MarketProfile> {
+export interface MarketProfileSeed {
+  name: string | null;
+  assetType: string | null;
+  sector: string | null;
+  industry: string | null;
+  payoutRatio?: number | null;
+}
+
+export async function getMarketProfile(rawSymbol: string, seed?: MarketProfileSeed): Promise<MarketProfile> {
   const symbol = rawSymbol.toUpperCase().trim();
   const cacheKey = `market-profile:v1:${symbol}`;
   try {
@@ -346,16 +354,36 @@ export async function getMarketProfile(rawSymbol: string): Promise<MarketProfile
   const todayET = getDateET();
   const fiveYearsAgo = new Date(Date.now() - 5.1 * 365 * DAY_MS);
 
-  const selfMeta = await prisma.ticker.findUnique({
-    where: { symbol },
-    select: {
-      name: true,
-      assetType: true,
-      sector: true,
-      industry: true,
-      finnhubMetrics: { select: { payoutRatio: true } },
-    },
-  });
+  const selfMeta = seed
+    ? {
+        name: seed.name,
+        assetType: seed.assetType,
+        sector: seed.sector,
+        industry: seed.industry,
+        payoutRatio: seed.payoutRatio ?? null,
+      }
+    : await prisma.ticker
+        .findUnique({
+          where: { symbol },
+          select: {
+            name: true,
+            assetType: true,
+            sector: true,
+            industry: true,
+            finnhubMetrics: { select: { payoutRatio: true } },
+          },
+        })
+        .then((t) =>
+          t
+            ? {
+                name: t.name,
+                assetType: t.assetType,
+                sector: t.sector,
+                industry: t.industry,
+                payoutRatio: t.finnhubMetrics?.payoutRatio ?? null,
+              }
+            : null,
+        );
 
   const isEtf = selfMeta?.assetType === 'ETF' || selfMeta?.assetType === 'LEVERAGED_ETF';
 
@@ -386,7 +414,7 @@ export async function getMarketProfile(rawSymbol: string): Promise<MarketProfile
     performance: perf.rows,
     risk,
     dividends,
-    payoutRatio: selfMeta?.finnhubMetrics?.payoutRatio ?? null,
+    payoutRatio: selfMeta?.payoutRatio ?? null,
     facts,
     peers: peerData.peers,
     peersPending: peerData.peersPending,

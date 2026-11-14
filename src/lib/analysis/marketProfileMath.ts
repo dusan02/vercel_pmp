@@ -467,6 +467,23 @@ export function edgarUrl(cik: string | null | undefined): string | null {
   return `https://www.sec.gov/edgar/browse/?CIK=${Number(cik)}`;
 }
 
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export function formatListedLabel(listDate: string, refYear: number): string {
+  const [yStr, mStr] = listDate.split('-');
+  const y = Number(yStr);
+  const m = Number(mStr);
+  if (!y || !m) return `Listed ${listDate}`;
+  const yrs = Math.max(0, refYear - y);
+  const suffix = yrs >= 1 ? ` · ${yrs}y` : '';
+  return `Listed ${SHORT_MONTHS[m - 1] ?? ''} ${y}${suffix}`;
+}
+
+export function formatDivAmount(v: number, currency = 'USD'): string {
+  const prefix = currency === 'USD' ? '$' : `${currency} `;
+  return `${prefix}${v < 0.1 ? v.toFixed(4) : v.toFixed(2)}`;
+}
+
 // ─── Intraday VWAP ──────────────────────────────────────────────────────────
 
 export interface IntradayBar {
