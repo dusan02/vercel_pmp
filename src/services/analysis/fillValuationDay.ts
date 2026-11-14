@@ -170,8 +170,13 @@ export function computeDayRatios(statements: FinancialStatement[], closePrice: n
     const eqStmt = latestWith((s) => s.totalEquity != null);
     const equity = eqStmt?.totalEquity ?? null;
     const bs = latestWith((s) => s.totalDebt != null && s.cashAndEquivalents != null);
-    const effectiveNI = ttm.netIncome ?? latestFYWith((s) => s.netIncome != null)?.netIncome;
-    const commonCandidate = ttm.netIncomeCommon ?? latestFYWith((s) => s.netIncomeCommon != null)?.netIncomeCommon;
+    const latestAnnualIncomeStmt = latestFYWith(
+        (s) => s.netIncome != null || s.netIncomeCommon != null
+    );
+    const effectiveNI = ttm.netIncome ?? latestAnnualIncomeStmt?.netIncome ?? null;
+    const commonCandidate = ttm.netIncome !== null
+        ? ttm.netIncomeCommon
+        : (latestAnnualIncomeStmt?.netIncomeCommon ?? null);
     const effectiveNICommon = commonCandidate ?? effectiveNI;
     const peBasis: 'COMMON' | 'CONSOLIDATED_FALLBACK' | null =
         commonCandidate != null ? 'COMMON' : (effectiveNI != null ? 'CONSOLIDATED_FALLBACK' : null);

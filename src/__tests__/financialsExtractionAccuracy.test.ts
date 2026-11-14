@@ -430,5 +430,75 @@ describe('Financial Data Quality — Rigorous Extraction & Methodology Tests', (
             expect(dFallback.peRatioBasis).toBe('CONSOLIDATED_FALLBACK');
             expect(dFallback.currentEps).toBe(10); // 100M / 10M shares
         });
+
+        it('nikdy nesiaha po historickom netIncomeCommon zo starého FY keď novšie výkazy majú len konsolidovaný netIncome (GOOGL/META regresia)', async () => {
+            const { derivePillarInputs } = await import('@/services/analysis/pillarInputs');
+            const googlShares = 12_000_000_000;
+            const googlPrice = 300; // $3.6T mcap
+            const makeRow = (fiscalYear: number, fiscalPeriod: string, endIso: string, netIncome: number, netIncomeCommon: number | null) => ({
+                id: `${fiscalYear}-${fiscalPeriod}`,
+                symbol: 'GOOGL',
+                fiscalYear,
+                fiscalPeriod,
+                endDate: new Date(endIso),
+                revenue: 350_000_000_000,
+                netIncome,
+                netIncomeCommon,
+                ebit: 120_000_000_000,
+                grossProfit: 200_000_000_000,
+                operatingCashFlow: 130_000_000_000,
+                capex: 50_000_000_000,
+                sbc: 20_000_000_000,
+                totalAssets: 500_000_000_000,
+                totalLiabilities: 120_000_000_000,
+                currentAssets: 160_000_000_000,
+                currentLiabilities: 80_000_000_000,
+                retainedEarnings: 250_000_000_000,
+                totalEquity: 380_000_000_000,
+                sharesOutstanding: googlShares,
+                interestExpense: 500_000_000,
+                totalDebt: 30_000_000_000,
+                cashAndEquivalents: 100_000_000_000,
+                netPPE: 150_000_000_000,
+            });
+
+            // 2026 Q2 (common present) + 2025 FY (common null) + 2025 Q2 (common null) + ancient 2017 FY (common $12.6B)
+            const stmts: any[] = [
+                makeRow(2026, 'Q2', '2026-06-30T00:00:00Z', 174_000_000_000, 174_000_000_000),
+                makeRow(2025, 'FY', '2025-12-31T00:00:00Z', 132_000_000_000, null),
+                makeRow(2025, 'Q2', '2025-06-30T00:00:00Z', 62_000_000_000, null),
+                makeRow(2017, 'FY', '2017-12-31T00:00:00Z', 12_600_000_000, 12_600_000_000),
+            ];
+
+            // TTM NI = 174B + 132B - 62B = 244B; $3.6T / $244B ≈ 14.75x (NOT $3.6T / $12.6B ≈ 285.7x!)
+            const ratios = computeDayRatios(stmts, googlPrice, new Date('2026-11-13T00:00:00Z'), googlShares);
+            expect(ratios.peBasis).toBe('CONSOLIDATED_FALLBACK');
+            expect(ratios.peRatio).toBeCloseTo(3_600_000_000_000 / 244_000_000_000, 1);
+            expect(ratios.peRatio!).toBeLessThan(20);
+
+            const d = derivePillarInputs({
+                stmts,
+                tickerData: { lastPrice: googlPrice, lastMarketCap: 3600, sharesOutstanding: googlShares },
+                finnhubMetrics: null,
+                valuationRows: [],
+            });
+            expect(d.peRatioBasis).toBe('CONSOLIDATED_FALLBACK');
+            expect(d.currentPe).toBeCloseTo(3_600_000_000_000 / 244_000_000_000, 1);
+
+            // Annual-only case (no Q2 triad): must still use 2025 FY ($132B), never 2017 FY ($12.6B)
+            const annualOnlyStmts = [stmts[1], stmts[3]];
+            const annualRatios = computeDayRatios(annualOnlyStmts, googlPrice, new Date('2026-11-13T00:00:00Z'), googlShares);
+            expect(annualRatios.peBasis).toBe('CONSOLIDATED_FALLBACK');
+            expect(annualRatios.peRatio).toBeCloseTo(3_600_000_000_000 / 132_000_000_000, 1);
+
+            const dAnnual = derivePillarInputs({
+                stmts: annualOnlyStmts,
+                tickerData: { lastPrice: googlPrice, lastMarketCap: 3600, sharesOutstanding: googlShares },
+                finnhubMetrics: null,
+                valuationRows: [],
+            });
+            expect(dAnnual.peRatioBasis).toBe('CONSOLIDATED_FALLBACK');
+            expect(dAnnual.currentPe).toBeCloseTo(3_600_000_000_000 / 132_000_000_000, 1);
+        });
     });
 });

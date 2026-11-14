@@ -22,7 +22,7 @@ function formatTimeAgo(unix: number): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-export function NewsSection({ ticker }: { ticker: string }) {
+export function NewsSection({ ticker, embedded = false }: { ticker: string; embedded?: boolean }) {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,7 +50,7 @@ export function NewsSection({ ticker }: { ticker: string }) {
   if (news.length === 0) return null;
 
   return (
-    <section className="mb-6">
+    <section className={embedded ? '' : 'mb-6'}>
       <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
           <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

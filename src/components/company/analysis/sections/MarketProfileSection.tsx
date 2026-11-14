@@ -338,25 +338,31 @@ function DividendsCard({
             <span>Annual Dividend / Share</span>
             <span>Split-adjusted ({dividends.years[0]!.year}–{dividends.years[dividends.years.length - 1]!.year})</span>
           </div>
-          <div className="flex items-end gap-1.5 h-16">
+          <div className="flex items-end gap-2 h-20">
             {dividends.years.map((yr) => {
               const total = yr.regular + yr.special;
-              const pctH = Math.max(8, Math.round((total / maxDivYearTotal) * 100));
+              const barPx = Math.max(4, Math.round((total / maxDivYearTotal) * 44));
+              const showValue = dividends.years.length <= 8;
               return (
                 <div
                   key={yr.year}
-                  className="flex-1 flex flex-col items-center justify-end h-full group"
+                  className="flex-1 max-w-[3.25rem] flex flex-col items-center justify-end h-full group"
                   title={`${yr.year}${yr.partial ? ' YTD' : ''}: ${formatDivAmount(total, dividends.currency)}${yr.special > 0 ? ` (incl. ${formatDivAmount(yr.special, dividends.currency)} special)` : ''}`}
                 >
+                  {showValue && (
+                    <span className="mb-1 text-[10px] font-medium text-gray-500 dark:text-gray-400 tabular-nums leading-none whitespace-nowrap">
+                      {formatDivAmount(total, dividends.currency)}
+                    </span>
+                  )}
                   <div
                     className={`w-full rounded-t transition-colors ${
                       yr.partial
                         ? 'bg-emerald-300/80 dark:bg-emerald-700/60 border border-dashed border-emerald-500'
                         : 'bg-emerald-500 dark:bg-emerald-500/85 group-hover:bg-emerald-600'
                     }`}
-                    style={{ height: `${pctH}%` }}
+                    style={{ height: `${barPx}px` }}
                   />
-                  <span className="mt-1 text-[10px] text-gray-400 dark:text-gray-500 tabular-nums">
+                  <span className="mt-1 text-[10px] text-gray-400 dark:text-gray-500 tabular-nums leading-none">
                     &apos;{String(yr.year).slice(-2)}
                   </span>
                 </div>

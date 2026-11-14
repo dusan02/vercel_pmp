@@ -495,48 +495,41 @@ export function AnalysisHero({
               </details>
             )}
 
-            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mr-0.5">
-                  Reports:
-                </span>
-                <Link
-                  href={`/valuation/${ticker}`}
-                  className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 font-medium transition-colors"
-                >
-                  Valuation &amp; P/E
-                </Link>
-                <Link
-                  href={`/financials/${ticker}`}
-                  className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 font-medium transition-colors"
-                >
-                  Financials
-                </Link>
-                <Link
-                  href={`/premarket/${ticker}`}
-                  className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 font-medium transition-colors"
-                >
-                  Premarket
-                </Link>
-                <a
-                  href={`https://stockcv.com/${ticker}`}
-                  rel="noopener"
-                  className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-semibold transition-colors"
-                >
-                  {ticker} StockCV ↗
-                </a>
-              </div>
-              <div className="hidden sm:flex items-center gap-2 text-gray-400 dark:text-gray-500">
-                <a href="#price-chart" className="hover:text-blue-600 dark:hover:text-blue-400">Chart ↓</a>
-                <span>·</span>
-                <a href="#market-profile" className="hover:text-blue-600 dark:hover:text-blue-400">Peers &amp; Alpha ↓</a>
-                <span>·</span>
-                <a href="#key-metrics" className="hover:text-blue-600 dark:hover:text-blue-400">Metrics ↓</a>
-                <span>·</span>
-                <a href="#financial-charts" className="hover:text-blue-600 dark:hover:text-blue-400">Sankey ↓</a>
-                <span>·</span>
-                <a href="#faq" className="hover:text-blue-600 dark:hover:text-blue-400">FAQ ↓</a>
-              </div>
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mr-0.5">
+                Reports:
+              </span>
+              <Link
+                href={`/valuation/${ticker}`}
+                className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 font-medium transition-colors"
+              >
+                Valuation &amp; P/E
+              </Link>
+              <Link
+                href={`/financials/${ticker}`}
+                className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 font-medium transition-colors"
+              >
+                Financials
+              </Link>
+              <Link
+                href={`/premarket/${ticker}`}
+                className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 font-medium transition-colors"
+              >
+                Premarket
+              </Link>
+              <Link
+                href="/capex-tracker"
+                className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 font-medium transition-colors"
+              >
+                Capex Tracker
+              </Link>
+              <a
+                href={`https://stockcv.com/${ticker}`}
+                rel="noopener"
+                className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-semibold transition-colors"
+              >
+                {ticker} StockCV ↗
+              </a>
             </div>
           </div>
         );

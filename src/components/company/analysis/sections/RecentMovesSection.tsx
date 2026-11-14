@@ -12,6 +12,7 @@ interface RecentMove {
 interface RecentMovesSectionProps {
   ticker: string;
   moves: RecentMove[];
+  embedded?: boolean;
 }
 
 function formatSessionLabel(session: string): string {
@@ -24,10 +25,11 @@ function formatSessionLabel(session: string): string {
   return map[session] ?? session;
 }
 
-export function RecentMovesSection({ ticker, moves }: RecentMovesSectionProps) {
+export function RecentMovesSection({ ticker, moves, embedded = false }: RecentMovesSectionProps) {
+  const marginClass = embedded ? '' : 'mb-6 ';
   if (moves.length === 0) {
     return (
-      <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 px-6 py-4 flex items-center justify-between gap-3 flex-wrap">
+      <div className={`${marginClass}bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 px-6 py-4 flex items-center justify-between gap-3 flex-wrap`}>
         <p className="text-sm text-gray-500 dark:text-gray-400">No significant market moves for {ticker} in the last 30 days.</p>
         <Link href={`/premarket/${ticker}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
           See {ticker} move history →
@@ -37,7 +39,7 @@ export function RecentMovesSection({ ticker, moves }: RecentMovesSectionProps) {
   }
 
   return (
-    <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+    <div className={`${marginClass}bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6`}>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Market Moves</h2>
         <Link href={`/premarket/${ticker}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">

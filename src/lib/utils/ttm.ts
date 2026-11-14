@@ -50,6 +50,12 @@ export function computeTTM(stmts: FinancialStatement[]): TTMResult {
         : null;
 
     const canTtm = !!(latestQ && matchingFY && prevYearSameQ);
+    const niTtmActive = !!(
+        canTtm
+        && latestQ?.netIncome != null
+        && latestFY?.netIncome != null
+        && prevYearSameQ?.netIncome != null
+    );
 
     function ttmVal(field: keyof FinancialStatement, absFields = false): number | null {
         if (canTtm && latestQ && latestFY && prevYearSameQ) {
@@ -63,6 +69,10 @@ export function computeTTM(stmts: FinancialStatement[]): TTMResult {
                 return qVal + fyVal - prevQVal;
             }
         }
+        // Keep netIncomeCommon period-aligned with netIncome: when netIncome
+        // succeeded on the 3-row TTM triad, do not fall back to an older
+        // single-FY netIncomeCommon.
+        if (field === 'netIncomeCommon' && niTtmActive) return null;
         const fb = (latestFY as any)?.[field] as number | null;
         return fb != null && absFields ? Math.abs(fb) : fb ?? null;
     }
@@ -124,6 +134,14 @@ export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
     // Fallback: latest available FY value when the primary formula can't run
     // (missing matching FY or prevYearSameQ). Slightly stale, correct magnitude.
     const fallbackFY = annualBeforeDate[0] ?? null;
+    const niTtmActive = !!(
+        latestQ
+        && matchingFY
+        && prevYearSameQ
+        && latestQ.netIncome != null
+        && matchingFY.netIncome != null
+        && prevYearSameQ.netIncome != null
+    );
 
     function field(name: 'netIncome' | 'netIncomeCommon' | 'revenue' | 'ebit' | 'operatingCashFlow' | 'capex', absField = false): number | null {
         if (latestQ && matchingFY && prevYearSameQ) {
@@ -135,6 +153,7 @@ export function computeTTMAtDate(stmts: FinancialStatement[], date: Date): {
                 return q + fy - pq;
             }
         }
+        if (name === 'netIncomeCommon' && niTtmActive) return null;
         const fb = fallbackFY?.[name];
         return fb != null && absField ? Math.abs(fb) : fb ?? null;
     }

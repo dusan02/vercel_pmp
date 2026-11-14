@@ -7,6 +7,7 @@ import { getCompanyName } from '@/lib/companyNames';
 import { AnalysisTabClient } from '@/components/company/AnalysisTabClient';
 import { getEarningsForTicker } from '@/lib/seo/earningsSSR';
 import { summarizeLossYears } from '@/lib/utils/analysisMath';
+import { formatPrice } from '@/lib/utils/format';
 import {
   getTickerData,
   getAnalysisQuote,
@@ -298,7 +299,7 @@ export default async function AnalysisPage({ params }: PageProps) {
       )}
       <TrackPageEvent name="view_item" params={{ item_id: tickerUpper, item_type: 'analysis' }} />
 
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div id="top" className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Breadcrumb */}
         <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700" aria-label="Breadcrumb">
           <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -435,6 +436,71 @@ export default async function AnalysisPage({ params }: PageProps) {
             <TechnicalDipSection ticker={tickerUpper} initialItem={dipData} />
           </div>
 
+          {/* Sticky quick-jump section navigation bar */}
+          <nav
+            aria-label="Analysis sections"
+            className="sticky top-0 z-20 mb-5 -mx-4 px-4 sm:mx-0 sm:px-3 py-1.5 sm:py-2 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-md border-b sm:border sm:rounded-xl border-gray-200/80 dark:border-gray-800/80 flex items-center justify-between gap-3 overflow-x-auto scrollbar-none"
+          >
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="hidden sm:inline-flex items-center gap-1.5 pr-2.5 mr-1 border-r border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-800 dark:text-gray-100 tabular-nums">
+                {tickerUpper}
+                {displayPrice != null && (
+                  <span className="font-semibold text-gray-500 dark:text-gray-400">
+                    ${formatPrice(displayPrice)}
+                  </span>
+                )}
+              </span>
+              <a
+                href="#price-chart"
+                className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+              >
+                Price &amp; Valuation
+              </a>
+              <a
+                href="#market-profile"
+                className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+              >
+                {isEtf ? 'Alpha & Dividends' : 'Alpha, Peers & Dividends'}
+              </a>
+              {!isEtf && (
+                <a
+                  href="#key-metrics"
+                  className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                >
+                  Key Metrics
+                </a>
+              )}
+              {!isEtf && (
+                <a
+                  href="#financial-charts"
+                  className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                >
+                  Financials &amp; Sankey
+                </a>
+              )}
+              <a
+                href="#earnings-moves"
+                className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+              >
+                {isEtf ? 'Moves & News' : 'Earnings & News'}
+              </a>
+              {faqItems.length > 0 && (
+                <a
+                  href="#faq"
+                  className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                >
+                  FAQ
+                </a>
+              )}
+            </div>
+            <a
+              href="#top"
+              className="hidden md:inline-flex items-center text-[11px] font-medium text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 whitespace-nowrap shrink-0"
+            >
+              ↑ Top
+            </a>
+          </nav>
+
           {/* Price history — full-width section */}
           <div id="price-chart" className="scroll-mt-16">
             <PriceHistorySection
@@ -468,30 +534,25 @@ export default async function AnalysisPage({ params }: PageProps) {
 
           {/* Full interactive analysis — financial statement pairs (history bar + structure sankey), valuation, health charts (stocks only) */}
           {!isEtf && (
-            <>
-              <div id="financial-charts" className="scroll-mt-16">
-                <AnalysisTabClient
-                  key={tickerUpper}
-                  ticker={tickerUpper}
-                  initialAnalysisData={analysisData}
-                  initialHistoryData={historyData}
-                  flowPeriods={flowPeriods}
-                  ewScore={ewScore}
-                />
-              </div>
-
-              <p className="-mt-2 mb-6 text-xs text-gray-500 dark:text-gray-500">
-                See how {tickerUpper} ranks on the{' '}
-                <Link href="/capex-tracker" className="underline hover:text-gray-600 dark:hover:text-gray-300">Capex Tracker</Link>
-                {' '}— top 50 capital spenders compared.
-              </p>
-            </>
+            <div id="financial-charts" className="scroll-mt-16">
+              <AnalysisTabClient
+                key={tickerUpper}
+                ticker={tickerUpper}
+                initialAnalysisData={analysisData}
+                initialHistoryData={historyData}
+                flowPeriods={flowPeriods}
+                ewScore={ewScore}
+              />
+            </div>
           )}
 
-          {/* Earnings & Recent Unusual Moves side-by-side */}
-          <div id="earnings-moves" className="grid gap-6 grid-cols-1 lg:grid-cols-[repeat(auto-fit,minmax(min(100%,32rem),1fr))] items-start scroll-mt-16">
-            {!isEtf && <EarningsSection upcoming={earningsData.upcoming} recent={earningsData.recent} />}
-            <RecentMovesSection ticker={tickerUpper} moves={recentMoves} />
+          {/* Unified Earnings, Catalysts & Latest News */}
+          <div id="earnings-moves" className="grid gap-6 grid-cols-1 lg:grid-cols-[repeat(auto-fit,minmax(min(100%,30rem),1fr))] items-start scroll-mt-16 mb-6">
+            {!isEtf && <EarningsSection upcoming={earningsData.upcoming} recent={earningsData.recent} embedded />}
+            <div className="flex flex-col gap-6 min-w-0">
+              <RecentMovesSection ticker={tickerUpper} moves={recentMoves} embedded />
+              <NewsSection ticker={tickerUpper} embedded />
+            </div>
           </div>
 
           {/* Cross-links to related report pages + share in a compact 4-column bar */}
@@ -506,9 +567,6 @@ export default async function AnalysisPage({ params }: PageProps) {
 
           {/* FAQ — 2-column compact accordion mirrored by FAQPage JSON-LD */}
           <AnalysisFaqSection items={faqItems} ticker={tickerUpper} />
-
-          {/* Latest news — client-side fetch from Finnhub, cached 30min */}
-          <NewsSection ticker={tickerUpper} />
 
           {/* Collapsible Quantitative Summary & SEO text sections — full SSR HTML for Google indexing with zero visual clutter */}
           <KeyInsightsSection

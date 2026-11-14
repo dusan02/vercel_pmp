@@ -402,10 +402,16 @@ export function derivePillarInputs(args: DerivePillarInputsArgs): PillarDerivati
         : null;
 
     // ─── PILLAR INPUTS: Valuation ────────────────────────────────────────
-    const effectiveNetIncome = ttmNetIncome ?? annualStmts.find(s => s.netIncome != null)?.netIncome ?? null;
-    const commonCandidate = ttm.netIncomeCommon
-        ?? annualStmts.find(s => s.netIncomeCommon != null)?.netIncomeCommon
-        ?? null;
+    // Keep netIncomeCommon synchronized to the exact same period/statement as
+    // effectiveNetIncome — never scan back to an older fiscal year's
+    // netIncomeCommon when recent filings report consolidated Net Income only.
+    const latestAnnualIncomeStmt = annualStmts.find(
+        (s) => s.netIncome != null || s.netIncomeCommon != null
+    ) ?? null;
+    const effectiveNetIncome = ttmNetIncome ?? latestAnnualIncomeStmt?.netIncome ?? null;
+    const commonCandidate = ttmNetIncome !== null
+        ? ttm.netIncomeCommon
+        : (latestAnnualIncomeStmt?.netIncomeCommon ?? null);
     const effectiveNetIncomeCommon = commonCandidate ?? effectiveNetIncome;
     const peRatioBasis: PeRatioBasis | null =
         commonCandidate != null ? 'COMMON' : (effectiveNetIncome != null ? 'CONSOLIDATED_FALLBACK' : null);
