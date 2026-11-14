@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import {
   computePerformance,
   computeRisk,
@@ -248,5 +250,13 @@ describe('chunkQuery', () => {
     }, 2);
     expect(batches).toEqual([['A', 'B'], ['C', 'D'], ['E']]);
     expect(res).toEqual(['A!', 'B!', 'C!', 'D!', 'E!']);
+  });
+});
+
+describe('ISR safety invariants', () => {
+  it('marketProfile.ts never uses cache: no-store fetch (runs inside ISR /analysis/[ticker])', () => {
+    const src = readFileSync(join(process.cwd(), 'src/lib/analysis/marketProfile.ts'), 'utf8');
+    expect(src).not.toMatch(/cache\s*:\s*['"]no-store['"]/);
+    expect(src).not.toMatch(/['"]no-store['"]/);
   });
 });

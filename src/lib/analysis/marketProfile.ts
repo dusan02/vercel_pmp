@@ -34,7 +34,10 @@ interface CachedDividendsPayload {
 
 async function fetchJsonWithTimeout<T>(url: string, timeoutMs: number): Promise<{ ok: boolean; status: number; data: T | null }> {
   try {
-    const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(timeoutMs) });
+    // Must use `next: { revalidate }` (never uncached) because
+    // getMarketProfile is called during ISR rendering of /analysis/[ticker];
+    // an uncached fetch throws Next.js "Page changed from static to dynamic at runtime".
+    const res = await fetch(url, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(timeoutMs) });
     if (!res.ok) return { ok: false, status: res.status, data: null };
     const data = (await res.json()) as T;
     return { ok: true, status: res.status, data };
