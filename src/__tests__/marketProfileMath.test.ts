@@ -11,6 +11,7 @@ import {
   edgarUrl,
   formatListedLabel,
   formatDivAmount,
+  shortCompanyName,
   type DailyClose,
   type IntradayBar,
 } from '@/lib/analysis/marketProfileMath';
@@ -222,6 +223,15 @@ describe('fact formatters', () => {
     expect(formatDivAmount(0.25)).toBe('$0.25');
     expect(formatDivAmount(0.0825)).toBe('$0.0825');
     expect(formatDivAmount(1.5, 'EUR')).toBe('EUR 1.50');
+  });
+
+  it('shortens verbose legal/share-class suffixes and prefers curated names', () => {
+    expect(shortCompanyName('MSFT', 'Microsoft Corp', 'Microsoft')).toBe('Microsoft');
+    expect(shortCompanyName('PLTR', 'Palantir Technologies Inc. Class A Common Stock', 'Palantir')).toBe('Palantir');
+    expect(shortCompanyName('SNOW', 'Snowflake Inc. Class A Common Stock')).toBe('Snowflake');
+    expect(shortCompanyName('ACME', 'Acme Holdings, Inc.')).toBe('Acme');
+    expect(shortCompanyName('FOO', 'Foo Bar Corporation')).toBe('Foo Bar');
+    expect(shortCompanyName('BAR', null)).toBeNull();
   });
 
   it('formats ordinal numbers accurately across edge cases', () => {

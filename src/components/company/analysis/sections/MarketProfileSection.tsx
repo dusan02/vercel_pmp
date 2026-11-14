@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import CompanyLogo from '@/components/CompanyLogo';
+import { companyNames } from '@/lib/companyNames';
 import { formatMarketCap, formatPercent, formatPrice } from '@/lib/utils/format';
 import {
   edgarUrl,
   formatDivAmount,
   formatListedLabel,
+  shortCompanyName,
   type CompanyFacts,
   type DividendProfile,
   type MarketProfile,
@@ -148,23 +151,24 @@ function IndustryPeersTable({ peers }: { peers: PeerRow[] }) {
         </h3>
         <span className="text-[11px] text-gray-400 dark:text-gray-500">Finnhub industry peers</span>
       </div>
-      <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700/80">
-        <table className="w-full text-xs sm:text-sm">
-          <thead className="bg-gray-50/90 dark:bg-gray-900/60 text-left text-[11px] text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+      <div className="overflow-x-auto sm:overflow-visible rounded-xl border border-gray-100 dark:border-gray-700/80">
+        <table className="w-full text-xs">
+          <thead className="bg-gray-50/90 dark:bg-gray-900/60 text-left text-[11px] text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700 whitespace-nowrap">
             <tr>
-              <th scope="col" className="px-3 py-2 font-medium">Company</th>
-              <th scope="col" className="px-2.5 py-2 font-medium text-right">Price</th>
-              <th scope="col" className="px-2.5 py-2 font-medium text-right">Day %</th>
-              <th scope="col" className="px-2.5 py-2 font-medium text-right">Mkt Cap</th>
-              <th scope="col" className="px-2.5 py-2 font-medium text-right">P/E</th>
-              <th scope="col" className="px-2.5 py-2 font-medium text-right">Rev CAGR</th>
-              <th scope="col" className="px-2.5 py-2 font-medium text-right">Div %</th>
-              <th scope="col" className="px-3 py-2 font-medium text-right">Score</th>
+              <th scope="col" className="pl-3 pr-2 py-2 font-medium">Company</th>
+              <th scope="col" className="px-1.5 sm:px-2 py-2 font-medium text-right">Price</th>
+              <th scope="col" className="px-1.5 sm:px-2 py-2 font-medium text-right">Day %</th>
+              <th scope="col" className="px-1.5 sm:px-2 py-2 font-medium text-right">Mkt Cap</th>
+              <th scope="col" className="px-1.5 sm:px-2 py-2 font-medium text-right">P/E</th>
+              <th scope="col" className="px-1.5 sm:px-2 py-2 font-medium text-right">Rev CAGR</th>
+              <th scope="col" className="px-1.5 sm:px-2 py-2 font-medium text-right">Div %</th>
+              <th scope="col" className="pl-1.5 pr-3 py-2 font-medium text-right">Score</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
             {peers.map((peer) => {
               const up = (peer.changePct ?? 0) >= 0;
+              const shortName = shortCompanyName(peer.symbol, peer.name, companyNames[peer.symbol]);
               return (
                 <tr
                   key={peer.symbol}
@@ -174,42 +178,51 @@ function IndustryPeersTable({ peers }: { peers: PeerRow[] }) {
                       : 'hover:bg-gray-50/70 dark:hover:bg-gray-700/30 transition-colors'
                   }
                 >
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    {peer.isSelf ? (
-                      <span className="font-bold text-gray-900 dark:text-white">{peer.symbol}</span>
-                    ) : (
-                      <Link
-                        href={`/analysis/${peer.symbol}`}
-                        className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                  <td className="pl-3 pr-2 py-2 min-w-0">
+                    <div className="flex items-center gap-1.5 leading-tight">
+                      <CompanyLogo ticker={peer.symbol} size={18} className="rounded shrink-0" />
+                      {peer.isSelf ? (
+                        <span className="font-bold text-gray-900 dark:text-white">{peer.symbol}</span>
+                      ) : (
+                        <Link
+                          href={`/analysis/${peer.symbol}`}
+                          className="font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          {peer.symbol}
+                        </Link>
+                      )}
+                    </div>
+                    {shortName && (
+                      <div
+                        className="text-[11px] font-normal text-gray-500 dark:text-gray-400 leading-tight mt-0.5 max-w-[7rem] sm:max-w-[8.5rem] truncate"
+                        title={peer.name ?? shortName}
                       >
-                        {peer.symbol}
-                      </Link>
-                    )}
-                    {peer.name && (
-                      <span className="ml-1.5 text-[11px] text-gray-500 dark:text-gray-400 hidden sm:inline max-w-[11rem] truncate align-bottom inline-block">
-                        {peer.name}
-                      </span>
+                        {shortName}
+                      </div>
                     )}
                   </td>
-                  <td className="px-2.5 py-2 text-right tabular-nums text-gray-900 dark:text-gray-100">
+                  <td className="px-1.5 sm:px-2 py-2 text-right tabular-nums whitespace-nowrap text-gray-900 dark:text-gray-100">
                     {peer.price != null ? `$${formatPrice(peer.price)}` : '—'}
                   </td>
-                  <td className={`px-2.5 py-2 text-right tabular-nums font-medium ${up ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                  <td className={`px-1.5 sm:px-2 py-2 text-right tabular-nums whitespace-nowrap font-medium ${up ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                     {peer.changePct != null ? formatPercent(peer.changePct) : '—'}
                   </td>
-                  <td className="px-2.5 py-2 text-right tabular-nums text-gray-700 dark:text-gray-300">
+                  <td className="px-1.5 sm:px-2 py-2 text-right tabular-nums whitespace-nowrap text-gray-700 dark:text-gray-300">
                     {peer.marketCap != null ? `$${formatMarketCap(peer.marketCap)}` : '—'}
                   </td>
-                  <td className="px-2.5 py-2 text-right tabular-nums text-gray-700 dark:text-gray-300">
-                    {peer.pe != null && peer.pe > 0 ? `${peer.pe.toFixed(1)}×` : '—'}
+                  <td
+                    className="px-1.5 sm:px-2 py-2 text-right tabular-nums whitespace-nowrap text-gray-700 dark:text-gray-300"
+                    title={peer.pe != null && peer.pe > 0 ? `P/E: ${peer.pe.toFixed(1)}×` : undefined}
+                  >
+                    {peer.pe != null && peer.pe > 0 ? `${peer.pe >= 100 ? Math.round(peer.pe) : peer.pe.toFixed(1)}×` : '—'}
                   </td>
-                  <td className="px-2.5 py-2 text-right tabular-nums text-gray-700 dark:text-gray-300">
+                  <td className="px-1.5 sm:px-2 py-2 text-right tabular-nums whitespace-nowrap text-gray-700 dark:text-gray-300">
                     {peer.revenueCagr != null ? `${peer.revenueCagr > 0 ? '+' : ''}${peer.revenueCagr.toFixed(1)}%` : '—'}
                   </td>
-                  <td className="px-2.5 py-2 text-right tabular-nums text-gray-700 dark:text-gray-300">
+                  <td className="px-1.5 sm:px-2 py-2 text-right tabular-nums whitespace-nowrap text-gray-700 dark:text-gray-300">
                     {peer.dividendYield != null && peer.dividendYield > 0 ? `${peer.dividendYield.toFixed(2)}%` : '—'}
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums font-semibold text-gray-900 dark:text-white">
+                  <td className="pl-1.5 pr-3 py-2 text-right tabular-nums whitespace-nowrap font-semibold text-gray-900 dark:text-white">
                     {peer.overallScore != null ? `${peer.overallScore.toFixed(0)}/100` : '—'}
                   </td>
                 </tr>
@@ -433,7 +446,7 @@ export function MarketProfileSection({ ticker, companyName, initialData, isEtf =
       {hasPerf && <PerformanceAlphaGrid performance={data.performance} risk={data.risk} />}
 
       {(hasPeers || hasDivs) && (
-        <div className={`grid gap-6 ${hasPeers && hasDivs ? 'grid-cols-1 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]' : 'grid-cols-1'}`}>
+        <div className={`grid gap-6 ${hasPeers && hasDivs ? 'grid-cols-1 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]' : 'grid-cols-1'}`}>
           {hasPeers && <IndustryPeersTable peers={data.peers} />}
           {hasDivs && data.dividends && (
             <DividendsCard dividends={data.dividends} payoutRatio={data.payoutRatio} />

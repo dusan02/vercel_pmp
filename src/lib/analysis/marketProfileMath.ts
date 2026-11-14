@@ -528,3 +528,21 @@ export function attachSessionVwap(bars: IntradayBar[]): (number | null)[] {
     return vol > 0 ? Math.round((pv / vol) * 10000) / 10000 : null;
   });
 }
+
+/**
+ * Compact display name for dense peer tables — uses the curated short name
+ * when available and otherwise strips verbose share-class / legal suffixes.
+ */
+export function shortCompanyName(
+  symbol: string,
+  rawName: string | null | undefined,
+  curatedName?: string | null,
+): string | null {
+  if (curatedName && curatedName !== symbol) return curatedName;
+  if (!rawName) return null;
+  const cleaned = rawName
+    .replace(/,?\s*\b(?:Class\s+[A-D]\s+)?(?:Common|Ordinary)\s+(?:Stock|Shares|Units)\b.*$/i, '')
+    .replace(/,?\s*\b(?:Holdings?(?:,?\s*(?:Inc\.?|Corp\.?|Ltd\.?|LLC|PLC))?|Incorporated|Corporation|Corp\.?|Inc\.?|Company|Co\.?|Ltd\.?|Limited|PLC|N\.?V\.?|S\.?A\.?|SE|AG)\s*$/i, '')
+    .trim();
+  return cleaned || rawName;
+}
