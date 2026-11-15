@@ -15,6 +15,7 @@ export const metadata: Metadata = generatePageMetadata({
   description:
     'The largest single-session stock moves measured by official regular-session closes (no after-hours noise). Citable leaderboard of the biggest daily gainers and losers.',
   path: '/biggest-movers',
+  noIndex: true,
 });
 
 type LeaderboardRow = {

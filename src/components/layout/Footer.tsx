@@ -98,11 +98,6 @@ export function Footer() {
                   Capex Tracker
                 </Link>
               </li>
-              <li>
-                <Link href="/biggest-movers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Biggest Daily Moves
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -143,6 +138,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/trading-ideas" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Trading Ideas
+                </Link>
+              </li>
+              <li>
                 <Link href="/heatmap/pe-ratio" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   P/E Ratio Heatmap
                 </Link>
@@ -161,6 +161,11 @@ export function Footer() {
               Company
             </h3>
             <ul className="space-y-2">
+              <li>
+                <Link href="/brief" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Premarket Brief
+                </Link>
+              </li>
               <li>
                 <Link href="/blog" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   Blog

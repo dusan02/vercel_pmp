@@ -308,9 +308,7 @@ export default async function PremarketMoversPage() {
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
               Browse pre-market gainers and losers from previous trading days. Each date shows the top mover in each direction.
-              {' '}<Link href="/premarket-movers/weekly" className="text-blue-600 dark:text-blue-400 hover:underline">Biggest movers this week</Link>
-              {' · '}
-              <Link href="/premarket-gainers" className="text-emerald-600 dark:text-emerald-400 hover:underline">Full gainers archive</Link>
+              {' '}<Link href="/premarket-gainers" className="text-emerald-600 dark:text-emerald-400 hover:underline">Full gainers archive</Link>
               {' · '}
               <Link href="/premarket-losers" className="text-rose-600 dark:text-rose-400 hover:underline">Full losers archive</Link>
             </p>
@@ -418,7 +416,7 @@ export default async function PremarketMoversPage() {
           <div className="flex flex-wrap gap-3 text-sm">
             <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/gainers">Top Gainers</Link>
             <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/losers">Top Losers</Link>
-            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/unusual-volume">Unusual Volume</Link>
+            <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/heatmap/relative-volume">Relative Volume</Link>
             <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/heatmap">Market Heatmap</Link>
             <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/sectors">Sectors</Link>
             <Link className="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" href="/earnings">Earnings Calendar</Link>

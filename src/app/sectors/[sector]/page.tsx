@@ -7,7 +7,6 @@ import { formatSectorName, formatMarketCap } from '@/lib/utils/format';
 import { StructuredData } from '@/components/StructuredData';
 import { sectorDescriptions, defaultSectorDescription } from '@/lib/seo/sectorDescriptions';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
-import { getEligibleValuationTickers } from '@/lib/seo/eligibleValuation';
 import { StandaloneHeader } from '@/components/StandaloneHeader';
 
 // Revalidate every hour
@@ -82,8 +81,6 @@ export default async function SectorPage({ params }: PageProps) {
 
     const formattedSector = formatSectorName(sectorName);
     const eligibleAnalysis = await getEligibleAnalysisSet();
-    const eligibleValuation = await getEligibleValuationTickers();
-    const eligibleValuationSet = new Set(eligibleValuation);
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -197,21 +194,15 @@ export default async function SectorPage({ params }: PageProps) {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-left text-xs">
                                                 {eligibleAnalysis.has(ticker.symbol) && (
-                                                    <Link href={`/analysis/${ticker.symbol}`} className="text-blue-600 dark:text-blue-400 hover:underline">
-                                                        Analysis
-                                                    </Link>
-                                                )}
-                                                {eligibleValuationSet.has(ticker.symbol) && (
                                                     <>
-                                                        {' · '}
-                                                        <Link href={`/valuation/${ticker.symbol}`} className="text-blue-600 dark:text-blue-400 hover:underline">
-                                                            Valuation
+                                                        <Link href={`/analysis/${ticker.symbol}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+                                                            Analysis
                                                         </Link>
+                                                        {' · '}
                                                     </>
                                                 )}
-                                                {' · '}
-                                                <Link href={`/financials/${ticker.symbol}`} className="text-blue-600 dark:text-blue-400 hover:underline">
-                                                    Financials
+                                                <Link href={`/premarket/${ticker.symbol}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+                                                    Premarket
                                                 </Link>
                                             </td>
                                         </tr>

@@ -38,20 +38,20 @@ PreMarketPrice tracks 1,000+ US stocks during the pre-market session (4:00 AM �
 - [Insider buying leaderboard](https://premarketprice.com/screener/insider-buying): Stocks with the most net open-market insider buying over 90 days (SEC Form 4 code P, at actual transaction prices). Companion: [insider selling](https://premarketprice.com/screener/insider-selling), [insider buying as % of shares outstanding](https://premarketprice.com/screener/insider-buying-percent)
 - [Early Winners](https://premarketprice.com/screener/early-winners): US stocks ranked by the PMP composite score — fundamentals, momentum and quality factors from SEC filings and price data (V5-B current-data methodology, earnings pillar blocked)
 - [Capex Tracker](https://premarketprice.com/capex-tracker): Top 50 US companies by capital expenditures — capex/revenue intensity, YoY change and FCF after capex
-- [All Stocks](https://premarketprice.com/stocks): Full index of every tracked US stock with links to its analysis and valuation pages
+- [All Stocks](https://premarketprice.com/stocks): Full index of every tracked US stock with links to its unified analysis, valuation, and financials hub
 - [Sectors](https://premarketprice.com/sectors): Sector-level performance and top movers per sector
 - [Embeddable heatmap widget](https://premarketprice.com/embed/heatmap): Free iframe widget of the live heatmap for external publishers
 - [Blog](https://premarketprice.com/blog): Daily premarket reports and weekly earnings recaps
 - [RSS Feed](https://premarketprice.com/api/rss): Machine-readable feed of daily reports
 
-## Daily archives (updated every trading day)
+## Daily archives & event calendars (updated every trading day)
 
-Each trading day gets permanent dated pages — useful for "what moved on [date]" questions:
+Each trading day gets permanent dated pages — useful for "what moved on [date]" or "who reported earnings on [date]" questions:
 
 - /premarket-gainers/[YYYY-MM-DD]: top pre-market gainers for that date (e.g. [latest](https://premarketprice.com/premarket-gainers))
 - /premarket-losers/[YYYY-MM-DD]: top pre-market losers for that date (e.g. [latest](https://premarketprice.com/premarket-losers))
-- /gainers and /losers: today's regular-session leaders
-- [/premarket-movers/weekly](https://premarketprice.com/premarket-movers/weekly): biggest single-day pre-market moves of the current trading week
+- /earnings/date/[YYYY-MM-DD]: full schedule of US companies reporting earnings on that date with before-market / after-market split, EPS & revenue estimates, and market-cap context (see [Earnings Calendar](https://premarketprice.com/earnings))
+- /gainers and /losers: today's live top gainers and losers (pre-market before the opening bell, active session during market hours)
 - /premarket/[TICKER]: per-stock history of significant pre-market moves with catalysts (e.g. [AAPL](https://premarketprice.com/premarket/AAPL))
 
 ## Metric heatmaps (one per fundamental/valuation metric)
@@ -73,11 +73,10 @@ Simplified Chinese pilot pages — same live data, Chinese UI:
 
 ## Per-ticker pages
 
-Each tracked company has three data pages:
+Each tracked company has two canonical data pages:
 
-- /analysis/[TICKER]: live pre-market price, financial health scores, profitability, valuation, recent moves (e.g. [AAPL](https://premarketprice.com/analysis/AAPL))
-- /valuation/[TICKER]: P/E and P/S history, valuation percentile vs 5-year range (e.g. [AAPL](https://premarketprice.com/valuation/AAPL))
-- /financials/[TICKER]: revenue, net income, assets and liabilities history (e.g. [AAPL](https://premarketprice.com/financials/AAPL))
+- /analysis/[TICKER]: comprehensive stock analysis — live pre-market price, PMP Verdict (6-pillar score: Valuation, Growth, Profitability, Financial Health, Quality, Moat), 10-year price & valuation multiple history (P/E, P/S, P/B, EV/EBITDA), annual & quarterly financial statements, industry peers, SEC Form 4 insider activity, and daily catalyst breakdown (e.g. [AAPL](https://premarketprice.com/analysis/AAPL))
+- /premarket/[TICKER]: per-stock history of significant pre-market moves with RVOL, z-score, and catalysts (e.g. [AAPL](https://premarketprice.com/premarket/AAPL))
 
 Top tickers: ${topTickers.map((t) => `[${t}](https://premarketprice.com/analysis/${t})`).join(', ')}
 

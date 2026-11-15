@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { Metadata } from 'next';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { StructuredData } from '@/components/StructuredData';
@@ -27,14 +28,38 @@ function isValidDate(dateStr: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
 }
 
+const getCachedEarningsDate = cache(async (date: string) =>
+  getEarningsRange(date, date, { enrich: true }),
+);
+
+function buildEarningsDateTitle(shortDate: string, topTickers: string[], total: number): string {
+  const candidates: string[] = [];
+  if (topTickers.length >= 3 && total > 3) {
+    candidates.push(`${topTickers.slice(0, 3).join(', ')} & ${total - 3} Earnings (${shortDate})`);
+  }
+  if (topTickers.length >= 2 && total > 2) {
+    candidates.push(`${topTickers.slice(0, 2).join(', ')} & ${total - 2} Earnings (${shortDate})`);
+  }
+  if (topTickers.length >= 1 && total > 1) {
+    candidates.push(`${topTickers[0]} & ${total - 1} Earnings (${shortDate})`);
+  }
+  if (topTickers.length > 0) {
+    candidates.push(`${topTickers.slice(0, 3).join(', ')} Earnings (${shortDate})`);
+  }
+  candidates.push(`Earnings Calendar (${shortDate})`);
+  // Strictly <= 43 chars before the 17-char " | PreMarketPrice" suffix.
+  return candidates.find((c) => c.length <= 43) ?? `Earnings (${shortDate})`;
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { date } = await params;
   if (!isValidDate(date)) return {};
 
   const d = new Date(date + 'T12:00:00Z');
-  const dateDisplay = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const dateDisplay = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  const shortDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 
-  const groups = await getEarningsRange(date, date);
+  const groups = await getCachedEarningsDate(date);
   const group = groups[0];
   if (!group || group.total === 0) {
     return {
@@ -44,14 +69,28 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
+  const topTickers = [...group.preMarket, ...group.afterMarket, ...group.timeTbd]
+    .sort((a, b) => (b.marketCap ?? 0) - (a.marketCap ?? 0))
+    .slice(0, 5)
+    .map((r) => r.ticker);
+
+  const splitParts = [
+    group.preMarket.length > 0 ? `${group.preMarket.length} pre-market` : '',
+    group.afterMarket.length > 0 ? `${group.afterMarket.length} after-hours` : '',
+  ].filter(Boolean);
+  const splitNote = splitParts.length > 0 ? ` (${splitParts.join(', ')})` : '';
+  const leadNote = topTickers.length > 0 ? `, led by ${topTickers.join(', ')}` : '';
+  const description = `${group.total} US ${group.total === 1 ? 'company reports' : 'companies report'} earnings on ${dateDisplay}${leadNote}${splitNote}. Track EPS estimates, revenue forecasts, and earnings surprises.`;
+
   return generatePageMetadata({
-    title: `Earnings for ${dateDisplay}`,
-    description: `Earnings reports and announcements for ${dateDisplay}. See EPS estimates, actual results, revenue forecasts, and earnings surprises for companies reporting on this date.`,
+    title: buildEarningsDateTitle(shortDate, topTickers, group.total),
+    description,
     path: `/earnings/date/${date}`,
     keywords: [
       `earnings ${date}`,
       `earnings reports ${date}`,
       `earnings calendar ${date}`,
+      ...topTickers.slice(0, 3).map((t) => `${t} earnings`),
       'EPS estimates',
       'earnings announcements',
       'quarterly earnings',
@@ -68,7 +107,7 @@ export default async function EarningsDatePage({ params }: PageProps) {
   const { date } = await params;
   if (!isValidDate(date)) notFound();
 
-  const groups = await getEarningsRange(date, date, { enrich: true });
+  const groups = await getCachedEarningsDate(date);
   const group = groups[0];
 
   if (!group || group.total === 0) {
@@ -148,6 +187,44 @@ export default async function EarningsDatePage({ params }: PageProps) {
             {withEstimatesCount > 0 && ` · ${withEstimatesCount} with EPS estimates`}
           </p>
         </div>
+
+        {/* Concise SSR highlights summary for fast scanning & AI citations */}
+        {allRows.length > 0 && (
+          <section
+            aria-label="Key earnings highlights"
+            className="mb-6 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4"
+          >
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+              Notable Reports on {formatDateDisplay(date)}
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              {allRows.slice(0, 5).map((r, idx) => {
+                const slot = r.time === 'bmo' ? 'BMO' : r.time === 'amc' ? 'AMC' : 'TBD';
+                const epsText = r.epsActual != null
+                  ? `EPS $${r.epsActual.toFixed(2)}`
+                  : r.epsEstimate != null
+                    ? `Est $${r.epsEstimate.toFixed(2)}`
+                    : null;
+                return (
+                  <span key={`hl-${r.ticker}-${r.date}`}>
+                    {idx > 0 && ' · '}
+                    {eligibleAnalysis.has(r.ticker) ? (
+                      <Link href={`/analysis/${r.ticker}`} className="font-semibold text-slate-900 dark:text-white hover:underline">
+                        {r.ticker}
+                      </Link>
+                    ) : (
+                      <strong className="text-slate-900 dark:text-white">{r.ticker}</strong>
+                    )}
+                    {' '}
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      ({slot}{epsText ? `, ${epsText}` : ''})
+                    </span>
+                  </span>
+                );
+              })}
+            </p>
+          </section>
+        )}
 
         {/* Featured earnings — largest/most consequential reports of the day */}
         {featured.length > 0 && (featured[0]?.marketCap ?? 0) >= 1e9 && (

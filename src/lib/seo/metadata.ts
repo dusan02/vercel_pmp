@@ -44,6 +44,8 @@ interface PageMetadataParams {
   keywords?: string[];
   image?: string;
   type?: 'website' | 'article';
+  /** Set true to exclude page from search index while allowing link discovery. */
+  noIndex?: boolean;
   /** hreflang alternates, e.g. { 'en': '/premarket-movers', 'zh-CN': '/zh/premarket-movers' } */
   languages?: Record<string, string>;
 }
@@ -193,6 +195,7 @@ export function generatePageMetadata({
   keywords = [],
   image,
   type = 'website',
+  noIndex = false,
   languages,
 }: PageMetadataParams): Metadata {
   const fullTitle = title;
@@ -251,10 +254,10 @@ export function generatePageMetadata({
       creator: '@premarketprice',
     },
     robots: {
-      index: true,
+      index: !noIndex,
       follow: true,
       googleBot: {
-        index: true,
+        index: !noIndex,
         follow: true,
         'max-video-preview': -1,
         'max-image-preview': 'large',

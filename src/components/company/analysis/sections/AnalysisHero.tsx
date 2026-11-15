@@ -56,6 +56,9 @@ interface AnalysisHeroProps {
   recommendation?: RecommendationData | null;
   /** Latest reported balance sheet — cash vs debt bar under the 52w range */
   cashVsDebt?: { cash: number; debt: number; label: string } | null;
+  /** Optional today's primary move driver / catalyst — shown right under price */
+  moversReason?: string | null;
+  moversCategory?: string | null;
   /** Optional company profile overview integrated into the hero footer */
   description?: string | null;
   headquarters?: string | null;
@@ -86,6 +89,8 @@ export function AnalysisHero({
   priceTarget,
   recommendation,
   cashVsDebt,
+  moversReason,
+  moversCategory,
   description,
   headquarters,
   employees,
@@ -210,6 +215,14 @@ export function AnalysisHero({
           </>
         )}
       </div>
+      {moversReason && (
+        <div className="mt-2 inline-flex items-start gap-2 rounded-lg border border-blue-200/70 dark:border-blue-800/50 bg-blue-50/70 dark:bg-blue-950/30 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200 max-w-full">
+          <span className="shrink-0 font-bold uppercase tracking-wider text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+            {moversCategory || 'Catalyst'}
+          </span>
+          <span className="leading-snug">{moversReason}</span>
+        </div>
+      )}
       {/* P/E vs own history — the "cheap or expensive vs itself" answer at
           a glance; the full percentiles live in Key Metrics tooltips. */}
       {peHistory?.current != null && peHistory?.percentile != null && isPeDistorted(peHistory.current, peHistory.median) ? (
@@ -499,18 +512,18 @@ export function AnalysisHero({
               <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mr-0.5">
                 Reports:
               </span>
-              <Link
-                href={`/valuation/${ticker}`}
+              <a
+                href="#price-chart"
                 className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 font-medium transition-colors"
               >
                 Valuation &amp; P/E
-              </Link>
-              <Link
-                href={`/financials/${ticker}`}
+              </a>
+              <a
+                href="#financial-charts"
                 className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 font-medium transition-colors"
               >
                 Financials
-              </Link>
+              </a>
               <Link
                 href={`/premarket/${ticker}`}
                 className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400 font-medium transition-colors"

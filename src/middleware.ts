@@ -89,8 +89,16 @@ export async function middleware(request: NextRequest) {
   // Redirect bare /movers (and /movers/null junk) → /premarket-movers (301)
   // /movers is a tab-only concept; the canonical standalone page is
   // /premarket-movers.
-  if (pathname === '/movers' || pathname === '/movers/null') {
+  if (pathname === '/movers' || pathname === '/movers/null' || pathname === '/premarket-movers/weekly') {
     const redirectUrl = new URL('/premarket-movers', request.url);
+    return NextResponse.redirect(redirectUrl, 301);
+  }
+
+  // Redirect deprecated /valuation/[ticker] & /financials/[ticker] → /analysis/[ticker] (301)
+  // All valuation history and financial statements live on the unified /analysis/[ticker] page.
+  const consolidatedTickerMatch = pathname.match(/^\/(?:valuation|financials)\/([A-Za-z0-9._-]+)$/);
+  if (consolidatedTickerMatch?.[1]) {
+    const redirectUrl = new URL(`/analysis/${consolidatedTickerMatch[1].toUpperCase()}`, request.url);
     return NextResponse.redirect(redirectUrl, 301);
   }
 

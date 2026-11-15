@@ -204,8 +204,6 @@ async function main(): Promise<void> {
     '/earnings',
     '/premarket-movers',
     ...TICKERS.map((t) => `/analysis/${t}`),
-    `/valuation/${TICKERS[0]}`,
-    `/financials/${TICKERS[0]}`,
     `/premarket/${TICKERS[0]}`,
   ];
 

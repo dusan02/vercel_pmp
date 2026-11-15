@@ -21,6 +21,7 @@ export const metadata = generatePageMetadata({
   description:
     'US stocks trading on unusually high pre-market volume today. Relative volume (RVOL) compares traded volume against the typical volume for this time of day — spikes often precede big moves. Updated continuously.',
   path: '/unusual-volume',
+  noIndex: true,
   keywords: [
     'unusual volume stocks',
     'unusual volume today',

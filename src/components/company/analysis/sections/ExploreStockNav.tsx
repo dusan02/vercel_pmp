@@ -5,17 +5,19 @@ type PageKind = 'analysis' | 'valuation' | 'financials' | 'premarket';
 
 const ROUTES: { kind: PageKind; label: string; href: (s: string) => string }[] = [
   { kind: 'analysis', label: 'Analysis', href: (s) => `/analysis/${s}` },
-  { kind: 'valuation', label: 'Valuation history', href: (s) => `/valuation/${s}` },
-  { kind: 'financials', label: 'Financials', href: (s) => `/financials/${s}` },
+  { kind: 'valuation', label: 'Valuation history', href: (s) => `/analysis/${s}#price-chart` },
+  { kind: 'financials', label: 'Financials', href: (s) => `/analysis/${s}#financial-charts` },
   { kind: 'premarket', label: 'Move history', href: (s) => `/premarket/${s}` },
 ];
 
 /**
- * "Explore this stock" strip — sibling-page links so every ticker page
- * cross-links to the other three. Current page is rendered as plain text.
+ * "Explore this stock" strip — cross-links between the unified /analysis/[ticker]
+ * view (with valuation & financials anchors) and /premarket/[ticker].
  */
 export function ExploreStockNav({ ticker, current }: { ticker: string; current: PageKind }) {
-  const others = ROUTES.filter((r) => r.kind !== current);
+  const others = ROUTES.filter((r) =>
+    current === 'analysis' ? r.kind === 'premarket' : r.kind !== current
+  );
   return (
     <nav aria-label={`Explore ${ticker}`} className="mb-6 flex flex-wrap items-center gap-2 text-sm">
       <span className="text-gray-500 dark:text-gray-400 font-medium mr-1">Explore {ticker}:</span>

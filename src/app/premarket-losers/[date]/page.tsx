@@ -11,6 +11,7 @@ import {
 } from '@/lib/seo/premarketArchive';
 import { getEligibleAnalysisSet } from '@/lib/seo/eligibleTickers';
 import { StandaloneHeader } from '@/components/StandaloneHeader';
+import { PremarketTopSummary } from '@/components/movers/PremarketTopSummary';
 
 export const revalidate = 3600;
 
@@ -131,6 +132,14 @@ export default async function PremarketLosersDatePage({ params }: PageProps) {
             View Gainers for {display} ↑
           </Link>
         </nav>
+
+        {/* Top-5 structured takeaways */}
+        <PremarketTopSummary
+          direction="losers"
+          displayDate={display}
+          rows={rows}
+          eligibleAnalysis={eligibleAnalysis}
+        />
 
         {/* SEO content */}
         <section className="mb-8 max-w-4xl">

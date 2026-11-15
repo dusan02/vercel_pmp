@@ -22,15 +22,12 @@ interface TabConfig {
 
 const TABS: TabConfig[] = [
   { id: 'heatmap',   label: 'Heatmap',    icon: 'heatmap',  href: '/heatmap' },
-  { id: 'brief',     label: 'Brief',      icon: 'brief',    href: '/brief' },
   { id: 'analysis',  label: 'Analysis',   icon: 'analysis', href: '/analysis' },
-  { id: 'ideas',     label: 'Trading Ideas (Long)', icon: 'ideas', href: '/trading-ideas' },
   { id: 'movers',    label: 'Movers',     icon: 'zap',      href: '/premarket-movers' },
   { id: 'portfolio', label: 'Portfolio',  icon: 'pie',      href: '/portfolio' },
   { id: 'favorites', label: 'Favorites',  icon: 'star',     href: '/favorites' },
-  { id: 'earnings',   label: 'Earnings',   icon: 'calendar', href: '/earnings' },
-  { id: 'screener',   label: 'Screener',   icon: 'screener', href: '/screener' },
-  { id: 'blog',      label: 'Blog',       icon: 'book',     href: '/blog' },
+  { id: 'earnings',  label: 'Earnings',   icon: 'calendar', href: '/earnings' },
+  { id: 'screener',  label: 'Screener',   icon: 'screener', href: '/screener' },
 ];
 
 export function SectionNavigation({ onTabChange, activeTab }: SectionNavigationProps) {

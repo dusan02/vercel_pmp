@@ -325,13 +325,22 @@ function MoversTable({ title, rows, eligibleAnalysis, sortBy, sortDir, onSort }:
                     <div className="flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100 leading-tight">
                       <CompanyLogo ticker={r.symbol} size={22} className="rounded" />
                       {eligibleAnalysis.has(r.symbol) ? (
-                        <Link
-                          className="hover:underline"
-                          href={`/analysis/${r.symbol}`}
-                          onClick={() => event('ticker_click', { ticker: r.symbol, click_source: 'movers' })}
-                        >
-                          {r.symbol}
-                        </Link>
+                        <>
+                          <Link
+                            className="hover:underline"
+                            href={`/analysis/${r.symbol}`}
+                            onClick={() => event('ticker_click', { ticker: r.symbol, click_source: 'movers' })}
+                          >
+                            {r.symbol}
+                          </Link>
+                          <Link
+                            href={`/analysis/${r.symbol}`}
+                            onClick={() => event('ticker_click', { ticker: r.symbol, click_source: 'movers' })}
+                            className="md:hidden ml-1 px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-[10px] font-semibold text-blue-600 dark:text-blue-400"
+                          >
+                            Analyze →
+                          </Link>
+                        </>
                       ) : (
                         r.symbol
                       )}
@@ -403,16 +412,28 @@ function MoversTable({ title, rows, eligibleAnalysis, sortBy, sortDir, onSort }:
                   <td className="px-3 py-2.5 hidden sm:table-cell">
                     <CatalystCell mover={r} />
                   </td>
-                  {/* Expand quality scores */}
-                  <td className="pr-2 py-2.5 align-top">
-                    <button
-                      onClick={() => toggle(r.symbol)}
-                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-xs px-1"
-                      title={expanded.has(r.symbol) ? 'Hide quality scores' : 'Show quality scores (V/G/P/H/Q/EW)'}
-                      aria-expanded={expanded.has(r.symbol)}
-                    >
-                      {expanded.has(r.symbol) ? '▾' : '▸'}
-                    </button>
+                  {/* Analysis CTA + expand quality scores */}
+                  <td className="pr-2 py-2.5 align-top whitespace-nowrap text-right">
+                    <div className="inline-flex items-center gap-1">
+                      {eligibleAnalysis.has(r.symbol) && (
+                        <Link
+                          href={`/analysis/${r.symbol}`}
+                          onClick={() => event('ticker_click', { ticker: r.symbol, click_source: 'movers' })}
+                          className="hidden md:inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50/80 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                          title={`Open full ${r.symbol} analysis`}
+                        >
+                          Analysis →
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => toggle(r.symbol)}
+                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 text-xs px-1"
+                        title={expanded.has(r.symbol) ? 'Hide quality scores' : 'Show quality scores (V/G/P/H/Q/EW)'}
+                        aria-expanded={expanded.has(r.symbol)}
+                      >
+                        {expanded.has(r.symbol) ? '▾' : '▸'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 {expanded.has(r.symbol) && (
@@ -442,6 +463,7 @@ function StandoutCard({ s }: { s: Standout }) {
   return (
     <Link
       href={`/analysis/${mover.symbol}`}
+      onClick={() => event('ticker_click', { ticker: mover.symbol, click_source: 'movers' })}
       className="flex-1 min-w-[170px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-sm transition-all"
     >
       <div className="text-[10px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">

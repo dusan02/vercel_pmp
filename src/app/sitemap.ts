@@ -3,8 +3,6 @@ import { getProjectTickers } from '@/data/defaultTickers';
 import { getDateET } from '@/lib/utils/dateET';
 import { prisma } from '@/lib/db/prisma';
 import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
-import { getEligibleValuationTickers } from '@/lib/seo/eligibleValuation';
-import { getEligibleFinancialsTickers } from '@/lib/seo/eligibleFinancials';
 import { LEADERBOARDS } from '@/lib/seo/leaderboards';
 import { METRIC_PAGES } from '@/lib/heatmap/metricPages';
 
@@ -47,12 +45,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 0.85,
     },
-    {
-      url: `${baseUrl}/brief`,
-      lastModified: currentDate,
-      changeFrequency: 'hourly',
-      priority: 0.85,
-    },
     ...METRIC_PAGES.map((p) => ({
       url: `${baseUrl}/heatmap/${p.slug}`,
       lastModified: currentDate,
@@ -79,18 +71,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       },
     },
     {
-      url: `${baseUrl}/biggest-movers`,
-      lastModified: currentDate,
-      changeFrequency: 'daily',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/premarket-movers/weekly`,
-      lastModified: currentDate,
-      changeFrequency: 'daily',
-      priority: 0.7,
-    },
-    {
       url: `${baseUrl}/premarket-gainers`,
       lastModified: currentDate,
       changeFrequency: 'daily',
@@ -100,12 +80,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/premarket-losers`,
       lastModified: currentDate,
       changeFrequency: 'daily',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/unusual-volume`,
-      lastModified: currentDate,
-      changeFrequency: 'hourly',
       priority: 0.8,
     },
     {
@@ -151,12 +125,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily' as const,
       priority: 0.7,
     })),
-    {
-      url: `${baseUrl}/embed`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly',
-      priority: 0.4,
-    },
     {
       url: `${baseUrl}/about`,
       lastModified: currentDate,
@@ -249,34 +217,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // -------------------------------------------------------
-  // 3a. VALUATION PAGES — /valuation/[ticker]
-  //     Only include tickers with ≥20 PE AND ≥20 PS observations.
-  //     Tickers with insufficient data get noindex on the page itself.
-  // -------------------------------------------------------
-  const eligibleValuationTickers = await fill(() => getEligibleValuationTickers());
-  const valuationPages: MetadataRoute.Sitemap = eligibleValuationTickers.map((ticker) => ({
-    url: `${baseUrl}/valuation/${ticker}`,
-    lastModified: tickerUpdates.get(ticker) || currentDate,
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }));
-
-  // -------------------------------------------------------
-  // 3b. FINANCIALS PAGES — /financials/[ticker]
-  //     Only include tickers with ≥4 FinancialStatement rows
-  //     with all 5 key fields non-null (revenue, netIncome,
-  //     totalAssets, totalLiabilities, totalEquity).
-  // -------------------------------------------------------
-  const eligibleFinancialsTickers = await fill(() => getEligibleFinancialsTickers());
-  const financialsPages: MetadataRoute.Sitemap = eligibleFinancialsTickers.map((ticker) => ({
-    url: `${baseUrl}/financials/${ticker}`,
-    lastModified: tickerUpdates.get(ticker) || currentDate,
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }));
-
-  // -------------------------------------------------------
-  // 3c. MOVER PAGES — /movers/[ticker]
+  // 3c. MOVER PAGES — /premarket/[ticker]
   //     Only include tickers with enough significant moves (quality filter).
   //     A page with 0-2 moves is thin content → noindex on the page itself
   //     and excluded from sitemap to avoid wasting crawl budget.
@@ -323,12 +264,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // are expected there (ISR regenerates with real data on first request).
   if (
     process.env.NEXT_PHASE !== 'phase-production-build' &&
-    (allTickers.length === 0 ||
-      valuationPages.length === 0 ||
-      financialsPages.length === 0)
+    allTickers.length === 0
   ) {
     throw new Error(
-      `sitemap: ticker sections empty (analysis=${allTickers.length} valuation=${valuationPages.length} financials=${financialsPages.length}) — refusing to cache a gutted sitemap`,
+      `sitemap: ticker section empty (analysis=${allTickers.length}) — refusing to cache a gutted sitemap`,
     );
   }
 
@@ -463,8 +402,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...mainPages,
     ...analysisPages,
-    ...valuationPages,
-    ...financialsPages,
     ...sectorPages,
     ...archivePages,
     ...earningsPages,

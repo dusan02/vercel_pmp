@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/db/prisma';
 import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
-import { getEligibleValuationTickers } from '@/lib/seo/eligibleValuation';
 import { formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
 
 interface MoverLink {
@@ -11,7 +10,6 @@ interface MoverLink {
   lastPrice: number | null;
   lastChangePct: number | null;
   lastMarketCap: number | null;
-  hasValuation: boolean;
 }
 
 /**
@@ -24,7 +22,6 @@ async function getTopMoversFromDB(
   limit: number = 25
 ): Promise<MoverLink[]> {
   const eligibleAnalysis = new Set(await getEligibleAnalysisTickers());
-  const eligibleValuation = new Set(await getEligibleValuationTickers());
 
   const tickers = await prisma.ticker.findMany({
     where: {
@@ -51,7 +48,6 @@ async function getTopMoversFromDB(
     lastPrice: t.lastPrice,
     lastChangePct: t.lastChangePct,
     lastMarketCap: t.lastMarketCap,
-    hasValuation: eligibleValuation.has(t.symbol),
   }));
 }
 
@@ -65,7 +61,7 @@ function formatMarketCap(value: number | null): string {
 /**
  * Server-rendered discovery section with ticker links.
  * Renders top movers from DB data, independent of Redis.
- * Each ticker links to /analysis/[ticker] and /valuation/[ticker] (if eligible).
+ * Each ticker links directly to /analysis/[ticker].
  */
 export async function SsrMoverLinks({
   direction,
@@ -118,16 +114,8 @@ export async function SsrMoverLinks({
                 href={`/analysis/${m.symbol}`}
                 className="text-blue-600 dark:text-blue-400 hover:underline"
               >
-                Analysis
+                Analysis →
               </Link>
-              {m.hasValuation && (
-                <Link
-                  href={`/valuation/${m.symbol}`}
-                  className="text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  Valuation
-                </Link>
-              )}
             </div>
           </div>
         ))}
@@ -191,16 +179,8 @@ export async function SsrMoverLinksCombined() {
                       href={`/analysis/${m.symbol}`}
                       className="text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      Analysis
+                      Analysis →
                     </Link>
-                    {m.hasValuation && (
-                      <Link
-                        href={`/valuation/${m.symbol}`}
-                        className="text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        Val.
-                      </Link>
-                    )}
                   </div>
                 </div>
               ))}
@@ -237,16 +217,8 @@ export async function SsrMoverLinksCombined() {
                       href={`/analysis/${m.symbol}`}
                       className="text-blue-600 dark:text-blue-400 hover:underline"
                     >
-                      Analysis
+                      Analysis →
                     </Link>
-                    {m.hasValuation && (
-                      <Link
-                        href={`/valuation/${m.symbol}`}
-                        className="text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        Val.
-                      </Link>
-                    )}
                   </div>
                 </div>
               ))}

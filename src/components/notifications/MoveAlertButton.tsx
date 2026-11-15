@@ -12,7 +12,7 @@ import { event } from '@/lib/ga';
  *
  * Renders nothing where push can't work (unsupported browsers, dev hosts).
  */
-export function MoveAlertButton({ symbol }: { symbol: string }) {
+export function MoveAlertButton({ symbol, label }: { symbol: string; label?: string }) {
     const [state, setState] = useState<'loading' | 'off' | 'on' | 'unsupported'>('loading');
     const [busy, setBusy] = useState(false);
 
@@ -128,7 +128,7 @@ export function MoveAlertButton({ symbol }: { symbol: string }) {
             title={on ? `${symbol} move alerts on` : `Alert me when ${symbol} makes an unusual move`}
         >
             {on ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-            <span>{on ? 'Alerts on' : 'Get move alerts'}</span>
+            <span>{on ? 'Alerts on' : (label ?? 'Get move alerts')}</span>
         </button>
     );
 }

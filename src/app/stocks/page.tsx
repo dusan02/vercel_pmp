@@ -257,17 +257,13 @@ export default async function StocksHubPage({ searchParams }: StocksPageProps) {
                       >
                         Analysis
                       </Link>
-                      {s.hasValuation && (
-                        <>
-                          {' · '}
-                          <Link
-                            href={`/valuation/${s.symbol}`}
-                            className="text-blue-600 dark:text-blue-400 hover:underline"
-                          >
-                            Valuation
-                          </Link>
-                        </>
-                      )}
+                      {' · '}
+                      <Link
+                        href={`/premarket/${s.symbol}`}
+                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        Premarket
+                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -285,7 +281,7 @@ export default async function StocksHubPage({ searchParams }: StocksPageProps) {
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
                 {stocks.filter((s) => s.hasValuation).length}
               </div>
-              <div className="text-sm text-slate-500 dark:text-slate-400">With Valuation Pages</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400">With Valuation History</div>
             </div>
             <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
               <div className="text-2xl font-bold text-slate-900 dark:text-white">{sectors.length}</div>

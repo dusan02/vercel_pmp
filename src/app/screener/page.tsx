@@ -81,8 +81,8 @@ export default async function ScreenerPage() {
               Sectors
             </Link>
             {' · '}
-            <Link className="hover:underline" href="/unusual-volume">
-              Unusual Volume
+            <Link className="hover:underline" href="/heatmap/relative-volume">
+              Relative Volume
             </Link>
             {' · '}
             <Link className="hover:underline" href="/earnings">

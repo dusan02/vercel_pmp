@@ -19,6 +19,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { Star } from 'lucide-react';
 import { AddFavoriteSearch } from './AddFavoriteSearch';
 import { useFavoriteSignals } from '@/hooks/useFavoriteSignals';
+import { NotificationToggle } from '@/components/notifications/NotificationToggle';
 
 interface FavoritesSectionProps {
   favoriteStocks: StockData[];
@@ -259,6 +260,15 @@ export function FavoritesSection({
           />
         </div>
       </div>
+
+      {!loading && favoriteStocks.length > 0 && (
+        <div className="mx-4 mb-4">
+          <NotificationToggle
+            title={`Move & Earnings Alerts (${favoriteStocks.length} favorite${favoriteStocks.length === 1 ? '' : 's'})`}
+            subtitle="Get notified when your favorite stocks jump >3% before the bell."
+          />
+        </div>
+      )}
 
       {signals.length > 0 && (
         <div className="mx-4 mb-4 p-3 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.04] dark:bg-emerald-500/[0.06] flex flex-wrap items-center gap-2">

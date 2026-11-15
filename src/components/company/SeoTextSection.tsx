@@ -108,17 +108,17 @@ export function SeoTextSection({
           )}
           {hasValuation && (
             <li>
-              <Link href={`/valuation/${ticker}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+              <a href="#price-chart" className="text-blue-600 dark:text-blue-400 hover:underline">
                 <strong>Valuation & P/E history:</strong> Historical P/E, P/S, and P/B ratios for {ticker}
-              </Link>{' '}
+              </a>{' '}
               with trend analysis and normalized valuation multiples.
             </li>
           )}
           {hasFinancials && (
             <li>
-              <Link href={`/financials/${ticker}`} className="text-blue-600 dark:text-blue-400 hover:underline">
+              <a href="#financial-charts" className="text-blue-600 dark:text-blue-400 hover:underline">
                 <strong>Financial statements:</strong> Revenue, net income, assets, liabilities, and equity for {companyName}
-              </Link>{' '}
+              </a>{' '}
               across multiple reporting periods.
             </li>
           )}

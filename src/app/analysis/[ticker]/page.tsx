@@ -371,6 +371,8 @@ export default async function AnalysisPage({ params }: PageProps) {
               week52Low={week52?.low ?? null}
               week52High={week52?.high ?? null}
               cashVsDebt={cashVsDebt}
+              moversReason={data?.moversReason ?? null}
+              moversCategory={data?.moversCategory ?? null}
               earningsDate={nextEarnings?.date ?? null}
               earningsDays={earningsDays}
               ewScore={ewScore}
@@ -381,7 +383,11 @@ export default async function AnalysisPage({ params }: PageProps) {
               employees={data?.employees ?? null}
               websiteUrl={data?.websiteUrl ?? null}
             />
-            {hasPillars && <PillarsRadar pillars={analysisData!.pillars!} previous={analysisData?.pillarsPrev ?? null} peer={peerPillars} />}
+            {hasPillars && (
+              <div className="hidden lg:block h-full">
+                <PillarsRadar pillars={analysisData!.pillars!} previous={analysisData?.pillarsPrev ?? null} peer={peerPillars} />
+              </div>
+            )}
           </div>
 
           {/* Mobile-only profile chips — quick score strip right under the hero on phones */}

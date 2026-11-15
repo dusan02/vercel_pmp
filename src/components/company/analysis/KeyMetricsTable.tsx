@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import Link from 'next/link';
 import { AnalysisData, ValuationHistoryStat } from './types';
 import { MetricCardDef, StatusType, StatusBadge, VALUE_COLORS } from '../shared/MetricCard';
 import { summarizeLossYears, capexCycleContext } from '@/lib/utils/analysisMath';
@@ -564,7 +565,10 @@ export function KeyMetricsTable({ data, insiderTransactions, insiderActivity }: 
                     <HistBar stat={peStat} />
                     {capexCtx && (
                         <p className="px-3 py-1.5 border-t border-gray-100 dark:border-gray-800/60 text-[11px] leading-snug text-amber-700 dark:text-amber-400">
-                            <span className="font-semibold">{capexCtx.label}:</span> {capexCtx.text}
+                            <span className="font-semibold">{capexCtx.label}:</span> {capexCtx.text}{' '}
+                            <Link href="/capex-tracker" className="font-semibold underline hover:text-amber-800 dark:hover:text-amber-300">
+                                Capex Tracker →
+                            </Link>
                         </p>
                     )}
                 </div>
@@ -591,7 +595,15 @@ export function KeyMetricsTable({ data, insiderTransactions, insiderActivity }: 
                             <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                                 Insider Transactions
                             </h3>
-                            <span className="text-[10px] text-gray-400 dark:text-gray-500">SEC Form 4 · {insiderTxs.length} records</span>
+                            <div className="flex items-center gap-3">
+                                <Link
+                                    href="/screener/insider-buying"
+                                    className="text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                                >
+                                    Top Market Insider Buying →
+                                </Link>
+                                <span className="text-[10px] text-gray-400 dark:text-gray-500">SEC Form 4 · {insiderTxs.length} records</span>
+                            </div>
                         </div>
                         {insiderActivity != null && <InsiderActivitySummary rows={insiderActivity} />}
                         <InsiderTransactionsBody transactions={insiderTxs} />

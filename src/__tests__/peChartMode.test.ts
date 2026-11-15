@@ -78,7 +78,7 @@ async function renderChart() {
 
 async function clickButton(container: HTMLElement, label: string) {
   const norm = (t: string | null | undefined) =>
-    (t ?? '').replace(/[✓▾▴]/g, '').trim();
+    (t ?? '').replace(/[✓▾▴×]/g, '').trim();
   const btn = [...container.querySelectorAll('button')].find(
     (b) => norm(b.textContent) === label,
   ) as HTMLButtonElement | undefined;
@@ -88,6 +88,11 @@ async function clickButton(container: HTMLElement, label: string) {
     // View swaps are two-phase (fade-out → commit after ~120ms) — flush it.
     await new Promise((r) => setTimeout(r, 150));
   });
+}
+
+async function enterValuationMode(container: HTMLElement) {
+  await clickButton(container, 'Tools');
+  await clickButton(container, 'Valuation Multiples (P/E)');
 }
 
 describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
@@ -124,7 +129,7 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
 
   it('P/E mode shows × headline with premium vs median', async () => {
     const { container } = await renderChart();
-    await clickButton(container, 'Valuation');
+    await enterValuationMode(container);
     // headline: current multiple + premium/discount vs its own median
     expect(container.innerHTML).toMatch(/\d+\.\d×/);
     const badge = [...container.querySelectorAll('span')].find(
@@ -138,7 +143,7 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
 
   it('keeps median line + band, adds gradient def and Brush navigator', async () => {
     const { container } = await renderChart();
-    await clickButton(container, 'Valuation');
+    await enterValuationMode(container);
     // median reference label kept (user requirement)
     expect(container.textContent).toContain('median 26.4');
     // gradient fill definition exists for the P/E area
@@ -150,7 +155,7 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
 
   it('formula caption: P/E = close ÷ TTM EPS with 1Y avg + median context', async () => {
     const { container } = await renderChart();
-    await clickButton(container, 'Valuation');
+    await enterValuationMode(container);
     expect(container.innerHTML).toMatch(/P\/E [\d.]+× = \$[\d.]+ close ÷ \$[\d.]+ TTM EPS/);
     expect(container.textContent).toContain('1Y avg');
     expect(container.textContent).toContain('median 26.4');
@@ -158,24 +163,22 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
 
   it('Valuation mode offers a metric menu and hides price overlays', async () => {
     const { container } = await renderChart();
-    await clickButton(container, 'Valuation');
+    await enterValuationMode(container);
     // the metric selector is a dropdown — trigger shows the active metric
     await clickButton(container, 'P/E'); // opens the metric menu
     const labels = [...container.querySelectorAll('button')].map((b) =>
       b.textContent?.replace(/[✓▾▴]/g, '').trim());
     expect(labels).toEqual(expect.arrayContaining(['P/E', 'P/E NTM', 'P/S', 'P/B', 'EV/EBIT', 'FCF yield']));
-    // price-only overlays are hidden in valuation mode — their container
-    // carries `invisible` so toggled state survives the mode round-trip and
-    // the slot keeps its width (period buttons don't shift).
+    // price-only overlays dropdown is hidden in valuation mode
     const ovBtn = [...container.querySelectorAll('button')].find((b) =>
       b.textContent?.includes('Overlays'),
-    ) as HTMLButtonElement | undefined;
-    expect(ovBtn?.parentElement?.parentElement?.className).toContain('invisible');
+    );
+    expect(ovBtn).toBeFalsy();
   });
 
   it('switching metric to P/S changes headline and formula caption', async () => {
     const { container } = await renderChart();
-    await clickButton(container, 'Valuation');
+    await enterValuationMode(container);
     await clickButton(container, 'P/E'); // open metric menu
     await clickButton(container, 'P/S');
     expect(container.textContent).toContain('median 5.2');
@@ -184,7 +187,7 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
 
   it('P/E NTM: realized series label + consensus headline, never "Fwd P/E"', async () => {
     const { container } = await renderChart();
-    await clickButton(container, 'Valuation');
+    await enterValuationMode(container);
     await clickButton(container, 'P/E'); // open metric menu
     await clickButton(container, 'P/E NTM');
     // Headline = today's consensus (24.2×) flagged as such.
@@ -212,7 +215,7 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
       }),
     );
     const { container } = await renderChart();
-    await clickButton(container, 'Valuation');
+    await enterValuationMode(container);
     await clickButton(container, 'P/E'); // open metric menu
     await clickButton(container, 'P/E NTM');
     // Falls back to the last realized point — no consensus tag.
@@ -225,7 +228,7 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
 
   it('FCF yield renders in % units and inverts the cheaper direction', async () => {
     const { container } = await renderChart();
-    await clickButton(container, 'Valuation');
+    await enterValuationMode(container);
     await clickButton(container, 'P/E'); // open metric menu
     await clickButton(container, 'FCF yield');
     // headline in % — fixture ~2%
@@ -233,9 +236,9 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     expect(container.innerHTML).toMatch(/FCF yield [\d.]+% = TTM FCF ÷ market cap/);
   });
 
-  it('offers SPY/QQQ/sector-ETF in the compare menu; select fetches benchmark weekly series', async () => {
+  it('offers SPY/QQQ/sector-ETF in the Tools compare section; select fetches benchmark weekly series', async () => {
     const { container } = await renderChart();
-    await clickButton(container, '⇄ Compare'); // open compare menu
+    await clickButton(container, 'Tools'); // open consolidated Tools menu
     const labels = [...container.querySelectorAll('button')].map((b) => b.textContent?.trim());
     expect(labels).toEqual(expect.arrayContaining(['SPY', 'QQQ', 'XLF']));
 
@@ -249,17 +252,17 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     expect(container.textContent).toMatch(/[+-][\d.]+pp/);
   });
 
-  it('compare menu hides with the price-mode group in valuation mode', async () => {
+  it('back-to-price exit button appears in valuation mode and returns cleanly', async () => {
     const { container } = await renderChart();
-    await clickButton(container, 'Valuation');
-    // The compare trigger stays mounted inside the shared slot (it keeps its
-    // width) — the whole price-side pill just turns invisible.
-    const cmp = [...container.querySelectorAll('button')].find((b) => b.textContent?.includes('Compare'));
-    expect(cmp).toBeTruthy();
-    expect(cmp?.parentElement?.parentElement?.className).toContain('invisible');
+    await enterValuationMode(container);
+    await clickButton(container, '← Price');
+    const ovBtn = [...container.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('Overlays'),
+    );
+    expect(ovBtn).toBeTruthy();
   });
 
-  it('clicking the active benchmark chip again exits compare and reports it', async () => {
+  it('clicking the active benchmark chip exits compare and reports it', async () => {
     const onCompareChange = jest.fn();
     document.body.innerHTML = '';
     (global as any).IS_REACT_ACT_ENVIRONMENT = true;
@@ -272,18 +275,16 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     });
     onCompareChange.mockClear();
 
-    await clickButton(container, '⇄ Compare');
+    await clickButton(container, 'Tools');
     await clickButton(container, 'SPY');
     await act(async () => { await Promise.resolve(); });
     expect(onCompareChange).toHaveBeenLastCalledWith('SPY');
-    // trigger reflects the active benchmark
+    // active chip appears in toolbar and clicking it clears compare in one click
     const trig = [...container.querySelectorAll('button')].find((b) =>
-      b.textContent?.replace(/[✓▾▴]/g, '').trim() === '⇄ SPY');
+      b.textContent?.replace(/[✓▾▴×]/g, '').trim() === '⇄ SPY');
     expect(trig).toBeTruthy();
 
-    // exit compare via the menu's "Candles only" option
-    await clickButton(container, '⇄ SPY'); // reopen
-    await clickButton(container, 'Candles only');
+    await clickButton(container, '⇄ SPY');
     await act(async () => { await Promise.resolve(); });
     expect(onCompareChange).toHaveBeenLastCalledWith(null);
     // back in price mode — the compare legend is gone

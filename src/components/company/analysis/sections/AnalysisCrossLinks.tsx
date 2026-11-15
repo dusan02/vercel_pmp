@@ -34,29 +34,29 @@ export function AnalysisCrossLinks({ ticker, companyName, description }: Analysi
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-sm">
-        <Link
-          href={`/valuation/${ticker}`}
+        <a
+          href="#price-chart"
           className="group flex flex-col justify-between rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/40 px-3.5 py-2.5 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors"
         >
           <span className="text-xs font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
-            {ticker} Valuation &amp; P/E History →
+            {ticker} Valuation &amp; P/E History ↑
           </span>
           <span className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
             10Y historical multiples &amp; percentiles
           </span>
-        </Link>
+        </a>
 
-        <Link
-          href={`/financials/${ticker}`}
+        <a
+          href="#financial-charts"
           className="group flex flex-col justify-between rounded-lg border border-gray-200/80 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/40 px-3.5 py-2.5 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors"
         >
           <span className="text-xs font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
-            {ticker} Financial Statements →
+            {ticker} Financial Statements ↑
           </span>
           <span className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
             Income, balance sheet &amp; cash flow
           </span>
-        </Link>
+        </a>
 
         <Link
           href={`/premarket/${ticker}`}
