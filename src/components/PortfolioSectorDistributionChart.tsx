@@ -2,7 +2,12 @@
 
 import React, { useMemo, useState } from 'react';
 import * as d3Hierarchy from 'd3-hierarchy';
-import { scaleLinear } from 'd3-scale';
+import {
+    PORTFOLIO_DONUT_GEOMETRY,
+    layoutDonutLabels,
+    shortenIndustryLabel,
+} from '@/lib/utils/portfolioDonutLayout';
+import { PortfolioDonutLabels } from '@/components/portfolio/PortfolioDonutLabels';
 
 // Map sectors to specific base colors for consistency
 const SECTOR_COLORS: Record<string, string> = {
@@ -97,7 +102,10 @@ const createArcPath = (startAngle: number, endAngle: number, rInner: number, rOu
     ].join(' ');
 };
 
-export function PortfolioSectorDistributionChart({ data, size = 280 }: PortfolioDonutChartProps) {
+export function PortfolioSectorDistributionChart({
+    data,
+    size = PORTFOLIO_DONUT_GEOMETRY.size,
+}: PortfolioDonutChartProps) {
     const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
     const { nodes, totalValue } = useMemo(() => {
@@ -198,11 +206,38 @@ export function PortfolioSectorDistributionChart({ data, size = 280 }: Portfolio
         return { nodes: processedNodes, totalValue: total };
     }, [data]);
 
+    const viewBoxWidth = size + PORTFOLIO_DONUT_GEOMETRY.paddingX * 2;
+    const viewBoxHeight = size + PORTFOLIO_DONUT_GEOMETRY.paddingY * 2;
+    const centerX = viewBoxWidth / 2;
+    const centerY = viewBoxHeight / 2;
+    const aspectRatio = `${viewBoxWidth} / ${viewBoxHeight}`;
+
+    const radius = size / 2;
+    const innerRadius = radius * 0.45; // Hole
+    const middleRadius = radius * 0.7; // Boundary between Sector and Industry
+    const outerRadius = radius;
+
+    const labels = useMemo(
+        () =>
+            layoutDonutLabels(
+                nodes
+                    .filter((n) => n.depth === 2 && n.percentage > 4)
+                    .map((n, idx) => ({
+                        key: `sector-label-${idx}-${n.name}`,
+                        label: shortenIndustryLabel(n.name),
+                        percentage: n.percentage,
+                        midAngleRad: (n.x0 + n.x1) / 2,
+                    })),
+                outerRadius,
+                centerY,
+            ),
+        [nodes, outerRadius, centerY],
+    );
+
     if (nodes.length === 0) {
         // Empty State Placeholder
         const placeholderRadius = size / 2;
         const placeholderInner = placeholderRadius * 0.45;
-        // const placeholderMiddle = placeholderRadius * 0.7; // Unused
 
         return (
             <div className="w-full h-full flex flex-col p-4 md:p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -212,14 +247,14 @@ export function PortfolioSectorDistributionChart({ data, size = 280 }: Portfolio
                 <div className="flex-1 flex justify-center flex-col items-center">
                     <div
                         className="relative w-full opacity-30 grayscale"
-                        style={{ maxWidth: size + 260, aspectRatio: 1 }}
+                        style={{ maxWidth: viewBoxWidth, aspectRatio }}
                     >
                         <svg
-                            viewBox={`0 0 ${size + 260} ${size + 260}`}
+                            viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
                             preserveAspectRatio="xMidYMid meet"
                             className="w-full h-full"
                         >
-                            <g transform={`translate(${(size + 260) / 2}, ${(size + 260) / 2})`}>
+                            <g transform={`translate(${centerX}, ${centerY})`}>
                                 {/* Placeholder Donut */}
                                 <path
                                     d={createArcPath(0, 2 * Math.PI, placeholderInner, placeholderRadius)}
@@ -237,17 +272,6 @@ export function PortfolioSectorDistributionChart({ data, size = 280 }: Portfolio
         );
     }
 
-    // Dimensions
-    const padding = 130; // Space for labels inside compact 3-column card
-    const viewBoxSize = size + padding * 2;
-    const center = viewBoxSize / 2;
-    const radius = size / 2;
-
-    // Radii configuration
-    const innerRadius = radius * 0.45; // Hole
-    const middleRadius = radius * 0.7; // Boundary between Sector and Industry
-    const outerRadius = radius;
-
     // Functions
     const getRadii = (depth: number) => {
         if (depth === 1) return { inner: innerRadius, outer: middleRadius }; // Sector
@@ -262,14 +286,14 @@ export function PortfolioSectorDistributionChart({ data, size = 280 }: Portfolio
             <div className="flex-1 flex items-center justify-center">
                 <div
                     className="relative w-full"
-                    style={{ maxWidth: viewBoxSize, aspectRatio: 1 }}
+                    style={{ maxWidth: viewBoxWidth, aspectRatio }}
                 >
                     <svg
-                        viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
+                        viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
                         preserveAspectRatio="xMidYMid meet"
                         className="w-full h-full"
                     >
-                        <g transform={`translate(${center}, ${center})`}>
+                        <g transform={`translate(${centerX}, ${centerY})`}>
                             {/* Slices */}
                             {nodes.flatMap((node, i) => {
                                 const { inner, outer } = getRadii(node.depth);
@@ -303,76 +327,11 @@ export function PortfolioSectorDistributionChart({ data, size = 280 }: Portfolio
                                 ));
                             })}
 
-                            {/* Labels for Outer Layer (Industries) - Improved threshold for mobile visibility */}
-                            {nodes.filter(n => n.depth === 2 && n.percentage > 4).map((node, i) => {
-                                // Calculate position
-                                const midAngle = (node.x0 + node.x1) / 2;
-                                const { outer } = getRadii(node.depth);
-
-                                const labelR = outer + 16;
-                                const pos = polarToCartesian(midAngle, labelR);
-                                const isRight = midAngle < Math.PI;
-
-                                // Elbow line
-                                const elbowStart = polarToCartesian(midAngle, outer);
-                                const elbowEnd = { x: isRight ? pos.x + 14 : pos.x - 14, y: pos.y };
-                                const displayName = node.name && node.name.length > 15 ? `${node.name.slice(0, 14)}…` : node.name;
-
-                                return (
-                                    <g key={`label-${i}`} className="pointer-events-none">
-                                        <polyline
-                                            points={`${elbowStart.x},${elbowStart.y} ${pos.x},${pos.y} ${elbowEnd.x},${elbowEnd.y}`}
-                                            fill="none"
-                                            stroke="#9ca3af"
-                                            strokeWidth="1"
-                                        />
-                                        <text
-                                            x={elbowEnd.x + (isRight ? 4 : -4)}
-                                            y={elbowEnd.y + 4}
-                                            textAnchor={isRight ? 'start' : 'end'}
-                                            className="text-[14px] font-bold fill-gray-900 dark:fill-gray-100"
-                                        >
-                                            {displayName}
-                                        </text>
-                                        <text
-                                            x={elbowEnd.x + (isRight ? 4 : -4)}
-                                            y={elbowEnd.y + 17}
-                                            textAnchor={isRight ? 'start' : 'end'}
-                                            className="text-[12px] fill-gray-500 dark:fill-gray-400"
-                                        >
-                                            {node.percentage.toFixed(1)}%
-                                        </text>
-                                    </g>
-                                );
-                            })}
-
-                            {/* Center Total */}
-                            <text
-                                x="0"
-                                y="-10"
-                                textAnchor="middle"
-                                className="text-sm font-medium fill-gray-500 dark:fill-gray-400"
-                            >
-                                Total
-                            </text>
-                            <text
-                                x="0"
-                                y="15"
-                                textAnchor="middle"
-                                className="text-[22px] font-bold fill-gray-900 dark:fill-gray-100"
-                            >
-                                ${formatCompact(totalValue)}
-                            </text>
+                            <PortfolioDonutLabels labels={labels} totalValue={totalValue} />
                         </g>
                     </svg>
                 </div>
             </div>
         </div>
     );
-}
-
-function formatCompact(num: number) {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
-    return num.toFixed(0);
 }

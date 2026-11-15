@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import { PORTFOLIO_DONUT_GEOMETRY, layoutDonutLabels } from '@/lib/utils/portfolioDonutLayout';
+import { PortfolioDonutLabels } from '@/components/portfolio/PortfolioDonutLabels';
 
 // Unified color palette matching other charts where possible
 const CHART_COLORS = [
@@ -25,7 +27,10 @@ interface PortfolioStockDistributionChartProps {
     size?: number; // Base size for the donut itself
 }
 
-export function PortfolioStockDistributionChart({ data, size = 280 }: PortfolioStockDistributionChartProps) {
+export function PortfolioStockDistributionChart({
+    data,
+    size = PORTFOLIO_DONUT_GEOMETRY.size,
+}: PortfolioStockDistributionChartProps) {
     const [hoveredTicker, setHoveredTicker] = useState<string | null>(null);
 
     const { slices, totalValue } = useMemo(() => {
@@ -58,6 +63,32 @@ export function PortfolioStockDistributionChart({ data, size = 280 }: PortfolioS
         return { slices: slicesWithCoords, totalValue: total };
     }, [data]);
 
+    const viewBoxWidth = size + PORTFOLIO_DONUT_GEOMETRY.paddingX * 2;
+    const viewBoxHeight = size + PORTFOLIO_DONUT_GEOMETRY.paddingY * 2;
+    const centerX = viewBoxWidth / 2;
+    const centerY = viewBoxHeight / 2;
+    const aspectRatio = `${viewBoxWidth} / ${viewBoxHeight}`;
+
+    const outerRadius = size / 2;
+    const innerRadius = outerRadius * 0.6; // Donut hole
+
+    const labels = useMemo(
+        () =>
+            layoutDonutLabels(
+                slices
+                    .filter((s) => s.percentage >= 4 || slices.length <= 8)
+                    .map((s) => ({
+                        key: `label-${s.ticker}`,
+                        label: s.ticker,
+                        percentage: s.percentage,
+                        midAngleRad: (s.middleAngle * Math.PI) / 180,
+                    })),
+                outerRadius,
+                centerY,
+            ),
+        [slices, outerRadius, centerY],
+    );
+
     if (slices.length === 0) {
         // Empty State Placeholder
         const placeholderRadius = size / 2;
@@ -71,14 +102,14 @@ export function PortfolioStockDistributionChart({ data, size = 280 }: PortfolioS
                 <div className="flex-1 flex justify-center flex-col items-center">
                     <div
                         className="relative w-full opacity-30 grayscale"
-                        style={{ maxWidth: size + 210, aspectRatio: 1 }}
+                        style={{ maxWidth: viewBoxWidth, aspectRatio }}
                     >
                         <svg
-                            viewBox={`0 0 ${size + 210} ${size + 210}`}
+                            viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
                             preserveAspectRatio="xMidYMid meet"
                             className="w-full h-full"
                         >
-                            <g transform={`translate(${(size + 210) / 2}, ${(size + 210) / 2})`}>
+                            <g transform={`translate(${centerX}, ${centerY})`}>
                                 {/* Placeholder Donut */}
                                 <circle r={placeholderRadius} fill="none" stroke="var(--clr-border)" strokeWidth="2" strokeDasharray="4 4" />
                                 <circle r={placeholderInner} fill="none" stroke="var(--clr-border)" strokeWidth="2" strokeDasharray="4 4" />
@@ -91,22 +122,12 @@ export function PortfolioStockDistributionChart({ data, size = 280 }: PortfolioS
         );
     }
 
-    // Radius config
-    const outerRadius = size / 2;
-    const innerRadius = outerRadius * 0.6; // Donut hole
-    const labelRadius = outerRadius + 16;  // Radius where the line break starts
-
-    // Tight padding tuned for ticker symbols in a 3-column layout
-    const padding = 105;
-    const viewBoxSize = size + padding * 2;
-    const center = viewBoxSize / 2;
-
     // Helper functions
-    const polarToCartesian = (centerX: number, centerY: number, radius: number, angleInDegrees: number) => {
+    const polarToCartesian = (centerXCoord: number, centerYCoord: number, radius: number, angleInDegrees: number) => {
         const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
         return {
-            x: centerX + radius * Math.cos(angleInRadians),
-            y: centerY + radius * Math.sin(angleInRadians),
+            x: centerXCoord + radius * Math.cos(angleInRadians),
+            y: centerYCoord + radius * Math.sin(angleInRadians),
         };
     };
 
@@ -135,14 +156,14 @@ export function PortfolioStockDistributionChart({ data, size = 280 }: PortfolioS
             <div className="flex-1 flex items-center justify-center">
                 <div
                     className="relative w-full"
-                    style={{ maxWidth: viewBoxSize, aspectRatio: 1 }}
+                    style={{ maxWidth: viewBoxWidth, aspectRatio }}
                 >
                     <svg
-                        viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
+                        viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
                         preserveAspectRatio="xMidYMid meet"
                         className="w-full h-full"
                     >
-                        <g transform={`translate(${center}, ${center})`}>
+                        <g transform={`translate(${centerX}, ${centerY})`}>
                             {/* 1. Slices */}
                             {slices.flatMap((slice) => {
                                 const isHovered = hoveredTicker === slice.ticker;
@@ -175,77 +196,7 @@ export function PortfolioStockDistributionChart({ data, size = 280 }: PortfolioS
                                 ));
                             })}
 
-                            {/* 2. Labels & Lines */}
-                            {slices.map((slice) => {
-                                // Only show label if slice is > 4% to avoid clutter, or if there are few items
-                                if (slice.percentage < 4 && slices.length > 8) return null;
-
-                                const startPt = polarToCartesian(0, 0, outerRadius, slice.middleAngle);
-                                const elbowPt = polarToCartesian(0, 0, labelRadius, slice.middleAngle);
-
-                                // Determine text side roughly based on angle
-                                const isRightSide = slice.middleAngle < 180;
-                                const xSign = isRightSide ? 1 : -1;
-
-                                // End point for the line
-                                const endPt = {
-                                    x: elbowPt.x + (14 * xSign),
-                                    y: elbowPt.y
-                                };
-
-                                // Text anchor position
-                                const textAnchor = isRightSide ? 'start' : 'end';
-                                const textX = endPt.x + (4 * xSign);
-                                const textY = endPt.y;
-
-                                return (
-                                    <g key={`label-${slice.ticker}`} className="pointer-events-none">
-                                        {/* Connection Line */}
-                                        <polyline
-                                            points={`${startPt.x},${startPt.y} ${elbowPt.x},${elbowPt.y} ${endPt.x},${endPt.y}`}
-                                            fill="none"
-                                            stroke="#9ca3af" // gray-400
-                                            strokeWidth="1"
-                                        />
-
-                                        {/* Text Label */}
-                                        <text
-                                            x={textX}
-                                            y={textY - 4} // Ticker above line
-                                            textAnchor={textAnchor}
-                                            className="text-[14px] font-bold fill-gray-900 dark:fill-gray-100"
-                                        >
-                                            {slice.ticker}
-                                        </text>
-                                        <text
-                                            x={textX}
-                                            y={textY + 12} // Percent below line - added more spacing
-                                            textAnchor={textAnchor}
-                                            className="text-[12px] fill-gray-500 dark:fill-gray-400"
-                                        >
-                                            {slice.percentage.toFixed(1)}%
-                                        </text>
-                                    </g>
-                                );
-                            })}
-
-                            {/* Center text (Total) */}
-                            <text
-                                x="0"
-                                y="-5"
-                                textAnchor="middle"
-                                className="text-sm font-medium fill-gray-500 dark:fill-gray-400"
-                            >
-                                Total
-                            </text>
-                            <text
-                                x="0"
-                                y="15"
-                                textAnchor="middle"
-                                className="text-[22px] font-bold fill-gray-900 dark:fill-gray-100"
-                            >
-                                ${(totalValue / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k
-                            </text>
+                            <PortfolioDonutLabels labels={labels} totalValue={totalValue} />
                         </g>
                     </svg>
                 </div>

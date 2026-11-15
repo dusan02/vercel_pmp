@@ -95,21 +95,21 @@ export const formatCurrencyCompact = (value: number | null | undefined, showPlus
   
   // Trillions
   if (absValue >= 1_000_000_000_000) {
-    return `${sign}$${(value / 1_000_000_000_000).toFixed(2)}T`;
+    return `${sign}$${(absValue / 1_000_000_000_000).toFixed(2)}T`;
   }
   
   // Billions
   if (absValue >= 1_000_000_000) {
-    return `${sign}$${(value / 1_000_000_000).toFixed(2)}B`;
+    return `${sign}$${(absValue / 1_000_000_000).toFixed(2)}B`;
   }
   
   // Millions
   if (absValue >= 1_000_000) {
-    return `${sign}$${(value / 1_000_000).toFixed(2)}M`;
+    return `${sign}$${(absValue / 1_000_000).toFixed(2)}M`;
   }
   
   // Thousands and below - use standard formatting with commas
-  return `${sign}$${Math.round(value).toLocaleString('en-US')}`;
+  return `${sign}$${Math.round(absValue).toLocaleString('en-US')}`;
 };
 
 /**

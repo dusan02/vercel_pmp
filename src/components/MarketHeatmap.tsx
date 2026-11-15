@@ -30,6 +30,8 @@ export type MarketHeatmapProps = {
   /** Controlled zoomed sector (optional) */
   zoomedSector?: string | null;
   onZoomChange?: (sector: string | null) => void;
+  /** Whether to show the floating color-scale legend overlay (default: true). */
+  showLegend?: boolean;
 };
 
 export { HeatmapLegend };
@@ -50,6 +52,7 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   sectorLabelVariant = 'compact',
   zoomedSector: controlledZoomedSector,
   onZoomChange,
+  showLegend = true,
 }) => {
   // -- Zoom state (controlled or internal) ----------------------------------
   const [internalZoomedSector, setInternalZoomedSector] = useState<string | null>(null);
@@ -369,13 +372,15 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
 
       {/* Legend overlay — derived from the same adaptive scale as the tiles,
           so it always matches what the map actually shows */}
-      <div className="absolute bottom-2 left-2 z-20 pointer-events-none">
-        <HeatmapLegend
-          timeframe={timeframe}
-          metric={metric}
-          values={metric === 'mcap' ? (data ?? []).map((d) => d.marketCapDiff ?? 0) : undefined}
-        />
-      </div>
+      {showLegend && (
+        <div className="absolute bottom-2 left-2 z-20 pointer-events-none">
+          <HeatmapLegend
+            timeframe={timeframe}
+            metric={metric}
+            values={metric === 'mcap' ? (data ?? []).map((d) => d.marketCapDiff ?? 0) : undefined}
+          />
+        </div>
+      )}
     </div>
   );
 };

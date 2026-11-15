@@ -10,6 +10,7 @@
 import { hierarchy, treemap, treemapSquarify, type HierarchyNode } from 'd3-hierarchy';
 import type { HierarchyData, SectorLabelVariant } from './types';
 import { LAYOUT_CONFIG } from '@/lib/utils/heatmapConfig';
+import { getDesktopTreemapPadding } from './treemapPadding';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -79,13 +80,6 @@ function computeScaleAndOffset(
   return { scale, offset };
 }
 
-/** Resolve the sector-label height used by the treemap padding. */
-function sectorLabelHeight(variant: SectorLabelVariant): number {
-  return variant === 'full'
-    ? LAYOUT_CONFIG.SECTOR_LABEL_FULL.HEIGHT
-    : LAYOUT_CONFIG.SECTOR_LABEL_COMPACT.HEIGHT;
-}
-
 // ---------------------------------------------------------------------------
 // Desktop layout
 // ---------------------------------------------------------------------------
@@ -96,21 +90,13 @@ function computeDesktopLayout(
   height: number,
   sectorLabelVariant: SectorLabelVariant,
 ): void {
-  const labelH = sectorLabelHeight(sectorLabelVariant);
+  const pad = getDesktopTreemapPadding(sectorLabelVariant);
 
   treemap<HierarchyData>()
     .size([width, height])
-    .padding((n) => {
-      if (n.data.meta?.type === 'sector') return LAYOUT_CONFIG.SECTOR_GAP;
-      if (n.data.meta?.type === 'industry') return 1;
-      return 0;
-    })
-    .paddingTop((n) => {
-      if (n.data.meta?.type === 'sector') return labelH;
-      if (n.data.meta?.type === 'industry') return 14;
-      return 0;
-    })
-    .paddingBottom((n) => (n.data.meta?.type === 'sector' ? 2 : 0))
+    .padding((n) => pad.padding(n.data.meta?.type))
+    .paddingTop((n) => pad.paddingTop(n.data.meta?.type))
+    .paddingBottom((n) => pad.paddingBottom(n.data.meta?.type))
     .paddingLeft(0)
     .paddingRight(0)
     .round(true)

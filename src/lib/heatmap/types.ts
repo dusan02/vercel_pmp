@@ -39,7 +39,7 @@ export type HeatmapMetric =
   | 'rvol'           // relative volume
   | 'beta'           // beta (lower = safer, inverted)
   | 'zscore';        // Ticker.latestMoversZScore
-export type SectorLabelVariant = 'compact' | 'full';
+export type SectorLabelVariant = 'compact' | 'full' | 'none';
 
 /**
  * Input data for one company in the heatmap.

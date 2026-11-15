@@ -112,7 +112,7 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
             </div>
 
             <div
-                className="relative w-full flex-1 min-h-[260px] sm:min-h-[300px] overflow-hidden select-none"
+                className="relative w-full flex-1 min-h-[250px] sm:min-h-[260px] rounded-md overflow-hidden select-none"
                 style={{
                     backgroundColor: 'transparent',
                     color: 'inherit'
@@ -139,7 +139,8 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
                             metric="percent"
                             // Layout by abs daily $ P&L (tile area)
                             layoutMetric="mcap"
-                            sectorLabelVariant="compact"
+                            sectorLabelVariant="none"
+                            showLegend={false}
                         />
                     )
                 )}

@@ -84,7 +84,7 @@ export function HeatmapDomView({
             })}
 
             {/* Sector borders */}
-            {filteredNodes
+            {sectorLabelVariant !== 'none' && filteredNodes
                 .filter((node) => node.depth === 1)
                 .map((node) => {
                     const { x0, y0, x1, y1 } = node as TreemapNode;
@@ -118,7 +118,7 @@ export function HeatmapDomView({
                 })}
 
             {/* Sector labels */}
-            {filteredNodes
+            {sectorLabelVariant !== 'none' && filteredNodes
                 .filter((node) => node.depth === 1)
                 .map((node) => (
                     <SectorLabel

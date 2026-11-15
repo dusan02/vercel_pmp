@@ -52,7 +52,8 @@ export function SectorLabel({
 
     const minSizeForLabel = 80;
     const minHeightForLabel = labelHeight + 8;
-    const showLabel = scaledWidth > minSizeForLabel
+    const showLabel = sectorLabelVariant !== 'none'
+        && scaledWidth > minSizeForLabel
         && scaledHeight > minHeightForLabel
         && scale > 0
         && treemapBoundsNotNull;
