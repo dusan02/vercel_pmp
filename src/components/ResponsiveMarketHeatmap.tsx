@@ -94,9 +94,16 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   const isMobile = useMediaQuery('(max-width: 767px)');
 
   // Centralized metric state management
-  // Use controlledMetric if provided (for external control), otherwise use hook
+  // Use controlledMetric if provided (for external control), otherwise use hook.
+  // When a caller specifies controlledMetric or initialMetric, don't let localStorage
+  // overwrite the intended route/embed metric on hydration.
+  const hasExplicitMetric = controlledMetric !== undefined || initialMetric !== undefined;
   const { metric: centralizedMetric, setMetric: setMetricInternal } = useHeatmapMetric(
-    controlledMetric ?? initialMetric ?? 'percent'
+    controlledMetric ?? initialMetric ?? 'percent',
+    {
+      useStoredPreference: !hasExplicitMetric,
+      persistPreference: !hasExplicitMetric,
+    },
   );
 
   // Data fetching hook
@@ -124,9 +131,11 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   // Single source of truth: controlled prop, else the centralized (localStorage) hook
   const metric = controlledMetric ?? centralizedMetric;
 
-  // Handle metric change — update centralized state and notify parent
+  // Handle metric change — update centralized state (when uncontrolled) and notify parent
   const setMetric = (newMetric: HeatmapMetric) => {
-    setMetricInternal(newMetric);
+    if (controlledMetric === undefined) {
+      setMetricInternal(newMetric);
+    }
     if (onMetricChange) {
       onMetricChange(newMetric);
     }

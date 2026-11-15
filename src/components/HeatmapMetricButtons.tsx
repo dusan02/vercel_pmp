@@ -32,16 +32,20 @@ export function HeatmapMetricButtons({
     setMounted(true);
   }, []);
 
+  const isDark = variant === 'dark';
+
   // Render placeholder during SSR to avoid hydration mismatch
   if (!mounted) {
     return (
       <div className={`inline-flex items-center ${className}`} aria-hidden="true">
-        <div className="w-32 h-8 bg-slate-100 dark:bg-slate-700 rounded-lg animate-pulse" />
+        <div
+          className={`w-32 ${size === 'sm' ? 'h-7' : 'h-8'} rounded-lg animate-pulse ${
+            isDark ? 'bg-white/10' : 'bg-slate-100 dark:bg-slate-700'
+          }`}
+        />
       </div>
     );
   }
-
-  const isDark = variant === 'dark';
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newMetric = e.target.value as HeatmapMetric;
