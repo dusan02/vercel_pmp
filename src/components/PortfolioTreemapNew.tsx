@@ -79,30 +79,26 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
         });
     }, [data, metric, effectiveMode]);
 
-    // UX sizing: keep this treemap roughly the size of donut cards (not "infinite height").
-    // - Clamp height so desktop doesn't become gigantic
-    // - Still responsive: scale with available width, but capped
-    const dynamicHeight = useMemo(() => {
-        const w = width || 600; // fallback during first render
-        const isNarrow = w < 640;
-        const cap = isNarrow ? 320 : 360;
-        const target = Math.round(w * 0.6);
-        return Math.min(cap, Math.max(240, target));
-    }, [width]);
+    // Match stretched row height when placed alongside donut cards, with a clean mobile fallback.
+    const renderHeight = useMemo(() => {
+        if (size.height > 0) return Math.round(size.height);
+        const w = width || 400;
+        return Math.min(360, Math.max(260, Math.round(w * 0.85)));
+    }, [size.height, width]);
 
     return (
-        <div className="w-full p-4 md:p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                <h3 className="text-base font-semibold text-[var(--clr-subtext)] uppercase tracking-wider">
+        <div className="w-full h-full flex flex-col p-4 md:p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <h3 className="text-sm xl:text-base font-semibold text-[var(--clr-subtext)] uppercase tracking-wider">
                     Performance Map ({effectiveMode === 'total' ? 'Total Return' : 'Daily P&L'})
                 </h3>
                 {hasCost && (
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 shrink-0">
                         {(['daily', 'total'] as const).map(m => (
                             <button
                                 key={m}
                                 onClick={() => setMode(m)}
-                                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors capitalize ${
+                                className={`px-2 py-0.5 text-xs font-semibold rounded-md transition-colors capitalize ${
                                     effectiveMode === m
                                         ? 'bg-blue-600 text-white'
                                         : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -116,33 +112,28 @@ export function PortfolioPerformanceTreemap({ data, metric = 'percent' }: Portfo
             </div>
 
             <div
-                className="relative w-full overflow-hidden select-none"
+                className="relative w-full flex-1 min-h-[260px] sm:min-h-[300px] overflow-hidden select-none"
                 style={{
-                    width: '100%',
-                    height: `${dynamicHeight}px`,
-                    minHeight: '240px',
-                    maxWidth: '720px',
-                    margin: '0 auto',
                     backgroundColor: 'transparent',
                     color: 'inherit'
                 }}
             >
                 <div ref={ref} className="absolute inset-0" />
 
-                {width > 0 && dynamicHeight > 0 && (
+                {width > 0 && renderHeight > 0 && (
                     isMobile ? (
                         <MobileTreemapNew
                             data={heatmapData}
                             timeframe="day"
                             metric="percent"
                             layoutMetric="mcap"
-                            height={dynamicHeight}
+                            height={renderHeight}
                         />
                     ) : (
                         <MarketHeatmap
                             data={heatmapData}
                             width={width}
-                            height={dynamicHeight}
+                            height={renderHeight}
                             timeframe="day"
                             // Color/labels by % move (intensity)
                             metric="percent"

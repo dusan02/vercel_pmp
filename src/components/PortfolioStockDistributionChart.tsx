@@ -25,7 +25,7 @@ interface PortfolioStockDistributionChartProps {
     size?: number; // Base size for the donut itself
 }
 
-export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioStockDistributionChartProps) {
+export function PortfolioStockDistributionChart({ data, size = 280 }: PortfolioStockDistributionChartProps) {
     const [hoveredTicker, setHoveredTicker] = useState<string | null>(null);
 
     const { slices, totalValue } = useMemo(() => {
@@ -64,21 +64,21 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
         const placeholderInner = placeholderRadius * 0.6;
 
         return (
-            <div className="w-full p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-                <h3 className="text-base font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider">
+            <div className="w-full h-full flex flex-col p-4 md:p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm xl:text-base font-semibold text-[var(--clr-subtext)] mb-3 uppercase tracking-wider">
                     Asset Allocation
                 </h3>
-                <div className="flex justify-center flex-col items-center">
+                <div className="flex-1 flex justify-center flex-col items-center">
                     <div
                         className="relative w-full opacity-30 grayscale"
-                        style={{ maxWidth: size + 240, aspectRatio: 1 }}
+                        style={{ maxWidth: size + 210, aspectRatio: 1 }}
                     >
                         <svg
-                            viewBox={`0 0 ${size + 240} ${size + 240}`}
+                            viewBox={`0 0 ${size + 210} ${size + 210}`}
                             preserveAspectRatio="xMidYMid meet"
                             className="w-full h-full"
                         >
-                            <g transform={`translate(${(size + 240) / 2}, ${(size + 240) / 2})`}>
+                            <g transform={`translate(${(size + 210) / 2}, ${(size + 210) / 2})`}>
                                 {/* Placeholder Donut */}
                                 <circle r={placeholderRadius} fill="none" stroke="var(--clr-border)" strokeWidth="2" strokeDasharray="4 4" />
                                 <circle r={placeholderInner} fill="none" stroke="var(--clr-border)" strokeWidth="2" strokeDasharray="4 4" />
@@ -94,10 +94,10 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
     // Radius config
     const outerRadius = size / 2;
     const innerRadius = outerRadius * 0.6; // Donut hole
-    const labelRadius = outerRadius + 20;  // Radius where the line break starts
+    const labelRadius = outerRadius + 16;  // Radius where the line break starts
 
-    // Increase viewBox to accommodate labels
-    const padding = 140;
+    // Tight padding tuned for ticker symbols in a 3-column layout
+    const padding = 105;
     const viewBoxSize = size + padding * 2;
     const center = viewBoxSize / 2;
 
@@ -128,11 +128,11 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
     };
 
     return (
-        <div className="w-full p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-            <h3 className="text-base font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider">
+        <div className="w-full h-full flex flex-col p-4 md:p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+            <h3 className="text-sm xl:text-base font-semibold text-[var(--clr-subtext)] mb-3 uppercase tracking-wider">
                 Asset Allocation
             </h3>
-            <div className="flex justify-center">
+            <div className="flex-1 flex items-center justify-center">
                 <div
                     className="relative w-full"
                     style={{ maxWidth: viewBoxSize, aspectRatio: 1 }}
@@ -189,13 +189,13 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
 
                                 // End point for the line
                                 const endPt = {
-                                    x: elbowPt.x + (20 * xSign),
+                                    x: elbowPt.x + (14 * xSign),
                                     y: elbowPt.y
                                 };
 
                                 // Text anchor position
                                 const textAnchor = isRightSide ? 'start' : 'end';
-                                const textX = endPt.x + (5 * xSign);
+                                const textX = endPt.x + (4 * xSign);
                                 const textY = endPt.y;
 
                                 return (
@@ -213,7 +213,7 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
                                             x={textX}
                                             y={textY - 4} // Ticker above line
                                             textAnchor={textAnchor}
-                                            className="text-[13px] font-bold fill-gray-900 dark:fill-gray-100"
+                                            className="text-[14px] font-bold fill-gray-900 dark:fill-gray-100"
                                         >
                                             {slice.ticker}
                                         </text>
@@ -221,7 +221,7 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
                                             x={textX}
                                             y={textY + 12} // Percent below line - added more spacing
                                             textAnchor={textAnchor}
-                                            className="text-[11px] fill-gray-500 dark:fill-gray-400"
+                                            className="text-[12px] fill-gray-500 dark:fill-gray-400"
                                         >
                                             {slice.percentage.toFixed(1)}%
                                         </text>
@@ -242,7 +242,7 @@ export function PortfolioStockDistributionChart({ data, size = 300 }: PortfolioS
                                 x="0"
                                 y="15"
                                 textAnchor="middle"
-                                className="text-xl font-bold fill-gray-900 dark:fill-gray-100"
+                                className="text-[22px] font-bold fill-gray-900 dark:fill-gray-100"
                             >
                                 ${(totalValue / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}k
                             </text>

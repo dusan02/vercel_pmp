@@ -97,7 +97,7 @@ const createArcPath = (startAngle: number, endAngle: number, rInner: number, rOu
     ].join(' ');
 };
 
-export function PortfolioSectorDistributionChart({ data, size = 300 }: PortfolioDonutChartProps) {
+export function PortfolioSectorDistributionChart({ data, size = 280 }: PortfolioDonutChartProps) {
     const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
     const { nodes, totalValue } = useMemo(() => {
@@ -205,21 +205,21 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
         // const placeholderMiddle = placeholderRadius * 0.7; // Unused
 
         return (
-            <div className="w-full p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-                <h3 className="text-base font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider">
+            <div className="w-full h-full flex flex-col p-4 md:p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm xl:text-base font-semibold text-[var(--clr-subtext)] mb-3 uppercase tracking-wider">
                     Segment Distribution
                 </h3>
-                <div className="flex justify-center flex-col items-center">
+                <div className="flex-1 flex justify-center flex-col items-center">
                     <div
                         className="relative w-full opacity-30 grayscale"
-                        style={{ maxWidth: size + 280, aspectRatio: 1 }}
+                        style={{ maxWidth: size + 260, aspectRatio: 1 }}
                     >
                         <svg
-                            viewBox={`0 0 ${size + 280} ${size + 280}`}
+                            viewBox={`0 0 ${size + 260} ${size + 260}`}
                             preserveAspectRatio="xMidYMid meet"
                             className="w-full h-full"
                         >
-                            <g transform={`translate(${(size + 280) / 2}, ${(size + 280) / 2})`}>
+                            <g transform={`translate(${(size + 260) / 2}, ${(size + 260) / 2})`}>
                                 {/* Placeholder Donut */}
                                 <path
                                     d={createArcPath(0, 2 * Math.PI, placeholderInner, placeholderRadius)}
@@ -238,7 +238,7 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
     }
 
     // Dimensions
-    const padding = 160; // Space for labels
+    const padding = 130; // Space for labels inside compact 3-column card
     const viewBoxSize = size + padding * 2;
     const center = viewBoxSize / 2;
     const radius = size / 2;
@@ -255,11 +255,11 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
     };
 
     return (
-        <div className="w-full p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-            <h3 className="text-base font-semibold text-[var(--clr-subtext)] mb-4 uppercase tracking-wider">
+        <div className="w-full h-full flex flex-col p-4 md:p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+            <h3 className="text-sm xl:text-base font-semibold text-[var(--clr-subtext)] mb-3 uppercase tracking-wider">
                 Segment Distribution
             </h3>
-            <div className="flex justify-center">
+            <div className="flex-1 flex items-center justify-center">
                 <div
                     className="relative w-full"
                     style={{ maxWidth: viewBoxSize, aspectRatio: 1 }}
@@ -309,13 +309,14 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
                                 const midAngle = (node.x0 + node.x1) / 2;
                                 const { outer } = getRadii(node.depth);
 
-                                const labelR = outer + 20;
+                                const labelR = outer + 16;
                                 const pos = polarToCartesian(midAngle, labelR);
                                 const isRight = midAngle < Math.PI;
 
                                 // Elbow line
                                 const elbowStart = polarToCartesian(midAngle, outer);
-                                const elbowEnd = { x: isRight ? pos.x + 20 : pos.x - 20, y: pos.y };
+                                const elbowEnd = { x: isRight ? pos.x + 14 : pos.x - 14, y: pos.y };
+                                const displayName = node.name && node.name.length > 15 ? `${node.name.slice(0, 14)}…` : node.name;
 
                                 return (
                                     <g key={`label-${i}`} className="pointer-events-none">
@@ -326,18 +327,18 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
                                             strokeWidth="1"
                                         />
                                         <text
-                                            x={elbowEnd.x + (isRight ? 5 : -5)}
+                                            x={elbowEnd.x + (isRight ? 4 : -4)}
                                             y={elbowEnd.y + 4}
                                             textAnchor={isRight ? 'start' : 'end'}
-                                            className="text-[13px] font-bold fill-gray-900 dark:fill-gray-100"
+                                            className="text-[14px] font-bold fill-gray-900 dark:fill-gray-100"
                                         >
-                                            {node.name}
+                                            {displayName}
                                         </text>
                                         <text
-                                            x={elbowEnd.x + (isRight ? 5 : -5)}
-                                            y={elbowEnd.y + 16}
+                                            x={elbowEnd.x + (isRight ? 4 : -4)}
+                                            y={elbowEnd.y + 17}
                                             textAnchor={isRight ? 'start' : 'end'}
-                                            className="text-[11px] fill-gray-500 dark:fill-gray-400"
+                                            className="text-[12px] fill-gray-500 dark:fill-gray-400"
                                         >
                                             {node.percentage.toFixed(1)}%
                                         </text>
@@ -358,7 +359,7 @@ export function PortfolioSectorDistributionChart({ data, size = 300 }: Portfolio
                                 x="0"
                                 y="15"
                                 textAnchor="middle"
-                                className="text-xl font-bold fill-gray-900 dark:fill-gray-100"
+                                className="text-[22px] font-bold fill-gray-900 dark:fill-gray-100"
                             >
                                 ${formatCompact(totalValue)}
                             </text>

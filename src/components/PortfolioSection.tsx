@@ -735,10 +735,10 @@ export function PortfolioSection({
 
         {/* Desktop Visualizations */}
         {portfolioStocks.length > 0 && (
-          <div className="mb-8 space-y-8 px-4 mt-8">
+          <div className="mb-8 space-y-6 px-4 mt-8">
             <PortfolioPerformanceChart holdings={portfolioHoldings} />
-            <PortfolioPerformanceTreemap data={chartData} />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 xl:gap-6 items-stretch">
+              <PortfolioPerformanceTreemap data={chartData} />
               <PortfolioSectorDistributionChart data={chartData} />
               <PortfolioStockDistributionChart data={chartData} />
             </div>
