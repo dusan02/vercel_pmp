@@ -27,6 +27,58 @@ function resolveDescription(pathname: string): string {
   return d['default'] ?? '';
 }
 
+const FOOTER_LINK_CLASS =
+  'text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors';
+
+interface FooterLinkItem {
+  href: string;
+  label: string;
+  external?: boolean;
+}
+
+const FOOTER_LINK_COLUMNS: Array<{ heading: string; links: FooterLinkItem[] }> = [
+  {
+    heading: 'Markets',
+    links: [
+      { href: '/premarket-movers', label: 'Premarket Movers' },
+      { href: '/gainers', label: 'Top Gainers' },
+      { href: '/losers', label: 'Top Losers' },
+      { href: '/heatmap', label: 'Market Heatmap' },
+      { href: '/earnings', label: 'Earnings Calendar' },
+      { href: '/sectors', label: 'Sector Performance' },
+      { href: '/stocks', label: 'All Stocks' },
+      { href: '/capex-tracker', label: 'Capex Tracker' },
+    ],
+  },
+  {
+    heading: 'Screens & Views',
+    links: [
+      { href: '/screener', label: 'Stock Screener' },
+      { href: '/screener/early-winners', label: 'Early Winners' },
+      { href: '/screener/most-undervalued', label: 'Most Undervalued' },
+      { href: '/screener/highest-growth', label: 'Highest Growth' },
+      { href: '/screener/insider-buying', label: 'Insider Buying' },
+      { href: '/screener/quality-compounders', label: 'Quality Compounders' },
+      { href: '/trading-ideas', label: 'Trading Ideas' },
+      { href: '/heatmap/pe-ratio', label: 'P/E Ratio Heatmap' },
+      { href: '/heatmap/dividend-yield', label: 'Dividend Heatmap' },
+    ],
+  },
+  {
+    heading: 'Company',
+    links: [
+      { href: '/brief', label: 'Premarket Brief' },
+      { href: '/blog', label: 'Blog' },
+      { href: '/about', label: 'About Us' },
+      { href: '/contact', label: 'Contact' },
+      { href: '/disclaimer', label: 'Disclaimer' },
+      { href: '/api/rss', label: 'RSS Feed', external: true },
+      { href: '/embed', label: 'Widgets for your site' },
+      { href: 'https://stockcv.com', label: 'StockCV — company CVs', external: true },
+    ],
+  },
+];
+
 export function Footer() {
   const pathname = usePathname();
   const desc = resolveDescription(pathname);
@@ -39,7 +91,7 @@ export function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           {/* Brand Section */}
           <div className="col-span-1 sm:col-span-2 lg:col-span-1">
-            <Link href="/" className="flex items-center">
+            <Link prefetch={false} href="/" className="flex items-center">
               <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
                 PreMarketPrice
               </span>
@@ -52,157 +104,29 @@ export function Footer() {
             </p>
           </div>
 
-          {/* Market Links */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
-              Markets
-            </h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/premarket-movers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Premarket Movers
-                </Link>
-              </li>
-              <li>
-                <Link href="/gainers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Top Gainers
-                </Link>
-              </li>
-              <li>
-                <Link href="/losers" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Top Losers
-                </Link>
-              </li>
-              <li>
-                <Link href="/heatmap" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Market Heatmap
-                </Link>
-              </li>
-              <li>
-                <Link href="/earnings" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Earnings Calendar
-                </Link>
-              </li>
-              <li>
-                <Link href="/sectors" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Sector Performance
-                </Link>
-              </li>
-              <li>
-                <Link href="/stocks" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  All Stocks
-                </Link>
-              </li>
-              <li>
-                <Link href="/capex-tracker" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Capex Tracker
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Screeners & Views */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
-              Screens &amp; Views
-            </h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/screener" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Stock Screener
-                </Link>
-              </li>
-              <li>
-                <Link href="/screener/early-winners" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Early Winners
-                </Link>
-              </li>
-              <li>
-                <Link href="/screener/most-undervalued" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Most Undervalued
-                </Link>
-              </li>
-              <li>
-                <Link href="/screener/highest-growth" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Highest Growth
-                </Link>
-              </li>
-              <li>
-                <Link href="/screener/insider-buying" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Insider Buying
-                </Link>
-              </li>
-              <li>
-                <Link href="/screener/quality-compounders" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Quality Compounders
-                </Link>
-              </li>
-              <li>
-                <Link href="/trading-ideas" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Trading Ideas
-                </Link>
-              </li>
-              <li>
-                <Link href="/heatmap/pe-ratio" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  P/E Ratio Heatmap
-                </Link>
-              </li>
-              <li>
-                <Link href="/heatmap/dividend-yield" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Dividend Heatmap
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Company Links */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
-              Company
-            </h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/brief" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Premarket Brief
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Blog
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Contact
-                </Link>
-              </li>
-              <li>
-                <Link href="/disclaimer" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Disclaimer
-                </Link>
-              </li>
-              <li>
-                <a href="/api/rss" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  RSS Feed
-                </a>
-              </li>
-              <li>
-                <Link href="/embed" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Widgets for your site
-                </Link>
-              </li>
-              <li>
-                <a href="https://stockcv.com" className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  StockCV — company CVs
-                </a>
-              </li>
-            </ul>
-          </div>
+          {/* Directory Columns */}
+          {FOOTER_LINK_COLUMNS.map((col) => (
+            <div key={col.heading}>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+                {col.heading}
+              </h3>
+              <ul className="space-y-2">
+                {col.links.map((item) => (
+                  <li key={item.href}>
+                    {item.external ? (
+                      <a href={item.href} className={FOOTER_LINK_CLASS}>
+                        {item.label}
+                      </a>
+                    ) : (
+                      <Link prefetch={false} href={item.href} className={FOOTER_LINK_CLASS}>
+                        {item.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
 
           {/* Support Section */}
           <div>
@@ -271,6 +195,7 @@ export function Footer() {
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-gray-400 dark:text-gray-500">
             <Link
               href="/zh"
+              prefetch={false}
               hrefLang="zh-CN"
               className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             >

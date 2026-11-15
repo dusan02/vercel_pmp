@@ -1,6 +1,9 @@
 import { formatCurrencyCompact } from '@/lib/utils/format';
 import {
+  adjustHexColor,
+  createDonutArcPaths,
   formatDonutTotal,
+  getDonutViewBox,
   layoutDonutLabels,
   shortenIndustryLabel,
 } from '@/lib/utils/portfolioDonutLayout';
@@ -72,5 +75,24 @@ describe('Portfolio visualization helpers', () => {
     const compactPad = getDesktopTreemapPadding('compact');
     expect(compactPad.paddingTop('sector')).toBeGreaterThan(0);
     expect(compactPad.paddingTop('industry')).toBe(14);
+  });
+
+  test('shared donut viewBox, arc-splitting, and hex color helpers behave consistently', () => {
+    const vb = getDonutViewBox(240);
+    expect(vb).toEqual({
+      viewBoxWidth: 540,
+      viewBoxHeight: 356,
+      centerX: 270,
+      centerY: 178,
+      aspectRatio: '540 / 356',
+    });
+
+    expect(createDonutArcPaths(0, Math.PI / 2, 50, 100)).toHaveLength(1);
+    expect(createDonutArcPaths(0, Math.PI * 2, 50, 100)).toHaveLength(2);
+    expect(createDonutArcPaths(1, 1, 50, 100)).toEqual([]);
+
+    expect(adjustHexColor('#000000', 20)).toBe('#333333');
+    expect(adjustHexColor('#ffffff', -20)).toBe('#cccccc');
+    expect(adjustHexColor('#000', 0)).toBe('#000000');
   });
 });

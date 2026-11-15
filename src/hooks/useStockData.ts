@@ -51,9 +51,10 @@ const fetchWithRetry = async (url: string, maxRetries = 3, initialDelay = 1000):
 interface UseStockDataProps {
   initialData?: StockData[];
   favorites: { ticker: string }[];
+  skipTop50?: boolean;
 }
 
-export function useStockData({ initialData = [], favorites }: UseStockDataProps) {
+export function useStockData({ initialData = [], favorites, skipTop50 = false }: UseStockDataProps) {
   // State for stock data
   const [stockData, setStockData] = useState<StockData[]>(initialData);
   const [loadingStates, setLoadingStates] = useState<LoadingStates>({
@@ -323,6 +324,11 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
       await fetchFavoritesData(true); // Show loading on initial load
       favoritesInitialLoadRef.current = true;
 
+      if (skipTop50) {
+        console.log('⏭️ Standalone view: skipping background status and Phase 3 top 50 stocks fetch');
+        return;
+      }
+
       console.log('🔄 Phase 2: Loading background status...');
       fetchBackgroundStatus();
 
@@ -341,22 +347,24 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
       console.error('Error in progressive loading:', error);
       setError('Failed to refresh data. Please try again.');
     }
-  }, [fetchFavoritesData, fetchTop50StocksData, fetchBackgroundStatus]);
+  }, [fetchFavoritesData, fetchTop50StocksData, fetchBackgroundStatus, skipTop50, stockData.length]);
 
   // Full refresh function
   const loadData = useCallback(async () => {
     try {
       setError(null);
       await fetchFavoritesData();
-      fetchBackgroundStatus();
-      setTimeout(() => {
-        fetchTop50StocksData();
-      }, 100);
+      if (!skipTop50) {
+        fetchBackgroundStatus();
+        setTimeout(() => {
+          fetchTop50StocksData();
+        }, 100);
+      }
     } catch (error) {
       console.error('Error refreshing data:', error);
       setError('Failed to refresh data. Please try again.');
     }
-  }, [fetchFavoritesData, fetchBackgroundStatus, fetchTop50StocksData]);
+  }, [fetchFavoritesData, fetchBackgroundStatus, fetchTop50StocksData, skipTop50]);
 
   // Initial load effect
   useEffect(() => {
@@ -368,12 +376,13 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
   // Throttled background status fetch
   const throttledFetchBackgroundStatus = useThrottle(fetchBackgroundStatus, 30000);
 
-  // Background polling
+  // Background polling (skipped for standalone portfolio/favorites tools)
   useEffect(() => {
+    if (skipTop50) return;
     throttledFetchBackgroundStatus();
     const interval = setInterval(throttledFetchBackgroundStatus, 60000);
     return () => clearInterval(interval);
-  }, [throttledFetchBackgroundStatus]);
+  }, [throttledFetchBackgroundStatus, skipTop50]);
 
   // Auto-refresh stock data (similar to heatmap - every 30 seconds)
   useEffect(() => {
@@ -387,12 +396,14 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
         const project = getProjectName();
         // Refresh favorites and top 50 stocks (SILENT refresh - no loading state)
         fetchFavoritesData(false);
-        fetchAndMergeStocks(
-          `/api/stocks?tickers=${getProjectTickers(project, 50).join(',')}&project=${project}&limit=50&t=${Date.now()}`,
-          'top50Stocks',
-          'Refreshing top 50 stocks data',
-          { showLoading: false }
-        );
+        if (!skipTop50) {
+          fetchAndMergeStocks(
+            `/api/stocks?tickers=${getProjectTickers(project, 50).join(',')}&project=${project}&limit=50&t=${Date.now()}`,
+            'top50Stocks',
+            'Refreshing top 50 stocks data',
+            { showLoading: false }
+          );
+        }
       }, 30000); // 30 seconds - same as heatmap
     }, 30000);
 
@@ -402,7 +413,7 @@ export function useStockData({ initialData = [], favorites }: UseStockDataProps)
         clearInterval(refreshInterval);
       }
     };
-  }, [fetchFavoritesData, fetchAndMergeStocks]);
+  }, [fetchFavoritesData, fetchAndMergeStocks, skipTop50]);
 
   // Favorites polling - only fetch on initial load or when favorites are added
   // Don't refetch when favorites are removed to avoid flickering

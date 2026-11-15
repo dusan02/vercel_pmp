@@ -32,6 +32,90 @@ export const PORTFOLIO_DONUT_GEOMETRY = {
   },
 } as const;
 
+export interface DonutViewBox {
+  viewBoxWidth: number;
+  viewBoxHeight: number;
+  centerX: number;
+  centerY: number;
+  aspectRatio: string;
+}
+
+/** Computes shared responsive SVG viewBox geometry for portfolio donut charts. */
+export function getDonutViewBox(size: number = PORTFOLIO_DONUT_GEOMETRY.size): DonutViewBox {
+  const viewBoxWidth = size + PORTFOLIO_DONUT_GEOMETRY.paddingX * 2;
+  const viewBoxHeight = size + PORTFOLIO_DONUT_GEOMETRY.paddingY * 2;
+  return {
+    viewBoxWidth,
+    viewBoxHeight,
+    centerX: viewBoxWidth / 2,
+    centerY: viewBoxHeight / 2,
+    aspectRatio: `${viewBoxWidth} / ${viewBoxHeight}`,
+  };
+}
+
+function polarToCartesian(angleRad: number, radius: number): { x: number; y: number } {
+  const a = angleRad - Math.PI / 2;
+  return {
+    x: radius * Math.cos(a),
+    y: radius * Math.sin(a),
+  };
+}
+
+function buildArcPath(startRad: number, endRad: number, rInner: number, rOuter: number): string {
+  const startOuter = polarToCartesian(endRad, rOuter);
+  const endOuter = polarToCartesian(startRad, rOuter);
+  const startInner = polarToCartesian(endRad, rInner);
+  const endInner = polarToCartesian(startRad, rInner);
+  const largeArc = endRad - startRad <= Math.PI ? 0 : 1;
+
+  return [
+    'M', startOuter.x, startOuter.y,
+    'A', rOuter, rOuter, 0, largeArc, 0, endOuter.x, endOuter.y,
+    'L', endInner.x, endInner.y,
+    'A', rInner, rInner, 0, largeArc, 1, startInner.x, startInner.y,
+    'Z',
+  ].join(' ');
+}
+
+/**
+ * Generates SVG arc path(s) in radians clockwise from 12 o'clock.
+ * Splits full-circle (~2π) spans into two π-radian paths to avoid SVG start==end degeneration.
+ */
+export function createDonutArcPaths(
+  startRad: number,
+  endRad: number,
+  rInner: number,
+  rOuter: number,
+): string[] {
+  const span = endRad - startRad;
+  if (span <= 0) return [];
+  if (span >= Math.PI * 2 - 1e-6) {
+    return [
+      buildArcPath(startRad, startRad + Math.PI, rInner, rOuter),
+      buildArcPath(startRad + Math.PI, endRad, rInner, rOuter),
+    ];
+  }
+  return [buildArcPath(startRad, endRad, rInner, rOuter)];
+}
+
+/** Lightens (positive percent) or darkens (negative percent) a hex RGB color. */
+export function adjustHexColor(hex: string, percent: number): string {
+  if (!hex) return '#000000';
+  let normalized = hex.replace(/^\s*#|\s*$/g, '');
+  if (normalized.length === 3) {
+    normalized = normalized.replace(/(.)/g, '$1$1');
+  }
+  const rRaw = parseInt(normalized.slice(0, 2), 16);
+  const gRaw = parseInt(normalized.slice(2, 4), 16);
+  const bRaw = parseInt(normalized.slice(4, 6), 16);
+  if (Number.isNaN(rRaw) || Number.isNaN(gRaw) || Number.isNaN(bRaw)) return hex;
+
+  const amt = Math.floor(2.55 * percent);
+  const clamp = (v: number) => Math.max(0, Math.min(255, v));
+  const toHex = (v: number) => clamp(v).toString(16).padStart(2, '0');
+  return `#${toHex(rRaw + amt)}${toHex(gRaw + amt)}${toHex(bRaw + amt)}`;
+}
+
 const INDUSTRY_ABBREVIATIONS: Record<string, string> = {
   'Semiconductor Equipment & Materials': 'Semi Equipment',
   'Internet Content & Information': 'Internet Content',

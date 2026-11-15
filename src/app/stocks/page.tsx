@@ -48,7 +48,7 @@ async function fill<T>(fn: () => Promise<T[]>, tries = 4): Promise<T[]> {
   return [];
 }
 
-async function getAllStocks(industryFilter?: string): Promise<StockRow[]> {
+async function getAllStocks(): Promise<StockRow[]> {
   const eligibleAnalysis = new Set(await fill(() => getEligibleAnalysisTickers()));
   const eligibleValuation = new Set(await fill(() => getEligibleValuationTickers()));
 
@@ -56,7 +56,6 @@ async function getAllStocks(industryFilter?: string): Promise<StockRow[]> {
     where: {
       symbol: { in: [...eligibleAnalysis] },
       lastPrice: { gt: 0 },
-      ...(industryFilter ? { industry: industryFilter } : {}),
     },
     select: {
       symbol: true,
@@ -103,21 +102,8 @@ function scoreColor(score: number | null): string {
   return 'text-rose-600 dark:text-rose-400';
 }
 
-interface StocksPageProps {
-  searchParams: Promise<{ industry?: string; sector?: string }>;
-}
-
-export default async function StocksHubPage({ searchParams }: StocksPageProps) {
-  const { industry: industryParam, sector: sectorParam } = await searchParams;
-  const industryFilter = industryParam ? decodeURIComponent(industryParam) : undefined;
-  const sectorFilter = sectorParam ? decodeURIComponent(sectorParam) : undefined;
-
-  let stocks = await getAllStocks(industryFilter);
-
-  // Additional client-side sector filter (if sector param present and no industry filter)
-  if (sectorFilter && !industryFilter) {
-    stocks = stocks.filter(s => s.sector === sectorFilter);
-  }
+export default async function StocksHubPage() {
+  const stocks = await getAllStocks();
 
   // Group by sector for sector filter chips
   const sectorCounts = new Map<string, number>();
@@ -151,34 +137,22 @@ export default async function StocksHubPage({ searchParams }: StocksPageProps) {
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-              {industryFilter || sectorFilter ? `${industryFilter || sectorFilter} Stocks` : 'All Stocks'}
+              All Stocks
             </h1>
             <p className="mt-2 text-slate-600 dark:text-slate-300 max-w-3xl">
-              {(industryFilter || sectorFilter)
-                ? `Showing ${stocks.length} ${industryFilter ? `stocks in the ${industryFilter} industry` : `stocks in the ${sectorFilter} sector`}. Each ticker links to detailed analysis.`
-                : <>Browse all {stocks.length} US stocks covered by PreMarketPrice. Each ticker links to detailed stock analysis, historical valuation, and market movement pages.</>}
+              Browse all {stocks.length} US stocks covered by PreMarketPrice. Each ticker links to detailed stock analysis, historical valuation, and market movement pages.
             </p>
-            {(industryFilter || sectorFilter) && (
-              <div className="mt-3">
-                <Link
-                  href="/stocks"
-                  className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline"
-                >
-                  ← Back to All Stocks
-                </Link>
-              </div>
-            )}
             <div className="mt-3 text-sm text-slate-600 dark:text-slate-400">
               Related:{' '}
-              <Link className="hover:underline" href="/premarket-movers">Premarket Movers</Link>
+              <Link prefetch={false} className="hover:underline" href="/premarket-movers">Premarket Movers</Link>
               {' · '}
-              <Link className="hover:underline" href="/sectors">Sectors</Link>
+              <Link prefetch={false} className="hover:underline" href="/sectors">Sectors</Link>
               {' · '}
-              <Link className="hover:underline" href="/gainers">Top Gainers</Link>
+              <Link prefetch={false} className="hover:underline" href="/gainers">Top Gainers</Link>
               {' · '}
-              <Link className="hover:underline" href="/losers">Top Losers</Link>
+              <Link prefetch={false} className="hover:underline" href="/losers">Top Losers</Link>
               {' · '}
-              <Link className="hover:underline" href="/heatmap">Heatmap</Link>
+              <Link prefetch={false} className="hover:underline" href="/heatmap">Heatmap</Link>
             </div>
           </div>
 
@@ -189,6 +163,7 @@ export default async function StocksHubPage({ searchParams }: StocksPageProps) {
               <Link
                 key={sector}
                 href={`/sectors/${encodeURIComponent(sector)}`}
+                prefetch={false}
                 className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               >
                 {sector} <span className="ml-1 text-slate-400">({count})</span>
@@ -222,6 +197,7 @@ export default async function StocksHubPage({ searchParams }: StocksPageProps) {
                     <td className="py-2 px-2.5 sm:px-4">
                       <Link
                         href={`/analysis/${s.symbol}`}
+                        prefetch={false}
                         className="font-semibold text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400"
                       >
                         {s.symbol}
@@ -233,7 +209,7 @@ export default async function StocksHubPage({ searchParams }: StocksPageProps) {
                     </td>
                     <td className="py-2 px-4 text-slate-600 dark:text-slate-400 text-xs hidden md:table-cell">
                       {s.sector ? (
-                        <Link href={`/sectors/${encodeURIComponent(s.sector)}`} className="hover:underline">
+                        <Link href={`/sectors/${encodeURIComponent(s.sector)}`} prefetch={false} className="hover:underline">
                           {s.sector}
                         </Link>
                       ) : '—'}
@@ -253,6 +229,7 @@ export default async function StocksHubPage({ searchParams }: StocksPageProps) {
                     <td className="py-2 px-4 text-center text-xs whitespace-nowrap hidden lg:table-cell">
                       <Link
                         href={`/analysis/${s.symbol}`}
+                        prefetch={false}
                         className="text-blue-600 dark:text-blue-400 hover:underline"
                       >
                         Analysis
@@ -260,6 +237,7 @@ export default async function StocksHubPage({ searchParams }: StocksPageProps) {
                       {' · '}
                       <Link
                         href={`/premarket/${s.symbol}`}
+                        prefetch={false}
                         className="text-blue-600 dark:text-blue-400 hover:underline"
                       >
                         Premarket

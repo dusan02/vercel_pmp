@@ -30,6 +30,7 @@ import {
   BUTTON_SECONDARY
 } from '@/lib/utils/buttonStyles';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useTickerAutocomplete } from '@/hooks/useTickerAutocomplete';
 
 interface PortfolioSectionProps {
   portfolioStocks: StockData[];
@@ -62,7 +63,7 @@ export function PortfolioSection({
 }: PortfolioSectionProps) {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [portfolioSearchTerm, setPortfolioSearchTerm] = useState('');
-  const [portfolioSearchResults, setPortfolioSearchResults] = useState<StockData[]>([]);
+  const { results: portfolioSearchResults } = useTickerAutocomplete(portfolioSearchTerm, allStocks, { limit: 10 });
   const [showPortfolioSearch, setShowPortfolioSearch] = useState(false);
   const [trendUniverse, setTrendUniverse] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
@@ -204,22 +205,6 @@ export function PortfolioSection({
     }).catch(() => {});
     event('portfolio_share_link', { click_source: 'portfolio' });
   }, [enhancedPortfolioStocks, costBasis]);
-
-  // Search Logic
-  useEffect(() => {
-    if (portfolioSearchTerm.trim() === '') {
-      setPortfolioSearchResults([]);
-      return;
-    }
-    const term = portfolioSearchTerm.toLowerCase();
-    const results = allStocks.filter(
-      (stock) =>
-        stock.ticker.toLowerCase().includes(term) ||
-        (stock.companyName || '').toLowerCase().includes(term) ||
-        getCompanyName(stock.ticker).toLowerCase().includes(term)
-    ).slice(0, 10); // Increased from 5 to 10 for better user experience
-    setPortfolioSearchResults(results);
-  }, [portfolioSearchTerm, allStocks]);
 
   // Column Definitions
   const columns: ColumnDef<EnhancedStock>[] = useMemo(() => [
@@ -685,9 +670,11 @@ export function PortfolioSection({
                   <button
                     key={stock.ticker}
                     className="pmp-dropdown-option border-b last:border-0 border-gray-100 dark:border-gray-700/50"
-                    onClick={() => {
+                    onMouseDown={(e) => {
+                      e.preventDefault();
                       onAddStock(stock.ticker);
                       setPortfolioSearchTerm('');
+                      setShowPortfolioSearch(false);
                     }}
                   >
                     <span className="font-bold text-blue-600 dark:text-blue-400 w-16 shrink-0">{stock.ticker}</span>

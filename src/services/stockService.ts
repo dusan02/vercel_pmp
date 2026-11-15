@@ -235,13 +235,12 @@ export async function getStocksList(options: {
     const pricingState = getPricingState(etNow);
 
     const SEVEN_DAYS_AGO = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const TWENTY_FOUR_HOURS_AGO = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const where = tickers && tickers.length > 0
       ? { symbol: { in: tickers } }
       : { 
           lastPrice: { gt: 0 },
           updatedAt: { gte: SEVEN_DAYS_AGO },
-          lastPriceUpdated: { gte: TWENTY_FOUR_HOURS_AGO }
+          lastPriceUpdated: { gte: SEVEN_DAYS_AGO }
         };
 
     // Global queries fetch the complete filtered universe — the Redis overlay

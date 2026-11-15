@@ -1,7 +1,67 @@
 'use client';
 
 import React from 'react';
-import { formatDonutTotal, type DonutLabelLayout } from '@/lib/utils/portfolioDonutLayout';
+import {
+  PORTFOLIO_DONUT_GEOMETRY,
+  formatDonutTotal,
+  getDonutViewBox,
+  type DonutLabelLayout,
+} from '@/lib/utils/portfolioDonutLayout';
+
+interface PortfolioDonutCardProps {
+  title: string;
+  size?: number;
+  isEmpty?: boolean;
+  emptyInnerRatio?: number;
+  children?: React.ReactNode;
+}
+
+/** Shared responsive card shell and SVG viewport for portfolio donut visualizations. */
+export function PortfolioDonutCard({
+  title,
+  size = PORTFOLIO_DONUT_GEOMETRY.size,
+  isEmpty = false,
+  emptyInnerRatio = 0.6,
+  children,
+}: PortfolioDonutCardProps) {
+  const { viewBoxWidth, viewBoxHeight, centerX, centerY, aspectRatio } = getDonutViewBox(size);
+  const outerR = size / 2;
+  const innerR = outerR * emptyInnerRatio;
+
+  return (
+    <div className="w-full h-full flex flex-col p-4 md:p-5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+      <h3 className="text-sm xl:text-base font-semibold text-[var(--clr-subtext)] mb-3 uppercase tracking-wider">
+        {title}
+      </h3>
+      <div className="flex-1 flex items-center justify-center">
+        <div
+          className={`relative w-full ${isEmpty ? 'opacity-30 grayscale' : ''}`}
+          style={{ maxWidth: viewBoxWidth, aspectRatio }}
+        >
+          <svg
+            viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
+            preserveAspectRatio="xMidYMid meet"
+            className="w-full h-full"
+          >
+            <g transform={`translate(${centerX}, ${centerY})`}>
+              {isEmpty ? (
+                <>
+                  <circle r={outerR} fill="none" stroke="var(--clr-border)" strokeWidth="2" strokeDasharray="4 4" />
+                  <circle r={innerR} fill="none" stroke="var(--clr-border)" strokeWidth="2" strokeDasharray="4 4" />
+                  <text textAnchor="middle" dy="0.3em" className="fill-gray-400 text-sm font-medium">
+                    No Data
+                  </text>
+                </>
+              ) : (
+                children
+              )}
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface PortfolioDonutLabelsProps {
   labels: DonutLabelLayout[];

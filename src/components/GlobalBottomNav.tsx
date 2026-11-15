@@ -78,6 +78,7 @@ export function GlobalBottomNav() {
             <Link
               key={item.label}
               href={item.path}
+              prefetch={false}
               aria-label={item.label}
               aria-current={active ? 'page' : undefined}
               className={`relative flex flex-col items-center justify-center w-full h-full transition-all rounded-lg gap-0.5

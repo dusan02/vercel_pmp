@@ -1,19 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Star, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Star } from 'lucide-react';
 import CompanyLogo from './CompanyLogo';
-import { getCompanyName } from '@/lib/companyNames';
-
 import { StockData } from '@/lib/types';
-
-interface MinimalRow {
-    t: string;  // ticker
-    n: string;  // company name
-    p: number;  // price
-    c: number;  // changePct
-    m: number;  // marketCap
-}
+import { useTickerAutocomplete } from '@/hooks/useTickerAutocomplete';
 
 interface AddFavoriteSearchProps {
     onToggleFavorite: (ticker: string) => void;
@@ -23,10 +14,10 @@ interface AddFavoriteSearchProps {
 
 export function AddFavoriteSearch({ onToggleFavorite, isFavorite, allStocks }: AddFavoriteSearchProps) {
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState<MinimalRow[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
 
+    const { results, isSearching } = useTickerAutocomplete(query, allStocks, { limit: 6 });
     const wrapperRef = useRef<HTMLDivElement>(null);
 
     // Close dropdown on outside click
@@ -40,32 +31,12 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite, allStocks }: A
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Local search functionality (debounced visually, but runs locally)
     useEffect(() => {
-        const q = query.trim().toLowerCase();
-        if (q.length === 0) {
-            setResults([]);
-            return;
-        }
-
-        const filtered = allStocks.filter(stock =>
-            stock.ticker.toLowerCase().includes(q) ||
-            (stock.companyName || '').toLowerCase().includes(q) ||
-            getCompanyName(stock.ticker).toLowerCase().includes(q)
-        ).slice(0, 6);
-
-        const mappedResults: MinimalRow[] = filtered.map(stock => ({
-            t: stock.ticker,
-            n: stock.companyName || getCompanyName(stock.ticker),
-            p: stock.currentPrice || 0,
-            c: stock.percentChange || 0,
-            m: stock.marketCap || 0,
-        }));
-
-        setResults(mappedResults);
         setSelectedIndex(-1);
-        setIsOpen(true);
-    }, [query, allStocks]);
+        if (query.trim().length > 0) {
+            setIsOpen(true);
+        }
+    }, [query]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (!isOpen || results.length === 0) return;
@@ -80,7 +51,7 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite, allStocks }: A
             e.preventDefault();
             if (selectedIndex >= 0 && selectedIndex < results.length) {
                 const stock = results[selectedIndex];
-                if (stock) onToggleFavorite(stock.t);
+                if (stock) onToggleFavorite(stock.ticker);
             }
         } else if (e.key === 'Escape') {
             setIsOpen(false);
@@ -117,24 +88,24 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite, allStocks }: A
                 <div className="absolute z-50 w-full mt-2 pmp-dropdown-menu">
                     {results.length > 0 ? (
                         results.map((r, i) => {
-                            const favorited = isFavorite(r.t);
-                            const name = r.n;
+                            const favorited = isFavorite(r.ticker);
+                            const name = r.companyName;
                             const isSelected = selectedIndex === i;
 
                             return (
                                 <button
-                                    key={r.t}
-                                    onClick={() => handleSelect(r.t)}
+                                    key={r.ticker}
+                                    onClick={() => handleSelect(r.ticker)}
                                     // Make sure mouse enter updates selectedIndex so keyboard/mouse mix perfectly:
                                     onMouseEnter={() => setSelectedIndex(i)}
                                     className={`pmp-dropdown-option ${isSelected ? 'selected' : ''}`}
                                 >
                                     <div className="flex items-center gap-3 overflow-hidden">
                                         <div className="flex-shrink-0">
-                                            <CompanyLogo ticker={r.t} size={28} className="rounded-md" />
+                                            <CompanyLogo ticker={r.ticker} size={28} className="rounded-md" />
                                         </div>
                                         <div className="min-w-0">
-                                            <div className="text-sm font-bold text-slate-900 dark:text-slate-100">{r.t}</div>
+                                            <div className="text-sm font-bold text-slate-900 dark:text-slate-100">{r.ticker}</div>
                                             <div className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[150px]">
                                                 {name}
                                             </div>
@@ -144,11 +115,11 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite, allStocks }: A
                                     <div className="flex items-center gap-3 flex-shrink-0">
                                         <div className="text-right">
                                             <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                                                ${r.p.toFixed(2)}
+                                                ${r.currentPrice.toFixed(2)}
                                             </div>
-                                            <div className={`text-xs font-semibold ${r.c >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                                            <div className={`text-xs font-semibold ${r.percentChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                                                 }`}>
-                                                {r.c >= 0 ? '+' : ''}{r.c.toFixed(2)}%
+                                                {r.percentChange >= 0 ? '+' : ''}{r.percentChange.toFixed(2)}%
                                             </div>
                                         </div>
 
@@ -166,7 +137,9 @@ export function AddFavoriteSearch({ onToggleFavorite, isFavorite, allStocks }: A
                         })
                     ) : (
                         <div className="px-4 py-6 text-center">
-                            <div className="text-sm text-slate-500 dark:text-slate-400">No stocks found for "{query}"</div>
+                            <div className="text-sm text-slate-500 dark:text-slate-400">
+                                {isSearching ? `Searching for "${query}"...` : `No stocks found for "${query}"`}
+                            </div>
                         </div>
                     )}
                 </div>

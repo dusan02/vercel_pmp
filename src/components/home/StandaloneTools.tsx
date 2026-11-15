@@ -15,7 +15,7 @@ export function FavoritesStandalone() {
   const {
     favoriteStocksSorted, loadingStates, favSortKey, favAscending,
     requestFavSort, toggleFavorite, isFavorite, stockData,
-  } = useHomeData({ initialData: [], activeSection: 'favorites' });
+  } = useHomeData({ initialData: [], activeSection: 'favorites', skipTop50: true });
   return (
     <HomeFavorites
       favoriteStocks={favoriteStocksSorted}
@@ -32,17 +32,17 @@ export function FavoritesStandalone() {
 
 export function PortfolioStandalone() {
   const {
-    portfolioStocks, portfolioHoldings, costBasis, stockData, loadingStates,
+    portfolioStocks, portfolioHoldings, costBasis, stockData,
     updateQuantity, updateCostBasis, removeStock, addStock, calculateDailyChange,
     calculateTotalStockValue, totalPortfolioValue,
-  } = useHomeData({ initialData: [], activeSection: 'portfolio' });
+  } = useHomeData({ initialData: [], activeSection: 'portfolio', skipTop50: true });
   return (
     <HomePortfolio
       portfolioStocks={portfolioStocks}
       portfolioHoldings={portfolioHoldings}
       costBasis={costBasis}
       allStocks={stockData}
-      loading={loadingStates.top50Stocks}
+      loading={false}
       onUpdateQuantity={updateQuantity}
       onUpdateCostBasis={updateCostBasis}
       onRemoveStock={removeStock}

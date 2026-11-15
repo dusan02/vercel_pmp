@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useStockData } from './useStockData';
 import { usePortfolio } from './usePortfolio';
 import { useStockFilter } from './useStockFilter';
@@ -14,9 +14,10 @@ import type { ActiveSection } from './useHomeNavigation';
 interface UseHomeDataOptions {
   initialData: StockData[];
   activeSection: ActiveSection;
+  skipTop50?: boolean;
 }
 
-export function useHomeData({ initialData, activeSection }: UseHomeDataOptions) {
+export function useHomeData({ initialData, activeSection, skipTop50 = false }: UseHomeDataOptions) {
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
 
   const {
@@ -27,18 +28,7 @@ export function useHomeData({ initialData, activeSection }: UseHomeDataOptions) 
     fetchRemainingStocksData,
     fetchSpecificTickers,
     loadData,
-  } = useStockData({ initialData, favorites });
-
-  // Auto-load remaining stocks only when user opens Portfolio or Favorites
-  // (where the add-stock search bar filters over `allStocks`). Screener uses
-  // its own /api/analysis/screener endpoint; Heatmap uses /api/heatmap.
-  const allStocksLoadedRef = useRef(false);
-  useEffect(() => {
-    if ((activeSection === 'portfolio' || activeSection === 'favorites') && !allStocksLoadedRef.current && !loadingStates.remainingStocks) {
-      fetchRemainingStocksData();
-      allStocksLoadedRef.current = true;
-    }
-  }, [activeSection, fetchRemainingStocksData, loadingStates.remainingStocks]);
+  } = useStockData({ initialData, favorites, skipTop50 });
 
   const {
     portfolioHoldings,
@@ -63,7 +53,9 @@ export function useHomeData({ initialData, activeSection }: UseHomeDataOptions) 
       ticker => !stockData.some(s => s.ticker === ticker)
     );
     if (missing.length === 0) return;
-    const id = setTimeout(() => fetchSpecificTickers(missing), 300);
+    // Fetch missing portfolio/favorite tickers right away on cold mount instead of stalling 300ms
+    const delay = stockData.length === 0 ? 0 : 150;
+    const id = setTimeout(() => fetchSpecificTickers(missing), delay);
     return () => clearTimeout(id);
   }, [portfolioHoldings, favorites, stockData, fetchSpecificTickers]);
 

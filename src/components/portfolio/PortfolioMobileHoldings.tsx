@@ -8,6 +8,7 @@ import { PortfolioCardMobile } from './PortfolioCardMobile';
 import { PortfolioPositionSheet } from './PortfolioPositionSheet';
 import { getCompanyName } from '@/lib/companyNames';
 import { formatPrice } from '@/lib/utils/format';
+import { useTickerAutocomplete } from '@/hooks/useTickerAutocomplete';
 
 interface EnhancedStock extends StockData {
   value: number;
@@ -57,18 +58,7 @@ export function PortfolioMobileHoldings({
   const [editingStockTicker, setEditingStockTicker] = useState<string | null>(null);
 
   // Search Results
-  const searchResults = useMemo(() => {
-    if (!searchTerm.trim()) return [];
-    const term = searchTerm.toLowerCase();
-    return allStocks
-      .filter(
-        (s) =>
-          s.ticker.toLowerCase().includes(term) ||
-          (s.companyName || '').toLowerCase().includes(term) ||
-          getCompanyName(s.ticker).toLowerCase().includes(term)
-      )
-      .slice(0, 8);
-  }, [searchTerm, allStocks]);
+  const { results: searchResults } = useTickerAutocomplete(searchTerm, allStocks, { limit: 8 });
 
   // Suggested popular stocks not yet in portfolio
   const existingTickers = useMemo(() => new Set(stocks.map((s) => s.ticker)), [stocks]);

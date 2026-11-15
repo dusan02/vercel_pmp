@@ -67,6 +67,7 @@ export function SectionNavigation({ onTabChange, activeTab }: SectionNavigationP
             <Link
               key={tab.id}
               href={tab.href}
+              prefetch={false}
               title={showFavBadge ? favSignalTitle : undefined}
               onClick={(e) => {
                 // When onTabChange is provided (homepage), do client-side tab

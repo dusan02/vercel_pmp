@@ -3,14 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, X } from 'lucide-react';
-
-interface Suggestion {
-  symbol: string;
-  name: string | null;
-  lastPrice?: number | null;
-  lastChangePct: number | null;
-  assetType?: string | null;
-}
+import { useTickerAutocomplete } from '@/hooks/useTickerAutocomplete';
 
 interface AnalysisStockSearchProps {
   /** When provided, selection stays in-app (e.g. the homepage Analysis tab).
@@ -22,44 +15,37 @@ interface AnalysisStockSearchProps {
   variant?: 'light' | 'dark';
 }
 
+const EMPTY_LOCAL_STOCKS: never[] = [];
+
 /** Ticker search with live autocomplete (symbol prefix + company name). */
-export function AnalysisStockSearch({ onSelect, placeholder = 'Search ticker or company…', className = '', variant = 'light' }: AnalysisStockSearchProps) {
+export function AnalysisStockSearch({
+  onSelect,
+  placeholder = 'Search ticker or company…',
+  className = '',
+  variant = 'light',
+}: AnalysisStockSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(-1);
   const boxRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const reqIdRef = useRef(0);
+
+  const { results } = useTickerAutocomplete(query, EMPTY_LOCAL_STOCKS, {
+    limit: 8,
+    debounceMs: 150,
+  });
 
   const pick = useCallback((t: string) => {
     setQuery('');
-    setResults([]);
     setOpen(false);
     if (onSelect) onSelect(t);
     else router.push(`/analysis/${encodeURIComponent(t)}`);
   }, [onSelect, router]);
 
   useEffect(() => {
-    const q = query.trim();
-    setResults([]);
     setHighlight(-1);
-    if (!q) { setOpen(false); return; }
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      const id = ++reqIdRef.current;
-      try {
-        const res = await fetch(`/api/stocks/search?q=${encodeURIComponent(q)}`);
-        const json = await res.json();
-        if (id !== reqIdRef.current) return;
-        setResults(Array.isArray(json?.data) ? json.data : []);
-        setOpen(true);
-        setHighlight(-1);
-      } catch { /* keep previous results */ }
-    }, 150);
-    return () => clearTimeout(debounceRef.current);
-  }, [query]);
+    setOpen(Boolean(query.trim()) && results.length > 0);
+  }, [query, results.length]);
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
@@ -76,8 +62,8 @@ export function AnalysisStockSearch({ onSelect, placeholder = 'Search ticker or 
     else if (e.key === 'Enter') {
       e.preventDefault();
       const hit = results.at(highlight >= 0 ? highlight : 0);
-      if (hit) pick(hit.symbol);
-      else if (query.trim()) pick(query.trim().toUpperCase()); // raw-ticker fallback
+      if (hit) pick(hit.ticker);
+      else if (query.trim()) pick(query.trim().toUpperCase());
     }
   };
 
@@ -104,7 +90,7 @@ export function AnalysisStockSearch({ onSelect, placeholder = 'Search ticker or 
       {query && (
         <button
           type="button"
-          onClick={() => { setQuery(''); setResults([]); setOpen(false); }}
+          onClick={() => { setQuery(''); setOpen(false); }}
           className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           aria-label="Clear search"
         >
@@ -119,23 +105,23 @@ export function AnalysisStockSearch({ onSelect, placeholder = 'Search ticker or 
             const isEtf = s.assetType === 'ETF' || s.assetType === 'LEVERAGED_ETF';
             return (
               <button
-                key={s.symbol}
+                key={s.ticker}
                 type="button"
                 className={`w-full text-left px-3.5 py-2 flex items-center gap-2.5 transition-colors ${
                   i === highlight ? 'bg-blue-50 dark:bg-blue-900/30' : dark ? 'hover:bg-white/10' : 'hover:bg-gray-50 dark:hover:bg-white/5'
                 }`}
-                onMouseDown={e => { e.preventDefault(); pick(s.symbol); }}
+                onMouseDown={e => { e.preventDefault(); pick(s.ticker); }}
                 onMouseEnter={() => setHighlight(i)}
               >
                 <div className="flex items-center gap-1.5 w-20 shrink-0">
-                  <span className={`font-bold text-sm font-mono ${dark ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{s.symbol}</span>
+                  <span className={`font-bold text-sm font-mono ${dark ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{s.ticker}</span>
                   {isEtf && (
                     <span className="px-1 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30">
                       {s.assetType === 'LEVERAGED_ETF' ? 'LEV' : 'ETF'}
                     </span>
                   )}
                 </div>
-                <span className={`text-xs sm:text-sm truncate flex-1 ${dark ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>{s.name ?? ''}</span>
+                <span className={`text-xs sm:text-sm truncate flex-1 ${dark ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>{s.companyName}</span>
                 <div className="flex items-center gap-2 shrink-0 tabular-nums">
                   {s.lastPrice != null && s.lastPrice > 0 && (
                     <span className={`text-xs font-medium ${dark ? 'text-gray-300' : 'text-gray-700 dark:text-gray-300'}`}>
