@@ -2,7 +2,7 @@
 
 // Client component containing all page logic
 // This is imported by page.tsx (server component)
-import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 
 // All component imports moved to dynamic imports - fixed pattern for named exports
@@ -144,6 +144,7 @@ import { useMobilePrefetch } from '@/hooks/useMobilePrefetch';
 import { useHomeNavigation } from '@/hooks/useHomeNavigation';
 import { useHomeData } from '@/hooks/useHomeData';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
+import { useAnalysisPrefetch } from '@/hooks/useAnalysisPrefetch';
 import { KeepAliveTab } from '@/components/KeepAliveTab';
 
 interface HomePageProps {
@@ -246,25 +247,8 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
     return () => clearTimeout(t);
   }, []);
 
-  // Warm the analysis endpoints when the user hovers a heatmap tile — by the
-  // time they click, /api/stocks + /api/analysis/{t} + /history are already
-  // in-flight or cached server-side, so the tab switch renders fast.
-  // 150ms debounce skips fast mouse sweeps; per-symbol Set dedupes.
-  const analysisPrefetchRef = useRef<{ timer?: ReturnType<typeof setTimeout>; done: Set<string> }>({ done: new Set() });
-  const handleAnalysisPrefetch = useCallback((ticker: string | null) => {
-    const ref = analysisPrefetchRef.current;
-    clearTimeout(ref.timer);
-    if (!ticker) return;
-    const symbol = ticker.toUpperCase();
-    if (ref.done.has(symbol)) return;
-    ref.timer = setTimeout(() => {
-      ref.done.add(symbol);
-      const s = encodeURIComponent(symbol);
-      void fetch(`/api/stocks?tickers=${s}`).catch(() => {});
-      void fetch(`/api/analysis/${s}`).catch(() => {});
-      void fetch(`/api/analysis/${s}/history`).catch(() => {});
-    }, 150);
-  }, []);
+  // Warm the Next.js /analysis/[ticker] route (chunks + ISR/RSC payload) on heatmap tile hover
+  const handleAnalysisPrefetch = useAnalysisPrefetch();
 
 
   return (

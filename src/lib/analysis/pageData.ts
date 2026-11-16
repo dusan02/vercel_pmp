@@ -328,12 +328,34 @@ export interface TopNewsItem {
 }
 
 /**
+ * Run an SSR prefetch within a bounded timeout budget so cold external calls
+ * or heavy computes never stall page navigation; client components hydrate via
+ * their fallback API routes when null is returned.
+ */
+export async function raceWithTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise.catch(() => null),
+      new Promise<null>((resolve) => {
+        timer = setTimeout(() => resolve(null), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
+/**
  * SSR pre-fetch top news headline — feeds the "what's happening" context
  * strip when there is no AI mover insight. Returns the first item that is
  * actually about this company (see isAboutTicker), else null.
+ * Bounded to 350ms so a cold Finnhub call never blocks SSR (NewsSection
+ * hydrates client-side and the background call still warms Redis).
  */
 export async function prefetchTopNews(symbol: string, companyName: string | null = null): Promise<TopNewsItem | null> {
-  const news = await getTickerNews(symbol, companyName);
+  const news = await raceWithTimeout(getTickerNews(symbol, companyName), 350);
+  if (!news) return null;
   const first = news.find((n) => n.headline && isAboutTicker(n, symbol, companyName)) ?? null;
   return first
     ? {
@@ -347,7 +369,7 @@ export async function prefetchTopNews(symbol: string, companyName: string | null
 
 /**
  * SSR pre-fetch for Gaussian RSI & Dip card (and ETF technical verdict).
- * Checks Redis `dip:item:v3:{symbol}` first, else computes with an 800ms
+ * Checks Redis `dip:item:v3:{symbol}` first, else computes with a 350ms
  * timeout budget so a cold Polygon 10Y fetch never stalls the SSR render
  * (client TechnicalDipSection falls back to /api/trading-ideas/[ticker]).
  */
@@ -361,10 +383,7 @@ export async function prefetchDipData(symbol: string) {
     } catch {}
 
     const { evaluateDipIdeaForSymbol } = await import('@/lib/tradingIdeas/dipEngine');
-    const item = await Promise.race([
-      evaluateDipIdeaForSymbol(symbol, false),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 800)),
-    ]);
+    const item = await raceWithTimeout(evaluateDipIdeaForSymbol(symbol, false), 350);
     if (item) {
       try {
         await setCachedData(cacheKey, { success: true, data: item }, 45);
@@ -379,17 +398,14 @@ export async function prefetchDipData(symbol: string) {
 /**
  * SSR pre-fetch for Market Profile (S&P 500 relative performance, 1Y risk,
  * Finnhub peers, split-adjusted dividends, Polygon listing/SEC facts).
- * Bounded by a 1500ms timeout budget so cold external calls never stall SSR
+ * Bounded by a 450ms timeout budget so cold external calls never stall SSR
  * (MarketProfileSection hydrates from /api/analysis/[ticker]/market-profile).
  */
 export async function prefetchMarketProfile(symbol: string, seed?: MarketProfileSeed) {
   if (process.env.NEXT_PHASE === 'phase-production-build') return null;
   try {
     const { getMarketProfile } = await import('./marketProfile');
-    return await Promise.race([
-      getMarketProfile(symbol, seed),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
-    ]);
+    return await raceWithTimeout(getMarketProfile(symbol, seed), 450);
   } catch {
     return null;
   }

@@ -1,11 +1,39 @@
 'use client';
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import type { TreemapLeaf, CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
 import { getTileColor, formatMetricValue } from '@/lib/heatmap/metricValue';
 import { TILE_SIZE_THRESHOLDS, FONT_SIZE_CONFIG } from '@/lib/utils/heatmapConfig';
 import { getTileLabelConfig, calculateFontSizeFromArea, TileLabelConfig, clampNumber } from '@/lib/utils/heatmapLabelUtils';
 import { useUserPreferences } from '@/hooks/useUserPreferences';
+
+/**
+ * Pure canvas hit-testing helper — finds the topmost leaf containing `(x, y)`
+ * in canvas-local coordinates. Shared across hover, pointerdown, and click so
+ * clicks never miss or read stale rAF hover state.
+ */
+export function findLeafAtCanvasPoint(
+    x: number,
+    y: number,
+    leaves: TreemapLeaf[],
+    scale: number,
+    offset: { x: number; y: number },
+): TreemapLeaf | null {
+    for (let i = leaves.length - 1; i >= 0; i--) {
+        const leaf = leaves[i];
+        if (!leaf) continue;
+
+        const tileX = leaf.x0 * scale + offset.x;
+        const tileY = leaf.y0 * scale + offset.y;
+        const tileW = (leaf.x1 - leaf.x0) * scale;
+        const tileH = (leaf.y1 - leaf.y0) * scale;
+
+        if (x >= tileX && x <= tileX + tileW && y >= tileY && y <= tileY + tileH) {
+            return leaf;
+        }
+    }
+    return null;
+}
 
 // --- CONSTANTS & HELPERS ---
 // Moved to shared utilities (@/lib/utils/heatmap*) to avoid duplication with MarketHeatmap.tsx
@@ -39,7 +67,6 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
     colorScale,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [hoveredLeaf, setHoveredLeaf] = useState<TreemapLeaf | null>(null);
     const { preferences } = useUserPreferences();
     const theme = preferences.theme;
 
@@ -277,6 +304,21 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
 
     }, [leaves, width, height, scale, offset, metric, timeframe, colorScale, theme]);
 
+    const hitTestClientPoint = useCallback((clientX: number, clientY: number): CompanyNode | null => {
+        const canvas = canvasRef.current;
+        if (!canvas) return null;
+        const rect = canvas.getBoundingClientRect();
+        const { scale: currentScale, offset: currentOffset } = transformRef.current;
+        const leaf = findLeafAtCanvasPoint(
+            clientX - rect.left,
+            clientY - rect.top,
+            leavesRef.current,
+            currentScale,
+            currentOffset,
+        );
+        return leaf?.data?.meta?.companyData ?? null;
+    }, []);
+
     // Interaction Handler (throttled via rAF; updates hover state only when tile changes)
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
         const canvas = canvasRef.current;
@@ -298,32 +340,13 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             const p = pendingPointRef.current;
             if (!p) return;
 
-            const currentLeaves = leavesRef.current;
             const { scale: currentScale, offset: currentOffset } = transformRef.current;
-
-            let found: TreemapLeaf | null = null;
-            for (let i = currentLeaves.length - 1; i >= 0; i--) {
-                const leaf = currentLeaves[i];
-                if (!leaf) continue;
-
-                const tileX = leaf.x0 * currentScale + currentOffset.x;
-                const tileY = leaf.y0 * currentScale + currentOffset.y;
-                const tileW = (leaf.x1 - leaf.x0) * currentScale;
-                const tileH = (leaf.y1 - leaf.y0) * currentScale;
-
-                if (p.x >= tileX && p.x <= tileX + tileW && p.y >= tileY && p.y <= tileY + tileH) {
-                    found = leaf;
-                    break;
-                }
-            }
-
+            const found = findLeafAtCanvasPoint(p.x, p.y, leavesRef.current, currentScale, currentOffset);
             const company = found?.data?.meta?.companyData ?? null;
             const key = company?.symbol ?? null;
 
-            // Only trigger React state update when hovered tile changes (prevents update-depth loops)
             if (key !== lastHoverKeyRef.current) {
                 lastHoverKeyRef.current = key;
-                setHoveredLeaf(found);
             }
 
             const cb = onHoverRef.current;
@@ -331,11 +354,24 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
         });
     }, []);
 
-    const handleClick = useCallback(() => {
-        if (hoveredLeaf && onTileClick) {
-            onTileClick(hoveredLeaf.data.meta.companyData!);
+    // Warm prefetch right on pointerdown (~80-120ms head start before click completes)
+    const handlePointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+        const company = hitTestClientPoint(e.clientX, e.clientY);
+        const key = company?.symbol ?? null;
+        if (company && key !== lastHoverKeyRef.current) {
+            lastHoverKeyRef.current = key;
+            onHoverRef.current?.(company, e.clientX, e.clientY);
         }
-    }, [hoveredLeaf, onTileClick]);
+    }, [hitTestClientPoint]);
+
+    // Hit-test directly from click coordinates so fast/instant clicks never miss waiting on rAF
+    const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+        if (!onTileClick) return;
+        const company = hitTestClientPoint(e.clientX, e.clientY);
+        if (company) {
+            onTileClick(company);
+        }
+    }, [hitTestClientPoint, onTileClick]);
 
     const handleMouseLeave = useCallback(() => {
         pendingPointRef.current = null;
@@ -344,7 +380,6 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             cancelAnimationFrame(rafRef.current);
             rafRef.current = null;
         }
-        setHoveredLeaf(null);
         const cb = onHoverRef.current;
         if (cb) cb(null, 0, 0);
     }, []);
@@ -354,12 +389,11 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             ref={canvasRef}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
+            onPointerDown={handlePointerDown}
             onClick={handleClick}
             onDoubleClick={(e) => {
-                // Tile dblclick = navigate; don't bubble to the wrapper's
-                // zoom-reset handler (active while a sector is zoomed).
+                // Prevent bubbling to wrapper zoom-reset (click already handled navigation).
                 e.stopPropagation();
-                handleClick();
             }}
             className="block cursor-pointer no-redirect"
             style={{ width, height }}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ResponsiveMarketHeatmap from '@/components/ResponsiveMarketHeatmap';
 import { HeatmapMetricButtons } from '@/components/HeatmapMetricButtons';
+import { useAnalysisPrefetch } from '@/hooks/useAnalysisPrefetch';
 import { METRIC_PAGES } from '@/lib/heatmap/metricPages';
 import type { HeatmapMetric, CompanyNode } from '@/lib/heatmap/types';
 import { event } from '@/lib/ga';
@@ -26,6 +27,7 @@ export function getMetricNavigationTarget(next: HeatmapMetric): string {
  */
 export default function MetricHeatmapClient({ metric }: { metric: HeatmapMetric }) {
   const router = useRouter();
+  const handleTileHover = useAnalysisPrefetch();
 
   const handleTileClick = useCallback(
     (company: CompanyNode) => {
@@ -68,6 +70,7 @@ export default function MetricHeatmapClient({ metric }: { metric: HeatmapMetric 
         <ResponsiveMarketHeatmap
           controlledMetric={metric}
           onTileClick={handleTileClick}
+          onTileHover={handleTileHover}
           onMetricChange={handleMetricChange}
           hideMetricButtons={true}
           sectorLabelVariant="full"

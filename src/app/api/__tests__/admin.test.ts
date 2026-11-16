@@ -1,215 +1,30 @@
+/** @jest-environment node */
+
 import { jest } from '@jest/globals';
 
-// Mock the redis module first
-jest.mock('@/lib/redis', () => ({
-  redisClient: {
-    isOpen: true,
-    keys: jest.fn(),
-    ttl: jest.fn(),
-    get: jest.fn(),
-    del: jest.fn(),
-    exists: jest.fn(),
-    memoryUsage: jest.fn(),
-    info: jest.fn(),
-  },
-  deleteCachedData: jest.fn(),
+const revalidatePathMock = jest.fn();
+
+jest.mock('next/cache', () => ({
+  revalidatePath: (...args: unknown[]) => revalidatePathMock(...args),
 }));
 
 import { NextRequest } from 'next/server';
 import { GET as getCacheKeys } from '../admin/cache/keys/route';
-import { POST as invalidateCache } from '../admin/cache/invalidate/route';
-import { redisClient as mockRedisClient } from '@/lib/redis';
+import { GET as getInvalidateInfo, POST as invalidateCache } from '../admin/cache/invalidate/route';
 
-// Mock environment variables
 const originalEnv = process.env;
 
 describe('/api/admin/cache/keys', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env = { ...originalEnv };
-    // Reset mock implementations
-    mockRedisClient.keys.mockReset();
-    mockRedisClient.ttl.mockReset();
-    mockRedisClient.get.mockReset();
-    mockRedisClient.del.mockReset();
-    mockRedisClient.exists.mockReset();
-    mockRedisClient.isOpen = true;
   });
 
   afterAll(() => {
     process.env = originalEnv;
   });
 
-  it('should return empty array when Redis is not available in Edge Runtime', async () => {
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=test-key');
-    const response = await getCacheKeys(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.data).toEqual([]);
-    expect(data.message).toBe('Redis not available in Edge Runtime, using memory cache');
-    expect(data.total).toBe(0);
-    expect(data.timestamp).toBeDefined();
-  });
-
-  it('should handle admin authentication in production', async () => {
-    // Mock production environment
-    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
-    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
-
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=wrong-key');
-    const response = await getCacheKeys(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(401);
-    expect(data.error).toBe('Unauthorized');
-  });
-
-  it('should allow access with correct admin key in production', async () => {
-    // Mock production environment
-    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
-    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
-
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=correct-key');
-    const response = await getCacheKeys(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.message).toBe('Redis not available in Edge Runtime, using memory cache');
-  });
-
-  it('should handle internal errors gracefully', async () => {
-    // Mock environment to trigger error handling
-    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
-    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
-
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys?admin_key=correct-key');
-    const response = await getCacheKeys(request);
-    const data = await response.json();
-
-    // API should handle errors gracefully and return 200 with info message
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.message).toBe('Redis not available in Edge Runtime, using memory cache');
-  });
-});
-
-describe('/api/admin/cache/invalidate', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    process.env = { ...originalEnv };
-    // Reset mock implementations
-    mockRedisClient.keys.mockReset();
-    mockRedisClient.ttl.mockReset();
-    mockRedisClient.get.mockReset();
-    mockRedisClient.del.mockReset();
-    mockRedisClient.exists.mockReset();
-    mockRedisClient.isOpen = true;
-  });
-
-  afterAll(() => {
-    process.env = originalEnv;
-  });
-
-  it('should return Edge Runtime message for cache invalidation', async () => {
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate?admin_key=test-key', {
-      method: 'POST',
-      body: JSON.stringify({ key: 'test-key' }),
-    });
-
-    const response = await invalidateCache(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.message).toBe('Cache invalidation not available in Edge Runtime');
-    expect(data.deletedCount).toBe(0);
-    expect(data.timestamp).toBeDefined();
-  });
-
-  it('should handle admin authentication in production', async () => {
-    // Mock production environment
-    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
-    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
-
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate?admin_key=wrong-key', {
-      method: 'POST',
-      body: JSON.stringify({ key: 'test-key' }),
-    });
-
-    const response = await invalidateCache(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(401);
-    expect(data.error).toBe('Unauthorized');
-  });
-
-  it('should allow access with correct admin key in production', async () => {
-    // Mock production environment
-    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
-    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
-
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate?admin_key=correct-key', {
-      method: 'POST',
-      body: JSON.stringify({ key: 'test-key' }),
-    });
-
-    const response = await invalidateCache(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.message).toBe('Cache invalidation not available in Edge Runtime');
-  });
-
-  it('should handle invalid JSON gracefully', async () => {
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate?admin_key=test-key', {
-      method: 'POST',
-      body: 'invalid-json',
-    });
-
-    const response = await invalidateCache(request);
-    const data = await response.json();
-
-    // Next.js request.json() might fail differently in different environments
-    // Accept either 500 or 400/200 depending on how the error is caught
-    expect([200, 400, 500]).toContain(response.status);
-    
-    if (response.status === 200) {
-        // If 200, it likely fell back to empty object or default behavior
-        expect(data.success).toBe(true);
-    } else {
-        expect(data.success).toBe(false);
-        expect(data.error).toBeDefined();
-    }
-  });
-});
-
-describe('Admin Authentication', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    process.env = { ...originalEnv };
-  });
-
-  afterAll(() => {
-    process.env = originalEnv;
-  });
-
-  it('should require admin key in production', async () => {
-    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
-    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'secret-key', writable: true });
-
-    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys');
-    const response = await getCacheKeys(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(401);
-    expect(data.error).toBe('Unauthorized');
-  });
-
-  it('should not require admin key in development', async () => {
+  it('returns empty array in development without requiring x-admin-key', async () => {
     Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true });
 
     const request = new NextRequest('http://localhost:3000/api/admin/cache/keys');
@@ -218,6 +33,129 @@ describe('Admin Authentication', () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.message).toBe('Redis not available in Edge Runtime, using memory cache');
+    expect(data.data).toEqual([]);
+    expect(data.total).toBe(0);
+    expect(data.timestamp).toBeDefined();
   });
-}); 
+
+  it('rejects requests without matching x-admin-key header in production', async () => {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
+
+    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys', {
+      headers: { 'x-admin-key': 'wrong-key' },
+    });
+    const response = await getCacheKeys(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(data.error).toBe('Unauthorized');
+  });
+
+  it('allows access with matching x-admin-key header in production', async () => {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'correct-key', writable: true });
+
+    const request = new NextRequest('http://localhost:3000/api/admin/cache/keys', {
+      headers: { 'x-admin-key': 'correct-key' },
+    });
+    const response = await getCacheKeys(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+  });
+});
+
+describe('/api/admin/cache/invalidate', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env = { ...originalEnv };
+    revalidatePathMock.mockReset();
+  });
+
+  afterAll(() => {
+    process.env = originalEnv;
+  });
+
+  it('returns endpoint info on GET', async () => {
+    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate');
+    const response = await getInvalidateInfo(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+  });
+
+  it('requires x-admin-key header in production', async () => {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'secret-key', writable: true });
+
+    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate', {
+      method: 'POST',
+      body: JSON.stringify({ symbol: 'PSX' }),
+    });
+    const response = await invalidateCache(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(data.error).toBe('Unauthorized');
+    expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+
+  it('expands { symbol } to all 4 ticker ISR page paths and calls revalidatePath', async () => {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', writable: true });
+    Object.defineProperty(process.env, 'ADMIN_SECRET_KEY', { value: 'secret-key', writable: true });
+
+    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate', {
+      method: 'POST',
+      headers: { 'x-admin-key': 'secret-key' },
+      body: JSON.stringify({ symbol: 'psx' }),
+    });
+    const response = await invalidateCache(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.revalidated).toEqual([
+      '/analysis/PSX',
+      '/valuation/PSX',
+      '/financials/PSX',
+      '/premarket/PSX',
+    ]);
+    expect(data.count).toBe(4);
+    expect(revalidatePathMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('deduplicates and filters unsafe paths in { paths }', async () => {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true });
+
+    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate', {
+      method: 'POST',
+      body: JSON.stringify({
+        paths: ['/analysis/NVDA', '/analysis/NVDA', 'https://evil.com/x', '/../etc/passwd', '/heatmap/pe-ratio'],
+      }),
+    });
+    const response = await invalidateCache(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.revalidated).toEqual(['/analysis/NVDA', '/heatmap/pe-ratio']);
+    expect(data.count).toBe(2);
+  });
+
+  it('handles invalid JSON body gracefully without crashing', async () => {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true });
+
+    const request = new NextRequest('http://localhost:3000/api/admin/cache/invalidate', {
+      method: 'POST',
+      body: 'not-json',
+    });
+    const response = await invalidateCache(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.revalidated).toEqual([]);
+  });
+});

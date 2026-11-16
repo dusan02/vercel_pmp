@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ResponsiveMarketHeatmap from '@/components/ResponsiveMarketHeatmap';
 import type { CompanyNode } from '@/lib/heatmap/types';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
+import { useAnalysisPrefetch } from '@/hooks/useAnalysisPrefetch';
 import { HeatmapMetricChips } from '@/components/HeatmapMetricChips';
 import { HEATMAP_METRICS, isHeatmapMetric } from '@/lib/heatmap/metricValue';
 import { METRIC_PAGES } from '@/lib/heatmap/metricPages';
@@ -63,21 +64,8 @@ export default function HeatmapPage() {
     router.push(`/analysis/${company.symbol.toUpperCase()}`);
   }, [router]);
 
-  // Prefetch the analysis route + warm the API on persistent tile hover
-  // (150ms debounce skips mouse sweeps; per-symbol Set dedupes).
-  const prefetchRef = useRef<{ timer?: ReturnType<typeof setTimeout>; done: Set<string> }>({ done: new Set() });
-  const handleTileHover = useCallback((company: CompanyNode | null) => {
-    const ref = prefetchRef.current;
-    clearTimeout(ref.timer);
-    if (!company) return;
-    const symbol = company.symbol.toUpperCase();
-    if (ref.done.has(symbol)) return;
-    ref.timer = setTimeout(() => {
-      ref.done.add(symbol);
-      router.prefetch(`/analysis/${symbol}`);
-      void fetch(`/api/analysis/${encodeURIComponent(symbol)}`).catch(() => {});
-    }, 150);
-  }, [router]);
+  // Prefetch /analysis/[ticker] route (RSC + chunks) on tile hover
+  const handleTileHover = useAnalysisPrefetch();
 
   return (
     <div

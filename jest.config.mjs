@@ -6,12 +6,14 @@ const presetConfig = createDefaultPreset();
 const config = {
   ...presetConfig,
   testEnvironment: 'jsdom',
-  roots: ['<rootDir>/src/__tests__'],
+  roots: ['<rootDir>/src'],
   testMatch: ['**/*.test.ts'],
+  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/src/lib/quant/'],
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^next-auth/react$': '<rootDir>/src/__tests__/mocks/next-auth-react.ts',
+    '^d3-(.*)$': '<rootDir>/node_modules/d3-$1/dist/d3-$1.min.js',
   },
   transform: {
     '^.+\\.tsx?$': [

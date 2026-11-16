@@ -45,8 +45,8 @@ describe('API Health Tests', () => {
   });
 });
 
-// Test component exports
-describe('Component Export Tests', () => {
+// Test component exports & route registries
+describe('Component Export & Registry Tests', () => {
   it('should have required files', async () => {
     const fs = await import('fs');
     const path = await import('path');
@@ -62,6 +62,23 @@ describe('Component Export Tests', () => {
       const filePath = path.join(process.cwd(), file);
       const exists = fs.existsSync(filePath);
       expect(exists).toBe(true);
+    }
+  });
+
+  it('should keep METRIC_PAGES slugs and metrics aligned with HEATMAP_METRICS', async () => {
+    const { METRIC_PAGES } = await import('@/lib/heatmap/metricPages');
+    const { HEATMAP_METRICS, isHeatmapMetric } = await import('@/lib/heatmap/metricValue');
+
+    const metricIds = HEATMAP_METRICS.map((m) => m.id);
+    expect(new Set(metricIds).size).toBe(metricIds.length);
+
+    const slugs = new Set<string>();
+    for (const page of METRIC_PAGES) {
+      expect(slugs.has(page.slug)).toBe(false);
+      slugs.add(page.slug);
+      expect(isHeatmapMetric(page.metric)).toBe(true);
+      expect(page.h1.length).toBeGreaterThan(3);
+      expect(page.faq.length).toBeGreaterThanOrEqual(2);
     }
   });
 });
