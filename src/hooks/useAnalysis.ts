@@ -22,6 +22,8 @@ function mergeAnalysisPayload(json: any, histJson: any = {}): AnalysisData | nul
         valuationHistory: h.valuationHistory ?? [],
         valuationHistoryPE: h.valuationHistoryPE ?? [],
         valuationHistoryPS: h.valuationHistoryPS ?? [],
+        valuationBasis: h.valuationBasis ?? null,
+        fairValueMethod: h.fairValueMethod ?? null,
         valuationSummary: h.valuationSummary ?? null,
         valuationSummaryPE: h.valuationSummaryPE ?? null,
         valuationSummaryPS: h.valuationSummaryPS ?? null,

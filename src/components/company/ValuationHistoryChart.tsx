@@ -15,11 +15,12 @@ import {
 import { CHART_FONT } from '@/components/charts/chartTheme';
 import { ChartBody, ChartControls, ChartPlot, ChartFootnote } from './shared/ChartFrame';
 import type { RatioStats } from './analysis/types';
+import { FAIR_METHOD_LABEL, type FairMethod } from '@/lib/valuation/fairValue';
 
 type ValuationPoint = {
   date: string;
   price: number;
-  intrinsic: number;
+  intrinsic: number | null;
   undervaluationPct: number | null;
   isForecast?: boolean;
 };
@@ -37,6 +38,8 @@ interface ValuationHistoryChartProps {
   valuationHistory: ValuationPoint[];
   valuationHistoryPE?: ValuationPoint[];
   valuationHistoryPS?: ValuationPoint[];
+  valuationBasis?: 'composite' | 'pe' | 'ps' | null;
+  fairValueMethod?: FairMethod | null;
   valuationForecast?: { date: string; intrinsic: number }[];
   valuationForecastPE?: { date: string; intrinsic: number }[];
   valuationForecastPS?: { date: string; intrinsic: number }[];
@@ -150,7 +153,7 @@ function splitPriceByRelation(data: ValuationPoint[]) {
   let prevUnder: boolean | null = null;
 
   data.forEach((d, i) => {
-    if (d.isForecast || d.intrinsic <= 0 || typeof d.price !== 'number') {
+    if (d.isForecast || d.intrinsic == null || d.intrinsic <= 0 || typeof d.price !== 'number') {
       green.push(null);
       red.push(null);
       prevUnder = null;
@@ -176,7 +179,7 @@ function splitPriceByRelation(data: ValuationPoint[]) {
 // between 0.70× and 1.30× intrinsic instead of filling every Area down to y=0.
 function buildBands(data: ValuationPoint[]) {
   return data.map(d => {
-    const iv = d.intrinsic > 0 ? d.intrinsic : 0;
+    const iv = d.intrinsic != null && d.intrinsic > 0 ? d.intrinsic : 0;
     return {
       sigOver: iv > 0 ? iv * 1.30 : null,
       sigUnder: iv > 0 ? iv * 0.70 : null,
@@ -198,7 +201,7 @@ function expandForecastMonthly(
   if (!forecast.length) return [];
   const out: ValuationPoint[] = [];
   let prevDateMs = lastHist ? new Date(lastHist.date).getTime() : null;
-  let prevIv = lastHist && lastHist.intrinsic > 0 ? lastHist.intrinsic : null;
+  let prevIv = lastHist && lastHist.intrinsic != null && lastHist.intrinsic > 0 ? lastHist.intrinsic : null;
 
   for (const f of forecast) {
     const targetMs = new Date(f.date).getTime();
@@ -266,11 +269,11 @@ function MetricToggle({
   onChange,
 }: {
   mode: MetricMode;
-  autoBasis: 'pe' | 'ps';
+  autoBasis: 'composite' | 'pe' | 'ps';
   onChange: (m: MetricMode) => void;
 }) {
   const options: { key: MetricMode; label: string }[] = [
-    { key: 'auto', label: `Auto (${autoBasis.toUpperCase()})` },
+    { key: 'auto', label: autoBasis === 'composite' ? 'Auto (Fair)' : `Auto (${autoBasis.toUpperCase()})` },
     { key: 'pe', label: 'P/E' },
     { key: 'ps', label: 'P/S' },
   ];
@@ -298,6 +301,8 @@ export function ValuationHistoryChart({
   valuationHistory,
   valuationHistoryPE,
   valuationHistoryPS,
+  valuationBasis,
+  fairValueMethod,
   valuationForecast = [],
   valuationForecastPE = [],
   valuationForecastPS = [],
@@ -311,8 +316,10 @@ export function ValuationHistoryChart({
   const [metricMode, setMetricMode] = useState<MetricMode>('auto');
   const [period, setPeriod] = useState<PeriodId>('5y');
 
-  // Identify which single model Auto selected (matches historyResponse.ts)
-  const autoBasis: 'pe' | 'ps' = useMemo(() => {
+  // Identify which model Auto selected (matches historyResponse.ts)
+  const autoBasis: 'composite' | 'pe' | 'ps' = useMemo(() => {
+    if (valuationBasis === 'composite') return 'composite';
+    if (valuationBasis === 'pe' || valuationBasis === 'ps') return valuationBasis;
     const peLast = valuationHistoryPE?.[valuationHistoryPE.length - 1];
     const psLen = valuationHistoryPS?.length ?? 0;
     const peLen = valuationHistoryPE?.length ?? 0;
@@ -320,12 +327,13 @@ export function ValuationHistoryChart({
       return 'pe';
     }
     return psLen > 0 ? 'ps' : 'pe';
-  }, [valuationHistoryPE, valuationHistoryPS]);
+  }, [valuationBasis, valuationHistoryPE, valuationHistoryPS]);
 
-  const effectiveBasis: 'pe' | 'ps' = metricMode === 'auto' ? autoBasis : metricMode;
+  const effectiveBasis: 'composite' | 'pe' | 'ps' = metricMode === 'auto' ? autoBasis : metricMode;
 
   // Select full history based on metric mode
   const rawActiveHistory = useMemo(() => {
+    if (effectiveBasis === 'composite') return valuationHistory;
     if (effectiveBasis === 'pe') return valuationHistoryPE ?? valuationHistory;
     return valuationHistoryPS ?? valuationHistory;
   }, [effectiveBasis, valuationHistory, valuationHistoryPE, valuationHistoryPS]);
@@ -356,12 +364,18 @@ export function ValuationHistoryChart({
   }, [rawActiveHistory, period]);
 
   const activeForecast = useMemo(() => {
+    if (effectiveBasis === 'composite') return valuationForecast;
     if (effectiveBasis === 'pe') return valuationForecastPE ?? valuationForecast;
     return valuationForecastPS ?? valuationForecast;
   }, [effectiveBasis, valuationForecast, valuationForecastPE, valuationForecastPS]);
 
   const activeSummary = useMemo(() => {
-    const baseSummary = effectiveBasis === 'pe' ? (summaryPE ?? summary) : (summaryPS ?? summary);
+    const baseSummary =
+      effectiveBasis === 'composite'
+        ? summary
+        : effectiveBasis === 'pe'
+          ? (summaryPE ?? summary)
+          : (summaryPS ?? summary);
     if (period === '5y' && baseSummary) return baseSummary;
     const valid = activeHistory.filter(v => v.undervaluationPct !== null);
     const lastPt = activeHistory[activeHistory.length - 1];
@@ -378,7 +392,7 @@ export function ValuationHistoryChart({
             (new Date(valid[valid.length - 1]!.date).getTime() - new Date(valid[0]!.date).getTime()) /
               (365 * 24 * 60 * 60 * 1000)
           );
-          if (start <= 0 || end <= 0) return null;
+          if (start == null || end == null || start <= 0 || end <= 0) return null;
           return parseFloat(((Math.pow(end / start, 1 / years) - 1) * 100).toFixed(2));
         })()
       : null;
@@ -404,7 +418,7 @@ export function ValuationHistoryChart({
     const values: number[] = [];
     allData.forEach((d, i) => {
       if (typeof d.price === 'number' && d.price > 0) values.push(d.price);
-      if (d.intrinsic > 0) values.push(d.intrinsic);
+      if (d.intrinsic != null && d.intrinsic > 0) values.push(d.intrinsic);
       const b = bands[i];
       if (b) for (const v of [b.sigOver, b.sigUnder]) if (v != null && v > 0) values.push(v);
     });
@@ -507,9 +521,11 @@ export function ValuationHistoryChart({
           ))}
         </div>
         <span className="text-[10px] text-gray-500 dark:text-gray-400 ml-auto truncate">
-          {effectiveBasis === 'pe'
-            ? `Intrinsic = TTM EPS × ${medianMult != null ? `${medianMult.toFixed(1)}×` : 'Med'} P/E`
-            : `Intrinsic = TTM Rev/sh × ${medianMult != null ? `${medianMult.toFixed(1)}×` : 'Med'} P/S`}
+          {effectiveBasis === 'composite'
+            ? `Fair = ${fairValueMethod ? FAIR_METHOD_LABEL[fairValueMethod] : '50% 5Y Multiple + 50% FCF DCF'}`
+            : effectiveBasis === 'pe'
+              ? `Intrinsic = TTM EPS × ${medianMult != null ? `${medianMult.toFixed(1)}×` : 'Med'} P/E`
+              : `Intrinsic = TTM Rev/sh × ${medianMult != null ? `${medianMult.toFixed(1)}×` : 'Med'} P/S`}
         </span>
       </ChartControls>
 
@@ -597,16 +613,16 @@ export function ValuationHistoryChart({
               isAnimationActive={false}
             />
 
-            {/* Intrinsic Value — dashed gray */}
+            {/* Intrinsic / Fair Value — dashed gray */}
             <Line
-              type="monotone"
+              type={effectiveBasis === 'composite' ? 'stepAfter' : 'monotone'}
               dataKey="intrinsic"
-              name="Intrinsic Value"
+              name={effectiveBasis === 'composite' ? 'Fair Value' : 'Intrinsic Value'}
               stroke="#9ca3af"
               strokeDasharray="5 3"
               strokeWidth={1.5}
               dot={false}
-              connectNulls
+              connectNulls={false}
               isAnimationActive={false}
             />
 
@@ -641,18 +657,27 @@ export function ValuationHistoryChart({
 
       <ChartFootnote>
         {/* Verdict — the card's conclusion, kept next to the summary badges */}
-        <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 leading-snug">
-          <span className={`inline-block w-2.5 h-2.5 rounded-sm mr-1.5 align-middle ${currentUv == null ? 'bg-gray-300' : headlineColor}`} />
-          {ticker && <strong>{ticker}</strong>} {currentUv == null
-            ? `has insufficient ${effectiveBasis === 'pe' ? 'earnings' : 'revenue'} data for ${effectiveBasis.toUpperCase()}-based valuation.`
-            : isFairValue
-            ? `is trading close to its ${effectiveBasis.toUpperCase()}-implied intrinsic value (${fmtDollar(last?.intrinsic)}, within ±5%).`
-            : isUndervalued
-            ? `is trading ${Math.abs(currentUv).toFixed(0)}% below its ${effectiveBasis.toUpperCase()}-implied intrinsic value (${fmtDollar(last?.intrinsic)}).`
-            : isSignificantlyOvervalued
-            ? `is significantly overvalued — price exceeds ${effectiveBasis.toUpperCase()}-implied intrinsic value (${fmtDollar(last?.intrinsic)}) by ${Math.abs(currentUv).toFixed(0)}%.`
-            : `is trading ${Math.abs(currentUv).toFixed(0)}% above its ${effectiveBasis.toUpperCase()}-implied intrinsic value (${fmtDollar(last?.intrinsic)}).`}
-        </p>
+        {(() => {
+          const basisDesc = effectiveBasis === 'composite'
+            ? 'composite fair value'
+            : `${effectiveBasis.toUpperCase()}-implied intrinsic value`;
+          return (
+            <p className="text-[11px] font-medium text-gray-700 dark:text-gray-300 leading-snug">
+              <span className={`inline-block w-2.5 h-2.5 rounded-sm mr-1.5 align-middle ${currentUv == null ? 'bg-gray-300' : headlineColor}`} />
+              {ticker && <strong>{ticker}</strong>} {currentUv == null
+                ? effectiveBasis === 'composite'
+                  ? 'does not have a reliable current fair value (outside gate range or insufficient data).'
+                  : `has insufficient ${effectiveBasis === 'pe' ? 'earnings' : 'revenue'} data for ${effectiveBasis.toUpperCase()}-based valuation.`
+                : isFairValue
+                ? `is trading close to its ${basisDesc} (${fmtDollar(last?.intrinsic)}, within ±5%).`
+                : isUndervalued
+                ? `is trading ${Math.abs(currentUv).toFixed(0)}% below its ${basisDesc} (${fmtDollar(last?.intrinsic)}).`
+                : isSignificantlyOvervalued
+                ? `is significantly overvalued — price exceeds ${basisDesc} (${fmtDollar(last?.intrinsic)}) by ${Math.abs(currentUv).toFixed(0)}%.`
+                : `is trading ${Math.abs(currentUv).toFixed(0)}% above its ${basisDesc} (${fmtDollar(last?.intrinsic)}).`}
+            </p>
+          );
+        })()}
 
         {/* Summary badges — compact single row */}
         <div className="flex flex-wrap gap-1.5">

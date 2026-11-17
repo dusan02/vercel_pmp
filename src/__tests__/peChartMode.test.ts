@@ -290,4 +290,67 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     // back in price mode — the compare legend is gone
     expect(container.textContent).not.toMatch(/vs SPY [+-]?[\d.]+%/);
   });
+
+  it('Fair value overlay is ON by default, renders header badge + bear/bull legend, and toggles off cleanly', async () => {
+    localStorage.clear();
+    const fvCandles = fixtureCandles().map((c, i) => ({
+      ...c,
+      fv: i >= 52 ? 213 : null,
+      fvBear: i >= 52 ? 159 : null,
+      fvBull: i >= 52 ? 324 : null,
+      fvMethod: i >= 52 ? 'pe+dcf' : null,
+    }));
+    (global.fetch as jest.Mock).mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({
+          candles: fvCandles,
+          fairValue: { method: 'pe+dcf', asOf: '2025-09-26' },
+          peStats,
+          valuationStats,
+          evNetDebt: 5e9,
+        }),
+      }),
+    );
+
+    const { container } = await renderChart();
+    // Header badge + below-chart range + footnote appear by default
+    expect(container.textContent).toMatch(/Fair \$213/);
+    expect(container.textContent).toContain('P/E + FCF DCF');
+    expect(container.textContent).toMatch(/bear \$159/);
+    expect(container.textContent).toMatch(/bull \$324/);
+
+    // Turning Fair value off in Overlays hides the badge & persists
+    await clickButton(container, 'Overlays');
+    await clickButton(container, 'Fair value');
+    expect(container.textContent).not.toMatch(/bear \$159/);
+    expect(JSON.parse(localStorage.getItem('pmp:pricechart:indicators') ?? '[]')).not.toContain('fair');
+  });
+
+  it('shows honest gated note without falling back to stale earlier fair value', async () => {
+    localStorage.clear();
+    const fvCandles = fixtureCandles().map((c, i, arr) => ({
+      ...c,
+      fv: i >= 52 && i < arr.length - 2 ? 213 : null,
+      fvBear: i >= 52 && i < arr.length - 2 ? 159 : null,
+      fvBull: i >= 52 && i < arr.length - 2 ? 324 : null,
+      fvMethod: i >= 52 && i < arr.length - 2 ? 'pe+dcf' : null,
+    }));
+    (global.fetch as jest.Mock).mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({
+          candles: fvCandles,
+          fairValue: { method: 'pe+dcf', asOf: '2025-09-26', gated: true },
+          peStats,
+          valuationStats,
+          evNetDebt: 5e9,
+        }),
+      }),
+    );
+
+    const { container } = await renderChart();
+    expect(container.textContent).toContain('Fair value hidden');
+    expect(container.textContent).not.toMatch(/Fair \$213/);
+  });
 });

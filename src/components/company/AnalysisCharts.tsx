@@ -145,7 +145,7 @@ export function AnalysisCharts({ ticker, data, flowPeriods }: AnalysisChartsProp
                     iconBgClass="bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-200"
                     icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18" /></svg>}
                     title="Valuation History"
-                    subtitle="Intrinsic value vs Price (PE/PS median)"
+                    subtitle="Fair value vs Price (multiple + DCF)"
                     hasData={hasValuationHistory}
                     emptyMessage="No valuation history available"
                 >
@@ -153,6 +153,8 @@ export function AnalysisCharts({ ticker, data, flowPeriods }: AnalysisChartsProp
                         valuationHistory={data.valuationHistory ?? []}
                         valuationHistoryPE={data.valuationHistoryPE ?? []}
                         valuationHistoryPS={data.valuationHistoryPS ?? []}
+                        valuationBasis={data.valuationBasis ?? null}
+                        fairValueMethod={data.fairValueMethod ?? null}
                         valuationForecast={data.valuationForecast ?? []}
                         valuationForecastPE={data.valuationForecastPE ?? []}
                         valuationForecastPS={data.valuationForecastPS ?? []}

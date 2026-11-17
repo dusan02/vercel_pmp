@@ -6,6 +6,7 @@
  */
 
 import type { ValuationHistoryStats } from '@/services/analysis/valuationHistory';
+import type { FairMethod } from '@/lib/valuation/fairValue';
 import type { PillarScores } from '@/services/analysis/pillars';
 export type { ValuationHistoryStat, ValuationHistoryStats } from '@/services/analysis/valuationHistory';
 export type { Pillar, PillarLeg, PillarScores } from '@/services/analysis/pillars';
@@ -223,9 +224,11 @@ export interface AnalysisData {
     correlation?: CorrelationData;
 
     // Valuation history (intrinsic vs price)
-    valuationHistory?: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[];
+    valuationHistory?: { date: string; price: number; intrinsic: number | null; undervaluationPct: number | null }[];
     valuationHistoryPE?: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[];
     valuationHistoryPS?: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[];
+    valuationBasis?: 'composite' | 'pe' | 'ps' | null;
+    fairValueMethod?: FairMethod | null;
     valuationSummary?: ValuationSummary | null;
     valuationSummaryPE?: ValuationSummary | null;
     valuationSummaryPS?: ValuationSummary | null;

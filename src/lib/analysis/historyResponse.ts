@@ -5,8 +5,57 @@ import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { applySplitAdjustments, applyPostSplitAdjustment, buildShareBoundaries, makeShareNormalizer, findNearestSplit } from '@/lib/utils/splitAdjustment';
 import { isPeDistorted } from '@/lib/analysis/peDistortion';
 import { computeTrendSignal } from '@/lib/analysis/trendSignal';
+import { analyzeFairValueSeries, FAIR_CFG, type FairMethod, type FairValueInput } from '@/lib/valuation/fairValue';
 
 const HISTORY_CACHE_TTL = 3600; // 1 hour (valuation history changes slowly)
+
+type ValuationHistoryPoint = {
+    date: string;
+    price: number;
+    intrinsic: number | null;
+    undervaluationPct: number | null;
+};
+
+/** Build weekly composite valuation points & 6Q forward steps from FairValueAnalysis. */
+function buildCompositeValuation(
+    fvInputs: FairValueInput[],
+    skipDcf: boolean,
+    lastPriceDate: string | null,
+) {
+    const fvAnalysis = analyzeFairValueSeries(fvInputs, { ...FAIR_CFG, skipDcf });
+    const byT = new Map(fvAnalysis.points.map(p => [p.t, p]));
+    const firstT = fvAnalysis.points[0]?.t ?? null;
+
+    const history: ValuationHistoryPoint[] = firstT == null
+        ? []
+        : fvInputs
+            .filter(p => p.t >= firstT)
+            .map(p => {
+                const date = new Date(p.t).toISOString().split('T')[0]!;
+                const price = parseFloat(p.c.toFixed(2));
+                const pt = byT.get(p.t);
+                if (!pt) return { date, price, intrinsic: null, undervaluationPct: null };
+                const underval = Math.max(-200, Math.min(200, ((pt.base - p.c) / pt.base) * 100));
+                return { date, price, intrinsic: pt.base, undervaluationPct: parseFloat(underval.toFixed(2)) };
+            });
+
+    const forecast: { date: string; impliedPrice: number; isForecast: boolean }[] = [];
+    if (!fvAnalysis.latestGated && fvAnalysis.points.length > 0) {
+        // Deduplicate weekly points to fundamental step changes (~quarterly) so
+        // projectForward's 12-point window covers ~3Y instead of 12 flat weeks.
+        const fvSteps: PerSharePoint[] = [];
+        for (const pt of fvAnalysis.points) {
+            if (!fvSteps.length || fvSteps[fvSteps.length - 1]!.value !== pt.base) {
+                fvSteps.push({ date: new Date(pt.t).toISOString().split('T')[0]!, value: pt.base });
+            }
+        }
+        for (const pt of projectForward(fvSteps, 6, lastPriceDate)) {
+            forecast.push({ date: pt.date, impliedPrice: parseFloat(pt.value.toFixed(2)), isForecast: true });
+        }
+    }
+
+    return { fvAnalysis, history, forecast };
+}
 
 /**
  * Shared analysis-history pipeline — used by /api/analysis/[ticker]/history
@@ -28,7 +77,7 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
         // Fetch 10Y daily valuation history
         const rows = await prisma.dailyValuationHistory.findMany({
             where: { symbol, date: { gte: tenYearsAgo } },
-            select: { date: true, peRatio: true, psRatio: true, closePrice: true, marketCap: true },
+            select: { date: true, peRatio: true, psRatio: true, fcfYield: true, closePrice: true, marketCap: true },
             orderBy: { date: 'asc' },
         });
 
@@ -333,8 +382,8 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
         const valuationHistoryPE = buildValuationHistory(impliedPricePE, impliedPeDates, distortedPeDates);
         const valuationHistoryPS = buildValuationHistory(impliedPricePS, impliedPsDates);
 
-        function computeSummary(vh: { date: string; price: number; intrinsic: number; undervaluationPct: number | null }[]) {
-            const valid = vh.filter(v => v.undervaluationPct !== null);
+        function computeSummary(vh: ValuationHistoryPoint[]) {
+            const valid = vh.filter(v => v.undervaluationPct !== null && v.intrinsic != null && v.intrinsic > 0);
             // Must use the ACTUAL latest point's undervaluationPct — falling back
             // to `valid[valid.length - 1]` when today's point is null reported a
             // stale percentage from years ago alongside today's price/intrinsic.
@@ -354,7 +403,7 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
                     const startDate = new Date(valid[0]!.date);
                     const endDate = new Date(valid[valid.length - 1]!.date);
                     const years = Math.max(1, (endDate.getTime() - startDate.getTime()) / (365 * 24 * 60 * 60 * 1000));
-                    if (start <= 0 || end <= 0) return null;
+                    if (start == null || end == null || start <= 0 || end <= 0) return null;
                     const cagr = Math.pow(end / start, 1 / years) - 1;
                     return parseFloat((cagr * 100).toFixed(2));
                 })()
@@ -366,31 +415,42 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
         const valuationSummaryPE = computeSummary(valuationHistoryPE);
         const valuationSummaryPS = computeSummary(valuationHistoryPS);
 
-        // Auto mode selects ONE consistent valuation basis for the whole series:
-        // prefer P/E when the latest point has a valid non-distorted P/E
-        // intrinsic and at least ~6 months of history; otherwise use P/S.
-        // Never splice P/E and P/S point-by-point (which mixed incompatible $
-        // levels into intrinsicCagr/avg5y) and never index PE/PS arrays by
-        // `priceHistory` index `idx` (which caused time-travel when PE started
-        // later than PS, e.g. UBER/PLTR).
+        const lastPriceDate = priceHistory.length > 0
+            ? priceHistory[priceHistory.length - 1]!.date
+            : null;
+
+        // Auto mode uses the shared point-in-time composite fair value module
+        // (same engine as PriceCandlestickChart's Fair value overlay).
+        // ValuationHistoryPE / ValuationHistoryPS stay available as explicit
+        // single-multiple lenses in ValuationHistoryChart.
         const latestPeDistorted = isPeDistorted(latestPE, medianPE);
         const peUsableForAuto = !latestPeDistorted
             && valuationSummaryPE.currentUndervaluation !== null
             && valuationHistoryPE.length >= Math.min(26, Math.ceil(valuationHistoryPS.length * 0.4));
 
-        const valuationHistory = peUsableForAuto
-            ? valuationHistoryPE
-            : (valuationHistoryPS.length > 0 ? valuationHistoryPS : valuationHistoryPE);
-        const valuationSummary = peUsableForAuto
-            ? valuationSummaryPE
-            : (valuationHistoryPS.length > 0 ? valuationSummaryPS : valuationSummaryPE);
+        const fvInputs: FairValueInput[] = weekly
+            .filter((r): r is typeof r & { closePrice: number } => r.closePrice != null && r.closePrice > 0)
+            .map(r => ({
+                t: r.date.getTime(),
+                c: r.closePrice,
+                pe: r.peRatio,
+                ps: r.psRatio,
+                fcfYield: r.fcfYield,
+            }));
+        const composite = buildCompositeValuation(fvInputs, tickerInfo?.sector === 'Financial Services', lastPriceDate);
+        const useComposite = composite.history.length > 0 || composite.fvAnalysis.latestGated;
+
+        const valuationBasis: 'composite' | 'pe' | 'ps' = useComposite
+            ? 'composite'
+            : (peUsableForAuto || valuationHistoryPS.length === 0 ? 'pe' : 'ps');
+        const valuationHistory: ValuationHistoryPoint[] = useComposite
+            ? composite.history
+            : (peUsableForAuto ? valuationHistoryPE : (valuationHistoryPS.length > 0 ? valuationHistoryPS : valuationHistoryPE));
+        const valuationSummary = useComposite
+            ? computeSummary(valuationHistory)
+            : (peUsableForAuto ? valuationSummaryPE : (valuationHistoryPS.length > 0 ? valuationSummaryPS : valuationSummaryPE));
 
         // --- Simple forward estimates (projection) ---
-        // Pass lastPriceDate so forecast starts AFTER the latest price point,
-        // preventing forecast dates from overlapping with historical data.
-        const lastPriceDate = priceHistory.length > 0
-            ? priceHistory[priceHistory.length - 1]!.date
-            : null;
         const revForecast = projectForward(revPerShareHistory, 6, lastPriceDate);
         const epsForecast = projectForward(epsPerShareHistory, 6, lastPriceDate);
 
@@ -401,9 +461,11 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
             ? epsForecast.map(pt => ({ date: pt.date, impliedPrice: parseFloat((pt.value * medianPE).toFixed(2)), isForecast: true }))
             : [];
 
-        const intrinsicForecastSeries = (peUsableForAuto && impliedPEForecast.length > 0)
-            ? impliedPEForecast
-            : (impliedPSForecast.length > 0 ? impliedPSForecast : impliedPEForecast);
+        const intrinsicForecastSeries = useComposite
+            ? composite.forecast
+            : (peUsableForAuto && impliedPEForecast.length > 0
+                ? impliedPEForecast
+                : (impliedPSForecast.length > 0 ? impliedPSForecast : impliedPEForecast));
         const intrinsicForecastPE = impliedPEForecast;
         const intrinsicForecastPS = impliedPSForecast;
 
@@ -465,6 +527,8 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
             valuationHistory,
             valuationHistoryPE,
             valuationHistoryPS,
+            valuationBasis,
+            fairValueMethod: composite.fvAnalysis.latestMethod as FairMethod | null,
             valuationSummary,
             valuationSummaryPE,
             valuationSummaryPS,

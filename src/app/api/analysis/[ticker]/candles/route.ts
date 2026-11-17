@@ -3,6 +3,7 @@ import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { prisma } from '@/lib/db/prisma';
 import { TICKER_RENAMES, foreignCutoffMs, spliceContinuous } from '@/lib/tickerRenames';
 import { quarterlyEpsSeries, ntmEpsAt } from '@/lib/utils/forwardEps';
+import { analyzeFairValueSeries, FAIR_CFG, type FairMethod } from '@/lib/valuation/fairValue';
 
 export const revalidate = 3600;
 
@@ -82,6 +83,12 @@ export interface Candle {
    *  (DailyValuationHistory.peForward) — only exists from collection start,
    *  never fabricated backward. */
   peCons?: number | null;
+  /** Composite fair value (50 % historical multiple + 50 % FCF DCF), point-in-time.
+   *  Null/absent where inputs are missing or the sanity gate trips. */
+  fv?: number | null;
+  fvBear?: number | null;
+  fvBull?: number | null;
+  fvMethod?: FairMethod | null;
 }
 
 export interface MetricStats {
@@ -324,9 +331,35 @@ export async function GET(
       sectorEtf = (sector && SECTOR_ETF[sector]) || null;
     } catch { /* sector chip is optional */ }
 
+    // Composite fair value — point-in-time per week from the attached TTM
+    // multiples (see lib/valuation/fairValue.ts). Financials skip the FCF
+    // DCF: bank/insurer operating cash flow carries deposits/float.
+    let fairValue: { method: FairMethod; asOf: string; gated?: boolean } | null = null;
+    try {
+      const fv = analyzeFairValueSeries(candles, { ...FAIR_CFG, skipDcf: sector === 'Financial Services' });
+      const byT = new Map(fv.points.map(p => [p.t, p]));
+      for (const c of candles) {
+        const p = byT.get(c.t);
+        if (p) { c.fv = p.base; c.fvBear = p.bear; c.fvBull = p.bull; c.fvMethod = p.method; }
+      }
+      const last = fv.points[fv.points.length - 1];
+      if (last || fv.latestGated) {
+        const asOfT = fv.latestGated ? (candles[candles.length - 1]?.t ?? last?.t) : last?.t;
+        const method = fv.latestGated ? (fv.latestMethod ?? last?.method) : (last?.method ?? fv.latestMethod);
+        if (asOfT != null && method) {
+          fairValue = {
+            method,
+            asOf: new Date(asOfT).toISOString().slice(0, 10),
+            ...(fv.latestGated ? { gated: true } : {}),
+          };
+        }
+      }
+    } catch { /* fair value overlay is optional */ }
+
     const responseBody = {
       symbol,
       candles,
+      fairValue,
       // Back-compat alias — the deployed P/E view reads peStats; the new
       // multi-metric view reads valuationStats.
       peStats: valuationStats?.pe ?? null,
