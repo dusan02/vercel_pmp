@@ -58,9 +58,15 @@ export interface FairValueComponents {
   relBear: number | null;
   relBull: number | null;
   relKind: 'pe' | 'ps' | null;
+  /** Applied multiple after growth cap (e.g. 35×), and raw trailing 5Y median (e.g. 55×). */
+  relMultiple: number | null;
+  relMedian: number | null;
+  /** TTM EPS (for P/E) or TTM rev/share (for P/S) used by the relative leg. */
+  relPerShare: number | null;
   dcfBase: number | null;
   dcfBear: number | null;
   dcfBull: number | null;
+  fcfPerShare: number | null;
   growth: number | null;   // g0 used by the DCF base case
 }
 
@@ -163,7 +169,7 @@ function computeRelativeFair(
   psWin: number[],
   growth: number | null,
   cfg: typeof FAIR_CFG,
-): Pick<FairValueComponents, 'relBase' | 'relBear' | 'relBull' | 'relKind'> {
+): Pick<FairValueComponents, 'relBase' | 'relBear' | 'relBull' | 'relKind' | 'relMultiple' | 'relMedian' | 'relPerShare'> {
   const peQ = peWin.length >= cfg.minWindowWeeks ? quantiles(peWin) : null;
   if (peQ && pos(p.pe) && !isPeDistorted(p.pe, peQ.med)) {
     const eps = p.c / p.pe;
@@ -175,14 +181,28 @@ function computeRelativeFair(
       relBear: eps * peQ.p25 * scale,
       relBull: eps * peQ.p75 * scale,
       relKind: 'pe',
+      relMultiple: peQ.med * scale,
+      relMedian: peQ.med,
+      relPerShare: eps,
     };
   }
   if (psWin.length >= cfg.minWindowWeeks && pos(p.ps)) {
     const q = quantiles(psWin);
     const rps = p.c / p.ps;
-    return { relBase: rps * q.med, relBear: rps * q.p25, relBull: rps * q.p75, relKind: 'ps' };
+    return {
+      relBase: rps * q.med,
+      relBear: rps * q.p25,
+      relBull: rps * q.p75,
+      relKind: 'ps',
+      relMultiple: q.med,
+      relMedian: q.med,
+      relPerShare: rps,
+    };
   }
-  return { relBase: null, relBear: null, relBull: null, relKind: null };
+  return {
+    relBase: null, relBear: null, relBull: null, relKind: null,
+    relMultiple: null, relMedian: null, relPerShare: null,
+  };
 }
 
 /** 10Y FCF/share DCF scenarios (bear / base / bull). */
@@ -190,15 +210,16 @@ function computeDcfFair(
   p: FairValueInput,
   growth: number | null,
   cfg: typeof FAIR_CFG,
-): Pick<FairValueComponents, 'dcfBase' | 'dcfBear' | 'dcfBull'> {
+): Pick<FairValueComponents, 'dcfBase' | 'dcfBear' | 'dcfBull' | 'fcfPerShare'> {
   const fcf0 = p.fcfYield != null && Number.isFinite(p.fcfYield) ? p.c * p.fcfYield : null;
   if (cfg.skipDcf || fcf0 == null || fcf0 <= 0 || growth == null) {
-    return { dcfBase: null, dcfBear: null, dcfBull: null };
+    return { dcfBase: null, dcfBear: null, dcfBull: null, fcfPerShare: fcf0 };
   }
   return {
     dcfBase: dcfPerShare(fcf0, growth, cfg.discount, cfg),
     dcfBear: dcfPerShare(fcf0, growth > 0 ? growth * 0.6 : growth * 1.4, cfg.discount + 0.01, cfg),
     dcfBull: dcfPerShare(fcf0, growth > 0 ? Math.min(0.3, growth * 1.3) : growth * 0.6, cfg.discount - 0.01, cfg),
+    fcfPerShare: fcf0,
   };
 }
 
@@ -259,6 +280,8 @@ export interface FairValueAnalysis {
   latestGated: boolean;
   /** Method of the latest bar (even if gated), or of the latest emitted point. */
   latestMethod: FairMethod | null;
+  /** Component breakdown from the most recent computed fundamental step. */
+  latestComponents: FairValueComponents | null;
 }
 
 /**
@@ -270,9 +293,11 @@ export function analyzeFairValueSeries(series: FairValueInput[], cfg = FAIR_CFG)
   const points: FairValuePoint[] = [];
   let prevEps: number | null = null, prevRps: number | null = null, prevFcf: number | null = null;
   let cur: Omit<FairValuePoint, 't'> | null = null;
+  let curComp: FairValueComponents | null = null;
   let started = false;
   let latestGated = false;
   let latestMethod: FairMethod | null = null;
+  let latestComponents: FairValueComponents | null = null;
   for (let i = 0; i < series.length; i++) {
     const p = series[i]!;
     const eps = pos(p.pe) ? p.c / p.pe : null;
@@ -280,7 +305,7 @@ export function analyzeFairValueSeries(series: FairValueInput[], cfg = FAIR_CFG)
     const fcf = p.fcfYield != null && Number.isFinite(p.fcfYield) ? p.c * p.fcfYield : null;
     if (eps == null && rps == null && fcf == null) {
       // no valuation coverage this week — break the line, force recompute
-      cur = null; started = false; prevEps = prevRps = prevFcf = null;
+      cur = null; curComp = null; started = false; prevEps = prevRps = prevFcf = null;
       latestGated = false;
       continue;
     }
@@ -290,7 +315,8 @@ export function analyzeFairValueSeries(series: FairValueInput[], cfg = FAIR_CFG)
       || changed(rps, prevRps, cfg.changeTol)
       || changed(fcf, prevFcf, cfg.changeTol);
     if (fundamentalsMoved) {
-      cur = combine(componentsAt(series, i, cfg), cfg);
+      curComp = componentsAt(series, i, cfg);
+      cur = combine(curComp, cfg);
       prevEps = eps; prevRps = rps; prevFcf = fcf; started = true;
     }
     if (!cur) {
@@ -298,6 +324,7 @@ export function analyzeFairValueSeries(series: FairValueInput[], cfg = FAIR_CFG)
       continue;
     }
     latestMethod = cur.method;
+    latestComponents = curComp;
     const ratio = cur.base / p.c;
     if (!(ratio <= cfg.gate && ratio >= cfg.gateLow)) {
       latestGated = true;
@@ -312,7 +339,7 @@ export function analyzeFairValueSeries(series: FairValueInput[], cfg = FAIR_CFG)
       method: cur.method,
     });
   }
-  return { points, latestGated, latestMethod };
+  return { points, latestGated, latestMethod, latestComponents };
 }
 
 /**

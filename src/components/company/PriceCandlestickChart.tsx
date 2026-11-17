@@ -25,6 +25,7 @@ import { event as gaEvent } from '@/lib/ga';
 import { Ruler, TrendingUp, Eraser, Minus, Square, ArrowUpRight, Percent, Save, Check, CloudOff, SlidersHorizontal } from 'lucide-react';
 import { useSession, signIn } from 'next-auth/react';
 import { ChartDrawLayer, loadDrawings, saveDrawings, type Drawing, type DrawTool } from './chart/ChartDrawTools';
+import { FairValueBreakdown, type FairValueMeta } from './chart/FairValueBreakdown';
 import { useTickerNavMode } from '@/components/company/analysis/useTickerNavMode';
 import type { NavDimension, NavNeighbor, SimilarTickers, TickerNav } from '@/lib/analysis/tickerNav';
 import { FAIR_CFG, FAIR_METHOD_LABEL, formatFairDollar, formatFairStatus, type FairMethod } from '@/lib/valuation/fairValue';
@@ -559,7 +560,8 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
   // right edge of the P/E-NTM view (realized history can't reach "now").
   const [fwdPeNow, setFwdPeNow] = useState<number | null>(null);
   const [fwdPeAsOf, setFwdPeAsOf] = useState<string | null>(null);
-  const [fairMeta, setFairMeta] = useState<{ method: FairMethod; asOf: string; gated?: boolean } | null>(null);
+  const [fairMeta, setFairMeta] = useState<FairValueMeta | null>(null);
+  const [fvInfoOpen, setFvInfoOpen] = useState(false);
   const [metric, setMetric] = useState<MetricField>('pe');
   const [mode, setMode] = useState<ModeKey>('price');
   const [loading, setLoading] = useState(true);
@@ -1343,20 +1345,24 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
               </span>
             )}
             {!bmActive && fairPremium && (
-              <span
-                className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full tabular-nums ${
+              <button
+                type="button"
+                onClick={() => setFvInfoOpen((o) => !o)}
+                aria-expanded={fvInfoOpen}
+                className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full tabular-nums transition-shadow hover:shadow-sm cursor-pointer ${
                   Math.abs(fairPremium.undervalPct) < 1
                     ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
                     : fairPremium.undervalPct > 0
                       ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-800'
                       : 'bg-rose-50 text-rose-700 ring-1 ring-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:ring-rose-800'
                 }`}
-                title={`Composite fair value (${fairPremium.method ? FAIR_METHOD_LABEL[fairPremium.method] : 'Multiple + DCF'})${fairPremium.bear != null && fairPremium.bull != null ? ` · bear–bull ${formatFairDollar(fairPremium.bear)}–${formatFairDollar(fairPremium.bull)}` : ''}`}
+                title="Click to see how Fair Value is calculated"
               >
                 <span className="w-2.5 border-t-2 border-dashed" style={{ borderColor: FAIR_COLOR }} />
                 <span>{formatFairStatus(fairPremium.undervalPct)}</span>
                 <span className="font-medium opacity-75">· Fair {formatFairDollar(fairPremium.fair)}</span>
-              </span>
+                <span className="text-[9px] opacity-70">{fvInfoOpen ? '▴' : '▾'}</span>
+              </button>
             )}
           </div>
         )}
@@ -1699,6 +1705,16 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
           </div>
         </div>
       </div>
+
+      {mode === 'price' && !bmActive && fvInfoOpen && (fairPremium || fairMeta) && (
+        <FairValueBreakdown
+          meta={fairMeta}
+          fair={fairPremium?.fair ?? null}
+          bear={fairPremium?.bear ?? null}
+          bull={fairPremium?.bull ?? null}
+          onClose={() => setFvInfoOpen(false)}
+        />
+      )}
 
       <div className={`pmp-chart-swap relative${fading ? ' pmp-fading' : ''}`}>
       {mode === 'pe' && metricStats ? (
@@ -2227,16 +2243,30 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
             Above = Sell
           </span>
           {fairPremium.method && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-              {FAIR_METHOD_LABEL[fairPremium.method]}
-            </span>
+            <button
+              type="button"
+              onClick={() => setFvInfoOpen((o) => !o)}
+              aria-expanded={fvInfoOpen}
+              className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors cursor-pointer"
+              title="Show Fair Value calculation details"
+            >
+              {FAIR_METHOD_LABEL[fairPremium.method]} {fvInfoOpen ? '▴' : '▾'}
+            </button>
           )}
         </div>
       )}
       {mode === 'price' && !bmActive && inds.has('fair') && !fairPremium && fairMeta?.gated && (
-        <div className="mt-2 text-xs flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+        <div className="mt-2 text-xs flex items-center gap-1.5 flex-wrap text-gray-500 dark:text-gray-400">
           <span className="w-2 h-2 rounded-full bg-gray-400" />
           <span>Fair value hidden — outside reliable range vs price (distorted earnings or extreme multiple).</span>
+          <button
+            type="button"
+            onClick={() => setFvInfoOpen((o) => !o)}
+            aria-expanded={fvInfoOpen}
+            className="text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+          >
+            How it&apos;s calculated {fvInfoOpen ? '▴' : '▾'}
+          </button>
         </div>
       )}
 

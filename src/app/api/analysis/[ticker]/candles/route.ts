@@ -334,9 +334,25 @@ export async function GET(
     // Composite fair value — point-in-time per week from the attached TTM
     // multiples (see lib/valuation/fairValue.ts). Financials skip the FCF
     // DCF: bank/insurer operating cash flow carries deposits/float.
-    let fairValue: { method: FairMethod; asOf: string; gated?: boolean } | null = null;
+    let fairValue: {
+      method: FairMethod;
+      asOf: string;
+      gated?: boolean;
+      skipDcf?: boolean;
+      components?: {
+        rel: number | null;
+        relKind: 'pe' | 'ps' | null;
+        relMultiple: number | null;
+        relMedian: number | null;
+        relPerShare: number | null;
+        dcf: number | null;
+        fcfPerShare: number | null;
+        growth: number | null;
+      };
+    } | null = null;
     try {
-      const fv = analyzeFairValueSeries(candles, { ...FAIR_CFG, skipDcf: sector === 'Financial Services' });
+      const skipDcf = sector === 'Financial Services';
+      const fv = analyzeFairValueSeries(candles, { ...FAIR_CFG, skipDcf });
       const byT = new Map(fv.points.map(p => [p.t, p]));
       for (const c of candles) {
         const p = byT.get(c.t);
@@ -346,11 +362,26 @@ export async function GET(
       if (last || fv.latestGated) {
         const asOfT = fv.latestGated ? (candles[candles.length - 1]?.t ?? last?.t) : last?.t;
         const method = fv.latestGated ? (fv.latestMethod ?? last?.method) : (last?.method ?? fv.latestMethod);
+        const comp = fv.latestComponents;
+        const round2 = (v: number | null) => (v != null && Number.isFinite(v) ? +v.toFixed(2) : null);
         if (asOfT != null && method) {
           fairValue = {
             method,
             asOf: new Date(asOfT).toISOString().slice(0, 10),
             ...(fv.latestGated ? { gated: true } : {}),
+            ...(skipDcf ? { skipDcf: true } : {}),
+            ...(comp ? {
+              components: {
+                rel: round2(comp.relBase),
+                relKind: comp.relKind,
+                relMultiple: comp.relMultiple != null ? +comp.relMultiple.toFixed(1) : null,
+                relMedian: comp.relMedian != null ? +comp.relMedian.toFixed(1) : null,
+                relPerShare: round2(comp.relPerShare),
+                dcf: round2(comp.dcfBase),
+                fcfPerShare: round2(comp.fcfPerShare),
+                growth: comp.growth != null ? +comp.growth.toFixed(4) : null,
+              },
+            } : {}),
           };
         }
       }

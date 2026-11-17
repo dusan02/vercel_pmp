@@ -305,7 +305,20 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
         ok: true,
         json: async () => ({
           candles: fvCandles,
-          fairValue: { method: 'pe+dcf', asOf: '2025-09-26' },
+          fairValue: {
+            method: 'pe+dcf',
+            asOf: '2025-09-26',
+            components: {
+              rel: 280,
+              relKind: 'pe',
+              relMultiple: 35.0,
+              relMedian: 55.7,
+              relPerShare: 8.0,
+              dcf: 146,
+              fcfPerShare: 5.26,
+              growth: 0.2,
+            },
+          },
           peStats,
           valuationStats,
           evNetDebt: 5e9,
@@ -321,6 +334,19 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     expect(container.textContent).toMatch(/bull \$324/);
     expect(container.textContent).toContain('Below = Buy');
     expect(container.textContent).toContain('Above = Sell');
+
+    // Clicking the header valuation pill expands the Fair Value methodology breakdown
+    expect(container.textContent).not.toContain('How Fair Value is calculated');
+    const hdrBtn = [...container.querySelectorAll('button')].find((b) => b.textContent?.includes('Fair $213'));
+    expect(hdrBtn).toBeTruthy();
+    await act(async () => {
+      hdrBtn!.click();
+      await Promise.resolve();
+    });
+    expect(container.textContent).toContain('How Fair Value is calculated');
+    expect(container.textContent).toContain('$280');
+    expect(container.textContent).toContain('$146');
+    expect(container.textContent).toContain('capped at 15 + 20.0%');
 
     const cb = container.querySelector('input[type="checkbox"][aria-label="Fair value"]') as HTMLInputElement | null;
     expect(cb).toBeTruthy();
