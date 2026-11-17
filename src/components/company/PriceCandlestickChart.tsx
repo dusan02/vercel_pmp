@@ -17,6 +17,8 @@ import {
   ReferenceDot,
   Brush,
   AreaChart,
+  useYAxisScale,
+  usePlotArea,
 } from 'recharts';
 import { CHART_FONT } from '@/components/charts/chartTheme';
 import { event as gaEvent } from '@/lib/ga';
@@ -324,6 +326,79 @@ function lineEndTag(text: string, color: string, endIdx: number, dy: number) {
       </text>
     );
   };
+}
+
+// Custom candlestick + volume bar rendered via Recharts 3 axis/plot hooks so
+// wick/body Y coordinates match <Area>, <Line> and <YAxis> pixel-for-pixel.
+function CandleShape({
+  x,
+  width,
+  payload,
+  volFrac,
+  maxVolume,
+  showVolSpike,
+  fallbackDomain,
+  fallbackPlotHeight,
+}: {
+  x?: number;
+  width?: number;
+  payload?: ChartPoint;
+  volFrac: number;
+  maxVolume: number;
+  showVolSpike: boolean;
+  fallbackDomain: [number, number];
+  fallbackPlotHeight: number;
+}) {
+  const ys = useYAxisScale();
+  const plot = usePlotArea();
+  const d = payload;
+  if (!d || x == null || width == null) return null;
+
+  const top = plot?.y ?? 8;
+  const plotHeight = plot?.height ?? fallbackPlotHeight;
+  const [minY, maxY] = fallbackDomain;
+  const range = maxY - minY;
+  const getY = (val: number) => {
+    if (ys) {
+      const py = ys(val);
+      if (typeof py === 'number' && Number.isFinite(py)) return py;
+    }
+    if (range === 0) return top + plotHeight / 2;
+    return top + plotHeight * (1 - (val - minY) / range);
+  };
+
+  const cx = x + width / 2;
+  const up = d.c >= d.o;
+  const color = up ? UP : DOWN;
+
+  const yHigh = getY(d.h);
+  const yLow = getY(d.l);
+  const yOpen = getY(d.o);
+  const yClose = getY(d.c);
+  const bodyTop = Math.min(yOpen, yClose);
+  const bodyH = Math.max(1, Math.abs(yClose - yOpen));
+
+  const volTop = top + plotHeight * (1 - volFrac);
+  const yBottom = top + plotHeight;
+  const vH = maxVolume > 0 ? ((d.v || 0) / maxVolume) * (yBottom - volTop) : 0;
+
+  const bodyW = Math.max(1, Math.min(width * 0.7, 14));
+  const spike = showVolSpike && d.volSpike;
+
+  return (
+    <g key={d.t}>
+      <rect
+        x={cx - bodyW / 2}
+        y={yBottom - vH}
+        width={bodyW}
+        height={vH}
+        fill={spike ? VOL_SPIKE : color}
+        opacity={spike ? 0.55 : 0.18}
+      />
+      <line x1={cx} x2={cx} y1={yHigh} y2={yLow} stroke={color} strokeWidth={1} />
+      <rect x={cx - bodyW / 2} y={bodyTop} width={bodyW} height={bodyH} fill={color} />
+    </g>
+  );
 }
 
 // ── Custom Tooltip ──────────────────────────────────────────────────────────
@@ -1885,62 +1960,19 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
           <Bar
             dataKey="c"
             isAnimationActive={false}
-            shape={(props: any) => {
-              const { x, width, payload } = props;
-              const d = payload as ChartPoint;
-              
-              if (!d || x == null) return null;
-              
-              // Calculate Y coordinates manually since Recharts 3 Bar shape only gives y for dataKey
-              const [minY, maxY] = yDomain;
-              const range = maxY - minY;
-              const top = 8;
-              const plotHeight = (narrow ? 340 : 420) - 8 - 4; // height - top - bottom
-              
-              const getY = (val: number) => {
-                if (range === 0) return top + plotHeight / 2;
-                return top + plotHeight * (1 - (val - minY) / range);
-              };
-              
-              const cx = x + width / 2;
-              const up = d.c >= d.o;
-              const color = up ? UP : DOWN;
-              
-              const yHigh = getY(d.h);
-              const yLow = getY(d.l);
-              const yOpen = getY(d.o);
-              const yClose = getY(d.c);
-              const bodyTop = Math.min(yOpen, yClose);
-              const bodyH = Math.max(1, Math.abs(yClose - yOpen));
-              
-              // Volume bar — strip height matches the domain extension below
-              // the lowest price, so candles never overlap the volume zone
-              const volTop = top + plotHeight * (1 - volFrac);
-              const yBottom = top + plotHeight;
-              const vH = maxVolume > 0 ? ((d.v || 0) / maxVolume) * (yBottom - volTop) : 0;
-              
-              // Bar width clamp
-              const bodyW = Math.max(1, Math.min(width * 0.7, 14));
-              const spike = inds.has('volspike') && d.volSpike;
-
-              return (
-                <g key={d.t}>
-                  {/* volume */}
-                  <rect
-                    x={cx - bodyW / 2}
-                    y={yBottom - vH}
-                    width={bodyW}
-                    height={vH}
-                    fill={spike ? VOL_SPIKE : color}
-                    opacity={spike ? 0.55 : 0.18}
-                  />
-                  {/* wick */}
-                  <line x1={cx} x2={cx} y1={yHigh} y2={yLow} stroke={color} strokeWidth={1} />
-                  {/* body */}
-                  <rect x={cx - bodyW / 2} y={bodyTop} width={bodyW} height={bodyH} fill={color} />
-                </g>
-              );
-            }}
+            shape={(props: any) => (
+              <CandleShape
+                key={props.payload?.t ?? props.index}
+                x={props.x}
+                width={props.width}
+                payload={props.payload}
+                volFrac={volFrac}
+                maxVolume={maxVolume}
+                showVolSpike={inds.has('volspike')}
+                fallbackDomain={yDomain}
+                fallbackPlotHeight={(narrow ? 340 : 420) - 8 - 54}
+              />
+            )}
           />
           )}
           {/* Moving averages — values precomputed on the full candle series */}
