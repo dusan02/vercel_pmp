@@ -225,7 +225,6 @@ const INDICATORS: { key: IndKey; label: string; color: string }[] = [
   { key: 'ma50', label: 'MA 50w', color: MA50 },
   { key: 'ma200', label: 'MA 200d', color: MA200 },
   { key: 'bb', label: 'Bollinger', color: BB_COLOR },
-  { key: 'fair', label: 'Fair value', color: FAIR_COLOR },
   { key: 'w52', label: '52W hi/lo', color: REF52 },
   { key: 'volspike', label: 'Vol spike', color: VOL_SPIKE },
   { key: 'rsi', label: 'RSI 14', color: RSI_COLOR },
@@ -1073,7 +1072,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     if (ratio > FAIR_CFG.gate || ratio < FAIR_CFG.gateLow) return null;
     const undervalPct = ((last.fv - px) / last.fv) * 100;
     return {
-      anchorIdx,
       fair: last.fv,
       bear: last.fvBear ?? null,
       bull: last.fvBull ?? null,
@@ -1271,16 +1269,18 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
             )}
             {!bmActive && fairPremium && (
               <span
-                className={`text-xs font-semibold px-2 py-0.5 rounded-full tabular-nums ${
-                  Math.abs(fairPremium.undervalPct) < 3
+                className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full tabular-nums ${
+                  Math.abs(fairPremium.undervalPct) < 1
                     ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
                     : fairPremium.undervalPct > 0
-                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
-                      : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
+                      ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-800'
+                      : 'bg-rose-50 text-rose-700 ring-1 ring-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:ring-rose-800'
                 }`}
                 title={`Composite fair value (${fairPremium.method ? FAIR_METHOD_LABEL[fairPremium.method] : 'Multiple + DCF'})${fairPremium.bear != null && fairPremium.bull != null ? ` · bear–bull ${formatFairDollar(fairPremium.bear)}–${formatFairDollar(fairPremium.bull)}` : ''}`}
               >
-                Fair {formatFairDollar(fairPremium.fair)} · {formatFairStatus(fairPremium.undervalPct)}
+                <span className="w-2.5 border-t-2 border-dashed" style={{ borderColor: FAIR_COLOR }} />
+                <span>{formatFairStatus(fairPremium.undervalPct)}</span>
+                <span className="font-medium opacity-75">· Fair {formatFairDollar(fairPremium.fair)}</span>
               </span>
             )}
           </div>
@@ -1345,20 +1345,40 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
             </div>
           ) : (
             <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5">
+              {!bmActive && (
+                <label
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md cursor-pointer select-none transition-colors ${
+                    inds.has('fair')
+                      ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  }`}
+                  title="Toggle Fair value blue line and green/red buy/sell zones"
+                >
+                  <input
+                    type="checkbox"
+                    checked={inds.has('fair')}
+                    onChange={() => toggleInd('fair')}
+                    aria-label="Fair value"
+                    className="h-3.5 w-3.5 rounded accent-blue-600 cursor-pointer"
+                  />
+                  <span className="w-2.5 border-t-2 border-dashed shrink-0" style={{ borderColor: FAIR_COLOR }} />
+                  <span>Fair value</span>
+                </label>
+              )}
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setOpenMenu((m) => (m === 'overlays' ? null : 'overlays'))}
                   aria-haspopup="true"
                   aria-expanded={openMenu === 'overlays'}
-                  title="Chart overlays — moving averages, fair-value band, 52-week range"
+                  title="Chart overlays — moving averages, Bollinger bands, 52-week range"
                   className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
-                    openMenu === 'overlays' || inds.size > 0
+                    openMenu === 'overlays' || INDICATORS.some((i) => inds.has(i.key))
                       ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                   }`}
                 >
-                  {inds.size > 0 && (
+                  {INDICATORS.some((i) => inds.has(i.key)) && (
                     <span className="flex items-center -space-x-0.5">
                       {INDICATORS.filter((i) => inds.has(i.key)).map((i) => (
                         <span key={i.key} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: i.color }} />
@@ -1381,9 +1401,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
                         title={
                           ind.key === 'volspike'
                             ? 'Highlight weeks with volume > 2× the 20-week average'
-                            : ind.key === 'fair'
-                              ? 'Composite fair value (50% trailing 5Y multiple + 50% FCF DCF) with green/red buy/sell zones — steps mark earnings updates'
-                              : undefined
+                            : undefined
                         }
                         className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
                           inds.has(ind.key)
@@ -1868,7 +1886,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
             dataKey="c"
             isAnimationActive={false}
             shape={(props: any) => {
-              const { x, width, payload, index } = props;
+              const { x, width, payload } = props;
               const d = payload as ChartPoint;
               
               if (!d || x == null) return null;
@@ -1905,36 +1923,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
               const bodyW = Math.max(1, Math.min(width * 0.7, 14));
               const spike = inds.has('volspike') && d.volSpike;
 
-              // End-of-line Fair Value vs Price callout badge (AlphaSpread-style)
-              const showFvBadge = fairPremium != null && index === fairPremium.anchorIdx;
-              let fvCallout: React.ReactNode = null;
-              if (showFvBadge) {
-                const px = currentPrice ?? d.c;
-                const yPx = Math.max(top + 4, Math.min(volTop - 4, getY(px)));
-                const yFv = Math.max(top + 4, Math.min(volTop - 4, getY(fairPremium.fair)));
-                const uv = fairPremium.undervalPct;
-                const badgeColor = Math.abs(uv) < 1 ? '#64748b' : uv > 0 ? UP : DOWN;
-                const badgeLabel = Math.abs(uv) < 1
-                  ? 'AT FAIR VALUE'
-                  : uv > 0
-                    ? `${uv.toFixed(0)}% UNDERVALUED`
-                    : `${Math.abs(uv).toFixed(0)}% OVERVALUED`;
-                const badgeW = Math.round(badgeLabel.length * 6.3 + 16);
-                const badgeX = Math.max(8, cx - 8 - badgeW);
-                const badgeY = Math.max(top + 12, Math.min(volTop - 12, (yPx + yFv) / 2));
-                fvCallout = (
-                  <g style={{ pointerEvents: 'none' }}>
-                    <line x1={cx} x2={cx} y1={yPx} y2={yFv} stroke={badgeColor} strokeWidth={1.5} strokeDasharray="3 2" />
-                    <circle cx={cx} cy={yFv} r={3} fill={FAIR_COLOR} stroke="#fff" strokeWidth={1} />
-                    <circle cx={cx} cy={yPx} r={3} fill={badgeColor} stroke="#fff" strokeWidth={1} />
-                    <rect x={badgeX} y={badgeY - 10} width={badgeW} height={20} rx={6} fill={badgeColor} fillOpacity={0.94} stroke="#fff" strokeWidth={1} />
-                    <text x={badgeX + badgeW / 2} y={badgeY + 3.5} textAnchor="middle" fontSize={10} fontWeight={700} fill="#fff">
-                      {badgeLabel}
-                    </text>
-                  </g>
-                );
-              }
-
               return (
                 <g key={d.t}>
                   {/* volume */}
@@ -1950,7 +1938,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
                   <line x1={cx} x2={cx} y1={yHigh} y2={yLow} stroke={color} strokeWidth={1} />
                   {/* body */}
                   <rect x={cx - bodyW / 2} y={bodyTop} width={bodyW} height={bodyH} fill={color} />
-                  {fvCallout}
                 </g>
               );
             }}
