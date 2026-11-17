@@ -59,8 +59,10 @@ interface ChartPoint extends Candle {
   sma20?: number | null;
   sma50?: number | null;
   sma200?: number | null;
-  /** [bear, bull] fair value band */
-  fvBand?: [number, number] | null;
+  /** [min(price, fv), fv] shaded green when price <= fv (buy zone) */
+  fvBuyZone?: [number, number] | null;
+  /** [fv, max(price, fv)] shaded red when price > fv (sell zone) */
+  fvSellZone?: [number, number] | null;
   /** this week carries an updated fair value (new financial statements) */
   fvChanged?: boolean;
   /** implied TTM EPS for this week (close / pe) — used by tooltip + markers */
@@ -176,10 +178,11 @@ type PeriodLabel = '3M' | '6M' | 'YTD' | '1Y' | '3Y' | '5Y' | 'All';
 const UP = '#16a34a'; // green
 const DOWN = '#dc2626'; // red
 const FWD_CONS = '#d97706'; // amber — consensus forward P/E marker
-const MA20 = '#2563eb'; // blue
+const MA20 = '#f97316'; // orange
 const MA50 = '#7c3aed'; // violet
 const MA200 = '#0891b2'; // teal — 200-day ≈ 40 weekly bars
-const PE_FAIR = '#db2777'; // pink — price-at-median-P/E overlay
+const FAIR_COLOR = '#2563eb'; // blue — composite fair value line
+const PE_FAIR = '#db2777'; // pink — valuation mode median reference line
 const PE_LINE = '#4f46e5'; // indigo — P/E-multiple view
 const VOL_SPIKE = '#d97706'; // amber — volume ≫ its own norm
 const REF52 = '#64748b'; // slate-500 — 52W hi/lo lines (400 was too light on white)
@@ -222,7 +225,7 @@ const INDICATORS: { key: IndKey; label: string; color: string }[] = [
   { key: 'ma50', label: 'MA 50w', color: MA50 },
   { key: 'ma200', label: 'MA 200d', color: MA200 },
   { key: 'bb', label: 'Bollinger', color: BB_COLOR },
-  { key: 'fair', label: 'Fair value', color: PE_FAIR },
+  { key: 'fair', label: 'Fair value', color: FAIR_COLOR },
   { key: 'w52', label: '52W hi/lo', color: REF52 },
   { key: 'volspike', label: 'Vol spike', color: VOL_SPIKE },
   { key: 'rsi', label: 'RSI 14', color: RSI_COLOR },
@@ -696,7 +699,8 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
         sma50: sma50[i] ?? null,
         sma200: sma200[i] ?? null,
         eps: epsArr[i] ?? null,
-        fvBand: fv != null && c.fvBear != null && c.fvBull != null ? [c.fvBear, c.fvBull] : null,
+        fvBuyZone: fv != null ? [Math.min(c.c, fv), fv] : null,
+        fvSellZone: fv != null ? [fv, Math.max(c.c, fv)] : null,
         fvChanged,
         // Spike = this week's volume > 2× its own trailing 20w mean (≈ RVOL 2)
         volSpike: va != null && va > 0 && (c.v || 0) > 2 * va,
@@ -1060,7 +1064,8 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     // Partial current week (Mon morning before DVH cron) has no ratios yet —
     // allow one-bar fallback ONLY when the latest bar has zero valuation fields.
     const hasRatios = tail.pe != null || tail.ps != null || tail.fcfYield != null || tail.fv != null;
-    const last = !hasRatios && data.length >= 2 ? data[data.length - 2]! : tail;
+    const anchorIdx = !hasRatios && data.length >= 2 ? data.length - 2 : data.length - 1;
+    const last = data[anchorIdx]!;
     if (last.fv == null || last.fv <= 0) return null;
     const px = currentPrice ?? last.c;
     if (!(px > 0)) return null;
@@ -1068,6 +1073,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     if (ratio > FAIR_CFG.gate || ratio < FAIR_CFG.gateLow) return null;
     const undervalPct = ((last.fv - px) / last.fv) * 100;
     return {
+      anchorIdx,
       fair: last.fv,
       bear: last.fvBear ?? null,
       bull: last.fvBull ?? null,
@@ -1376,7 +1382,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
                           ind.key === 'volspike'
                             ? 'Highlight weeks with volume > 2× the 20-week average'
                             : ind.key === 'fair'
-                              ? 'Composite fair value (50% trailing 5Y multiple + 50% FCF DCF) with bear–bull band — steps mark earnings updates'
+                              ? 'Composite fair value (50% trailing 5Y multiple + 50% FCF DCF) with green/red buy/sell zones — steps mark earnings updates'
                               : undefined
                         }
                         className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
@@ -1774,9 +1780,9 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
                   )}</span>
                 )}
                 {inds.has('fair') && hd.fv != null && (
-                  <span style={{ color: PE_FAIR }}>
-                    Fair ${hd.fv.toFixed(2)}
-                    {hd.fvBear != null && hd.fvBull != null && ` ($${hd.fvBear.toFixed(0)}–$${hd.fvBull.toFixed(0)})`}
+                  <span style={{ color: FAIR_COLOR }}>
+                    Fair {formatFairDollar(hd.fv)}
+                    {hd.fvBear != null && hd.fvBull != null && ` (${formatFairDollar(hd.fvBear)}–${formatFairDollar(hd.fvBull)})`}
                     {(() => {
                       const uv = ((hd.fv - hd.c) / hd.fv) * 100;
                       return (
@@ -1787,7 +1793,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
                     })()}
                   </span>
                 )}
-                {inds.has('fair') && hd.fvChanged && <span style={{ color: PE_FAIR }}>↑ earnings update</span>}
+                {inds.has('fair') && hd.fvChanged && <span style={{ color: FAIR_COLOR }}>↑ earnings update</span>}
               </>
             )}
           </div>
@@ -1827,6 +1833,34 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
             cursor={{ fill: 'rgba(148,163,184,0.12)' }}
             isAnimationActive={false}
           />
+          {/* Buy/Sell zones vs Fair Value — rendered behind candlesticks so
+              green marks price below fair value (buy) and red marks price above (sell). */}
+          {!bmActive && inds.has('fair') && (
+            <>
+              <Area
+                type="linear"
+                dataKey="fvBuyZone"
+                stroke="none"
+                fill={UP}
+                fillOpacity={0.14}
+                isAnimationActive={false}
+                connectNulls={false}
+                dot={false}
+                activeDot={false}
+              />
+              <Area
+                type="linear"
+                dataKey="fvSellZone"
+                stroke="none"
+                fill={DOWN}
+                fillOpacity={0.12}
+                isAnimationActive={false}
+                connectNulls={false}
+                dot={false}
+                activeDot={false}
+              />
+            </>
+          )}
           {/* Visible candles + volume drawn as a custom shape inside Bar.
               Hidden in compare mode — the % axis makes $ candles meaningless. */}
           {!bmActive && (
@@ -1834,7 +1868,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
             dataKey="c"
             isAnimationActive={false}
             shape={(props: any) => {
-              const { x, width, payload } = props;
+              const { x, width, payload, index } = props;
               const d = payload as ChartPoint;
               
               if (!d || x == null) return null;
@@ -1871,6 +1905,36 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
               const bodyW = Math.max(1, Math.min(width * 0.7, 14));
               const spike = inds.has('volspike') && d.volSpike;
 
+              // End-of-line Fair Value vs Price callout badge (AlphaSpread-style)
+              const showFvBadge = fairPremium != null && index === fairPremium.anchorIdx;
+              let fvCallout: React.ReactNode = null;
+              if (showFvBadge) {
+                const px = currentPrice ?? d.c;
+                const yPx = Math.max(top + 4, Math.min(volTop - 4, getY(px)));
+                const yFv = Math.max(top + 4, Math.min(volTop - 4, getY(fairPremium.fair)));
+                const uv = fairPremium.undervalPct;
+                const badgeColor = Math.abs(uv) < 1 ? '#64748b' : uv > 0 ? UP : DOWN;
+                const badgeLabel = Math.abs(uv) < 1
+                  ? 'AT FAIR VALUE'
+                  : uv > 0
+                    ? `${uv.toFixed(0)}% UNDERVALUED`
+                    : `${Math.abs(uv).toFixed(0)}% OVERVALUED`;
+                const badgeW = Math.round(badgeLabel.length * 6.3 + 16);
+                const badgeX = Math.max(8, cx - 8 - badgeW);
+                const badgeY = Math.max(top + 12, Math.min(volTop - 12, (yPx + yFv) / 2));
+                fvCallout = (
+                  <g style={{ pointerEvents: 'none' }}>
+                    <line x1={cx} x2={cx} y1={yPx} y2={yFv} stroke={badgeColor} strokeWidth={1.5} strokeDasharray="3 2" />
+                    <circle cx={cx} cy={yFv} r={3} fill={FAIR_COLOR} stroke="#fff" strokeWidth={1} />
+                    <circle cx={cx} cy={yPx} r={3} fill={badgeColor} stroke="#fff" strokeWidth={1} />
+                    <rect x={badgeX} y={badgeY - 10} width={badgeW} height={20} rx={6} fill={badgeColor} fillOpacity={0.94} stroke="#fff" strokeWidth={1} />
+                    <text x={badgeX + badgeW / 2} y={badgeY + 3.5} textAnchor="middle" fontSize={10} fontWeight={700} fill="#fff">
+                      {badgeLabel}
+                    </text>
+                  </g>
+                );
+              }
+
               return (
                 <g key={d.t}>
                   {/* volume */}
@@ -1886,6 +1950,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
                   <line x1={cx} x2={cx} y1={yHigh} y2={yLow} stroke={color} strokeWidth={1} />
                   {/* body */}
                   <rect x={cx - bodyW / 2} y={bodyTop} width={bodyW} height={bodyH} fill={color} />
+                  {fvCallout}
                 </g>
               );
             }}
@@ -1981,48 +2046,35 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
               />
             </>
           )}
-          {/* Composite fair value: shaded bear–bull band + dashed stepAfter
-              line; dots mark weeks where fresh statements updated fair value */}
+          {/* Composite fair value: blue dashed stepAfter line; dots mark
+              weeks where fresh statements updated fair value */}
           {!bmActive && inds.has('fair') && (
-            <>
-              <Area
-                type="stepAfter"
-                dataKey="fvBand"
-                stroke="none"
-                fill={PE_FAIR}
-                fillOpacity={0.07}
-                isAnimationActive={false}
-                connectNulls={false}
-                dot={false}
-                activeDot={false}
-              />
-              <Line
-                type="stepAfter"
-                dataKey="fv"
-                stroke={PE_FAIR}
-                strokeWidth={1.75}
-                strokeDasharray="5 3"
-                isAnimationActive={false}
-                connectNulls={false}
-                dot={(props: any) => {
-                  const { cx, cy, payload } = props;
-                  if (cx == null || cy == null || !payload?.fvChanged || payload?.fv == null) {
-                    return <g key={payload?.t ?? cx ?? 0} />;
-                  }
-                  return (
-                    <circle
-                      key={payload.t}
-                      cx={cx}
-                      cy={cy}
-                      r={3.2}
-                      fill={PE_FAIR}
-                      stroke="#fff"
-                      strokeWidth={1.2}
-                    />
-                  );
-                }}
-              />
-            </>
+            <Line
+              type="stepAfter"
+              dataKey="fv"
+              stroke={FAIR_COLOR}
+              strokeWidth={2}
+              strokeDasharray="5 3"
+              isAnimationActive={false}
+              connectNulls={false}
+              dot={(props: any) => {
+                const { cx, cy, payload } = props;
+                if (cx == null || cy == null || !payload?.fvChanged || payload?.fv == null) {
+                  return <g key={payload?.t ?? cx ?? 0} />;
+                }
+                return (
+                  <circle
+                    key={payload.t}
+                    cx={cx}
+                    cy={cy}
+                    r={3.2}
+                    fill={FAIR_COLOR}
+                    stroke="#fff"
+                    strokeWidth={1.2}
+                  />
+                );
+              }}
+            />
           )}
           {/* Trailing 52-week high/low reference levels */}
           {!bmActive && inds.has('w52') && hiLo52 && (
@@ -2122,18 +2174,38 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
         </div>
       )}
 
-      {/* "How far from fair" — composite fair value & bear–bull range */}
+      {/* "How far from fair" — composite fair value & buy/sell zone legend */}
       {mode === 'price' && !bmActive && fairPremium && (
-        <div className="mt-2 text-xs flex items-center gap-1.5 flex-wrap">
-          <span className="w-3 border-t-2 border-dashed" style={{ borderColor: PE_FAIR }} />
-          <span className="tabular-nums font-semibold" style={{ color: fairPremium.undervalPct >= 0 ? UP : DOWN }}>
+        <div className="mt-2 text-xs flex items-center gap-x-2.5 gap-y-1 flex-wrap">
+          <span className="flex items-center gap-1.5">
+            <span className="w-3.5 border-t-2 border-dashed" style={{ borderColor: FAIR_COLOR }} />
+            <span className="font-medium text-gray-700 dark:text-gray-200 tabular-nums">
+              Fair value {formatFairDollar(fairPremium.fair)}
+            </span>
+          </span>
+          <span
+            className={`px-2 py-0.5 rounded font-semibold tabular-nums ${
+              Math.abs(fairPremium.undervalPct) < 1
+                ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                : fairPremium.undervalPct > 0
+                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
+                  : 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'
+            }`}
+          >
             {formatFairStatus(fairPremium.undervalPct)}
           </span>
-          <span className="text-gray-500 dark:text-gray-400 tabular-nums">
-            · Fair value {formatFairDollar(fairPremium.fair)}
-            {fairPremium.bear != null && fairPremium.bull != null && (
-              <> (bear {formatFairDollar(fairPremium.bear)} – bull {formatFairDollar(fairPremium.bull)})</>
-            )}
+          {fairPremium.bear != null && fairPremium.bull != null && (
+            <span className="text-gray-500 dark:text-gray-400 tabular-nums">
+              (bear {formatFairDollar(fairPremium.bear)} – bull {formatFairDollar(fairPremium.bull)})
+            </span>
+          )}
+          <span className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
+            <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: UP, opacity: 0.35 }} />
+            Below = Buy
+          </span>
+          <span className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
+            <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: DOWN, opacity: 0.3 }} />
+            Above = Sell
           </span>
           {fairPremium.method && (
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
@@ -2169,7 +2241,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
         {mode === 'price' && !bmActive && inds.has('fair') && (fairPremium || fairMeta) && (
           <>
             {' '}Fair value = 50% trailing 5Y historical multiple (growth-capped P/E or P/S) + 50%
-            10Y FCF DCF (10% discount, faded to 3%; financials use multiple only); shaded band = bear–bull.
+            10Y FCF DCF (10% discount, faded to 3%; financials use multiple only); green/red zone = price below/above fair value.
             Point-in-time: steps and dots mark new financial statements, not market moves.
             Illustrative valuation, not a price target.
           </>

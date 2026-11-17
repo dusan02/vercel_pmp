@@ -314,11 +314,15 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     );
 
     const { container } = await renderChart();
-    // Header badge + below-chart range + footnote appear by default
+    // Header badge + below-chart buy/sell zone legend + blue indicator dot appear by default
     expect(container.textContent).toMatch(/Fair \$213/);
     expect(container.textContent).toContain('P/E + FCF DCF');
     expect(container.textContent).toMatch(/bear \$159/);
     expect(container.textContent).toMatch(/bull \$324/);
+    expect(container.textContent).toContain('Below = Buy');
+    expect(container.textContent).toContain('Above = Sell');
+    const ovBtn = [...container.querySelectorAll('button')].find((b) => b.textContent?.includes('Overlays'));
+    expect(ovBtn?.innerHTML).toMatch(/rgb\(37,\s*99,\s*235\)|#2563eb/i);
 
     // Turning Fair value off in Overlays hides the badge & persists
     await clickButton(container, 'Overlays');
