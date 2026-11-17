@@ -17,6 +17,7 @@ import {
   ReferenceDot,
   Brush,
   AreaChart,
+  useXAxisScale,
   useYAxisScale,
   usePlotArea,
 } from 'recharts';
@@ -62,10 +63,6 @@ interface ChartPoint extends Candle {
   sma20?: number | null;
   sma50?: number | null;
   sma200?: number | null;
-  /** [min(price, fv), fv] shaded green when price <= fv (buy zone) */
-  fvBuyZone?: [number, number] | null;
-  /** [fv, max(price, fv)] shaded red when price > fv (sell zone) */
-  fvSellZone?: [number, number] | null;
   /** this week carries an updated fair value (new financial statements) */
   fvChanged?: boolean;
   /** implied TTM EPS for this week (close / pe) — used by tooltip + markers */
@@ -402,6 +399,62 @@ function CandleShape({
   );
 }
 
+// Green (price <= fair) and red (price > fair) zone fills rendered via Recharts
+// axis hooks so the fair-value edge steps horizontally with `type="stepAfter"`
+// instead of cutting diagonally across filing jumps.
+function FairValueZoneLayer({ data }: { data: ChartPoint[] }) {
+  const xs = useXAxisScale();
+  const ys = useYAxisScale();
+  if (!xs || !ys || data.length < 2) return null;
+
+  const xOf = (date: string): number | null => {
+    const px = xs(date, { position: 'middle' });
+    return typeof px === 'number' && Number.isFinite(px) ? px : null;
+  };
+  const yOf = (v: number): number | null => {
+    const py = ys(v);
+    return typeof py === 'number' && Number.isFinite(py) ? py : null;
+  };
+
+  const buyParts: string[] = [];
+  const sellParts: string[] = [];
+  const pushPoly = (dest: string[], pts: [number, number][]) => {
+    dest.push(`M${pts.map(([px, py]) => `${px.toFixed(1)},${py.toFixed(1)}`).join('L')}Z`);
+  };
+
+  for (let i = 0; i < data.length - 1; i++) {
+    const d0 = data[i]!;
+    const d1 = data[i + 1]!;
+    if (d0.fv == null || !(d0.fv > 0) || d1.fv == null || !(d1.fv > 0)) continue;
+    const x0 = xOf(d0.date);
+    const x1 = xOf(d1.date);
+    const yFv = yOf(d0.fv);
+    const y0 = yOf(d0.c);
+    const y1 = yOf(d1.c);
+    if (x0 == null || x1 == null || yFv == null || y0 == null || y1 == null) continue;
+
+    const diff0 = d0.c - d0.fv;
+    const diff1 = d1.c - d0.fv;
+    if (diff0 <= 0 && diff1 <= 0) {
+      pushPoly(buyParts, [[x0, yFv], [x0, y0], [x1, y1], [x1, yFv]]);
+    } else if (diff0 >= 0 && diff1 >= 0) {
+      pushPoly(sellParts, [[x0, yFv], [x0, y0], [x1, y1], [x1, yFv]]);
+    } else {
+      const frac = Math.abs(diff0) / (Math.abs(diff0) + Math.abs(diff1));
+      const xMid = x0 + frac * (x1 - x0);
+      pushPoly(diff0 < 0 ? buyParts : sellParts, [[x0, yFv], [x0, y0], [xMid, yFv]]);
+      pushPoly(diff1 < 0 ? buyParts : sellParts, [[xMid, yFv], [x1, y1], [x1, yFv]]);
+    }
+  }
+
+  return (
+    <g style={{ pointerEvents: 'none' }} data-testid="fair-value-zones">
+      {buyParts.length > 0 && <path d={buyParts.join('')} fill={UP} fillOpacity={0.14} stroke="none" />}
+      {sellParts.length > 0 && <path d={sellParts.join('')} fill={DOWN} fillOpacity={0.12} stroke="none" />}
+    </g>
+  );
+}
+
 // ── Custom Tooltip ──────────────────────────────────────────────────────────
 
 // Valuation-metric view tooltip — the multiple itself vs its own
@@ -561,7 +614,32 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
   const [fwdPeNow, setFwdPeNow] = useState<number | null>(null);
   const [fwdPeAsOf, setFwdPeAsOf] = useState<string | null>(null);
   const [fairMeta, setFairMeta] = useState<FairValueMeta | null>(null);
-  const [fvInfoOpen, setFvInfoOpen] = useState(false);
+  // Track which trigger opened the breakdown so clicking the bottom legend expands right below it instead of offscreen above the chart.
+  const [fvInfoAnchor, setFvInfoAnchor] = useState<'top' | 'bottom' | null>(null);
+  const toggleFvInfo = (anchor: 'top' | 'bottom') =>
+    setFvInfoAnchor((cur) => (cur === anchor ? null : anchor));
+  const renderFvBreakdown = (
+    slot: 'top' | 'bottom',
+    isPriceMode: boolean,
+    isComparing: boolean,
+    showFair: boolean,
+    premium: { fair: number; bear: number | null; bull: number | null } | null,
+    meta: FairValueMeta | null,
+    isLiveGated: boolean,
+  ) => {
+    if (!isPriceMode || isComparing || !showFair || fvInfoAnchor !== slot || (!premium && !meta)) return null;
+    const panel = (
+      <FairValueBreakdown
+        meta={meta}
+        fair={premium?.fair ?? null}
+        bear={premium?.bear ?? null}
+        bull={premium?.bull ?? null}
+        liveGated={isLiveGated}
+        onClose={() => setFvInfoAnchor(null)}
+      />
+    );
+    return slot === 'bottom' ? <div className="mt-2.5">{panel}</div> : panel;
+  };
   const [metric, setMetric] = useState<MetricField>('pe');
   const [mode, setMode] = useState<ModeKey>('price');
   const [loading, setLoading] = useState(true);
@@ -645,6 +723,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     setLoading(true);
     setError(null);
     setFairMeta(null);
+    setFvInfoAnchor(null);
     fetch(`/api/analysis/${ticker}/candles`)
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((json) => {
@@ -775,8 +854,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
         sma50: sma50[i] ?? null,
         sma200: sma200[i] ?? null,
         eps: epsArr[i] ?? null,
-        fvBuyZone: fv != null ? [Math.min(c.c, fv), fv] : null,
-        fvSellZone: fv != null ? [fv, Math.max(c.c, fv)] : null,
         fvChanged,
         // Spike = this week's volume > 2× its own trailing 20w mean (≈ RVOL 2)
         volSpike: va != null && va > 0 && (c.v || 0) > 2 * va,
@@ -1134,26 +1211,31 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
 
   // "How far from fair" — premium/discount of current price vs point-in-time
   // composite fair value. Shown only while the overlay is on and not gated.
-  const fairPremium = useMemo(() => {
-    if (!inds.has('fair') || !data.length) return null;
+  const { fairPremium, liveFairGated } = useMemo(() => {
+    if (!inds.has('fair') || !data.length) return { fairPremium: null, liveFairGated: false };
     const tail = data[data.length - 1]!;
     // Partial current week (Mon morning before DVH cron) has no ratios yet —
     // allow one-bar fallback ONLY when the latest bar has zero valuation fields.
     const hasRatios = tail.pe != null || tail.ps != null || tail.fcfYield != null || tail.fv != null;
     const anchorIdx = !hasRatios && data.length >= 2 ? data.length - 2 : data.length - 1;
     const last = data[anchorIdx]!;
-    if (last.fv == null || last.fv <= 0) return null;
+    if (last.fv == null || last.fv <= 0) return { fairPremium: null, liveFairGated: false };
     const px = currentPrice ?? last.c;
-    if (!(px > 0)) return null;
+    if (!(px > 0)) return { fairPremium: null, liveFairGated: false };
     const ratio = last.fv / px;
-    if (ratio > FAIR_CFG.gate || ratio < FAIR_CFG.gateLow) return null;
+    if (ratio > FAIR_CFG.gate || ratio < FAIR_CFG.gateLow) {
+      return { fairPremium: null, liveFairGated: true };
+    }
     const undervalPct = ((last.fv - px) / last.fv) * 100;
     return {
-      fair: last.fv,
-      bear: last.fvBear ?? null,
-      bull: last.fvBull ?? null,
-      method: last.fvMethod ?? fairMeta?.method ?? null,
-      undervalPct,
+      fairPremium: {
+        fair: last.fv,
+        bear: last.fvBear ?? null,
+        bull: last.fvBull ?? null,
+        method: last.fvMethod ?? fairMeta?.method ?? null,
+        undervalPct,
+      },
+      liveFairGated: false,
     };
   }, [data, inds, currentPrice, fairMeta]);
 
@@ -1347,8 +1429,8 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
             {!bmActive && fairPremium && (
               <button
                 type="button"
-                onClick={() => setFvInfoOpen((o) => !o)}
-                aria-expanded={fvInfoOpen}
+                onClick={() => toggleFvInfo('top')}
+                aria-expanded={fvInfoAnchor === 'top'}
                 className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full tabular-nums transition-shadow hover:shadow-sm cursor-pointer ${
                   Math.abs(fairPremium.undervalPct) < 1
                     ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
@@ -1361,7 +1443,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
                 <span className="w-2.5 border-t-2 border-dashed" style={{ borderColor: FAIR_COLOR }} />
                 <span>{formatFairStatus(fairPremium.undervalPct)}</span>
                 <span className="font-medium opacity-75">· Fair {formatFairDollar(fairPremium.fair)}</span>
-                <span className="text-[9px] opacity-70">{fvInfoOpen ? '▴' : '▾'}</span>
+                <span className="text-[9px] opacity-70">{fvInfoAnchor === 'top' ? '▴' : '▾'}</span>
               </button>
             )}
           </div>
@@ -1706,15 +1788,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
         </div>
       </div>
 
-      {mode === 'price' && !bmActive && fvInfoOpen && (fairPremium || fairMeta) && (
-        <FairValueBreakdown
-          meta={fairMeta}
-          fair={fairPremium?.fair ?? null}
-          bear={fairPremium?.bear ?? null}
-          bull={fairPremium?.bull ?? null}
-          onClose={() => setFvInfoOpen(false)}
-        />
-      )}
+      {renderFvBreakdown('top', mode === 'price', bmActive, inds.has('fair'), fairPremium, fairMeta, liveFairGated)}
 
       <div className={`pmp-chart-swap relative${fading ? ' pmp-fading' : ''}`}>
       {mode === 'pe' && metricStats ? (
@@ -1944,32 +2018,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
           />
           {/* Buy/Sell zones vs Fair Value — rendered behind candlesticks so
               green marks price below fair value (buy) and red marks price above (sell). */}
-          {!bmActive && inds.has('fair') && (
-            <>
-              <Area
-                type="linear"
-                dataKey="fvBuyZone"
-                stroke="none"
-                fill={UP}
-                fillOpacity={0.14}
-                isAnimationActive={false}
-                connectNulls={false}
-                dot={false}
-                activeDot={false}
-              />
-              <Area
-                type="linear"
-                dataKey="fvSellZone"
-                stroke="none"
-                fill={DOWN}
-                fillOpacity={0.12}
-                isAnimationActive={false}
-                connectNulls={false}
-                dot={false}
-                activeDot={false}
-              />
-            </>
-          )}
+          {!bmActive && inds.has('fair') && <FairValueZoneLayer data={data} />}
           {/* Visible candles + volume drawn as a custom shape inside Bar.
               Hidden in compare mode — the % axis makes $ candles meaningless. */}
           {!bmActive && (
@@ -2245,30 +2294,31 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
           {fairPremium.method && (
             <button
               type="button"
-              onClick={() => setFvInfoOpen((o) => !o)}
-              aria-expanded={fvInfoOpen}
+              onClick={() => toggleFvInfo('bottom')}
+              aria-expanded={fvInfoAnchor === 'bottom'}
               className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors cursor-pointer"
               title="Show Fair Value calculation details"
             >
-              {FAIR_METHOD_LABEL[fairPremium.method]} {fvInfoOpen ? '▴' : '▾'}
+              {FAIR_METHOD_LABEL[fairPremium.method]} {fvInfoAnchor === 'bottom' ? '▴' : '▾'}
             </button>
           )}
         </div>
       )}
-      {mode === 'price' && !bmActive && inds.has('fair') && !fairPremium && fairMeta?.gated && (
+      {mode === 'price' && !bmActive && inds.has('fair') && !fairPremium && (fairMeta?.gated || liveFairGated) && (
         <div className="mt-2 text-xs flex items-center gap-1.5 flex-wrap text-gray-500 dark:text-gray-400">
           <span className="w-2 h-2 rounded-full bg-gray-400" />
           <span>Fair value hidden — outside reliable range vs price (distorted earnings or extreme multiple).</span>
           <button
             type="button"
-            onClick={() => setFvInfoOpen((o) => !o)}
-            aria-expanded={fvInfoOpen}
+            onClick={() => toggleFvInfo('bottom')}
+            aria-expanded={fvInfoAnchor === 'bottom'}
             className="text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
           >
-            How it&apos;s calculated {fvInfoOpen ? '▴' : '▾'}
+            How it&apos;s calculated {fvInfoAnchor === 'bottom' ? '▴' : '▾'}
           </button>
         </div>
       )}
+      {renderFvBreakdown('bottom', mode === 'price', bmActive, inds.has('fair'), fairPremium, fairMeta, liveFairGated)}
 
       {/* "How stretched vs trend" — one line, only for enabled MAs */}
       {mode === 'price' && maDistances && (

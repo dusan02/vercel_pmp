@@ -107,6 +107,20 @@ function quantiles(vals: number[]): { p25: number; med: number; p75: number } {
 
 const pos = (v: number | null | undefined): v is number => v != null && Number.isFinite(v) && v > 0;
 
+/**
+ * True when a snapshot row (either DailyValuationHistory column names or
+ * candle field names) carries at least one usable valuation input.
+ */
+export function hasValuationInputs(r: {
+  peRatio?: number | null;
+  psRatio?: number | null;
+  fcfYield?: number | null;
+  pe?: number | null;
+  ps?: number | null;
+}): boolean {
+  return pos(r.peRatio ?? r.pe) || pos(r.psRatio ?? r.ps) || (r.fcfYield != null && Number.isFinite(r.fcfYield));
+}
+
 /** 10-year two-stage FCF DCF per share. Returns null on non-positive FCF. */
 export function dcfPerShare(fcf0: number, g0: number, r: number, cfg = FAIR_CFG): number | null {
   if (!(fcf0 > 0) || !(r > cfg.terminalGrowth)) return null;
@@ -282,11 +296,17 @@ export interface FairValueAnalysis {
   latestMethod: FairMethod | null;
   /** Component breakdown from the most recent computed fundamental step. */
   latestComponents: FairValueComponents | null;
+  /** Timestamp (ms) of the latest bar carrying real valuation ratios. */
+  latestAsOfT: number | null;
 }
+
+const MAX_TRAILING_CARRY_MS = 14 * 86400000;
 
 /**
  * Weekly fair-value series plus latest-bar gate status.
  * Points failing the price sanity gate are omitted (the chart draws a gap).
+ * A single trailing un-synced bar (<=14d after a valid bar, e.g. partial week
+ * before DVH cron) carries the active step instead of breaking the tail.
  * Input must be sorted ascending by t.
  */
 export function analyzeFairValueSeries(series: FairValueInput[], cfg = FAIR_CFG): FairValueAnalysis {
@@ -298,26 +318,36 @@ export function analyzeFairValueSeries(series: FairValueInput[], cfg = FAIR_CFG)
   let latestGated = false;
   let latestMethod: FairMethod | null = null;
   let latestComponents: FairValueComponents | null = null;
+  let latestAsOfT: number | null = null;
   for (let i = 0; i < series.length; i++) {
     const p = series[i]!;
     const eps = pos(p.pe) ? p.c / p.pe : null;
     const rps = pos(p.ps) ? p.c / p.ps : null;
     const fcf = p.fcfYield != null && Number.isFinite(p.fcfYield) ? p.c * p.fcfYield : null;
-    if (eps == null && rps == null && fcf == null) {
+    const isTrailingCarry = eps == null && rps == null && fcf == null
+      && i === series.length - 1
+      && cur != null
+      && latestAsOfT != null
+      && p.t - latestAsOfT <= MAX_TRAILING_CARRY_MS;
+    if (eps == null && rps == null && fcf == null && !isTrailingCarry) {
       // no valuation coverage this week — break the line, force recompute
       cur = null; curComp = null; started = false; prevEps = prevRps = prevFcf = null;
       latestGated = false;
+      latestComponents = null;
       continue;
     }
-    const fundamentalsMoved = !started
-      || cur == null
-      || changed(eps, prevEps, cfg.changeTol)
-      || changed(rps, prevRps, cfg.changeTol)
-      || changed(fcf, prevFcf, cfg.changeTol);
-    if (fundamentalsMoved) {
-      curComp = componentsAt(series, i, cfg);
-      cur = combine(curComp, cfg);
-      prevEps = eps; prevRps = rps; prevFcf = fcf; started = true;
+    if (!isTrailingCarry) {
+      latestAsOfT = p.t;
+      const fundamentalsMoved = !started
+        || cur == null
+        || changed(eps, prevEps, cfg.changeTol)
+        || changed(rps, prevRps, cfg.changeTol)
+        || changed(fcf, prevFcf, cfg.changeTol);
+      if (fundamentalsMoved) {
+        curComp = componentsAt(series, i, cfg);
+        cur = combine(curComp, cfg);
+        prevEps = eps; prevRps = rps; prevFcf = fcf; started = true;
+      }
     }
     if (!cur) {
       latestGated = false;
@@ -339,7 +369,7 @@ export function analyzeFairValueSeries(series: FairValueInput[], cfg = FAIR_CFG)
       method: cur.method,
     });
   }
-  return { points, latestGated, latestMethod, latestComponents };
+  return { points, latestGated, latestMethod, latestComponents, latestAsOfT };
 }
 
 /**

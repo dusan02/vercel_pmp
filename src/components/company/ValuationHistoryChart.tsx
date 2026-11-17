@@ -444,19 +444,12 @@ export function ValuationHistoryChart({
     [allData, green, red, bands]
   );
 
-  if (!valuationHistory?.length) {
+  const hasAnyHistory = !!(valuationHistory?.length || valuationHistoryPE?.length || valuationHistoryPS?.length);
+  if (!hasAnyHistory) {
     return <div className="text-center text-gray-500 text-sm py-10">No valuation data available.</div>;
   }
 
-  if (!activeHistory?.length) {
-    return (
-      <div className="text-center text-gray-500 text-sm py-10">
-        No {effectiveBasis === 'pe' ? 'P/E' : 'P/S'} valuation data available. Try switching to {effectiveBasis === 'pe' ? 'P/S' : 'P/E'} or Auto mode.
-      </div>
-    );
-  }
-
-  const last = activeHistory[activeHistory.length - 1]!;
+  const last = activeHistory[activeHistory.length - 1];
   const currentUv = activeSummary?.currentUndervaluation ?? last?.undervaluationPct ?? null;
   const avgUv = activeSummary?.avg5yUndervaluation ?? null;
   const cagr = activeSummary?.intrinsicCagr ?? null;
@@ -530,6 +523,14 @@ export function ValuationHistoryChart({
       </ChartControls>
 
       {/* Chart */}
+      {!activeHistory.length ? (
+        <div className="text-center text-gray-500 dark:text-gray-400 text-sm py-12">
+          {effectiveBasis === 'composite'
+            ? 'No composite fair value points in range (outside sanity gate or insufficient history). Try switching to P/E or P/S.'
+            : `No ${effectiveBasis === 'pe' ? 'P/E' : 'P/S'} valuation data available. Try switching to ${effectiveBasis === 'pe' ? 'P/S' : 'P/E'} or Auto.`}
+        </div>
+      ) : (
+      <>
       <ChartPlot className="bg-white dark:bg-gray-900 rounded-xl">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 24 }}>
@@ -737,6 +738,8 @@ export function ValuationHistoryChart({
           )}
         </div>
       </ChartFootnote>
+      </>
+      )}
     </ChartBody>
   );
 }

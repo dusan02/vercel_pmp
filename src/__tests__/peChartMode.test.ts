@@ -62,13 +62,13 @@ const valuationStats = {
   fcfYield: { median: 0.021, p25: 0.016, p75: 0.027, n: 300 },
 };
 
-async function renderChart() {
+async function renderChart(props: Record<string, unknown> = {}) {
   (global as any).IS_REACT_ACT_ENVIRONMENT = true;
   const container = document.createElement('div');
   document.body.appendChild(container);
   const root = createRoot(container);
   await act(async () => {
-    root.render(React.createElement(PriceCandlestickChart, { ticker: 'TEST' }));
+    root.render(React.createElement(PriceCandlestickChart, { ticker: 'TEST', ...props }));
   });
   await act(async () => {
     await Promise.resolve();
@@ -335,31 +335,71 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     expect(container.textContent).toContain('Below = Buy');
     expect(container.textContent).toContain('Above = Sell');
 
-    // Clicking the header valuation pill expands the Fair Value methodology breakdown
+    // Clicking the header valuation pill expands above the chart; clicking P/E + FCF DCF expands right below the legend
     expect(container.textContent).not.toContain('How Fair Value is calculated');
     const hdrBtn = [...container.querySelectorAll('button')].find((b) => b.textContent?.includes('Fair $213'));
+    const methodBtn = [...container.querySelectorAll('button')].find((b) => b.textContent?.includes('P/E + FCF DCF'));
+    const chartSwap = container.querySelector('.pmp-chart-swap');
     expect(hdrBtn).toBeTruthy();
+    expect(methodBtn).toBeTruthy();
+    expect(chartSwap).toBeTruthy();
+    expect(hdrBtn!.getAttribute('aria-expanded')).toBe('false');
+    expect(methodBtn!.getAttribute('aria-expanded')).toBe('false');
+
+    await act(async () => {
+      methodBtn!.click();
+      await Promise.resolve();
+    });
+    expect(methodBtn!.getAttribute('aria-expanded')).toBe('true');
+    expect(hdrBtn!.getAttribute('aria-expanded')).toBe('false');
+    expect(container.textContent).toContain('How Fair Value is calculated');
+    const bottomRegion = container.querySelector('[role="region"][aria-label="Fair value calculation breakdown"]');
+    expect(bottomRegion).toBeTruthy();
+    expect(Boolean(methodBtn!.compareDocumentPosition(bottomRegion!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+
+    await act(async () => {
+      methodBtn!.click();
+      await Promise.resolve();
+    });
+    expect(methodBtn!.getAttribute('aria-expanded')).toBe('false');
+    expect(container.textContent).not.toContain('How Fair Value is calculated');
+
     await act(async () => {
       hdrBtn!.click();
       await Promise.resolve();
     });
+    expect(hdrBtn!.getAttribute('aria-expanded')).toBe('true');
+    expect(methodBtn!.getAttribute('aria-expanded')).toBe('false');
     expect(container.textContent).toContain('How Fair Value is calculated');
     expect(container.textContent).toContain('$280');
     expect(container.textContent).toContain('$146');
     expect(container.textContent).toContain('capped at 15 + 20.0%');
+    const topRegion = container.querySelector('[role="region"][aria-label="Fair value calculation breakdown"]');
+    expect(Boolean(topRegion!.compareDocumentPosition(chartSwap!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+
+    // Clicking bottom method button while top is open moves the panel down beside P/E + FCF DCF instead of closing offscreen
+    await act(async () => {
+      methodBtn!.click();
+      await Promise.resolve();
+    });
+    expect(methodBtn!.getAttribute('aria-expanded')).toBe('true');
+    expect(hdrBtn!.getAttribute('aria-expanded')).toBe('false');
+    const movedRegion = container.querySelector('[role="region"][aria-label="Fair value calculation breakdown"]');
+    expect(Boolean(methodBtn!.compareDocumentPosition(movedRegion!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
 
     const cb = container.querySelector('input[type="checkbox"][aria-label="Fair value"]') as HTMLInputElement | null;
     expect(cb).toBeTruthy();
     expect(cb!.checked).toBe(true);
     expect(cb!.parentElement?.innerHTML).toMatch(/rgb\(37,\s*99,\s*235\)|#2563eb/i);
 
-    // Unchecking the Fair value checkbox hides the badge/zones & persists
+    // Wait — verify breakdown closes automatically when Fair value checkbox is unchecked
     await act(async () => {
       cb!.click();
       await Promise.resolve();
     });
     expect(cb!.checked).toBe(false);
     expect(container.textContent).not.toMatch(/bear \$159/);
+    expect(container.textContent).not.toContain('How Fair Value is calculated');
     expect(JSON.parse(localStorage.getItem('pmp:pricechart:indicators') ?? '[]')).not.toContain('fair');
   });
 
@@ -388,5 +428,39 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
     const { container } = await renderChart();
     expect(container.textContent).toContain('Fair value hidden');
     expect(container.textContent).not.toMatch(/Fair \$213/);
+  });
+
+  it('shows gated note when live quote pushes ratio outside gate range even if last candle was inside gate', async () => {
+    localStorage.clear();
+    const fvCandles = fixtureCandles().map((c, i) => ({
+      ...c,
+      fv: i >= 52 ? 213 : null,
+      fvBear: i >= 52 ? 159 : null,
+      fvBull: i >= 52 ? 324 : null,
+      fvMethod: i >= 52 ? 'pe+dcf' : null,
+    }));
+    (global.fetch as jest.Mock).mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({
+          candles: fvCandles,
+          fairValue: { method: 'pe+dcf', asOf: '2025-09-26' },
+          peStats,
+          valuationStats,
+          evNetDebt: 5e9,
+        }),
+      }),
+    );
+
+    // Live quote collapses to $50 while fv is $213 (ratio 4.26 > 2.5 gate)
+    const { container } = await renderChart({ currentPrice: 50 });
+    expect(container.textContent).toContain('Fair value hidden');
+    const calcBtn = [...container.querySelectorAll('button')].find((b) => b.textContent?.includes("How it's calculated"));
+    expect(calcBtn).toBeTruthy();
+    await act(async () => {
+      calcBtn!.click();
+      await Promise.resolve();
+    });
+    expect(container.textContent).toContain('Sanity gate active');
   });
 });

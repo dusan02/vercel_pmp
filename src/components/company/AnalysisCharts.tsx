@@ -31,7 +31,7 @@ const suspenseFallback = (color: string) => (
 export function AnalysisCharts({ ticker, data, flowPeriods }: AnalysisChartsProps) {
     const hasStatements = !!(data.statements && data.statements.length > 0);
     const hasFlows = !!(flowPeriods && (flowPeriods.annual || flowPeriods.quarterly));
-    const hasValuationHistory = !!(data.valuationHistory && data.valuationHistory.length);
+    const hasValuationHistory = !!(data.valuationHistory?.length || data.valuationHistoryPE?.length || data.valuationHistoryPS?.length);
     const hasScenarioData = !!(
         data.metrics?.currentEps != null &&
         data.metrics.currentEps > 0 &&

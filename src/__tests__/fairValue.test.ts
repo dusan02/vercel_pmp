@@ -7,6 +7,7 @@ import {
   computeFairValueSeries,
   dcfPerShare,
   FAIR_CFG,
+  hasValuationInputs,
   type FairValueInput,
 } from '@/lib/valuation/fairValue';
 
@@ -25,6 +26,8 @@ jest.mock('recharts', () => {
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { ValuationHistoryChart } = require('@/components/company/ValuationHistoryChart');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { FairValueBreakdown } = require('@/components/company/chart/FairValueBreakdown');
 
 const MS_WEEK = 7 * 86400000;
 
@@ -180,5 +183,88 @@ describe('composite fair value engine (point-in-time)', () => {
     expect(container.textContent).toContain('Fair = P/E + FCF DCF');
     expect(container.textContent).toContain('$213.00');
     expect(container.textContent).not.toContain('$445.00');
+  });
+
+  it('carries single trailing un-synced bar cleanly, preserves hasValuationInputs check, and clears stale components on multi-week gaps', () => {
+    expect(hasValuationInputs({ peRatio: null, psRatio: null, fcfYield: null })).toBe(false);
+    expect(hasValuationInputs({ peRatio: 20, psRatio: null, fcfYield: null })).toBe(true);
+    expect(hasValuationInputs({ peRatio: null, psRatio: null, fcfYield: -0.02 })).toBe(true);
+
+    const series = makeSeries(90, (i) => {
+      if (i === 89) return { c: 105, eps: null, rps: null, fcf: null }; // single trailing price-only week
+      return { c: 100, eps: 5, rps: 20, fcf: 4 };
+    });
+    const resTrailing = analyzeFairValueSeries(series);
+    expect(resTrailing.points.at(-1)?.t).toBe(series[89]!.t);
+    expect(resTrailing.latestAsOfT).toBe(series[88]!.t);
+    expect(resTrailing.latestComponents).not.toBeNull();
+
+    // Two missing bars at the end genuinely lose coverage and clear latestComponents
+    const twoGap = series.map((p, i) => (i >= 88 ? { t: p.t, c: p.c, pe: null, ps: null, fcfYield: null } : p));
+    const resGap = analyzeFairValueSeries(twoGap);
+    expect(resGap.points.at(-1)?.t).toBe(series[87]!.t);
+    expect(resGap.latestComponents).toBeNull();
+  });
+
+  it('keeps P/E and P/S toggles usable when composite history is empty, and formats FairValueBreakdown edge cases', async () => {
+    (global as any).IS_REACT_ACT_ENVIRONMENT = true;
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(
+        React.createElement(ValuationHistoryChart, {
+          ticker: 'GATED',
+          valuationHistory: [],
+          valuationHistoryPE: [{ date: '2026-11-16', price: 100, intrinsic: 90, undervaluationPct: -11.1 }],
+          valuationBasis: 'composite',
+        }),
+      );
+    });
+    expect(container.textContent).toContain('Try switching to P/E or P/S');
+    const peTab = [...container.querySelectorAll('button')].find((b) => b.textContent === 'P/E');
+    expect(peTab).toBeTruthy();
+    await act(async () => {
+      peTab!.click();
+      await Promise.resolve();
+    });
+    expect(container.textContent).toContain('$90.00');
+
+    // Negative FCF sign formatting and positive-FCF + missing-growth copy
+    await act(async () => {
+      root.render(
+        React.createElement(FairValueBreakdown, {
+          meta: {
+            method: 'pe',
+            asOf: '2026-11-16',
+            components: {
+              rel: 20, relKind: 'pe', relMultiple: 15, relMedian: 15, relPerShare: 1.33,
+              dcf: null, fcfPerShare: -8.16, growth: 0.1,
+            },
+          },
+          fair: 20, bear: 15, bull: 25, onClose: () => {},
+        }),
+      );
+    });
+    expect(container.textContent).toContain('-$8.16');
+    expect(container.textContent).not.toContain('$-8.16');
+
+    await act(async () => {
+      root.render(
+        React.createElement(FairValueBreakdown, {
+          meta: {
+            method: 'pe',
+            asOf: '2026-11-16',
+            components: {
+              rel: 20, relKind: 'pe', relMultiple: 15, relMedian: 15, relPerShare: 1.33,
+              dcf: null, fcfPerShare: 4.5, growth: null,
+            },
+          },
+          fair: 20, bear: 15, bull: 25, onClose: () => {},
+        }),
+      );
+    });
+    expect(container.textContent).toContain('revenue-growth history <50 weeks');
   });
 });

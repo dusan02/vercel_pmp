@@ -25,16 +25,22 @@ interface FairValueBreakdownProps {
   fair: number | null;
   bear: number | null;
   bull: number | null;
+  liveGated?: boolean;
   onClose: () => void;
 }
 
-export function FairValueBreakdown({ meta, fair, bear, bull, onClose }: FairValueBreakdownProps) {
+function fmtSignedDollar(v: number): string {
+  return v < 0 ? `-$${Math.abs(v).toFixed(2)}` : `$${v.toFixed(2)}`;
+}
+
+export function FairValueBreakdown({ meta, fair, bear, bull, liveGated, onClose }: FairValueBreakdownProps) {
   const c = meta?.components;
   const hasDcf = c?.dcf != null && c.dcf > 0;
   const hasRel = c?.rel != null && c.rel > 0;
   const relWeight = hasRel && hasDcf ? '50%' : hasRel ? '100%' : '0%';
   const dcfWeight = hasRel && hasDcf ? '50%' : hasDcf ? '100%' : '0%';
   const growthPct = c?.growth != null ? `${(c.growth * 100).toFixed(1)}%` : null;
+  const gated = Boolean(meta?.gated || liveGated);
 
   return (
     <div
@@ -64,9 +70,9 @@ export function FairValueBreakdown({ meta, fair, bear, bull, onClose }: FairValu
         </button>
       </div>
 
-      {meta?.gated && (
+      {gated && (
         <p className="mb-2 text-[11px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 rounded px-2.5 py-1.5">
-          Sanity gate active: computed fair value sits outside 0.3×–2.5× of current price (distorted earnings or extreme multiple), so the line is hidden.
+          Sanity gate active: computed fair value sits outside 0.3×–2.5× of current price (distorted earnings or extreme multiple), so the headline gap is hidden.
         </p>
       )}
 
@@ -128,7 +134,11 @@ export function FairValueBreakdown({ meta, fair, bear, bull, onClose }: FairValu
             </p>
           ) : c && (c.fcfPerShare == null || c.fcfPerShare <= 0) ? (
             <p className="text-gray-600 dark:text-gray-400">
-              Skipped (TTM FCF/sh is {c.fcfPerShare != null ? `$${c.fcfPerShare.toFixed(2)}` : 'unavailable'}); 100% weight shifts to the historical multiple.
+              Skipped (TTM FCF/sh is {c.fcfPerShare != null ? fmtSignedDollar(c.fcfPerShare) : 'unavailable'}); 100% weight shifts to the historical multiple.
+            </p>
+          ) : c?.fcfPerShare != null && c.fcfPerShare > 0 && c.growth == null ? (
+            <p className="text-gray-600 dark:text-gray-400">
+              Skipped (revenue-growth history &lt;50 weeks); 100% weight shifts to the historical multiple.
             </p>
           ) : (
             <p className="text-gray-600 dark:text-gray-400">

@@ -3,7 +3,7 @@ import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { prisma } from '@/lib/db/prisma';
 import { TICKER_RENAMES, foreignCutoffMs, spliceContinuous } from '@/lib/tickerRenames';
 import { quarterlyEpsSeries, ntmEpsAt } from '@/lib/utils/forwardEps';
-import { analyzeFairValueSeries, FAIR_CFG, type FairMethod } from '@/lib/valuation/fairValue';
+import { analyzeFairValueSeries, FAIR_CFG, hasValuationInputs, type FairMethod } from '@/lib/valuation/fairValue';
 
 export const revalidate = 3600;
 
@@ -192,31 +192,40 @@ export async function GET(
     // Latest-statement net debt — lets the client scale today's EV/EBIT from
     // the live quote (EV = mcap + netDebt) without another request.
     let evNetDebt: number | null = null;
+    // Paired DVH closes so fairValue recovers EPS/RPS/FCF from the exact close that divided the ratios.
+    const dvhCloses: (number | null)[] = new Array(candles.length).fill(null);
     try {
       const valRows = await prisma.dailyValuationHistory.findMany({
         where: { symbol, date: { gte: fromDate } },
         orderBy: { date: 'asc' },
         select: {
-          date: true, peRatio: true, psRatio: true, pbRatio: true,
+          date: true, closePrice: true, peRatio: true, psRatio: true, pbRatio: true,
           evEbitda: true, fcfYield: true, marketCap: true, peForward: true,
         },
       });
       if (valRows.length) {
         const times = valRows.map(r => r.date.getTime());
         let vi = 0;
-        for (const c of candles) {
+        for (let idx = 0; idx < candles.length; idx++) {
+          const c = candles[idx]!;
           // candle t = first trading day; close happens at end of week —
           // a valuation row up to 4 days after t still belongs to this week.
-          const end = c.t + 4 * 24 * 60 * 60 * 1000;
-          while (vi < times.length - 1 && times[vi + 1]! <= end) vi++;
-          // The row must fall inside THIS candle's week — otherwise a week
-          // without valuation coverage inherits last week's P/E next to this
-          // week's close (NVDA: $173.73 ÷ stale 23.4× → fake $7.44 EPS).
-          if (times[vi]! <= end && times[vi]! >= c.t - 2 * 24 * 60 * 60 * 1000) {
-            const r = valRows[vi]!;
+          const start = c.t - 2 * MS_DAY;
+          const end = c.t + 4 * MS_DAY;
+          while (vi < times.length && times[vi]! < start) vi++;
+          let bestValIdx: number | null = null;
+          let fallbackIdx: number | null = null;
+          for (let k = vi; k < times.length && times[k]! <= end; k++) {
+            fallbackIdx = k;
+            if (hasValuationInputs(valRows[k]!)) bestValIdx = k;
+          }
+          const picked = bestValIdx ?? fallbackIdx;
+          if (picked != null) {
+            const r = valRows[picked]!;
             c.pe = r.peRatio; c.ps = r.psRatio; c.pb = r.pbRatio;
             c.evEbit = r.evEbitda; c.fcfYield = r.fcfYield; c.mcap = r.marketCap;
             c.peCons = r.peForward;
+            if (r.closePrice != null && r.closePrice > 0) dvhCloses[idx] = r.closePrice;
           }
         }
 
@@ -352,7 +361,14 @@ export async function GET(
     } | null = null;
     try {
       const skipDcf = sector === 'Financial Services';
-      const fv = analyzeFairValueSeries(candles, { ...FAIR_CFG, skipDcf });
+      const fvSeriesInput = candles.map((c, idx) => ({
+        t: c.t,
+        c: dvhCloses[idx] ?? c.c,
+        pe: c.pe ?? null,
+        ps: c.ps ?? null,
+        fcfYield: c.fcfYield ?? null,
+      }));
+      const fv = analyzeFairValueSeries(fvSeriesInput, { ...FAIR_CFG, skipDcf });
       const byT = new Map(fv.points.map(p => [p.t, p]));
       for (const c of candles) {
         const p = byT.get(c.t);
@@ -360,7 +376,7 @@ export async function GET(
       }
       const last = fv.points[fv.points.length - 1];
       if (last || fv.latestGated) {
-        const asOfT = fv.latestGated ? (candles[candles.length - 1]?.t ?? last?.t) : last?.t;
+        const asOfT = fv.latestAsOfT ?? (fv.latestGated ? (candles[candles.length - 1]?.t ?? last?.t) : last?.t);
         const method = fv.latestGated ? (fv.latestMethod ?? last?.method) : (last?.method ?? fv.latestMethod);
         const comp = fv.latestComponents;
         const round2 = (v: number | null) => (v != null && Number.isFinite(v) ? +v.toFixed(2) : null);

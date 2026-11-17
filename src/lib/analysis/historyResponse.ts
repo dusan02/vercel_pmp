@@ -5,7 +5,7 @@ import { getCachedData, setCachedData } from '@/lib/redis/operations';
 import { applySplitAdjustments, applyPostSplitAdjustment, buildShareBoundaries, makeShareNormalizer, findNearestSplit } from '@/lib/utils/splitAdjustment';
 import { isPeDistorted } from '@/lib/analysis/peDistortion';
 import { computeTrendSignal } from '@/lib/analysis/trendSignal';
-import { analyzeFairValueSeries, FAIR_CFG, type FairMethod, type FairValueInput } from '@/lib/valuation/fairValue';
+import { analyzeFairValueSeries, FAIR_CFG, hasValuationInputs, type FairMethod, type FairValueInput } from '@/lib/valuation/fairValue';
 
 const HISTORY_CACHE_TTL = 3600; // 1 hour (valuation history changes slowly)
 
@@ -81,12 +81,16 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
             orderBy: { date: 'asc' },
         });
 
-        // Weekly downsample: keep last row of each ISO-week bucket
-        // bucket key = floor(ms / 7days) to avoid date-fns dependency
+        // Weekly downsample: keep last ratio-bearing row of each bucket so a
+        // trailing price-only EOD row never wipes out valid weekly multiples.
         const MS_WEEK = 7 * 24 * 60 * 60 * 1000;
         const weekMap = new Map<number, typeof rows[0]>();
         for (const r of rows) {
-            weekMap.set(Math.floor(r.date.getTime() / MS_WEEK), r);
+            const k = Math.floor(r.date.getTime() / MS_WEEK);
+            const prev = weekMap.get(k);
+            if (!prev || hasValuationInputs(r) || !hasValuationInputs(prev)) {
+                weekMap.set(k, r);
+            }
         }
         const weekly = Array.from(weekMap.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
 
