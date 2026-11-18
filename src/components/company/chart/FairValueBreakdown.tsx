@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FAIR_METHOD_LABEL, formatFairDollar, type FairMethod } from '@/lib/valuation/fairValue';
+import { FAIR_CFG, FAIR_METHOD_LABEL, formatFairDollar, type FairMethod } from '@/lib/valuation/fairValue';
 
 export interface FairValueMeta {
   method: FairMethod;
@@ -72,7 +72,7 @@ export function FairValueBreakdown({ meta, fair, bear, bull, liveGated, onClose 
 
       {gated && (
         <p className="mb-2 text-[11px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 rounded px-2.5 py-1.5">
-          Sanity gate active: computed fair value sits outside 0.3×–2.5× of current price (distorted earnings or extreme multiple), so the headline gap is hidden.
+          Sanity gate active: computed fair value sits outside {FAIR_CFG.gateLow}×–{FAIR_CFG.gate}× of current price (distorted earnings or extreme multiple), so the headline gap is hidden.
         </p>
       )}
 

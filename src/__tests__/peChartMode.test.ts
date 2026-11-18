@@ -122,9 +122,15 @@ describe('PriceCandlestickChart P/E mode (financecharts-style)', () => {
   });
 
   it('offers the finer period set (3M/6M/YTD…All) shared by both modes', async () => {
-    const { container } = await renderChart();
-    const labels = [...container.querySelectorAll('button')].map((b) => b.textContent?.trim());
-    expect(labels).toEqual(expect.arrayContaining(['3M', '6M', 'YTD', '1Y', '3Y', '5Y', 'All']));
+    // Pin mid-year date so YTD (~0.67Y) isn't deduped against 6M or 1Y depending on calendar day.
+    const nowSpy = jest.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 8, 1));
+    try {
+      const { container } = await renderChart();
+      const labels = [...container.querySelectorAll('button')].map((b) => b.textContent?.trim());
+      expect(labels).toEqual(expect.arrayContaining(['3M', '6M', 'YTD', '1Y', '3Y', '5Y', 'All']));
+    } finally {
+      nowSpy.mockRestore();
+    }
   });
 
   it('P/E mode shows × headline with premium vs median', async () => {

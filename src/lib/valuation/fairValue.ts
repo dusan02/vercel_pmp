@@ -81,11 +81,11 @@ export const FAIR_CFG = {
   gMax: 0.20,
   growthLookbackWeeks: 260,
   minGrowthLookbackWeeks: 50,
-  /** hide when base/price outside [gateLow, gate] — honest gap, not "+400 %".
-   *  Asymmetric: a quality compounder at −60 % vs fair (COST, WMT) is a real
-   *  view, while +150 % almost always means depressed/peak-cycle inputs. */
+  /** hide when base/price outside [gateLow, gate] — upper gate blocks "+400%"
+   *  depressed-EPS outliers; lower 0.05× floor (matches historyResponse) drops only
+   *  near-zero-earnings collapses without cutting gaps during growth rallies (NVDA '23-'24). */
   gate: 2.5,
-  gateLow: 0.3,
+  gateLow: 0.05,
   /** Banks/insurers: operating cash flow includes deposits/float — FCF DCF is
    *  meaningless there, relative multiple only. */
   skipDcf: false,

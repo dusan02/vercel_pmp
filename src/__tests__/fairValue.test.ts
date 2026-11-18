@@ -153,6 +153,27 @@ describe('composite fair value engine (point-in-time)', () => {
     const resGated = analyzeFairValueSeries(gatedSeries);
     expect(resGated.latestGated).toBe(true);
     expect(resGated.points.some((p) => p.t >= gatedSeries[90]!.t)).toBe(false);
+
+    // Growth rally running 5× ahead of trailing TTM fair value (~0.20× ratio >= 0.05) stays continuous
+    const rallySeries = makeSeries(100, (i) => ({
+      c: i >= 90 ? 500 : 100,
+      eps: 5,
+      rps: 20,
+      fcf: 4,
+    }));
+    const resRally = analyzeFairValueSeries(rallySeries);
+    expect(resRally.latestGated).toBe(false);
+    expect(resRally.points.some((p) => p.t >= rallySeries[90]!.t)).toBe(true);
+
+    // Extreme <0.05× (20×+ over fair value) still trips lower gate
+    const extremeSeries = makeSeries(100, (i) => ({
+      c: i >= 90 ? 3000 : 100,
+      eps: 5,
+      rps: 20,
+      fcf: 4,
+    }));
+    const resExtreme = analyzeFairValueSeries(extremeSeries);
+    expect(resExtreme.latestGated).toBe(true);
   });
 
   it('ValuationHistoryChart renders composite Auto (Fair) basis without falling back to PE/PS', async () => {
