@@ -511,7 +511,7 @@ export function KeyMetricsTable({ data, insiderTransactions, insiderActivity }: 
                 history bar. Four equal pillar cards follow below, keeping
                 comparable rows aligned; per-share / balance-sheet / market
                 context stays available in the additional-metrics disclosure. */}
-            <div className="grid gap-3 items-start">
+            <div className="grid grid-cols-1 gap-3 items-start">
                 {/* ── TTM snapshot — headline absolute amounts with YoY chips;
                     the strip that used to sit alone above the chart grid now
                     opens this table so ratios below share one as-of period ── */}

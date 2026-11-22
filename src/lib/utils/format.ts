@@ -28,6 +28,19 @@ export const formatMarketCap = (value: number | null | undefined): string => {
 };
 
 /**
+ * Formats a market capitalization stored in billions for natural-language SEO prose
+ * (e.g. 250 -> "$250.0 billion", 3100 -> "$3.10 trillion").
+ */
+export const formatMarketCapProse = (value: number | null | undefined): string => {
+  if (value == null || !isFinite(value) || value <= 0) return '';
+  const b = value > 100_000 ? value / 1_000_000_000 : value;
+  if (b >= 1000) return `$${(b / 1000).toFixed(2)} trillion`;
+  if (b >= 1) return `$${b.toFixed(1)} billion`;
+  if (b >= 0.001) return `$${(b * 1000).toFixed(0)} million`;
+  return `$${b.toFixed(0)}`;
+};
+
+/**
  * Legacy wrapper for formatMarketCap
  */
 export const formatBillions = (num: number) => formatMarketCap(num);

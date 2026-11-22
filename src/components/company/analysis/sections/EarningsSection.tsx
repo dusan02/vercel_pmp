@@ -105,31 +105,37 @@ export function EarningsSection({ upcoming, recent, embedded = false }: Earnings
             <table className="pmp-clean-table w-full text-xs sm:text-sm">
               <thead className="bg-gray-50/90 dark:bg-gray-900/60 text-left text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700 whitespace-nowrap">
                 <tr>
-                  <th scope="col" className="px-2 sm:px-3 py-2 font-medium">Date</th>
-                  <th scope="col" className="px-2 sm:px-3 py-2 font-medium">Time</th>
-                  <th scope="col" className="px-2 sm:px-3 py-2 font-medium text-right">EPS Est.</th>
-                  <th scope="col" className="px-2 sm:px-3 py-2 font-medium text-right">EPS Actual</th>
-                  <th scope="col" className="px-2 sm:px-3 py-2 font-medium">Surprise</th>
-                  <th scope="col" className="px-2 sm:px-3 py-2 font-medium text-right">Rev Est.</th>
-                  <th scope="col" className="px-2 sm:px-3 py-2 font-medium text-right">Rev Actual</th>
+                  <th scope="col" className="px-1.5 sm:px-3 py-2 font-medium">Date</th>
+                  <th scope="col" className="hidden sm:table-cell px-2 sm:px-3 py-2 font-medium">Time</th>
+                  <th scope="col" className="px-1.5 sm:px-3 py-2 font-medium text-right">EPS Est.</th>
+                  <th scope="col" className="px-1.5 sm:px-3 py-2 font-medium text-right">
+                    <span className="sm:hidden">EPS Act.</span>
+                    <span className="hidden sm:inline">EPS Actual</span>
+                  </th>
+                  <th scope="col" className="px-1.5 sm:px-3 py-2 font-medium">Surprise</th>
+                  <th scope="col" className="hidden md:table-cell px-2 sm:px-3 py-2 font-medium text-right">Rev Est.</th>
+                  <th scope="col" className="px-1.5 sm:px-3 py-2 font-medium text-right">
+                    <span className="sm:hidden">Rev Act.</span>
+                    <span className="hidden sm:inline">Rev Actual</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
                 {usefulRecent.map((e) => (
                   <tr key={`${e.date}-${e.time}`} className="hover:bg-gray-50/60 dark:hover:bg-gray-700/20">
-                    <td className="px-2 sm:px-3 py-2 tabular-nums whitespace-nowrap text-gray-700 dark:text-gray-300">{formatDateShort(e.date)}</td>
-                    <td className="px-2 sm:px-3 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300">{timeLabel(e.time)}</td>
-                    <td className="px-2 sm:px-3 py-2 tabular-nums whitespace-nowrap text-right text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsEstimate)}</td>
-                    <td className="px-2 sm:px-3 py-2 tabular-nums whitespace-nowrap text-right text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsActual)}</td>
-                    <td className="px-2 sm:px-3 py-2 whitespace-nowrap">
+                    <td className="px-1.5 sm:px-3 py-2 tabular-nums whitespace-nowrap text-gray-700 dark:text-gray-300">{formatDateShort(e.date)}</td>
+                    <td className="hidden sm:table-cell px-2 sm:px-3 py-2 whitespace-nowrap text-gray-700 dark:text-gray-300">{timeLabel(e.time)}</td>
+                    <td className="px-1.5 sm:px-3 py-2 tabular-nums whitespace-nowrap text-right text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsEstimate)}</td>
+                    <td className="px-1.5 sm:px-3 py-2 tabular-nums whitespace-nowrap text-right text-gray-700 dark:text-gray-300">{formatEpsShort(e.epsActual)}</td>
+                    <td className="px-1.5 sm:px-3 py-2 whitespace-nowrap">
                       {e.epsSurprisePercent != null ? (
                         <SurpriseBar surprise={e.epsSurprisePercent} />
                       ) : (
                         <span className="text-gray-500">—</span>
                       )}
                     </td>
-                    <td className="px-2 sm:px-3 py-2 tabular-nums whitespace-nowrap text-right text-gray-700 dark:text-gray-300">{formatRevShort(e.revenueEstimate)}</td>
-                    <td className="px-2 sm:px-3 py-2 tabular-nums whitespace-nowrap text-right text-gray-700 dark:text-gray-300">{formatRevShort(e.revenueActual)}</td>
+                    <td className="hidden md:table-cell px-2 sm:px-3 py-2 tabular-nums whitespace-nowrap text-right text-gray-700 dark:text-gray-300">{formatRevShort(e.revenueEstimate)}</td>
+                    <td className="px-1.5 sm:px-3 py-2 tabular-nums whitespace-nowrap text-right text-gray-700 dark:text-gray-300">{formatRevShort(e.revenueActual)}</td>
                   </tr>
                 ))}
               </tbody>

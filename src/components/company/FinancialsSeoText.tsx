@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatMarketCapProse } from '@/lib/utils/format';
 
 interface FinancialsSeoTextProps {
   ticker: string;
@@ -48,7 +49,8 @@ export function FinancialsSeoText({
     ? ` operating in the ${sector} sector${industry ? `, specifically the ${industry} industry` : ''}`
     : '';
   const priceText = price != null ? ` trading at $${price.toFixed(2)}` : '';
-  const mcapText = marketCap != null ? ` with a market capitalization of ${formatLarge(marketCap)}` : '';
+  const mcapStr = formatMarketCapProse(marketCap);
+  const mcapText = mcapStr ? ` with a market capitalization of ${mcapStr}` : '';
   const revText = revenueLatest != null
     ? ` Most recently, ${companyName} reported revenue of ${formatLarge(revenueLatest)}`
     : '';

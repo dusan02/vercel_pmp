@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatMarketCapProse } from '@/lib/utils/format';
 
 interface SeoTextSectionProps {
   ticker: string;
@@ -13,15 +14,6 @@ interface SeoTextSectionProps {
   hasValuation: boolean;
   hasFinancials: boolean;
   peersCount: number;
-}
-
-function formatMarketCap(value: number | null): string {
-  if (value == null || value === 0) return '';
-  // lastMarketCap is stored in billions in the DB
-  if (value >= 1000) return `$${(value / 1000).toFixed(2)} trillion`;
-  if (value >= 1) return `$${value.toFixed(1)} billion`;
-  if (value >= 0.001) return `$${(value * 1000).toFixed(0)} million`;
-  return `$${value.toFixed(0)}`;
 }
 
 function healthLabel(score: number | null): string {
@@ -55,7 +47,7 @@ export function SeoTextSection({
 }: SeoTextSectionProps) {
   const priceStr = price != null ? `$${price.toFixed(2)}` : null;
   const changeStr = changePct != null ? `${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%` : null;
-  const mcapStr = formatMarketCap(marketCap);
+  const mcapStr = formatMarketCapProse(marketCap);
   const healthStr = healthLabel(healthScore);
   const healthNum = healthScore != null ? `${Math.round(healthScore)}/100` : '';
 

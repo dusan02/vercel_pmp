@@ -28,7 +28,6 @@ import { AnalysisHero } from '@/components/company/analysis/sections/AnalysisHer
 import { TickerNavigator } from '@/components/company/analysis/TickerNavigator';
 import { getTickerNav, getSimilarTickers } from '@/lib/analysis/tickerNav';
 import { TrackPageEvent } from '@/components/analytics/TrackPageEvent';
-import { CompanyOverviewSection } from '@/components/company/analysis/sections/CompanyOverviewSection';
 import { KeyInsightsSection } from '@/components/company/analysis/sections/KeyInsightsSection';
 import { MoverInsightSection } from '@/components/company/analysis/sections/MoverInsightSection';
 import PillarsRadar, { PillarChips } from '@/components/company/analysis/PillarsRadar';
@@ -44,7 +43,6 @@ import { AnalysisFaqSection, buildAnalysisFaq, buildFaqSchema } from '@/componen
 import { AnalysisCrossLinks } from '@/components/company/analysis/sections/AnalysisCrossLinks';
 import { SeoTextSection } from '@/components/company/SeoTextSection';
 import { AnalysisStockSearch } from '@/components/AnalysisStockSearch';
-import { ThesisCard } from '@/components/company/analysis/sections/ThesisCard';
 import { PmpVerdict } from '@/components/company/analysis/sections/PmpVerdict';
 import { getMatchedScreens } from '@/lib/analysis/matchedScreens';
 import { renderPresetIcon } from '@/lib/utils/screenerIcons';
@@ -352,7 +350,7 @@ export default async function AnalysisPage({ params }: PageProps) {
           )}
 
           {/* ROW 1: Hero Card (with integrated About & Report Pills) + 6-Axis Profile Radar */}
-          <div className={`mb-4 grid gap-4 ${hasPillars ? 'lg:grid-cols-[minmax(0,1fr)_23.5rem]' : 'grid-cols-1'} lg:items-stretch`}>
+          <div className={`mb-4 grid grid-cols-1 gap-4 ${hasPillars ? 'lg:grid-cols-[minmax(0,1fr)_23.5rem]' : ''} lg:items-stretch`}>
             <AnalysisHero
               ticker={tickerUpper}
               companyName={companyName}

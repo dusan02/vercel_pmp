@@ -123,7 +123,7 @@ export function AnalysisHero({
     || earningsLabel != null;
 
   return (
-    <div className="h-full flex flex-col justify-between rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-5">
+    <div className="h-full flex flex-col justify-between min-w-0 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-5">
       <div>
       <div className="flex flex-wrap items-start sm:items-end justify-between gap-2.5">
         <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto sm:flex-1">

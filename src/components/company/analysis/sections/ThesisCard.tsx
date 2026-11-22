@@ -2,48 +2,18 @@ import type { AnalysisData } from '../types';
 import { isPeDistorted } from '@/lib/analysis/peDistortion';
 
 /**
- * Thesis on one screen — scannable bull/bear evidence summary under the hero.
- * Every chip is a threshold rule over data the page already renders deeper
- * down; this card just surfaces the verdict-relevant subset first.
- *
- * Server component — no interactivity, renders in SSR HTML for crawlers.
+ * Quantitative bull/risk thesis point extraction for PmpVerdict.
+ * Every point is a threshold rule over data the page renders deeper down.
  */
-interface ThesisCardProps {
-    analysisData: AnalysisData | null;
-    cache: {
-        piotroskiScore: number | null;
-        altmanZ: number | null;
-        beneishScore: number | null;
-        revenueCagr: number | null;
-        negativeNiYears: number | null;
-    } | null;
-    roe: number | null;
-    /** Render only one panel or unified combined panel. */
-    only?: 'strengths' | 'risks' | 'combined';
+interface ThesisCache {
+    piotroskiScore: number | null;
+    altmanZ: number | null;
+    beneishScore: number | null;
+    revenueCagr: number | null;
+    negativeNiYears: number | null;
 }
 
 const fmt = (v: number, d = 1) => v.toFixed(d);
-
-function EvidenceList({ title, items, icon, iconClass }: {
-    title: string;
-    items: string[];
-    icon: string;
-    iconClass: string;
-}) {
-    return (
-        <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">{title}</p>
-            <ul className="space-y-1.5">
-                {items.slice(0, 5).map((s) => (
-                    <li key={s} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300 leading-snug">
-                        <span className={`mt-0.5 shrink-0 font-bold ${iconClass}`}>{icon}</span>
-                        <span>{s}</span>
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-}
 
 export function computeThesisPoints({
     analysisData,
@@ -51,7 +21,7 @@ export function computeThesisPoints({
     roe,
 }: {
     analysisData?: AnalysisData | null;
-    cache?: ThesisCardProps['cache'];
+    cache?: ThesisCache | null;
     roe?: number | null;
 }): { strengths: string[]; risks: string[] } {
     const m = analysisData?.metrics ?? null;
@@ -127,37 +97,4 @@ export function computeThesisPoints({
     }
 
     return { strengths, risks };
-}
-
-export function ThesisCard({ analysisData, cache, roe, only }: ThesisCardProps) {
-    const { strengths, risks } = computeThesisPoints({ analysisData, cache, roe });
-
-    if (strengths.length === 0 && risks.length === 0) return null;
-    if (only === 'strengths') {
-        return strengths.length > 0 ? (
-            <div className="flex-1 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
-                <EvidenceList title="Bull Case" items={strengths} icon="✓" iconClass="text-emerald-500" />
-            </div>
-        ) : null;
-    }
-    if (only === 'risks') {
-        return risks.length > 0 ? (
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
-                <EvidenceList title="Risk Flags" items={risks} icon="⚠" iconClass="text-amber-500" />
-            </div>
-        ) : null;
-    }
-
-    return (
-        <div className="flex-1 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 flex flex-col justify-between gap-3">
-            {strengths.length > 0 && (
-                <EvidenceList title="Bull Case" items={strengths} icon="✓" iconClass="text-emerald-500" />
-            )}
-            {risks.length > 0 && (
-                <div className={strengths.length > 0 ? 'pt-3 border-t border-dashed border-gray-200 dark:border-gray-800' : ''}>
-                    <EvidenceList title="Risk Flags" items={risks} icon="⚠" iconClass="text-amber-500" />
-                </div>
-            )}
-        </div>
-    );
 }

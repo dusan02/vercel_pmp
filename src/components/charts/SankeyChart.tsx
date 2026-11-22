@@ -55,6 +55,7 @@ const COL_GAP = 145;
 // Narrow viewports: tighter gaps keep labels legible — a 560px viewBox
 // squeezed into ~350px rendered width shrinks text to ~7px.
 const COL_GAP_COMPACT = 118;
+const COL_GAP_COMPACT_DENSE = 104;
 const PAD_T = 10;
 const PAD_B = 10;
 // Minimum node heights for label rows to fit without crowding
@@ -66,7 +67,7 @@ const LABEL_BLOCK_1 = 16; // label only
 /** viewBox width the chart will use for a given column count — callers
  *  need it to back-compute a viewBox height that fills a measured box. */
 export function sankeyViewBoxWidth(colCount: number, compact = false) {
-    const gap = compact ? COL_GAP_COMPACT : COL_GAP;
+    const gap = compact ? (colCount >= 5 ? COL_GAP_COMPACT_DENSE : COL_GAP_COMPACT) : COL_GAP;
     return Math.max(compact ? 360 : 560, PAD_L + PAD_R + NODE_W + (colCount - 1) * gap);
 }
 
@@ -103,21 +104,73 @@ export default function SankeyChart({ columns, links, total, formatValue, height
     // Label de-overlap: two adjacent nodes in one column get centred labels a
     // few px apart that overlap (e.g. thin CapEx right above a huge FCF block).
     // Enforce a minimum gap between label-block edges, pushing labels down.
+    const getSide = (ci: number, n: SankeyNode): 'left' | 'right' => n.labelSide ?? (ci === 0 ? 'right' : 'left');
+    const getBlockH = (h: number): number => (h >= SHOW_VALUE_MIN_H ? LABEL_BLOCK_2 : LABEL_BLOCK_1);
+    const estTextWidth = (n: SankeyNode, h: number): number => {
+        const valText = h >= SHOW_VALUE_MIN_H ? `${formatValue(n.value)}${n.sub ? ` · ${n.sub}` : ''}` : '';
+        return Math.max(n.label.length * 6.4, valText.length * 5.6);
+    };
     const labelCenter = new Map<string, number>();
-    columns.forEach((col) => {
+    const enforceColumnSpacing = (col: SankeyNode[]) => {
         let prevBottom = -Infinity;
         [...col]
             .sort((a, b) => (laid.get(a.id)?.y ?? 0) - (laid.get(b.id)?.y ?? 0))
             .forEach((n) => {
                 const l = laid.get(n.id);
                 if (!l || l.h < SHOW_LABEL_MIN_H) return;
-                const blockH = l.h >= SHOW_VALUE_MIN_H ? LABEL_BLOCK_2 : LABEL_BLOCK_1;
-                let center = l.y + l.h / 2;
+                const blockH = getBlockH(l.h);
+                let center = labelCenter.get(n.id) ?? (l.y + l.h / 2);
                 if (center - blockH / 2 < prevBottom + 3) center = prevBottom + 3 + blockH / 2;
                 prevBottom = center + blockH / 2;
                 labelCenter.set(n.id, center);
             });
-    });
+    };
+    columns.forEach(enforceColumnSpacing);
+
+    // Cross-column shared-gap de-overlap: stagger opposing right/left labels
+    // that project into the same inter-column gap at nearly the same height.
+    const minC = PAD_T + 15;
+    const maxC = Math.max(minC, height - PAD_B - 15);
+    const clampC = (v: number) => Math.max(minC, Math.min(maxC, v));
+    for (let ci = 0; ci < colCount - 1; ci++) {
+        const gapAvail = colX(ci + 1) - (colX(ci) + NODE_W) - 16;
+        const rightGoing = columns[ci]!.filter(
+            (n) => (laid.get(n.id)?.h ?? 0) >= SHOW_LABEL_MIN_H && getSide(ci, n) === 'right',
+        );
+        const leftGoing = columns[ci + 1]!.filter(
+            (n) => (laid.get(n.id)?.h ?? 0) >= SHOW_LABEL_MIN_H && getSide(ci + 1, n) === 'left',
+        );
+        let shifted = false;
+        for (const rNode of rightGoing) {
+            const rLaid = laid.get(rNode.id)!;
+            for (const lNode of leftGoing) {
+                const lLaid = laid.get(lNode.id)!;
+                const rCenter = labelCenter.get(rNode.id) ?? (rLaid.y + rLaid.h / 2);
+                const lCenter = labelCenter.get(lNode.id) ?? (lLaid.y + lLaid.h / 2);
+                const minVGap = (getBlockH(rLaid.h) + getBlockH(lLaid.h)) / 2 + 2;
+                const neededW = estTextWidth(rNode, rLaid.h) + estTextWidth(lNode, lLaid.h) + 8;
+                if (neededW > gapAvail && Math.abs(rCenter - lCenter) < minVGap) {
+                    const mid = (rCenter + lCenter) / 2;
+                    if (rCenter <= lCenter) {
+                        const rNext = clampC(mid - minVGap / 2);
+                        const lNext = clampC(Math.max(mid + minVGap / 2, rNext + minVGap));
+                        labelCenter.set(rNode.id, clampC(Math.min(rNext, lNext - minVGap)));
+                        labelCenter.set(lNode.id, lNext);
+                    } else {
+                        const lNext = clampC(mid - minVGap / 2);
+                        const rNext = clampC(Math.max(mid + minVGap / 2, lNext + minVGap));
+                        labelCenter.set(lNode.id, clampC(Math.min(lNext, rNext - minVGap)));
+                        labelCenter.set(rNode.id, rNext);
+                    }
+                    shifted = true;
+                }
+            }
+        }
+        if (shifted) {
+            enforceColumnSpacing(columns[ci]!);
+            enforceColumnSpacing(columns[ci + 1]!);
+        }
+    }
 
     // Compute link ribbons — track running offsets so flows stack inside nodes
     const outOffset = new Map<string, number>();
@@ -148,7 +201,6 @@ export default function SankeyChart({ columns, links, total, formatValue, height
         <svg
             viewBox={`0 0 ${W} ${height}`}
             className="w-full h-auto select-none"
-            style={colCount > 4 ? { minWidth: compact ? 480 : W } : undefined}
             role="img"
             aria-label="Financial flows diagram"
         >
@@ -162,7 +214,7 @@ export default function SankeyChart({ columns, links, total, formatValue, height
                 col.map((n) => {
                     const l = laid.get(n.id);
                     if (!l) return null;
-                    const side = n.labelSide ?? (ci === 0 ? 'right' : 'left');
+                    const side = getSide(ci, n);
                     const labelX = side === 'right' ? l.x + NODE_W + 8 : l.x - 8;
                     const anchor = side === 'right' ? 'start' : 'end';
                     // Dense columns (balance sheet leaves) — thin nodes can't

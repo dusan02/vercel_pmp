@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/db/prisma';
 import { generatePageMetadata, shortName } from '@/lib/seo/metadata';
 import { getCompanyName } from '@/lib/companyNames';
+import { formatMarketCap, formatPrice } from '@/lib/utils/format';
 import {
   hasFinancialsData,
   getFinancialStatements,
@@ -146,6 +147,7 @@ export default async function FinancialsPage({ params }: PageProps) {
   if (statements.length < 4) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <StandaloneHeader />
         <main className="max-w-4xl mx-auto px-4 py-8">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             {companyName} ({tickerUpper}) Financials
@@ -451,7 +453,7 @@ export default async function FinancialsPage({ params }: PageProps) {
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Current Price: </span>
                     <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
-                      ${data.lastPrice.toFixed(2)}
+                      ${formatPrice(data.lastPrice)}
                     </span>
                   </div>
                 )}
@@ -459,7 +461,7 @@ export default async function FinancialsPage({ params }: PageProps) {
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Market Cap: </span>
                     <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
-                      {data.lastMarketCap >= 1000 ? `$${(data.lastMarketCap / 1000).toFixed(2)}T` : `$${data.lastMarketCap.toFixed(1)}B`}
+                      ${formatMarketCap(data.lastMarketCap)}
                     </span>
                   </div>
                 )}

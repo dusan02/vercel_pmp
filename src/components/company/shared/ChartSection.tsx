@@ -56,7 +56,7 @@ export function ChartSection({
     }, [title]);
 
     return (
-        <div ref={rootRef} className={`bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 overflow-visible h-full flex flex-col ${
+        <div ref={rootRef} className={`bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 overflow-visible h-full flex flex-col min-w-0 ${
             bleed
                 ? '-mx-4 rounded-none border-x-0 p-3 sm:mx-0 sm:rounded-xl sm:border-x sm:p-6'
                 : 'rounded-xl p-4 sm:p-6'
@@ -70,7 +70,7 @@ export function ChartSection({
                     <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 line-clamp-2 sm:truncate leading-snug" title={subtitle}>{subtitle}</p>
                 </div>
             </div>
-            {hasData ? <div className="flex-1 min-h-0">{children}</div> : (
+            {hasData ? <div className="flex-1 min-h-0 min-w-0">{children}</div> : (
                 <div className="text-sm text-gray-500 dark:text-gray-500 italic py-8 text-center">
                     {emptyMessage ?? 'No data available. Click Refresh Analysis to fetch data.'}
                 </div>

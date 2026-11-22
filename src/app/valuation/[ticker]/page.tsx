@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db/prisma';
 import { generatePageMetadata, shortName } from '@/lib/seo/metadata';
 import { getCompanyName } from '@/lib/companyNames';
 import { formatPercent, formatPrice } from '@/lib/utils/heatmapFormat';
+import { formatMarketCap } from '@/lib/utils/format';
 import {
   hasValuationData,
   getValuationHistory,
@@ -394,7 +395,7 @@ export default async function ValuationPage({ params }: PageProps) {
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Market Cap: </span>
                     <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
-                      {data.lastMarketCap >= 1000 ? `$${(data.lastMarketCap / 1000).toFixed(2)}T` : `$${data.lastMarketCap.toFixed(1)}B`}
+                      ${formatMarketCap(data.lastMarketCap)}
                     </span>
                   </div>
                 )}

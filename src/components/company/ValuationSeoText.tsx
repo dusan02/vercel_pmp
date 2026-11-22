@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatMarketCapProse } from '@/lib/utils/format';
 
 interface ValuationSeoTextProps {
   ticker: string;
@@ -52,9 +53,8 @@ export function ValuationSeoText({
     ? ` operating in the ${sector} sector${industry ? `, specifically the ${industry} industry` : ''}`
     : '';
   const priceText = price != null ? ` currently trading at $${price.toFixed(2)}` : '';
-  const mcapText = marketCap != null
-    ? ` with a market capitalization of ${marketCap >= 1000 ? `$${(marketCap / 1000).toFixed(2)} trillion` : `$${marketCap.toFixed(1)} billion`}`
-    : '';
+  const mcapStr = formatMarketCapProse(marketCap);
+  const mcapText = mcapStr ? ` with a market capitalization of ${mcapStr}` : '';
   const peText = peCurrent != null && peMedian != null
     ? ` The P/E ratio of ${formatRatio(peCurrent)} is ${peCurrent > peMedian ? 'above' : 'below'} the historical median of ${formatRatio(peMedian)}, placing ${ticker} at the ${pePercentile ?? 50}th percentile of its valuation range`
     : '';

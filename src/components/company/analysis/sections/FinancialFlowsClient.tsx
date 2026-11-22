@@ -237,7 +237,7 @@ function buildBalanceSheet(p: FlowPeriod): FlowSpec | null {
     const debtChildren: SankeyNode[] = [];
 
     if (L > 0) {
-        right.push({ id: 'liab', label: 'Total Liabilities', value: L, color: C.liab, sub: sub(L) });
+        right.push({ id: 'liab', label: 'Total Liab.', value: L, color: C.liab, sub: sub(L) });
         links.push({ from: 'assets', to: 'liab', value: L });
         const cl = p.currentLiabilities;
         if (cl != null && cl > 0 && cl <= L) {
@@ -245,7 +245,7 @@ function buildBalanceSheet(p: FlowPeriod): FlowSpec | null {
             links.push({ from: 'liab', to: 'cl', value: cl });
             const ltl = Math.max(0, L - cl);
             if (ltl > 0) {
-                children.push({ id: 'ltl', label: 'LT Liabilities', value: ltl, color: C.ltLiab, sub: sub(ltl) });
+                children.push({ id: 'ltl', label: 'LT Liab.', value: ltl, color: C.ltLiab, sub: sub(ltl) });
                 links.push({ from: 'liab', to: 'ltl', value: ltl });
                 const d = Math.min(pos(p.totalDebt), ltl);
                 const otherLTL = Math.max(0, ltl - d);
@@ -266,7 +266,7 @@ function buildBalanceSheet(p: FlowPeriod): FlowSpec | null {
         const re = p.retainedEarnings;
         if (re != null && re > 0) {
             const rv = Math.min(re, E);
-            children.push({ id: 're', label: 'Retained Earnings', value: rv, color: C.ebit, sub: sub(rv) });
+            children.push({ id: 're', label: 'Retained Earn.', value: rv, color: C.ebit, sub: sub(rv) });
             links.push({ from: 'eq', to: 're', value: rv });
             const otherEq = Math.max(0, E - rv);
             if (otherEq > 0) {
@@ -343,7 +343,7 @@ export function SankeyCell({ kind, annual, quarterly }: { kind: FlowKind; annual
     const compact = slot ? slot.w < 520 : true;
     const viewW = sankeyViewBoxWidth(spec.columns.length, compact);
     const svgW = slot ? Math.max(viewW, slot.w) : viewW;
-    const chartH = compact ? 250 : (slot ? Math.min(360, Math.max(240, Math.floor(slot.h * (viewW / svgW)))) : 280);
+    const chartH = compact ? (spec.columns.length >= 5 ? 275 : 245) : (slot ? Math.min(360, Math.max(240, Math.floor(slot.h * (viewW / svgW)))) : 280);
     return (
         <ChartBody>
             {/* Fixed-height controls band — rendered even when a single period

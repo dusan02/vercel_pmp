@@ -1358,7 +1358,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
   }
 
   return (
-    <div>
+    <div className="min-w-0">
       {/* Ticker slider + chart identity — step through the nav universe
           without leaving the chart context; the persisted view keeps the
           same metric across hops. Rendered even without neighbors so the
@@ -1775,7 +1775,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
                 key={p.label}
                 type="button"
                 onClick={() => animatedSet(() => { setPeriod(p.label); setPeBrush(null); setPeEpoch((e) => e + 1); gaEvent('chart_period', { period: p.label, ticker }); })}
-                className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${
+                className={`px-2 sm:px-3 py-1 text-xs font-bold rounded-md transition-colors ${
                   activePeriod === p.label
                     ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
