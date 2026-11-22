@@ -126,7 +126,7 @@ export function AnalysisHero({
     <div className="h-full flex flex-col justify-between rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-5">
       <div>
       <div className="flex flex-wrap items-start sm:items-end justify-between gap-2.5">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto sm:flex-1">
           <img
             src={`/api/logo/${encodeURIComponent(ticker)}?s=64&prefer=icon`}
             alt={`${companyName} (${ticker}) logo`}
@@ -148,22 +148,22 @@ export function AnalysisHero({
             </h1>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto sm:shrink-0 min-w-0 max-w-full">
           <a
             href={`https://stockcv.com/${ticker}`}
             target="_blank"
             rel="noopener noreferrer"
             title={`Check full company CV & fundamentals of ${companyName} (${ticker}) on StockCV`}
-            className="group inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800/80 bg-gradient-to-r from-indigo-50/90 to-blue-50/70 dark:from-indigo-950/40 dark:to-blue-950/30 text-indigo-900 dark:text-indigo-200 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-sm transition-all"
+            className="group inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800/80 bg-gradient-to-r from-indigo-50/90 to-blue-50/70 dark:from-indigo-950/40 dark:to-blue-950/30 text-indigo-900 dark:text-indigo-200 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-sm transition-all min-w-0 max-w-full"
           >
             <div className="w-6 h-6 rounded bg-indigo-100 dark:bg-indigo-900/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0 group-hover:scale-110 transition-transform">
               <FileText className="w-3.5 h-3.5" />
             </div>
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col text-left min-w-0">
               <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 dark:text-indigo-400 leading-none">
                 StockCV ↗
               </span>
-              <span className="text-xs font-semibold text-gray-900 dark:text-white leading-tight">
+              <span className="text-[11px] sm:text-xs font-semibold text-gray-900 dark:text-white leading-tight truncate">
                 Check CV of this company
               </span>
             </div>

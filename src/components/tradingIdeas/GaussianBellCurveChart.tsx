@@ -30,7 +30,7 @@ export function GaussianBellCurveChart({
   const availableTabs = useMemo(() => {
     const tabs: { key: MetricTabKey; label: string; shortLabel: string }[] = [
       { key: 'dailyRsi', label: 'Daily RSI (14)', shortLabel: 'Daily RSI' },
-      { key: 'weeklyRsi', label: 'Weekly RSI (14)', shortLabel: 'Weekly RSI' },
+      { key: 'weeklyRsi', label: 'Weekly RSI (14)', shortLabel: 'Wkly RSI' },
       { key: 'weeklySma200Dist', label: 'Distance from 200W SMA (%)', shortLabel: '200W SMA' },
       { key: 'dailySma200Dist', label: 'Distance from 200D SMA (%)', shortLabel: '200D SMA' },
     ];
@@ -158,7 +158,7 @@ export function GaussianBellCurveChart({
       {/* Header + Metric Switcher */}
       {compact ? (
         <div className="mb-2">
-          <div className="grid grid-flow-col auto-cols-fr gap-0.5 bg-gray-100 dark:bg-gray-800/80 p-1 rounded-lg">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-0.5 bg-gray-100 dark:bg-gray-800/80 p-1 rounded-lg">
             {availableTabs.map((tab) => {
               const active = activeMetric === tab.key;
               return (
@@ -166,7 +166,7 @@ export function GaussianBellCurveChart({
                   key={tab.key}
                   type="button"
                   onClick={() => setActiveMetric(tab.key)}
-                  className={`px-1 py-1 rounded text-[10.5px] font-semibold truncate transition-all ${
+                  className={`flex-1 min-w-0 text-center px-1 py-1 rounded text-[10px] sm:text-[10.5px] font-semibold whitespace-nowrap transition-all ${
                     active
                       ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-xs'
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'

@@ -622,10 +622,6 @@
 
 /* Better spacing on mobile */
 @media (max-width: 768px) {
-  section {
-    padding: 0.5rem 0.25rem;
-  }
-
   .section-content {
     padding: 0.5rem 0;
   }

@@ -517,13 +517,13 @@ export function KeyMetricsTable({ data, insiderTransactions, insiderActivity }: 
                     opens this table so ratios below share one as-of period ── */}
                 {snapshotCells && (
                     <div className="col-span-full min-w-0 rounded-xl border border-gray-200/80 dark:border-gray-800/80 overflow-hidden">
-                        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50/90 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800/60">
+                        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2 bg-gray-50/90 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800/60">
                             <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                                 TTM Snapshot
                             </h3>
                             <span className="text-[10px] text-gray-400 dark:text-gray-500">trailing twelve months · YoY</span>
                         </div>
-                        <div className="grid grid-cols-3 sm:grid-cols-6 gap-px bg-gray-100 dark:bg-gray-800/60">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-px bg-gray-100 dark:bg-gray-800/60">
                             {snapshotCells.map((c) => (
                                 <div key={c.label} className="px-3 py-2 bg-white dark:bg-gray-800 min-w-0">
                                     <div className="text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400 truncate">
@@ -591,7 +591,7 @@ export function KeyMetricsTable({ data, insiderTransactions, insiderActivity }: 
                     card instead of a third table on the page ─────────────── */}
                 {insiderTxs.length > 0 && (
                     <div className="col-span-full min-w-0 rounded-xl border border-gray-200/80 dark:border-gray-800/80 overflow-hidden">
-                        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-gray-50/90 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800/60">
+                        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2 bg-gray-50/90 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800/60">
                             <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                                 Insider Transactions
                             </h3>

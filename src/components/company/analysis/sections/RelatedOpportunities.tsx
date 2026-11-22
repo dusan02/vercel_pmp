@@ -16,7 +16,7 @@ export function RelatedOpportunities({ ticker, related }: Props) {
   if (related.groups.length === 0) return null;
 
   return (
-    <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+    <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-6">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Related opportunities</h2>
       <div className="space-y-4">
         {related.groups.map((g) => (

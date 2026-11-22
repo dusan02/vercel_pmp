@@ -93,12 +93,12 @@ export function MoverInsightSection({
               </span>
             )}
             {notableMove && !topNews && (
-              <span className="text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+              <span className="text-gray-500 dark:text-gray-400 text-xs">
                 Moving {changePct! >= 0 ? '+' : ''}{changePct!.toFixed(1)}% with no obvious catalyst — likely flow-driven
               </span>
             )}
             {lastMove && lastMove.changePct != null && (
-              <span className="text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+              <span className="text-gray-500 dark:text-gray-400 text-xs">
                 Last big move: {lastMove.changePct >= 0 ? '+' : ''}{lastMove.changePct.toFixed(1)}% on {lastMove.date.toISOString().slice(0, 10)}
               </span>
             )}

@@ -232,7 +232,7 @@ export function ScenarioLab({
 
                             {/* Bear/Base/Bull projection table */}
                             <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
+                                <table className="pmp-clean-table w-full text-xs sm:text-sm">
                                     <thead>
                                         <tr className="border-b-2 border-gray-200 dark:border-gray-700">
                                             <th className="text-left py-2.5 px-3 text-xs font-semibold text-gray-500 dark:text-gray-500 uppercase tracking-wider"></th>

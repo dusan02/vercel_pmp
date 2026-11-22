@@ -117,7 +117,7 @@ export default function AnalysisTab({ ticker, initialAnalysisData, initialHistor
         && (data.statements?.length ?? 0) > 0;
 
     return (
-        <div className="space-y-6 p-4 bg-transparent dark:bg-gray-900 rounded-xl transition-all animate-fade-in">
+        <div className={`space-y-6 ${isPageLevel ? '' : 'p-2 sm:p-4'} bg-transparent dark:bg-gray-900 rounded-xl transition-all animate-fade-in`}>
             {/* ── Verdict + Radar + Key metrics — normally SSR'd at page level
                 on /analysis/[ticker]. Rendered here ONLY when inside HomeAnalysis tab
                 (!isPageLevel) so clicking a Heatmap tile into the Analysis tab shows

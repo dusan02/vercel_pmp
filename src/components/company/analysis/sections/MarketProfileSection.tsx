@@ -152,7 +152,7 @@ function IndustryPeersTable({ peers }: { peers: PeerRow[] }) {
         <span className="text-[11px] text-gray-400 dark:text-gray-500">Finnhub industry peers</span>
       </div>
       <div className="overflow-x-auto sm:overflow-visible rounded-xl border border-gray-100 dark:border-gray-700/80">
-        <table className="w-full text-xs">
+        <table className="pmp-clean-table w-full text-xs">
           <thead className="bg-gray-50/90 dark:bg-gray-900/60 text-left text-[11px] text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700 whitespace-nowrap">
             <tr>
               <th scope="col" className="pl-3 pr-2 py-2 font-medium">Company</th>
@@ -407,7 +407,7 @@ export function MarketProfileSection({ ticker, companyName, initialData, isEtf =
     return (
       <section
         id="market-profile"
-        className="mb-6 scroll-mt-16 rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm animate-pulse"
+        className="mb-6 scroll-mt-16 rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm animate-pulse"
       >
         <div className="h-5 w-56 rounded bg-gray-200 dark:bg-gray-700 mb-4" />
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
@@ -433,7 +433,7 @@ export function MarketProfileSection({ ticker, companyName, initialData, isEtf =
   return (
     <section
       id="market-profile"
-      className="mb-6 scroll-mt-16 rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 sm:p-6 shadow-sm space-y-6"
+      className="mb-6 scroll-mt-16 rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 sm:p-6 shadow-sm space-y-6"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>

@@ -59,7 +59,7 @@ export function ChartSection({
         <div ref={rootRef} className={`bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 overflow-visible h-full flex flex-col ${
             bleed
                 ? '-mx-4 rounded-none border-x-0 p-3 sm:mx-0 sm:rounded-xl sm:border-x sm:p-6'
-                : 'rounded-xl p-3 sm:p-6'
+                : 'rounded-xl p-4 sm:p-6'
         }`}>
             <div className="flex items-center gap-2.5 sm:gap-3 mb-4 sm:mb-6">
                 <div className={`p-1.5 sm:p-2 rounded-lg flex-shrink-0 ${iconBgClass}`}>
@@ -67,7 +67,7 @@ export function ChartSection({
                 </div>
                 <div className="min-w-0">
                     <H className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">{title}</H>
-                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate" title={subtitle}>{subtitle}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 line-clamp-2 sm:truncate leading-snug" title={subtitle}>{subtitle}</p>
                 </div>
             </div>
             {hasData ? <div className="flex-1 min-h-0">{children}</div> : (

@@ -244,9 +244,9 @@ export function KeyInsightsSection({
   return (
     <section className="mb-6">
       <details className="group rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3.5">
-        <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden flex items-center justify-between gap-3">
-          <div className="min-w-0 flex-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 shrink-0">
+        <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden flex items-start sm:items-center justify-between gap-2.5">
+          <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:flex-wrap sm:items-baseline gap-x-2.5 gap-y-0.5">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 break-words leading-snug">
               Quantitative Summary: {companyName} ({ticker})
             </h2>
             <span className="text-xs text-gray-600 dark:text-gray-300 truncate group-open:hidden">

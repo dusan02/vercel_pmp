@@ -28,22 +28,22 @@ const MAX_ROWS = 5;
 
 function TransactionsTable({ transactions, label }: InsiderTransactionsSectionProps & { label: string }) {
   return (
-    <table className="w-full table-fixed text-left">
+    <table className="pmp-clean-table w-full table-fixed text-left">
       <caption className="sr-only">{label}</caption>
       <colgroup>
-        <col className="w-[42%] md:w-[18%]" />
+        <col className="w-[38%] md:w-[18%]" />
         <col className="hidden md:table-column md:w-[27%]" />
-        <col className="w-[33%] md:w-[26%]" />
-        <col className="w-1/4 md:w-[13%]" />
+        <col className="w-[38%] md:w-[26%]" />
+        <col className="w-[24%] md:w-[13%]" />
         <col className="hidden md:table-column md:w-[16%]" />
       </colgroup>
       <thead className="bg-gray-50 dark:bg-gray-900/40 text-[11px] text-gray-500 dark:text-gray-400">
         <tr className="border-b border-gray-100 dark:border-gray-700">
-          <th scope="col" className="px-3 py-2 font-medium whitespace-nowrap">Trade date</th>
-          <th scope="col" className="hidden md:table-cell px-3 py-2 font-medium">Insider</th>
-          <th scope="col" className="px-3 py-2 font-medium">Transaction</th>
-          <th scope="col" className="px-3 py-2 font-medium text-right">Shares</th>
-          <th scope="col" className="hidden md:table-cell px-3 py-2 font-medium text-right">Filed</th>
+          <th scope="col" className="px-2.5 sm:px-3 py-2 font-medium whitespace-nowrap">Trade date</th>
+          <th scope="col" className="hidden md:table-cell px-2.5 sm:px-3 py-2 font-medium">Insider</th>
+          <th scope="col" className="px-2.5 sm:px-3 py-2 font-medium">Transaction</th>
+          <th scope="col" className="px-2.5 sm:px-3 py-2 font-medium text-right">Shares</th>
+          <th scope="col" className="hidden md:table-cell px-2.5 sm:px-3 py-2 font-medium text-right">Filed</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-100 dark:divide-gray-700/70">
@@ -67,15 +67,15 @@ function TransactionsTable({ transactions, label }: InsiderTransactionsSectionPr
                 : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300';
           return (
             <tr key={`${tx.transactionDate}-${i}`} className="text-xs text-gray-600 dark:text-gray-300 even:bg-gray-50/50 dark:even:bg-gray-900/20 hover:bg-gray-50 dark:hover:bg-gray-900/40">
-              <td className="px-3 py-2 align-top md:align-middle">
+              <td className="px-2.5 sm:px-3 py-2 align-top md:align-middle">
                 <time dateTime={tx.transactionDate} className="tabular-nums whitespace-nowrap">{tx.transactionDate}</time>
                 <div className="md:hidden mt-0.5 font-medium text-gray-800 dark:text-gray-200 break-words">{tx.name || '—'}</div>
                 <div className="md:hidden mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">
                   Filed <time dateTime={tx.filingDate} className="tabular-nums">{tx.filingDate}</time>
                 </div>
               </td>
-              <td className="hidden md:table-cell px-3 py-2 font-medium text-gray-800 dark:text-gray-200 break-words">{tx.name || '—'}</td>
-              <td className="px-3 py-2 align-top md:align-middle">
+              <td className="hidden md:table-cell px-2.5 sm:px-3 py-2 font-medium text-gray-800 dark:text-gray-200 break-words">{tx.name || '—'}</td>
+              <td className="px-2.5 sm:px-3 py-2 align-top md:align-middle">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] leading-4 font-semibold uppercase ${badge}`}>
                     {direction === 'buy' ? 'Buy' : direction === 'sell' ? 'Sell' : label}
@@ -85,10 +85,10 @@ function TransactionsTable({ transactions, label }: InsiderTransactionsSectionPr
                   )}
                 </div>
               </td>
-              <td className={`px-3 py-2 align-top md:align-middle text-right whitespace-nowrap font-semibold tabular-nums ${direction === 'buy' ? 'text-emerald-600 dark:text-emerald-400' : direction === 'sell' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-600 dark:text-gray-300'}`}>
+              <td className={`px-2.5 sm:px-3 py-2 align-top md:align-middle text-right whitespace-nowrap font-semibold tabular-nums ${direction === 'buy' ? 'text-emerald-600 dark:text-emerald-400' : direction === 'sell' ? 'text-rose-600 dark:text-rose-400' : 'text-gray-600 dark:text-gray-300'}`}>
                 {tx.change > 0 ? '+' : ''}{formatCompactNumber(tx.change)}
               </td>
-              <td className="hidden md:table-cell px-3 py-2 text-right text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">
+              <td className="hidden md:table-cell px-2.5 sm:px-3 py-2 text-right text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">
                 <time dateTime={tx.filingDate}>{tx.filingDate}</time>
               </td>
             </tr>

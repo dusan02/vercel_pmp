@@ -540,7 +540,7 @@ export default async function AnalysisPage({ params }: PageProps) {
 
           {/* Full interactive analysis — financial statement pairs (history bar + structure sankey), valuation, health charts (stocks only) */}
           {!isEtf && (
-            <div id="financial-charts" className="scroll-mt-16">
+            <div id="financial-charts" className="mb-6 scroll-mt-16">
               <AnalysisTabClient
                 key={tickerUpper}
                 ticker={tickerUpper}

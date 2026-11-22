@@ -340,10 +340,10 @@ export function SankeyCell({ kind, annual, quarterly }: { kind: FlowKind; annual
     // viewH so the rendered diagram exactly fills the measured slot height.
     // Compact column gaps on narrow viewports — a 560px+ viewBox rendered
     // into ~350px shrinks labels to ~7px and forces horizontal scrolling.
-    const compact = slot ? slot.w < 560 : false;
+    const compact = slot ? slot.w < 520 : true;
     const viewW = sankeyViewBoxWidth(spec.columns.length, compact);
     const svgW = slot ? Math.max(viewW, slot.w) : viewW;
-    const chartH = slot ? Math.max(240, Math.floor(slot.h * (viewW / svgW))) : 300;
+    const chartH = compact ? 250 : (slot ? Math.min(360, Math.max(240, Math.floor(slot.h * (viewW / svgW)))) : 280);
     return (
         <ChartBody>
             {/* Fixed-height controls band — rendered even when a single period
@@ -361,7 +361,7 @@ export function SankeyCell({ kind, annual, quarterly }: { kind: FlowKind; annual
                     </button>
                 ))}
             </ChartControls>
-            <ChartPlot minHeight={240}>
+            <ChartPlot minHeight={compact ? 200 : 240}>
                 <div ref={boxRef} className="h-full overflow-x-auto">
                     <SankeyChart columns={spec.columns} links={spec.links} total={spec.total} formatValue={fmt$} height={chartH} compact={compact} />
                 </div>

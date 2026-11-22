@@ -27,7 +27,6 @@ export function PriceHistorySection({ ticker, companyName, nav, similar, current
                     title="Price History"
                     subtitle={cmpLabel ? `Relative Performance vs ${cmpLabel}` : 'Weekly Candlestick Chart — up to 5Y'}
                     as="h2"
-                    bleed
                 >
                     <Suspense fallback={<div className="flex justify-center items-center" style={{ height: 420 }}><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500" /></div>}>
                         <PriceCandlestickChart ticker={ticker} companyName={companyName ?? null} nav={nav ?? null} similar={similar ?? null} currentPrice={currentPrice ?? null} currentChangePct={currentChangePct ?? null} changeLabel={changeLabel ?? 'day'} onCompareChange={setCmpLabel} />
