@@ -8,6 +8,7 @@ const tickerDomains: Record<string, string> = {
   'GOOG': 'google.com',
   'META': 'meta.com',
   'AVGO': 'broadcom.com',
+  'ANT': 'anthropic.com',
   'BRK.A': 'berkshirehathaway.com',
   'BRK.B': 'berkshirehathaway.com',
   'TSLA': 'tesla.com',

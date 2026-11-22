@@ -45,7 +45,12 @@ export async function syncTickerDetails(symbol: string): Promise<void> {
             if (stmt?.sharesOutstanding && stmt.sharesOutstanding > 0) {
                 const dW = Math.abs(weighted - stmt.sharesOutstanding) / stmt.sharesOutstanding;
                 const dS = Math.abs(shareClass - stmt.sharesOutstanding) / stmt.sharesOutstanding;
-                sharesOutstanding = dS <= dW ? shareClass : weighted;
+                // Only use statement shares as arbiter if at least one candidate is
+                // within 40% of the filing (pre-IPO filings before preferred conversion
+                // can be 3-5x smaller than both post-IPO counts).
+                if (Math.min(dW, dS) <= 0.4) {
+                    sharesOutstanding = dS <= dW ? shareClass : weighted;
+                }
             }
         }
 

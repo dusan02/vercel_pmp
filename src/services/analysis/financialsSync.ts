@@ -189,7 +189,7 @@ export async function mergeSAPage(
     income: SAData,
     balance: SAData | null,
     cashflow: SAData | null,
-    opts: { quarterly: boolean; gapfill: boolean; trustedShares?: number | null },
+    opts: { quarterly: boolean; gapfill: boolean; trustedShares?: number | null; fallbackBalance?: SAData | null },
 ): Promise<{ inserted: number; updated: number }> {
     const balIdx = saIndexByDate(balance);
     const cfIdx = saIndexByDate(cashflow);
@@ -208,7 +208,19 @@ export async function mergeSAPage(
         const fiscalPeriod = (fiscalQuarter === 'Q4' || fiscalQuarter === 'FY') ? 'FY' : fiscalQuarter;
         const endDate = new Date(dateStr + 'T00:00:00Z');
 
-        const bi = balIdx.get(dateStr);
+        let balSrc = balance;
+        let bi = balIdx.get(dateStr);
+        const hasBsRow = bi != null && (saNumArr(balance, 'assets', bi) != null || saNumArr(balance, 'equity', bi) != null);
+        if (!hasBsRow && opts.fallbackBalance) {
+            const fb = opts.fallbackBalance;
+            const fbIdx = fb.datekey.findIndex((d, idx) =>
+                d === dateStr || (parseInt(fb.fiscalYear[idx] ?? '', 10) === fiscalYear && fb.fiscalQuarter[idx] === fiscalQuarter)
+            );
+            if (fbIdx >= 0 && (saNumArr(fb, 'assets', fbIdx) != null || saNumArr(fb, 'equity', fbIdx) != null)) {
+                balSrc = fb;
+                bi = fbIdx;
+            }
+        }
         const ci = cfIdx.get(dateStr);
         // Discrete SA values: netinccmn is common shareholders, netinc is consolidated.
         const niCommonDiscrete = saNumArr(income, 'netinccmn', i);
@@ -238,16 +250,16 @@ export async function mergeSAPage(
                 ? saYtdSum(cashflow, ['sbcomp', 'sbc'], fiscalQuarter, fiscalYear)
                 : firstNum(cashflow, ['sbcomp', 'sbc'], ci ?? -1)),
             interestExpense: qd ? saYtdSum(income, ['interestexpense'], fiscalQuarter, fiscalYear) : saNumArr(income, 'interestexpense', i),
-            totalAssets: (bi != null ? saNumArr(balance, 'assets', bi) : null) ?? ((bi != null && saNumArr(balance, 'liabilities', bi) != null && saNumArr(balance, 'equity', bi) != null) ? saNumArr(balance, 'liabilities', bi)! + saNumArr(balance, 'equity', bi)! : null),
-            totalLiabilities: (bi != null ? saNumArr(balance, 'liabilities', bi) : null) ?? ((bi != null && saNumArr(balance, 'assets', bi) != null && saNumArr(balance, 'equity', bi) != null) ? saNumArr(balance, 'assets', bi)! - saNumArr(balance, 'equity', bi)! : null),
-            currentAssets: bi != null ? saNumArr(balance, 'assetsc', bi) : null,
-            currentLiabilities: bi != null ? saNumArr(balance, 'currentLiabilities', bi) ?? saNumArr(balance, 'liabilitiesc', bi) : null,
-            retainedEarnings: bi != null ? saNumArr(balance, 'retearn', bi) ?? saNumArr(balance, 'balance_sheet_retained_earnings', bi) : null,
-            totalEquity: (bi != null ? saNumArr(balance, 'equity', bi) : null) ?? ((bi != null && saNumArr(balance, 'assets', bi) != null && saNumArr(balance, 'liabilities', bi) != null) ? saNumArr(balance, 'assets', bi)! - saNumArr(balance, 'liabilities', bi)! : null),
-            sharesOutstanding: sharesDirect ?? sharesFromEps ?? (bi != null ? saNumArr(balance, 'sharesOutTotalCommon', bi) : null),
-            totalDebt: bi != null ? saNumArr(balance, 'debt', bi) : null,
-            cashAndEquivalents: bi != null ? saNumArr(balance, 'totalcash', bi) ?? saNumArr(balance, 'cashneq', bi) : null,
-            netPPE: bi != null ? saNumArr(balance, 'netPPE', bi) ?? saNumArr(balance, 'balance_sheet_net_property_plant_and_equipment', bi) : null,
+            totalAssets: (bi != null ? saNumArr(balSrc, 'assets', bi) : null) ?? ((bi != null && saNumArr(balSrc, 'liabilities', bi) != null && saNumArr(balSrc, 'equity', bi) != null) ? saNumArr(balSrc, 'liabilities', bi)! + saNumArr(balSrc, 'equity', bi)! : null),
+            totalLiabilities: (bi != null ? saNumArr(balSrc, 'liabilities', bi) : null) ?? ((bi != null && saNumArr(balSrc, 'assets', bi) != null && saNumArr(balSrc, 'equity', bi) != null) ? saNumArr(balSrc, 'assets', bi)! - saNumArr(balSrc, 'equity', bi)! : null),
+            currentAssets: bi != null ? saNumArr(balSrc, 'assetsc', bi) : null,
+            currentLiabilities: bi != null ? saNumArr(balSrc, 'currentLiabilities', bi) ?? saNumArr(balSrc, 'liabilitiesc', bi) : null,
+            retainedEarnings: bi != null ? saNumArr(balSrc, 'retearn', bi) ?? saNumArr(balSrc, 'balance_sheet_retained_earnings', bi) : null,
+            totalEquity: (bi != null ? saNumArr(balSrc, 'equity', bi) : null) ?? ((bi != null && saNumArr(balSrc, 'assets', bi) != null && saNumArr(balSrc, 'liabilities', bi) != null) ? saNumArr(balSrc, 'assets', bi)! - saNumArr(balSrc, 'liabilities', bi)! : null),
+            sharesOutstanding: sharesDirect ?? sharesFromEps ?? (bi != null ? saNumArr(balSrc, 'sharesOutTotalCommon', bi) : null),
+            totalDebt: bi != null ? saNumArr(balSrc, 'debt', bi) : null,
+            cashAndEquivalents: bi != null ? saNumArr(balSrc, 'totalcash', bi) ?? saNumArr(balSrc, 'cashneq', bi) : null,
+            netPPE: bi != null ? saNumArr(balSrc, 'netPPE', bi) ?? saNumArr(balSrc, 'balance_sheet_net_property_plant_and_equipment', bi) : null,
         };
 
         if (!opts.gapfill) {
@@ -364,7 +376,7 @@ async function syncFromStockAnalysis(symbol: string, mode: SaMode = 'full', trus
         touched += r.inserted + r.updated;
     }
     if (incomeQ) {
-        const r = await mergeSAPage(symbol, incomeQ, balanceQ, cashflowQ, { quarterly: true, gapfill, trustedShares });
+        const r = await mergeSAPage(symbol, incomeQ, balanceQ, cashflowQ, { quarterly: true, gapfill, trustedShares, fallbackBalance: balanceA });
         touched += r.inserted + r.updated;
     }
     return touched;

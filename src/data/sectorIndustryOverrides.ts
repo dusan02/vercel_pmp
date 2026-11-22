@@ -17,6 +17,11 @@ export type SectorIndustryOverride = {
 export const SECTOR_INDUSTRY_OVERRIDES: Record<string, SectorIndustryOverride> =
   {
     // Technology sector overrides (from Communication Services)
+    ANT: {
+      sector: "Technology",
+      industry: "Software—Application",
+      name: "Anthropic, PBC",
+    },
     GOOGL: {
       sector: "Technology",
       industry: "Internet Content & Information",

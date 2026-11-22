@@ -92,6 +92,7 @@ export class LogoFetcher {
             'EBAY': 'ebay', 'TTD': 'thetradedesk', 'PATH': 'uipath', 'U': 'unity',
             'DIS': 'disney', 'AVGO': 'broadcom', 'TXN': 'texasinstruments',
             'PANW': 'paloaltonetworks', 'SQ': 'square', 'XOM': 'exxon',
+            'ANT': 'anthropic',
         };
 
         const slug = TICKER_TO_SI_SLUG[ticker.toUpperCase()];
@@ -338,7 +339,8 @@ export class LogoFetcher {
             'OKE': 'oneok.com',
             'FANG': 'diamondbackenergy.com',
             'PANW': 'paloaltonetworks.com',
-            'SNPS': 'synopsys.com'
+            'SNPS': 'synopsys.com',
+            'ANT': 'anthropic.com'
         };
 
         // Candidate domains, best-first. The ticker's own websiteUrl is the
