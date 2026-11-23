@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
-import { Inter, Space_Grotesk } from 'next/font/google'
+import localFont from 'next/font/local'
 import './globals.css'
 import '../styles/mobile-optimizations.css'
 import ErrorBoundaryWrapper from '@/components/ErrorBoundaryWrapper'
@@ -18,15 +18,18 @@ import { Footer } from '@/components/layout/Footer'
 import { ZhLanguageHint } from '@/components/layout/ZhLanguageHint'
 import { GlobalBottomNav } from '@/components/GlobalBottomNav'
 
-const inter = Inter({
-  subsets: ['latin'],
+const inter = localFont({
+  src: './fonts/inter-latin.woff2',
+  weight: '100 900',
+  style: 'normal',
   variable: '--font-inter',
   display: 'swap',
 })
 
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+const spaceGrotesk = localFont({
+  src: './fonts/space-grotesk-latin.woff2',
+  weight: '400 700',
+  style: 'normal',
   variable: '--font-space-grotesk',
   display: 'swap',
 })
