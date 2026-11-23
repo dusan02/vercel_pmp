@@ -110,18 +110,39 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
 
   const containerSize = { width: containerWidth, height: height ?? containerHeight };
 
-  // -- Detail sheet -----------------------------------------------------------
+  // -- Detail sheet / 1-tap navigation indicator ----------------------------
   const [selectedCompany, setSelectedCompany] = useState<CompanyNode | null>(null);
+  const [navigatingSymbol, setNavigatingSymbol] = useState<string | null>(null);
+  const navTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const lastNavRef = useRef<{ symbol: string; at: number } | null>(null);
   const closeSheet = useCallback(() => setSelectedCompany(null), []);
 
-  // Auto-close sheet when the view is deactivated (user switched tabs)
+  // Auto-close sheet & clear navigation badge when the view changes (user switched tabs)
   useEffect(() => {
     closeSheet();
+    setNavigatingSymbol(null);
+    lastNavRef.current = null;
   }, [activeView, closeSheet]);
+
+  useEffect(() => () => clearTimeout(navTimerRef.current), []);
 
   const handleTileSelect = useCallback((company: CompanyNode) => {
     setSelectedCompany(company);
   }, []);
+
+  const handleDirectTileClick = useCallback((company: CompanyNode) => {
+    if (!onTileClick) return;
+    const sym = company.symbol.toUpperCase();
+    const now = Date.now();
+    if (lastNavRef.current && lastNavRef.current.symbol === sym && now - lastNavRef.current.at < 4000) {
+      return;
+    }
+    lastNavRef.current = { symbol: sym, at: now };
+    setNavigatingSymbol(sym);
+    clearTimeout(navTimerRef.current);
+    navTimerRef.current = setTimeout(() => setNavigatingSymbol(null), 6000);
+    onTileClick(company);
+  }, [onTileClick]);
 
   // -- Data prep & layout -----------------------------------------------------
   const sortedData = useMemo(() => prepareMobileTreemapData(data), [data]);
@@ -196,7 +217,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
                 metric={metric}
                 getColor={getColor}
                 onTileSelect={handleTileSelect}
-                onTileClick={onTileClick}
+                onTileClick={onTileClick ? handleDirectTileClick : undefined}
               />
             ))
           ) : (
@@ -216,7 +237,19 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
         </div>
       </div>
 
-      {/* Detail bottom sheet */}
+      {/* Instant 1-tap navigation feedback pill */}
+      {navigatingSymbol && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed top-14 left-1/2 -translate-x-1/2 z-[10001] flex items-center gap-2 rounded-full bg-blue-600/95 px-4 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur-sm pointer-events-none"
+        >
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          <span>Opening {navigatingSymbol}…</span>
+        </div>
+      )}
+
+      {/* Detail bottom sheet (when no direct navigation handler is wired) */}
       <AnimatePresence>
         {selectedCompany && (
           <MobileHeatmapSheet

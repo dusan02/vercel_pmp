@@ -124,6 +124,7 @@ export const MobileHeatmapTile = React.memo<MobileHeatmapTileProps>(({
   prev.x === next.x && prev.y === next.y &&
   prev.width === next.width && prev.height === next.height &&
   prev.color === next.color &&
+  prev.onClick === next.onClick &&
   prev.label.showSymbol === next.label.showSymbol &&
   prev.label.showValue === next.label.showValue &&
   prev.label.symbolFontPx === next.label.symbolFontPx &&

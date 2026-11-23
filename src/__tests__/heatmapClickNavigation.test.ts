@@ -27,7 +27,18 @@ jest.mock('@/lib/analysis/newsService', () => ({
   isAboutTicker: () => true,
 }));
 
+jest.mock('@/styles/heatmap.module.css', () => ({
+  __esModule: true,
+  default: new Proxy({}, {
+    get: (_target, prop) => String(prop),
+  }),
+}));
+
 import { CanvasHeatmap, findLeafAtCanvasPoint } from '@/components/CanvasHeatmap';
+import { SectorLabel } from '@/components/heatmap/SectorLabel';
+import { MobileHeatmapSector } from '@/components/mobile/MobileHeatmapSector';
+import type { MobileTreemapSector } from '@/lib/heatmap/mobileTreemap';
+import type { TreemapNode } from '@/lib/heatmap/types';
 import { useAnalysisPrefetch } from '@/hooks/useAnalysisPrefetch';
 import { prefetchTopNews, raceWithTimeout } from '@/lib/analysis/pageData';
 import AnalysisTickerLoading from '@/app/analysis/[ticker]/loading';
@@ -104,24 +115,29 @@ describe('Heatmap to /analysis click speed & reliability', () => {
 
     const onTileClick = jest.fn();
     const onHover = jest.fn();
+    const parentClick = jest.fn();
     const container = document.createElement('div');
     const root = createRoot(container);
 
     try {
       await act(async () => {
         root.render(
-          React.createElement(CanvasHeatmap, {
-            leaves,
-            width: 200,
-            height: 100,
-            scale: 1,
-            offset: { x: 0, y: 0 },
-            metric: 'percent',
-            timeframe: 'day',
-            colorScale: () => '#16a34a',
-            onTileClick,
-            onHover,
-          }),
+          React.createElement(
+            'div',
+            { onClick: parentClick },
+            React.createElement(CanvasHeatmap, {
+              leaves,
+              width: 200,
+              height: 100,
+              scale: 1,
+              offset: { x: 0, y: 0 },
+              metric: 'percent',
+              timeframe: 'day',
+              colorScale: () => '#16a34a',
+              onTileClick,
+              onHover,
+            }),
+          ),
         );
       });
 
@@ -138,12 +154,13 @@ describe('Heatmap to /analysis click speed & reliability', () => {
         toJSON: () => ({}),
       });
 
-      // Instant click without any preceding mousemove must hit AMD immediately
+      // Instant click without any preceding mousemove must hit AMD immediately and stop propagation
       await act(async () => {
         canvas.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 150, clientY: 50 }));
       });
       expect(onTileClick).toHaveBeenCalledTimes(1);
       expect(onTileClick.mock.calls[0][0].symbol).toBe('AMD');
+      expect(parentClick).not.toHaveBeenCalled();
 
       // Pointerdown warms hover/prefetch immediately before mouseup/click
       await act(async () => {
@@ -151,11 +168,20 @@ describe('Heatmap to /analysis click speed & reliability', () => {
       });
       expect(onHover).toHaveBeenCalledWith(expect.objectContaining({ symbol: 'NVDA' }), 50, 50);
 
-      // Clicking outside tiles does not trigger navigation
+      // Slight <= 8px seam slip between pointerdown (NVDA at x=50) and click outside (x=250) stays ignored when >8px
       await act(async () => {
         canvas.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 250, clientY: 50 }));
       });
       expect(onTileClick).toHaveBeenCalledTimes(1);
+      expect(parentClick).not.toHaveBeenCalled();
+
+      // Seam slip <= 8px between pointerdown (AMD at x=198) and click on seam (x=203) honors pointerdown tile
+      await act(async () => {
+        canvas.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 198, clientY: 50 }));
+        canvas.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 203, clientY: 50 }));
+      });
+      expect(onTileClick).toHaveBeenCalledTimes(2);
+      expect(onTileClick.mock.calls[1][0].symbol).toBe('AMD');
 
       act(() => root.unmount());
     } finally {
@@ -232,5 +258,137 @@ describe('Heatmap to /analysis click speed & reliability', () => {
     const html = renderToStaticMarkup(React.createElement(AnalysisTickerLoading));
     expect(html).toContain('aria-busy="true"');
     expect(html).toContain('animate-pulse');
+  });
+
+  test('SectorLabel leaves outer wrap pointer-events-none and isolates badge clicks', async () => {
+    const onLabelClick = jest.fn();
+    const parentClick = jest.fn();
+    const sectorNode = {
+      x0: 0,
+      y0: 0,
+      x1: 400,
+      y1: 120,
+      data: { name: 'Technology' },
+      leaves: () => [],
+    } as unknown as TreemapNode;
+
+    const container = document.createElement('div');
+    const root = createRoot(container);
+
+    for (const variant of ['compact', 'full'] as const) {
+      onLabelClick.mockReset();
+      parentClick.mockReset();
+
+      await act(async () => {
+        root.render(
+          React.createElement(
+            'div',
+            { onClick: parentClick },
+            React.createElement(SectorLabel, {
+              node: sectorNode,
+              scale: 1,
+              offset: { x: 0, y: 0 },
+              sectorLabelVariant: variant,
+              isMobile: false,
+              metric: 'percent',
+              treemapBoundsNotNull: true,
+              onClick: onLabelClick,
+            }),
+          ),
+        );
+      });
+
+      const wrap = container.querySelector('.sectorLabelWrap') as HTMLElement;
+      const badgeClass = variant === 'full' ? '.sectorLabelStripFull' : '.sectorLabelPillCompact';
+      const badge = container.querySelector(badgeClass) as HTMLElement;
+      expect(wrap).toBeTruthy();
+      expect(wrap.style.pointerEvents).not.toBe('auto');
+      expect(badge).toBeTruthy();
+      expect(badge.className).toContain('no-redirect');
+      expect(badge.style.pointerEvents).toBe('auto');
+
+      // Clicking the wrap outside the pill must not hijack into onLabelClick
+      await act(async () => {
+        wrap.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      });
+      expect(onLabelClick).not.toHaveBeenCalled();
+
+      // Clicking the badge itself triggers onLabelClick and stops propagation to background redirect
+      parentClick.mockReset();
+      await act(async () => {
+        badge.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      });
+      expect(onLabelClick).toHaveBeenCalledTimes(1);
+      expect(parentClick).not.toHaveBeenCalled();
+    }
+
+    act(() => root.unmount());
+  });
+
+  test('MobileHeatmapSector goes straight to onTileClick on 1 tap instead of popping sheet', async () => {
+    const companyA = makeLeaf('AAPL', 0, 16, 120, 120).data.meta.companyData!;
+    const companySmall = makeLeaf('tiny', 122, 16, 134, 28).data.meta.companyData!;
+    const sector: MobileTreemapSector = {
+      name: 'Technology',
+      x0: 0,
+      y0: 0,
+      x1: 200,
+      y1: 150,
+      tiles: [
+        { x0: 0, y0: 16, x1: 120, y1: 120, company: companyA },
+        { x0: 122, y0: 16, x1: 134, y1: 28, company: companySmall },
+      ],
+    };
+
+    const onTileClick = jest.fn();
+    const onTileSelect = jest.fn();
+    const container = document.createElement('div');
+    const root = createRoot(container);
+
+    // Direct 1-tap navigation mode: tapping regular or small tile invokes onTileClick only
+    await act(async () => {
+      root.render(
+        React.createElement(MobileHeatmapSector, {
+          sector,
+          metric: 'percent',
+          getColor: () => '#16a34a',
+          onTileSelect,
+          onTileClick,
+        }),
+      );
+    });
+
+    const tiles = container.querySelectorAll('[data-heatmap-tile="1"]');
+    expect(tiles.length).toBe(2);
+
+    await act(async () => {
+      tiles[0]!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(onTileClick).toHaveBeenCalledTimes(1);
+    expect(onTileClick).toHaveBeenCalledWith(companyA);
+    expect(onTileSelect).not.toHaveBeenCalled();
+
+    // Without onTileClick, tapping opens preview sheet via onTileSelect
+    onTileClick.mockReset();
+    onTileSelect.mockReset();
+    await act(async () => {
+      root.render(
+        React.createElement(MobileHeatmapSector, {
+          sector,
+          metric: 'percent',
+          getColor: () => '#16a34a',
+          onTileSelect,
+        }),
+      );
+    });
+
+    const sheetTiles = container.querySelectorAll('[data-heatmap-tile="1"]');
+    await act(async () => {
+      sheetTiles[0]!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(onTileSelect).toHaveBeenCalledTimes(1);
+    expect(onTileSelect).toHaveBeenCalledWith(companyA);
+
+    act(() => root.unmount());
   });
 });

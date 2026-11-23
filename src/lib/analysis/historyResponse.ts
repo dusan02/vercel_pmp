@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db/prisma';
+import { readHistorySqliteData } from '@/lib/db/readonlySqlite';
 import { projectForward, buildStats, quarterlyDiffCorr, type PerSharePoint } from '@/lib/utils/analysisMath';
 import { computeTTMAtDate } from '@/lib/utils/ttm';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
@@ -73,13 +74,19 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
     try {
         const tenYearsAgo = new Date();
         tenYearsAgo.setFullYear(tenYearsAgo.getFullYear() - 10);
+        const tenYearsAgoStmts = new Date();
+        tenYearsAgoStmts.setFullYear(tenYearsAgoStmts.getFullYear() - 10);
+
+        const sqliteData = readHistorySqliteData(symbol, tenYearsAgo, tenYearsAgoStmts);
 
         // Fetch 10Y daily valuation history
-        const rows = await prisma.dailyValuationHistory.findMany({
-            where: { symbol, date: { gte: tenYearsAgo } },
-            select: { date: true, peRatio: true, psRatio: true, fcfYield: true, closePrice: true, marketCap: true },
-            orderBy: { date: 'asc' },
-        });
+        const rows = sqliteData
+            ? sqliteData.valRows
+            : await prisma.dailyValuationHistory.findMany({
+                where: { symbol, date: { gte: tenYearsAgo } },
+                select: { date: true, peRatio: true, psRatio: true, fcfYield: true, closePrice: true, marketCap: true },
+                orderBy: { date: 'asc' },
+            });
 
         // Weekly downsample: keep last ratio-bearing row of each bucket so a
         // trailing price-only EOD row never wipes out valid weekly multiples.
@@ -127,13 +134,12 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
         const psStats = buildStats(psAllValues);
 
         // --- Financial statements: compute TTM per-share metrics ---
-        const tenYearsAgoStmts = new Date();
-        tenYearsAgoStmts.setFullYear(tenYearsAgoStmts.getFullYear() - 10);
-
-        const statements = await prisma.financialStatement.findMany({
-            where: { symbol, endDate: { gte: tenYearsAgoStmts } },
-            orderBy: { endDate: 'asc' },
-        });
+        const statements = sqliteData
+            ? sqliteData.statements
+            : await prisma.financialStatement.findMany({
+                where: { symbol, endDate: { gte: tenYearsAgoStmts } },
+                orderBy: { endDate: 'asc' },
+            });
 
         // Build weekly price lookup for stock split detection
         const weeklyPriceMap = new Map<string, number>();
@@ -182,10 +188,12 @@ export async function getHistoryResponse(symbol: string): Promise<Record<string,
         }
 
         // Post-split shares adjustment for Finnhub statements not updated after recent split
-        const tickerInfo = await prisma.ticker.findUnique({
-            where: { symbol },
-            select: { sharesOutstanding: true, sector: true },
-        });
+        const tickerInfo = sqliteData
+            ? sqliteData.tickerInfo
+            : await prisma.ticker.findUnique({
+                where: { symbol },
+                select: { sharesOutstanding: true, sector: true },
+            });
 
         const trustedShares = tickerInfo?.sharesOutstanding ?? null;
         if (statements.length > 0) {

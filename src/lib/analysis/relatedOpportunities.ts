@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { dedupeShareClasses } from '@/lib/companyNames';
+import { BoundedTtlLruCache } from '@/lib/cache/boundedLruCache';
 
 /**
  * Related-opportunities engine — the internal discovery funnel.
@@ -100,7 +101,16 @@ export interface RelatedOpportunitiesSeed {
   valuationScore?: number | null;
 }
 
+const relatedOppsCache = new BoundedTtlLruCache<RelatedOpportunities>(500, 5 * 60 * 1000);
+
 export async function getRelatedOpportunities(
+  symbol: string,
+  seed?: RelatedOpportunitiesSeed,
+): Promise<RelatedOpportunities> {
+  return relatedOppsCache.getOrLoad(symbol.toUpperCase(), () => fetchRelatedOpportunities(symbol, seed));
+}
+
+async function fetchRelatedOpportunities(
   symbol: string,
   seed?: RelatedOpportunitiesSeed,
 ): Promise<RelatedOpportunities> {

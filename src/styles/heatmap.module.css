@@ -153,8 +153,8 @@
   gap: 8px;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%;
-  /* Full width */
+  width: fit-content;
+  max-width: 100%;
   min-width: 0;
   pointer-events: auto;
   /* Enable hover */

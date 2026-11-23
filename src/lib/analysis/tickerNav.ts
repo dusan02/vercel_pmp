@@ -12,6 +12,7 @@
  * index scan, no universe materialization, identical result per dataset.
  */
 import { prisma } from '@/lib/db/prisma';
+import { BoundedTtlLruCache } from '@/lib/cache/boundedLruCache';
 
 export type NavDimension = 'market_cap' | 'sector' | 'industry';
 
@@ -108,7 +109,14 @@ async function resolveNavSeed(symbol: string, seed?: TickerNavSeed): Promise<Tic
     };
 }
 
+const tickerNavCache = new BoundedTtlLruCache<TickerNav | null>(500, 5 * 60 * 1000);
+const similarTickersCache = new BoundedTtlLruCache<SimilarTickers | null>(500, 5 * 60 * 1000);
+
 export async function getTickerNav(symbol: string, seed?: TickerNavSeed): Promise<TickerNav | null> {
+    return tickerNavCache.getOrLoad(symbol.toUpperCase(), () => fetchTickerNav(symbol, seed));
+}
+
+async function fetchTickerNav(symbol: string, seed?: TickerNavSeed): Promise<TickerNav | null> {
     const t = await resolveNavSeed(symbol, seed);
     // Ticker not in the eligible universe or no market cap → no navigator.
     // (AnalysisCache is our "real fundamental data" proxy — ETFs like SPY
@@ -166,6 +174,10 @@ async function nearestByCap(symbol: string, mcap: number, extraWhere: object, n:
 /** Similar-cap peers for the in-chart "similar tickers" chips — same
  *  eligible universe as getTickerNav; null when the ticker isn't eligible. */
 export async function getSimilarTickers(symbol: string, seed?: TickerNavSeed): Promise<SimilarTickers | null> {
+    return similarTickersCache.getOrLoad(symbol.toUpperCase(), () => fetchSimilarTickers(symbol, seed));
+}
+
+async function fetchSimilarTickers(symbol: string, seed?: TickerNavSeed): Promise<SimilarTickers | null> {
     const t = await resolveNavSeed(symbol, seed);
     if (!t?.hasAnalysisCache || !t.lastMarketCap || t.lastMarketCap <= 0) return null;
     const mcap = t.lastMarketCap;

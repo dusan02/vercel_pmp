@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import Database from 'better-sqlite3';
+import type { FinancialStatement } from '@prisma/client';
 
 export interface ReadonlyValRow {
   date: Date;
@@ -30,6 +31,21 @@ export interface ReadonlyCandlesDbData {
   sector: string | null;
 }
 
+export interface ReadonlyHistoryValRow {
+  date: Date;
+  peRatio: number | null;
+  psRatio: number | null;
+  fcfYield: number | null;
+  closePrice: number | null;
+  marketCap: number | null;
+}
+
+export interface ReadonlyHistoryDbData {
+  valRows: ReadonlyHistoryValRow[];
+  statements: FinancialStatement[];
+  tickerInfo: { sharesOutstanding: number | null; sector: string | null } | null;
+}
+
 interface RawValRow {
   date: number | string;
   closePrice: number | null;
@@ -42,6 +58,15 @@ interface RawValRow {
   peForward: number | null;
 }
 
+interface RawHistValRow {
+  date: number | string;
+  peRatio: number | null;
+  psRatio: number | null;
+  fcfYield: number | null;
+  closePrice: number | null;
+  marketCap: number | null;
+}
+
 interface RawStatementRow {
   endDate: number | string;
   fiscalPeriod: string;
@@ -50,23 +75,32 @@ interface RawStatementRow {
   sharesOutstanding: number | null;
 }
 
+type RawFullStatementRow = Omit<FinancialStatement, 'endDate' | 'createdAt' | 'updatedAt'> & {
+  endDate: number | string;
+  createdAt: number | string;
+  updatedAt: number | string;
+};
+
 interface RawFinnhubMetricsRow {
   forwardPe: number | null;
   fetchedAt: number | string;
 }
 
-interface PreparedCandlesStmts {
+interface PreparedReadonlyStmts {
   ping: Database.Statement<[], { ok: number }>;
   valRows: Database.Statement<[string, number], RawValRow>;
   bs: Database.Statement<[string], { totalDebt: number | null; cashAndEquivalents: number | null }>;
   stmts: Database.Statement<[string], RawStatementRow>;
   fm: Database.Statement<[string], RawFinnhubMetricsRow>;
   sector: Database.Statement<[string], { sector: string | null }>;
+  histValRows: Database.Statement<[string, number], RawHistValRow>;
+  histStmts: Database.Statement<[string, number], RawFullStatementRow>;
+  histTickerInfo: Database.Statement<[string], { sharesOutstanding: number | null; sector: string | null }>;
 }
 
 interface ReadonlySqliteState {
   db: Database.Database;
-  prepared: PreparedCandlesStmts;
+  prepared: PreparedReadonlyStmts;
 }
 
 const globalForSqlite = globalThis as unknown as {
@@ -111,7 +145,7 @@ function getReadonlyState(): ReadonlySqliteState | null {
     const db = new Database(dbPath, { readonly: true, fileMustExist: true });
     db.pragma('busy_timeout = 5000');
     db.pragma('cache_size = -16000');
-    const prepared: PreparedCandlesStmts = {
+    const prepared: PreparedReadonlyStmts = {
       ping: db.prepare('SELECT 1 AS ok'),
       valRows: db.prepare(
         'SELECT date, closePrice, peRatio, psRatio, pbRatio, evEbitda, fcfYield, marketCap, peForward ' +
@@ -131,6 +165,20 @@ function getReadonlyState(): ReadonlySqliteState | null {
       ),
       sector: db.prepare(
         'SELECT sector FROM Ticker WHERE symbol = ? LIMIT 1',
+      ),
+      histValRows: db.prepare(
+        'SELECT date, peRatio, psRatio, fcfYield, closePrice, marketCap ' +
+        'FROM DailyValuationHistory WHERE symbol = ? AND date >= ? ORDER BY date ASC',
+      ),
+      histStmts: db.prepare(
+        'SELECT id, symbol, period, endDate, fiscalYear, fiscalPeriod, revenue, netIncome, ' +
+        'netIncomeCommon, ebit, grossProfit, operatingCashFlow, capex, totalAssets, totalLiabilities, ' +
+        'currentAssets, currentLiabilities, retainedEarnings, totalEquity, sharesOutstanding, sbc, ' +
+        'interestExpense, totalDebt, cashAndEquivalents, netPPE, createdAt, updatedAt ' +
+        'FROM FinancialStatement WHERE symbol = ? AND endDate >= ? ORDER BY endDate ASC',
+      ),
+      histTickerInfo: db.prepare(
+        'SELECT sharesOutstanding, sector FROM Ticker WHERE symbol = ? LIMIT 1',
       ),
     };
     globalForSqlite.__pmpReadonlySqlite = { db, prepared };
@@ -208,6 +256,52 @@ export function readCandlesSqliteData(
     const sector = sectorRow?.sector ?? null;
 
     return { valRows, bs, stmts, fm, sector };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Read 10Y daily valuation history, full financial statements, and ticker
+ * share count/sector for /api/analysis/[ticker]/history and SSR prefetch
+ * directly via WAL read-only SQLite, bypassing Prisma's single-connection queue.
+ */
+export function readHistorySqliteData(
+  symbol: string,
+  valFromDate: Date,
+  stmtFromDate: Date,
+): ReadonlyHistoryDbData | null {
+  const state = getReadonlyState();
+  if (!state || !('histValRows' in state.prepared)) return null;
+
+  try {
+    const rawValRows = state.prepared.histValRows.all(symbol, valFromDate.getTime());
+    const valRows: ReadonlyHistoryValRow[] = rawValRows.map((r) => ({
+      date: toDate(r.date),
+      peRatio: r.peRatio ?? null,
+      psRatio: r.psRatio ?? null,
+      fcfYield: r.fcfYield ?? null,
+      closePrice: r.closePrice ?? null,
+      marketCap: r.marketCap ?? null,
+    }));
+
+    const rawStmts = state.prepared.histStmts.all(symbol, stmtFromDate.getTime());
+    const statements: FinancialStatement[] = rawStmts.map((s) => ({
+      ...s,
+      endDate: toDate(s.endDate),
+      createdAt: toDate(s.createdAt),
+      updatedAt: toDate(s.updatedAt),
+    }));
+
+    const tickerRow = state.prepared.histTickerInfo.get(symbol);
+    const tickerInfo = tickerRow
+      ? {
+          sharesOutstanding: tickerRow.sharesOutstanding ?? null,
+          sector: tickerRow.sector ?? null,
+        }
+      : null;
+
+    return { valRows, statements, tickerInfo };
   } catch {
     return null;
   }

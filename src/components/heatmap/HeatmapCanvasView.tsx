@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CanvasHeatmap } from '../CanvasHeatmap';
 import { SectorLabel } from './SectorLabel';
 import type { CompanyNode, HeatmapMetric, SectorLabelVariant, HierarchyData, TreemapLeaf, TreemapNode } from '@/lib/heatmap/types';
@@ -58,10 +58,13 @@ export function HeatmapCanvasView({
     onSectorClick,
 }: HeatmapCanvasViewProps) {
     const effectiveScale = scale * panZoom.zoom;
-    const effectiveOffset = {
-        x: offset.x * panZoom.zoom + panZoom.panX,
-        y: offset.y * panZoom.zoom + panZoom.panY,
-    };
+    const effectiveOffset = useMemo(
+        () => ({
+            x: offset.x * panZoom.zoom + panZoom.panX,
+            y: offset.y * panZoom.zoom + panZoom.panY,
+        }),
+        [offset.x, offset.y, panZoom.zoom, panZoom.panX, panZoom.panY],
+    );
 
     return (
         <>

@@ -21,6 +21,7 @@ import {
   prefetchTopNews,
   prefetchDipData,
   prefetchMarketProfile,
+  raceWithTimeout,
 } from '@/lib/analysis/pageData';
 import { buildStockSchema } from '@/lib/seo/analysisSchemas';
 import { buildFlowPeriods, type StatementRow } from '@/components/company/analysis/sections/FinancialFlowsSection';
@@ -36,7 +37,7 @@ import { EarningsSection } from '@/components/company/analysis/sections/Earnings
 import { EarningsBanner } from '@/components/company/analysis/sections/EarningsBanner';
 import { RecentMovesSection } from '@/components/company/analysis/sections/RecentMovesSection';
 import { RelatedOpportunities } from '@/components/company/analysis/sections/RelatedOpportunities';
-import { getRelatedOpportunities } from '@/lib/analysis/relatedOpportunities';
+import { getRelatedOpportunities, type RelatedOpportunities as RelatedOpportunitiesData } from '@/lib/analysis/relatedOpportunities';
 import { PriceHistorySection } from '@/components/company/analysis/sections/PriceHistorySection';
 import { getCandlesPayload } from '@/lib/analysis/candlesData';
 import { KeyMetricsTable } from '@/components/company/analysis/KeyMetricsTable';
@@ -151,24 +152,32 @@ export default async function AnalysisPage({ params }: PageProps) {
     payoutRatio: data.finnhubMetrics?.payoutRatio ?? null,
   };
 
+  const relatedFallback: RelatedOpportunitiesData = {
+    sector: data?.sector ?? null,
+    industry: data?.industry ?? null,
+    groups: [],
+  };
+  const withBudget = <T,>(promise: Promise<T>, fallback: T, ms = 2000): Promise<T> =>
+    raceWithTimeout(promise, ms).then((res) => res ?? fallback);
+
   // Fetch everything in parallel (independent queries).
   // Includes SSR pre-fetch of analysis API + history + dipData for instant hydration.
   const [earningsData, recentMoves, relatedOpps, analysisData, historyData, week52, topNews, matchedScreens, tickerNav, similarTickers, insiderActivity, premarketData, dipData, etfBasket, peerPillars, marketProfile] = await Promise.all([
-    isEtf ? Promise.resolve({ upcoming: [], recent: [] }) : getEarningsForTicker(tickerUpper),
-    getRecentSignificantMoves(tickerUpper),
-    getRelatedOpportunities(tickerUpper, relatedSeed),
+    isEtf ? Promise.resolve({ upcoming: [], recent: [] }) : withBudget(getEarningsForTicker(tickerUpper), { upcoming: [], recent: [] }),
+    withBudget(getRecentSignificantMoves(tickerUpper), []),
+    withBudget(getRelatedOpportunities(tickerUpper, relatedSeed), relatedFallback),
     isEtf ? Promise.resolve(null) : prefetchAnalysisData(tickerUpper),
     isEtf ? Promise.resolve(null) : prefetchHistoryData(tickerUpper),
     get52WeekRange(tickerUpper),
     prefetchTopNews(tickerUpper, companyName),
     getMatchedScreens(tickerUpper),
-    getTickerNav(tickerUpper, navSeed),
-    getSimilarTickers(tickerUpper, navSeed),
-    isEtf ? Promise.resolve([]) : getInsiderActivity90d(tickerUpper),
+    raceWithTimeout(getTickerNav(tickerUpper, navSeed), 2000),
+    raceWithTimeout(getSimilarTickers(tickerUpper, navSeed), 2000),
+    isEtf ? Promise.resolve([]) : withBudget(getInsiderActivity90d(tickerUpper), []),
     getTodayPremarket(tickerUpper),
     prefetchDipData(tickerUpper),
     isEtf ? getEtfBasket(tickerUpper) : Promise.resolve(null),
-    isEtf ? Promise.resolve(null) : getPeerPillars(data?.sector ?? null, data?.industry ?? null),
+    isEtf ? Promise.resolve(null) : raceWithTimeout(getPeerPillars(data?.sector ?? null, data?.industry ?? null), 2000),
     prefetchMarketProfile(tickerUpper, profileSeed),
   ]);
 

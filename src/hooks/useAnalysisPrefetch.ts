@@ -13,7 +13,11 @@ export type PrefetchTarget = CompanyNode | string | null;
  */
 export function useAnalysisPrefetch(delayMs = 80) {
   const router = useRouter();
-  const stateRef = useRef<{ timer?: ReturnType<typeof setTimeout>; done: Set<string> }>({
+  const stateRef = useRef<{
+    timer?: ReturnType<typeof setTimeout> | undefined;
+    pendingSymbol?: string | null;
+    done: Set<string>;
+  }>({
     done: new Set(),
   });
 
@@ -21,20 +25,37 @@ export function useAnalysisPrefetch(delayMs = 80) {
     const state = stateRef.current;
     return () => {
       clearTimeout(state.timer);
+      state.timer = undefined;
+      state.pendingSymbol = null;
     };
   }, []);
 
   return useCallback(
     (target: PrefetchTarget) => {
       const state = stateRef.current;
-      clearTimeout(state.timer);
-      if (!target) return;
+      if (!target) {
+        clearTimeout(state.timer);
+        state.timer = undefined;
+        state.pendingSymbol = null;
+        return;
+      }
       const raw = typeof target === 'string' ? target : target.symbol;
-      if (!raw) return;
+      if (!raw) {
+        clearTimeout(state.timer);
+        state.timer = undefined;
+        state.pendingSymbol = null;
+        return;
+      }
       const symbol = raw.toUpperCase();
       if (state.done.has(symbol)) return;
+      // Moving within the same tile should NOT reset the hover countdown.
+      if (state.pendingSymbol === symbol && state.timer !== undefined) return;
 
+      clearTimeout(state.timer);
+      state.pendingSymbol = symbol;
       state.timer = setTimeout(() => {
+        state.timer = undefined;
+        state.pendingSymbol = null;
         state.done.add(symbol);
         router.prefetch(`/analysis/${encodeURIComponent(symbol)}`);
       }, delayMs);

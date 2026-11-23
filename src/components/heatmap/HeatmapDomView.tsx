@@ -70,8 +70,9 @@ export function HeatmapDomView({
                         onMouseEnter={() => onTileHover(company)}
                         onMouseLeave={() => onTileHover(null)}
                         onClick={(e) => {
+                            e.stopPropagation();
                             onTileClick?.(company);
-                            if (isMobile) onMobileTap?.(company, e.clientX, e.clientY);
+                            if (isMobile && !onTileClick) onMobileTap?.(company, e.clientX, e.clientY);
                         }}
                         onDoubleClick={(e) => {
                             // Tile dblclick = navigate; don't let it bubble to the

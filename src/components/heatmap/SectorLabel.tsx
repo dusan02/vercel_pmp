@@ -111,27 +111,26 @@ export function SectorLabel({
                 height: labelHeight,
                 paddingLeft: labelLeft,
                 overflow: 'hidden',
-                ...(isInteractive ? { pointerEvents: 'auto' as const } : {}),
             }}
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
-            onClick={onClick}
         >
             {sectorLabelVariant === 'full' ? (
                 <div
-                    className={styles.sectorLabelStripFull}
+                    className={`${styles.sectorLabelStripFull} no-redirect`}
                     style={{
                         fontSize: responsiveFontSize,
                         borderLeft: `3px solid ${accentColor}`,
                         paddingLeft: '6px',
+                        pointerEvents: isInteractive ? 'auto' : 'none',
                         ...(isMobile ? {
                             width: 'fit-content',
                             maxWidth: '100%',
                             padding: '2px 8px',
                             borderRadius: '6px',
-                            borderLeft: `3px solid ${accentColor}`,
                         } : {}),
                     }}
+                    onMouseEnter={onMouseEnter}
+                    onMouseLeave={onMouseLeave}
+                    onClick={onClick ? (e) => { e.stopPropagation(); onClick(); } : undefined}
                 >
                     <span>{displayName}</span>
                     {sectorSummary && (
@@ -140,12 +139,16 @@ export function SectorLabel({
                 </div>
             ) : (
                 <div
-                    className={styles.sectorLabelPillCompact}
+                    className={`${styles.sectorLabelPillCompact} no-redirect`}
                     style={{
                         fontSize: responsiveFontSize,
                         borderLeft: `3px solid ${accentColor}`,
                         paddingLeft: '5px',
+                        pointerEvents: isInteractive ? 'auto' : 'none',
                     }}
+                    onMouseEnter={onMouseEnter}
+                    onMouseLeave={onMouseLeave}
+                    onClick={onClick ? (e) => { e.stopPropagation(); onClick(); } : undefined}
                 >
                     {displayName}
                 </div>

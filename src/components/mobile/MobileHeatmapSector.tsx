@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import type { CompanyNode, HeatmapMetric } from '@/lib/heatmap/types';
 import type { MobileTreemapSector } from '@/lib/heatmap/mobileTreemap';
 import { getMobileTileLabel } from '@/lib/heatmap/mobileLabels';
@@ -28,6 +28,16 @@ export const MobileHeatmapSector: React.FC<MobileHeatmapSectorProps> = ({
   const secW = sector.x1 - sector.x0;
   const secH = sector.y1 - sector.y0;
 
+  const activateTile = useCallback((company: CompanyNode) => {
+    // When direct navigation (onTileClick) is wired, go straight to analysis on 1 tap
+    // instead of popping a preview sheet that looks like a 2-step gate.
+    if (onTileClick) {
+      onTileClick(company);
+    } else {
+      onTileSelect(company);
+    }
+  }, [onTileClick, onTileSelect]);
+
   const handleTilesClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement | null;
     const tileEl = target?.closest?.('[data-heatmap-tile="1"]') as HTMLElement | null;
@@ -46,14 +56,12 @@ export const MobileHeatmapSector: React.FC<MobileHeatmapSectorProps> = ({
     if (!picked) return;
     e.preventDefault();
     e.stopPropagation();
-    onTileSelect(picked);
-    onTileClick?.(picked);
+    activateTile(picked);
   };
 
-  const handleTileClick = (company: CompanyNode) => {
-    onTileSelect(company);
-    onTileClick?.(company);
-  };
+  const handleTileClick = useCallback((company: CompanyNode) => {
+    activateTile(company);
+  }, [activateTile]);
 
   return (
     <div

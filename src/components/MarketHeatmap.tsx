@@ -73,8 +73,33 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
   const [hoveredSector, setHoveredSector] = useState<string | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [mobileTappedNode, setMobileTappedNode] = useState<CompanyNode | null>(null);
+  const [navigatingSymbol, setNavigatingSymbol] = useState<string | null>(null);
   const mobileTapTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const navTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const lastNavRef = useRef<{ symbol: string; at: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => () => {
+    clearTimeout(mobileTapTimerRef.current);
+    clearTimeout(navTimerRef.current);
+  }, []);
+
+  const handleTileNavigate = useCallback((company: CompanyNode) => {
+    if (!onTileClick) return;
+    const sym = company.symbol.toUpperCase();
+    const now = Date.now();
+    if (lastNavRef.current && lastNavRef.current.symbol === sym && now - lastNavRef.current.at < 4000) {
+      return;
+    }
+    lastNavRef.current = { symbol: sym, at: now };
+    onTileHover?.(null);
+    setNavigatingSymbol(sym);
+    clearTimeout(navTimerRef.current);
+    navTimerRef.current = setTimeout(() => setNavigatingSymbol(null), 6000);
+    onTileClick(company);
+  }, [onTileClick, onTileHover]);
+
+  const handleSectorMouseLeave = useCallback(() => setHoveredSector(null), []);
 
   const handleMobileTap = useCallback((company: CompanyNode, x: number, y: number) => {
     clearTimeout(mobileTapTimerRef.current);
@@ -182,9 +207,14 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
     handleZoomChange(zoomedSector === sectorName ? null : sectorName);
   }, [zoomedSector, handleZoomChange]);
 
+  const hoveredSymbolRef = useRef<string | null>(null);
   const handleCanvasHover = useCallback((company: CompanyNode | null, x: number, y: number) => {
-    setHoveredNode(company);
-    onTileHover?.(company);
+    const nextSym = company?.symbol ?? null;
+    if (nextSym !== hoveredSymbolRef.current) {
+      hoveredSymbolRef.current = nextSym;
+      setHoveredNode(company);
+      onTileHover?.(company);
+    }
     if (company) setMousePosition({ x, y });
   }, [onTileHover]);
 
@@ -331,10 +361,10 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
             colorScale={colorScale}
             hoveredSector={hoveredSector}
             zoomedSector={zoomedSector}
-            onTileClick={onTileClick}
+            onTileClick={onTileClick ? handleTileNavigate : undefined}
             onHover={handleCanvasHover}
             onSectorMouseEnter={setHoveredSector}
-            onSectorMouseLeave={() => setHoveredSector(null)}
+            onSectorMouseLeave={handleSectorMouseLeave}
             onSectorClick={handleSectorClick}
           />
         ) : (
@@ -350,15 +380,27 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
             sectorLabelVariant={sectorLabelVariant}
             isMobile={isMobile}
             zoomedSector={zoomedSector}
-            onTileClick={onTileClick}
+            onTileClick={onTileClick ? handleTileNavigate : undefined}
             onTileHover={(company) => { setHoveredNode(company); onTileHover?.(company); }}
             onMobileTap={handleMobileTap}
             onSectorMouseEnter={setHoveredSector}
-            onSectorMouseLeave={() => setHoveredSector(null)}
+            onSectorMouseLeave={handleSectorMouseLeave}
             onSectorClick={handleSectorClick}
           />
         )}
       </div>
+
+      {/* Immediate 1-click navigation pill */}
+      {navigatingSymbol && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed top-14 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 rounded-full bg-blue-600/95 px-4 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur-sm pointer-events-none"
+        >
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          <span>Opening {navigatingSymbol}…</span>
+        </div>
+      )}
 
       {/* Tooltip - hover on desktop, tap (2s) on mobile */}
       {(isMobile ? mobileTappedNode : hoveredNode) && (

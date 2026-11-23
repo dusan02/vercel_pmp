@@ -154,28 +154,49 @@ export async function getStocksList(options: {
 }): Promise<StockServiceResult> {
   const { limit = 50, offset = 0, sort = 'marketCapDiff', order = 'desc', tickers } = options;
   const isGlobalQuery = !(tickers && tickers.length > 0);
-  const useGlobalCache = isGlobalQuery && process.env.NODE_ENV !== 'test';
+  const useUniverseCache = process.env.NODE_ENV !== 'test';
 
-  if (useGlobalCache) {
-    if (globalUniverseCache) {
-      const age = Date.now() - globalUniverseCache.fetchedAt;
-      if (age < GLOBAL_UNIVERSE_STALE_MS) {
-        if (age >= GLOBAL_UNIVERSE_FRESH_MS) {
-          void refreshGlobalUniverse(sort, order).catch(() => {});
-        }
+  if (useUniverseCache) {
+    if (!globalUniverseCache || Date.now() - globalUniverseCache.fetchedAt >= GLOBAL_UNIVERSE_STALE_MS) {
+      const res = await refreshGlobalUniverse(sort, order);
+      if (isGlobalQuery && res.errors.length > 0 && res.data.length === 0) return res;
+    } else if (Date.now() - globalUniverseCache.fetchedAt >= GLOBAL_UNIVERSE_FRESH_MS) {
+      void refreshGlobalUniverse(sort, order).catch(() => {});
+    }
+
+    if (globalUniverseCache && globalUniverseCache.rows.length > 0) {
+      if (isGlobalQuery) {
         return {
           data: sliceUniverse(globalUniverseCache.rows, sort, order, offset, limit),
           errors: [],
         };
       }
-    }
 
-    const res = await refreshGlobalUniverse(sort, order);
-    if (res.errors.length > 0 && res.data.length === 0) return res;
-    return {
-      data: sliceUniverse(res.data, sort, order, offset, limit),
-      errors: res.errors,
-    };
+      const byTicker = new Map(globalUniverseCache.rows.map((r) => [r.ticker.toUpperCase(), r]));
+      const requestedUpper = Array.from(
+        new Set(tickers.map((t) => t.trim().toUpperCase()).filter(Boolean)),
+      );
+      const hits: StockData[] = [];
+      const missing: string[] = [];
+      for (const sym of requestedUpper) {
+        const row = byTicker.get(sym);
+        if (row) hits.push({ ...row });
+        else missing.push(sym);
+      }
+
+      if (missing.length === 0) {
+        sortStockData(hits, sort, order);
+        return { data: hits, errors: [] };
+      }
+
+      const tailRes = await executeStocksListQuery({ sort, order, tickers: missing });
+      if (tailRes.data.length > 0) {
+        await attachScoresAndEarnings(tailRes.data);
+      }
+      const combined = [...hits, ...tailRes.data];
+      sortStockData(combined, sort, order);
+      return { data: combined, errors: tailRes.errors };
+    }
   }
 
   const res = await executeStocksListQuery(options);

@@ -77,6 +77,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
     const lastHoverKeyRef = useRef<string | null>(null);
     const rafRef = useRef<number | null>(null);
     const pendingPointRef = useRef<{ x: number; y: number; clientX: number; clientY: number } | null>(null);
+    const pointerDownRef = useRef<{ company: CompanyNode; clientX: number; clientY: number } | null>(null);
 
     useEffect(() => {
         leavesRef.current = leaves;
@@ -302,7 +303,7 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
             }
         });
 
-    }, [leaves, width, height, scale, offset, metric, timeframe, colorScale, theme]);
+    }, [leaves, width, height, scale, offset.x, offset.y, metric, timeframe, colorScale, theme]);
 
     const hitTestClientPoint = useCallback((clientX: number, clientY: number): CompanyNode | null => {
         const canvas = canvasRef.current;
@@ -354,9 +355,11 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
         });
     }, []);
 
-    // Warm prefetch right on pointerdown (~80-120ms head start before click completes)
+    // Warm hover/prefetch on pointerdown (~80-120ms head start before click completes)
+    // and capture the pressed tile so slight jitter never drops a click.
     const handlePointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
         const company = hitTestClientPoint(e.clientX, e.clientY);
+        pointerDownRef.current = company ? { company, clientX: e.clientX, clientY: e.clientY } : null;
         const key = company?.symbol ?? null;
         if (company && key !== lastHoverKeyRef.current) {
             lastHoverKeyRef.current = key;
@@ -366,15 +369,25 @@ export const CanvasHeatmap: React.FC<CanvasHeatmapProps> = ({
 
     // Hit-test directly from click coordinates so fast/instant clicks never miss waiting on rAF
     const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+        e.stopPropagation();
         if (!onTileClick) return;
-        const company = hitTestClientPoint(e.clientX, e.clientY);
-        if (company) {
-            onTileClick(company);
+        const down = pointerDownRef.current;
+        pointerDownRef.current = null;
+        const direct = hitTestClientPoint(e.clientX, e.clientY);
+        if (direct) {
+            onTileClick(direct);
+            return;
+        }
+        // Fallback: if cursor slipped slightly onto a seam between pointerdown and click (<= 8px),
+        // honor the tile under pointerdown rather than silently dropping the click.
+        if (down && Math.hypot(e.clientX - down.clientX, e.clientY - down.clientY) <= 8) {
+            onTileClick(down.company);
         }
     }, [hitTestClientPoint, onTileClick]);
 
     const handleMouseLeave = useCallback(() => {
         pendingPointRef.current = null;
+        pointerDownRef.current = null;
         lastHoverKeyRef.current = null;
         if (rafRef.current !== null) {
             cancelAnimationFrame(rafRef.current);
