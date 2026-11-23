@@ -1,5 +1,13 @@
 import { cache } from 'react';
 import { prisma } from '@/lib/db/prisma';
+import {
+  readTickerPageSqliteData,
+  read52WeekRangeSqlite,
+  readTodayPremarketSqlite,
+  readRecentMovesSqlite,
+  readInsiderActivity90dSqlite,
+  readFinancialFlowsSqlite,
+} from '@/lib/db/readonlySqlite';
 import { dedupeShareClasses } from '@/lib/companyNames';
 import type { StatementRow } from '@/components/company/analysis/sections/FinancialFlowsSection';
 import { detectSession } from '@/lib/utils/timeUtils';
@@ -29,6 +37,11 @@ const API_BASE = `http://127.0.0.1:${process.env.PORT || 3001}`;
 // the page render — it used to run twice per request.
 export const getTickerData = cache(async function getTickerData(symbol: string) {
   try {
+    const sqliteRes = readTickerPageSqliteData(symbol);
+    if (sqliteRes.ok) {
+      return sqliteRes.data;
+    }
+
     // lastClosedRef = the latest DailyRef row that actually closed. Ticker.
     // latestPrevClose is the NEXT session's reference (== the last close
     // itself), so price/prevClose degenerates to 0.00% on weekends — the
@@ -159,6 +172,11 @@ export async function getRecentSignificantMoves(symbol: string) {
     const since = new Date();
     since.setDate(since.getDate() - 30);
 
+    const sqliteRes = readRecentMovesSqlite(symbol, since);
+    if (sqliteRes.ok) {
+      return sqliteRes.data;
+    }
+
     return await prisma.sessionPrice.findMany({
       where: {
         symbol,
@@ -183,6 +201,10 @@ export async function getRecentSignificantMoves(symbol: string) {
 export async function getInsiderActivity90d(symbol: string) {
   try {
     const since = new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10);
+    const sqliteRes = readInsiderActivity90dSqlite(symbol, since);
+    if (sqliteRes.ok) {
+      return sqliteRes.data;
+    }
     return await prisma.finnhubInsiderTransaction.findMany({
       where: { symbol, transactionDate: { gte: since } },
       select: { transactionCode: true, change: true, transactionPrice: true },
@@ -198,6 +220,10 @@ export async function getInsiderActivity90d(symbol: string) {
  */
 export async function getFinancialFlowsData(symbol: string): Promise<StatementRow[]> {
   try {
+    const sqliteRes = readFinancialFlowsSqlite(symbol);
+    if (sqliteRes.ok) {
+      return sqliteRes.data;
+    }
     return await prisma.financialStatement.findMany({
       where: { symbol, revenue: { gt: 0 } },
       orderBy: { endDate: 'desc' },
@@ -264,6 +290,11 @@ export async function getSectorPeers(sector: string | null | undefined, excludeS
  */
 export async function get52WeekRange(symbol: string) {
   try {
+    const sqliteRes = read52WeekRangeSqlite(symbol);
+    if (sqliteRes.ok) {
+      return sqliteRes.data;
+    }
+
     const now = Date.now();
     const day = 86_400_000;
     const cutoff = new Date(now - 365 * day);
@@ -290,8 +321,14 @@ export async function get52WeekRange(symbol: string) {
  */
 export async function getTodayPremarket(symbol: string) {
   try {
+    const etDate = createETDate(getDateET());
+    const sqliteRes = readTodayPremarketSqlite(symbol, etDate);
+    if (sqliteRes.ok) {
+      return sqliteRes.data;
+    }
+
     return await prisma.sessionPrice.findUnique({
-      where: { symbol_date_session: { symbol, date: createETDate(getDateET()), session: 'pre' } },
+      where: { symbol_date_session: { symbol, date: etDate, session: 'pre' } },
       select: { lastPrice: true, changePct: true, lastTs: true },
     });
   } catch {
@@ -301,10 +338,11 @@ export async function getTodayPremarket(symbol: string) {
 
 /** SSR pre-fetch analysis data — same Redis-cache + compute pipeline as
  *  /api/analysis/[ticker] (origin passed so stale-cache revalidation still
- *  fires), without a localhost HTTP hop on every cold ISR render. */
+ *  fires), without a localhost HTTP hop on every cold ISR render. Bounded so
+ *  a Redis-miss + Prisma backlog never stalls click navigation. */
 export async function prefetchAnalysisData(symbol: string): Promise<any> {
   try {
-    return await getAnalysisResponse(symbol, { origin: API_BASE });
+    return await raceWithTimeout(getAnalysisResponse(symbol, { origin: API_BASE }), 1500);
   } catch {
     return null;
   }

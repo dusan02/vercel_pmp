@@ -176,7 +176,7 @@ export default async function AnalysisPage({ params }: PageProps) {
     isEtf ? Promise.resolve([]) : withBudget(getInsiderActivity90d(tickerUpper), []),
     getTodayPremarket(tickerUpper),
     prefetchDipData(tickerUpper),
-    isEtf ? getEtfBasket(tickerUpper) : Promise.resolve(null),
+    isEtf ? raceWithTimeout(getEtfBasket(tickerUpper), 1500) : Promise.resolve(null),
     isEtf ? Promise.resolve(null) : raceWithTimeout(getPeerPillars(data?.sector ?? null, data?.industry ?? null), 2000),
     prefetchMarketProfile(tickerUpper, profileSeed),
   ]);

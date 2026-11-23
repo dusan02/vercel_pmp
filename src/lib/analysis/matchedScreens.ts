@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { prisma } from '@/lib/db/prisma';
+import { readMatchedScreensSqlite } from '@/lib/db/readonlySqlite';
 import { QUICK_SCREENS, matchesPreset, presetToQueryString } from '@/lib/utils/screener';
 
 export interface MatchedScreen {
@@ -17,7 +18,10 @@ export interface MatchedScreen {
  * findUnique + three 1:1 relations, ISR-cached with the page render.
  */
 export const getMatchedScreens = cache(async (symbol: string): Promise<MatchedScreen[]> => {
-    const t = await prisma.ticker.findUnique({
+    const sqliteRes = readMatchedScreensSqlite(symbol);
+    const t = sqliteRes.ok
+        ? sqliteRes.data
+        : await prisma.ticker.findUnique({
         where: { symbol },
         select: {
             lastPrice: true,
