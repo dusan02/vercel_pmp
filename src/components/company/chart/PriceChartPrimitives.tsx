@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useImperativeHandle, useState } from 'react';
 import Link from 'next/link';
 import {
   ResponsiveContainer,
@@ -345,59 +345,83 @@ export function SimilarChips({ label, dim, items, from }: {
   );
 }
 
+export interface PriceReadoutStripHandle {
+  setHoverIndex: (idx: number | null) => void;
+}
+
 /** TradingView-style OHLC / benchmark / indicator readout strip above the plot. */
-export function PriceReadoutStrip({
+export const PriceReadoutStrip = React.forwardRef<
+  PriceReadoutStripHandle,
+  {
+    data?: ChartPoint[] | undefined;
+    hd: ChartPoint | undefined;
+    ticker: string;
+    bmActive: boolean;
+    bmLabel: string;
+    inds: Set<IndKey>;
+    medianPe: number | null;
+  }
+>(function PriceReadoutStrip({
+  data,
   hd,
   ticker,
   bmActive,
   bmLabel,
   inds,
   medianPe,
-}: {
-  hd: ChartPoint | undefined;
-  ticker: string;
-  bmActive: boolean;
-  bmLabel: string;
-  inds: Set<IndKey>;
-  medianPe: number | null;
-}) {
-  if (!hd) return null;
-  const up = hd.c >= hd.o;
-  const chg = hd.o > 0 ? ((hd.c - hd.o) / hd.o) * 100 : 0;
+}, ref) {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    setHoverIdx(null);
+  }, [data, ticker]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      setHoverIndex: (idx) => setHoverIdx((prev) => (prev === idx ? prev : idx)),
+    }),
+    [],
+  );
+
+  const point = (hoverIdx != null ? data?.[hoverIdx] : undefined) ?? hd;
+  if (!point) return null;
+  const up = point.c >= point.o;
+  const chg = point.o > 0 ? ((point.c - point.o) / point.o) * 100 : 0;
 
   return (
     <div className="mb-0.5 flex items-baseline gap-x-2.5 overflow-x-auto whitespace-nowrap text-[11px] tabular-nums text-gray-500 dark:text-gray-400 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <span className="font-medium">{new Date(hd.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+      <span className="font-medium">{new Date(point.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
       {bmActive ? (
         <>
-          <span className="font-semibold" style={{ color: (hd.chgPct ?? 0) >= 0 ? UP : DOWN }}>{ticker} {(hd.chgPct ?? 0) >= 0 ? '+' : ''}{(hd.chgPct ?? 0).toFixed(1)}%</span>
-          <span className="font-semibold" style={{ color: '#0ea5e9' }}>{bmLabel} {(hd.bmPct ?? 0) >= 0 ? '+' : ''}{(hd.bmPct ?? 0).toFixed(1)}%</span>
-          {hd.chgPct != null && hd.bmPct != null && (
-            <span>Δ {(hd.chgPct - hd.bmPct) >= 0 ? '+' : ''}{(hd.chgPct - hd.bmPct).toFixed(1)}pp</span>
+          <span className="font-semibold" style={{ color: (point.chgPct ?? 0) >= 0 ? UP : DOWN }}>{ticker} {(point.chgPct ?? 0) >= 0 ? '+' : ''}{(point.chgPct ?? 0).toFixed(1)}%</span>
+          <span className="font-semibold" style={{ color: '#0ea5e9' }}>{bmLabel} {(point.bmPct ?? 0) >= 0 ? '+' : ''}{(point.bmPct ?? 0).toFixed(1)}%</span>
+          {point.chgPct != null && point.bmPct != null && (
+            <span>Δ {(point.chgPct - point.bmPct) >= 0 ? '+' : ''}{(point.chgPct - point.bmPct).toFixed(1)}pp</span>
           )}
         </>
       ) : (
         <>
-          <span>O ${hd.o.toFixed(2)}</span>
-          <span>H ${hd.h.toFixed(2)}</span>
-          <span>L ${hd.l.toFixed(2)}</span>
-          <span>C <b className="font-semibold" style={{ color: up ? UP : DOWN }}>${hd.c.toFixed(2)} ({chg >= 0 ? '+' : ''}{chg.toFixed(2)}%)</b></span>
-          <span>Vol {fmtVol(hd.v)}{hd.volSpike ? ' ⚡' : ''}</span>
-          {inds.has('ma20') && hd.sma20 != null && <span style={{ color: MA20 }}>MA20 ${hd.sma20.toFixed(2)}</span>}
-          {inds.has('ma50') && hd.sma50 != null && <span style={{ color: MA50 }}>MA50 ${hd.sma50.toFixed(2)}</span>}
-          {inds.has('ma200') && hd.sma200 != null && <span style={{ color: MA200 }}>MA200 ${hd.sma200.toFixed(2)}</span>}
-          {inds.has('bb') && hd.bbLo != null && hd.bbUp != null && <span style={{ color: BB_COLOR }}>BB ${hd.bbLo.toFixed(0)}–${hd.bbUp.toFixed(0)}</span>}
-          {hd.pe != null && hd.pe > 0 && (
-            <span>P/E {hd.pe.toFixed(1)}×{medianPe != null && medianPe !== 0 && (
-              <span style={{ color: hd.pe >= medianPe ? DOWN : UP }}> ({((hd.pe - medianPe) / medianPe) * 100 >= 0 ? '+' : ''}{(((hd.pe - medianPe) / medianPe) * 100).toFixed(0)}% vs med)</span>
+          <span>O ${point.o.toFixed(2)}</span>
+          <span>H ${point.h.toFixed(2)}</span>
+          <span>L ${point.l.toFixed(2)}</span>
+          <span>C <b className="font-semibold" style={{ color: up ? UP : DOWN }}>${point.c.toFixed(2)} ({chg >= 0 ? '+' : ''}{chg.toFixed(2)}%)</b></span>
+          <span>Vol {fmtVol(point.v)}{point.volSpike ? ' ⚡' : ''}</span>
+          {inds.has('ma20') && point.sma20 != null && <span style={{ color: MA20 }}>MA20 ${point.sma20.toFixed(2)}</span>}
+          {inds.has('ma50') && point.sma50 != null && <span style={{ color: MA50 }}>MA50 ${point.sma50.toFixed(2)}</span>}
+          {inds.has('ma200') && point.sma200 != null && <span style={{ color: MA200 }}>MA200 ${point.sma200.toFixed(2)}</span>}
+          {inds.has('bb') && point.bbLo != null && point.bbUp != null && <span style={{ color: BB_COLOR }}>BB ${point.bbLo.toFixed(0)}–${point.bbUp.toFixed(0)}</span>}
+          {point.pe != null && point.pe > 0 && (
+            <span>P/E {point.pe.toFixed(1)}×{medianPe != null && medianPe !== 0 && (
+              <span style={{ color: point.pe >= medianPe ? DOWN : UP }}> ({((point.pe - medianPe) / medianPe) * 100 >= 0 ? '+' : ''}{(((point.pe - medianPe) / medianPe) * 100).toFixed(0)}% vs med)</span>
             )}</span>
           )}
-          {inds.has('fair') && hd.fv != null && (
+          {inds.has('fair') && point.fv != null && (
             <span style={{ color: FAIR_COLOR }}>
-              Fair {formatFairDollar(hd.fv)}
-              {hd.fvBear != null && hd.fvBull != null && ` (${formatFairDollar(hd.fvBear)}–${formatFairDollar(hd.fvBull)})`}
+              Fair {formatFairDollar(point.fv)}
+              {point.fvBear != null && point.fvBull != null && ` (${formatFairDollar(point.fvBear)}–${formatFairDollar(point.fvBull)})`}
               {(() => {
-                const uv = ((hd.fv - hd.c) / hd.fv) * 100;
+                const uv = ((point.fv - point.c) / point.fv) * 100;
                 return (
                   <span style={{ color: uv >= 0 ? UP : DOWN }}>
                     {' '}({Math.abs(uv) < 1 ? 'fair' : uv > 0 ? `${uv.toFixed(0)}% under` : `${Math.abs(uv).toFixed(0)}% over`})
@@ -406,12 +430,12 @@ export function PriceReadoutStrip({
               })()}
             </span>
           )}
-          {inds.has('fair') && hd.fvChanged && <span style={{ color: FAIR_COLOR }}>↑ earnings update</span>}
+          {inds.has('fair') && point.fvChanged && <span style={{ color: FAIR_COLOR }}>↑ earnings update</span>}
         </>
       )}
     </div>
   );
-}
+});
 
 /** Synchronized RSI(14) and MACD(12,26,9) panes under the price chart. */
 export function PriceOscillatorPanes({

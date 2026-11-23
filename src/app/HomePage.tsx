@@ -64,15 +64,7 @@ const TradingIdeasBoard = dynamic(
   () => import('@/components/tradingIdeas/TradingIdeasBoard').then((mod) => mod.TradingIdeasBoard),
   { ssr: false, loading: () => null }
 );
-// OPTIMIZATION: Enable SSR for desktop (faster initial load), keep ssr: false for mobile
-// Desktop heatmap can be server-rendered, mobile uses different components
-const HomeHeatmap = dynamic(
-  () => import('@/components/home/HomeHeatmap').then((mod) => mod.HomeHeatmap),
-  {
-    ssr: true, // Enable SSR for faster desktop loading
-    loading: () => null // Custom loading handled inside if needed, or skeleton
-  }
-);
+import { HomeHeatmap } from '@/components/home/HomeHeatmap';
 const HomeAnalysis = dynamic(
   () => import('@/components/home/HomeAnalysis').then((mod) => mod.HomeAnalysis),
   { ssr: true, loading: () => null }
@@ -233,9 +225,7 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
       void import('@/components/home/HomeBlog');
       void import('@/components/home/HomePricing');
       void import('@/components/StockScreener');
-      // Heatmap inner chunks (the heaviest waterfall: 4 nested dynamic levels)
-      void import('@/components/HeatmapPreview');
-      void import('@/components/ResponsiveMarketHeatmap');
+      // Heatmap inner dynamic chunks (desktop D3 map + mobile treemap)
       void import('@/components/MarketHeatmap');
       void import('@/components/MobileTreemapNew');
     };

@@ -2,7 +2,6 @@ import { Suspense } from 'react';
 import { Metadata } from 'next';
 import HomePage from './HomePage';
 import { getStocksData } from '@/services/stockService';
-import { getEarningsWeekMap, type EarningsWeekDay } from '@/lib/seo/earningsSSR';
 import { getProjectTickers } from '@/data/defaultTickers';
 import { getCompanyName } from '@/lib/companyNames';
 import { logger } from '@/lib/utils/logger';
@@ -74,7 +73,6 @@ export default async function Page() {
   let initialMoversData: any[] = [];
   let initialBlogSnapshots: any[] = [];
   let initialHeatmapData: any[] = [];
-  let weeklyEarningsData: Record<string, EarningsWeekDay> = {};
 
   // ET dates computed unconditionally — deterministic SSR props for the calendar
   const todayET = getDateET(new Date());
@@ -95,7 +93,7 @@ export default async function Page() {
     // Client-side hooks will fetch the data anyway, so empty initial data is safe.
     const SSR_TIMEOUT_MS = 3000;
 
-    const [stocksResult, moversResult, blogResult, heatmapResult, weeklyEarningsResult] = await Promise.allSettled([
+    const [stocksResult, moversResult, blogResult, heatmapResult] = await Promise.allSettled([
       withTimeout(getStocksData(topTickers, project), SSR_TIMEOUT_MS, { data: [], errors: ['SSR timeout'] }),
       // Movers via shared pipeline — same records as /api/stocks/movers,
       // without a self-referential HTTP hop (localhost:3001 fetch used to
@@ -108,30 +106,36 @@ export default async function Page() {
         SSR_TIMEOUT_MS,
         []
       ),
-      // SSR fetch for blog snapshots — used by HomeBlog
+      // SSR fetch for DailyRecapCard — only the 1 latest daily snapshot; the Blog tab
+      // fetches the full archive when opened.
       withTimeout(
         (async () => {
-          const snapshots = await prisma.dailyBlogSnapshot.findMany({
+          const latestDaily = await prisma.dailyBlogSnapshot.findFirst({
+            where: { NOT: { date: { startsWith: 'weekly-' } } },
             orderBy: { date: 'desc' },
-            take: 10,
+            select: {
+              date: true,
+              overviewJson: true,
+              gainersJson: true,
+              losersJson: true,
+              mcapMoversJson: true,
+            },
           });
-          return snapshots;
+          return latestDaily ? [latestDaily] : [];
         })(),
         SSR_TIMEOUT_MS,
         []
       ),
-      // Heatmap via shared service — same cache-aware pipeline as
-      // /api/heatmap (compact rows for instant hydration), no HTTP hop.
+      // Heatmap via shared service — top 300 caps for fast SSR hydration;
+      // client refreshes the full universe after mount.
       withTimeout(
         (async () => {
-          const result = await getHeatmapData();
+          const result = await getHeatmapData({ limit: 300 });
           return result.ok ? result.rows : [];
         })(),
         SSR_TIMEOUT_MS,
         []
       ),
-      // SSR fetch for weekly earnings — full Mon-Sun week map with EPS/revenue details
-      withTimeout(getEarningsWeekMap(earningsWeekStartStr), SSR_TIMEOUT_MS, {}),
     ]);
 
     if (stocksResult.status === 'fulfilled' && stocksResult.value) {
@@ -171,14 +175,6 @@ export default async function Page() {
       }
     } else {
       logger.error('SSR Error fetching heatmap', heatmapResult.reason);
-    }
-
-    if (weeklyEarningsResult.status === 'fulfilled') {
-      weeklyEarningsData = weeklyEarningsResult.value as Record<string, EarningsWeekDay>;
-      const total = Object.values(weeklyEarningsData).reduce((s, d) => s + d.preMarket.length + d.afterMarket.length + d.timeTbd.length, 0);
-      if (total > 0) {
-        logger.ssr(`Loaded ${total} weekly earnings across ${Object.keys(weeklyEarningsData).length} days`);
-      }
     }
 
   } catch (error) {
@@ -232,7 +228,6 @@ export default async function Page() {
           initialMoversData={initialMoversData}
           initialBlogSnapshots={initialBlogSnapshots}
           initialHeatmapData={initialHeatmapData}
-          weeklyEarningsData={weeklyEarningsData}
           earningsTodayStr={earningsTodayStr}
           earningsWeekStartStr={earningsWeekStartStr}
           eligibleTickers={eligibleSet}

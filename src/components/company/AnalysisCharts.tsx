@@ -1,6 +1,6 @@
 'use client';
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import FinancialChart from './FinancialChart';
 import DebtCashChart from './DebtCashChart';
 import CashFlowChart from './CashFlowChart';
@@ -27,6 +27,62 @@ const suspenseFallback = (color: string) => (
         <div className={`animate-spin rounded-full h-6 w-6 border-b-2 ${color}`} />
     </div>
 );
+
+/**
+ * Progressively mounts below-the-fold charts as the user scrolls (or after
+ * a short idle fallback) so 10 Recharts trees don't block initial hydration.
+ */
+function DeferredChartSlot({
+    children,
+    minHeight = 360,
+    className,
+}: {
+    children: React.ReactNode;
+    minHeight?: number | undefined;
+    className?: string | undefined;
+}) {
+    const ref = useRef<HTMLDivElement | null>(null);
+    const [visible, setVisible] = useState(
+        () => typeof window === 'undefined' || typeof IntersectionObserver === 'undefined',
+    );
+
+    useEffect(() => {
+        if (visible) return;
+        const el = ref.current;
+        if (!el || typeof IntersectionObserver === 'undefined') {
+            setVisible(true);
+            return;
+        }
+        const io = new IntersectionObserver(
+            (entries) => {
+                if (entries.some((e) => e.isIntersecting)) {
+                    setVisible(true);
+                    io.disconnect();
+                }
+            },
+            { rootMargin: '450px 0px' },
+        );
+        io.observe(el);
+        const fallbackId = setTimeout(() => setVisible(true), 1200);
+        return () => {
+            io.disconnect();
+            clearTimeout(fallbackId);
+        };
+    }, [visible]);
+
+    return (
+        <div ref={ref} className={className} style={visible ? undefined : { minHeight }}>
+            {visible ? (
+                children
+            ) : (
+                <div
+                    className="w-full rounded-2xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 animate-pulse"
+                    style={{ height: minHeight }}
+                />
+            )}
+        </div>
+    );
+}
 
 export function AnalysisCharts({ ticker, data, flowPeriods }: AnalysisChartsProps) {
     const hasStatements = !!(data.statements && data.statements.length > 0);
@@ -70,175 +126,191 @@ export function AnalysisCharts({ ticker, data, flowPeriods }: AnalysisChartsProp
             </ChartErrorBoundary>
 
             {/* Cash Flow Analysis */}
-            <ChartErrorBoundary>
-                <ChartSection
-                    iconBgClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
-                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
-                    title="Cash Flow Analysis"
-                    subtitle="Operating CF, CapEx, Free Cash Flow & Net Income"
-                    hasData={hasStatements}
-                    emptyMessage="No cash flow data available. Click Refresh Analysis to fetch data."
-                >
-                    <CashFlowChart statements={data.statements ?? []} />
-                </ChartSection>
-            </ChartErrorBoundary>
+            <DeferredChartSlot>
+                <ChartErrorBoundary>
+                    <ChartSection
+                        iconBgClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
+                        icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
+                        title="Cash Flow Analysis"
+                        subtitle="Operating CF, CapEx, Free Cash Flow & Net Income"
+                        hasData={hasStatements}
+                        emptyMessage="No cash flow data available. Click Refresh Analysis to fetch data."
+                    >
+                        <CashFlowChart statements={data.statements ?? []} />
+                    </ChartSection>
+                </ChartErrorBoundary>
+            </DeferredChartSlot>
 
             {/* Cash Flow Sankey — where operating cash goes */}
-            <ChartErrorBoundary>
-                <ChartSection
-                    iconBgClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
-                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
-                    title="Cash Flow Breakdown"
-                    subtitle="OCF → CapEx → FCF → True FCF — latest period"
-                    hasData={hasFlows}
-                    emptyMessage="No cash flow data available"
-                >
-                    <SankeyCell kind="cashflow" annual={flowPeriods?.annual ?? null} quarterly={flowPeriods?.quarterly ?? null} />
-                </ChartSection>
-            </ChartErrorBoundary>
+            <DeferredChartSlot>
+                <ChartErrorBoundary>
+                    <ChartSection
+                        iconBgClass="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
+                        icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
+                        title="Cash Flow Breakdown"
+                        subtitle="OCF → CapEx → FCF → True FCF — latest period"
+                        hasData={hasFlows}
+                        emptyMessage="No cash flow data available"
+                    >
+                        <SankeyCell kind="cashflow" annual={flowPeriods?.annual ?? null} quarterly={flowPeriods?.quarterly ?? null} />
+                    </ChartSection>
+                </ChartErrorBoundary>
+            </DeferredChartSlot>
 
             {/* Debt vs Cash */}
-            <ChartErrorBoundary>
-                <ChartSection
-                    iconBgClass="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
-                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>}
-                    title="Debt vs Cash"
-                    subtitle="Total Debt, Liquidity & Net Debt History"
-                    hasData={hasStatements}
-                    emptyMessage="No balance sheet data available for this ticker. Click Refresh Analysis to fetch data."
-                >
-                    <DebtCashChart statements={data.statements ?? []} />
-                </ChartSection>
-            </ChartErrorBoundary>
+            <DeferredChartSlot>
+                <ChartErrorBoundary>
+                    <ChartSection
+                        iconBgClass="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+                        icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>}
+                        title="Debt vs Cash"
+                        subtitle="Total Debt, Liquidity & Net Debt History"
+                        hasData={hasStatements}
+                        emptyMessage="No balance sheet data available for this ticker. Click Refresh Analysis to fetch data."
+                    >
+                        <DebtCashChart statements={data.statements ?? []} />
+                    </ChartSection>
+                </ChartErrorBoundary>
+            </DeferredChartSlot>
 
             {/* Balance Sheet Sankey — asset funding structure */}
-            <ChartErrorBoundary>
-                <ChartSection
-                    iconBgClass="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
-                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>}
-                    title="Balance Sheet Breakdown"
-                    subtitle="Assets → Liabilities + Equity — latest period"
-                    hasData={hasFlows}
-                    emptyMessage="No balance sheet data available"
-                >
-                    <SankeyCell kind="balance" annual={flowPeriods?.annual ?? null} quarterly={flowPeriods?.quarterly ?? null} />
-                </ChartSection>
-            </ChartErrorBoundary>
+            <DeferredChartSlot>
+                <ChartErrorBoundary>
+                    <ChartSection
+                        iconBgClass="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+                        icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>}
+                        title="Balance Sheet Breakdown"
+                        subtitle="Assets → Liabilities + Equity — latest period"
+                        hasData={hasFlows}
+                        emptyMessage="No balance sheet data available"
+                    >
+                        <SankeyCell kind="balance" annual={flowPeriods?.annual ?? null} quarterly={flowPeriods?.quarterly ?? null} />
+                    </ChartSection>
+                </ChartErrorBoundary>
+            </DeferredChartSlot>
 
             {/* Shares Outstanding & Buybacks */}
-            <ChartErrorBoundary>
-                <ChartSection
-                    iconBgClass="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
-                    title="Shares Outstanding & Buybacks"
-                    subtitle="YoY change % per period (bars) & cumulative drift (line)"
-                    hasData={hasStatements}
-                    emptyMessage="No share data available. Click Refresh Analysis to fetch data."
-                >
-                    <ShareDilutionChart statements={data.statements ?? []} />
-                </ChartSection>
-            </ChartErrorBoundary>
+            <DeferredChartSlot>
+                <ChartErrorBoundary>
+                    <ChartSection
+                        iconBgClass="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                        icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+                        title="Shares Outstanding & Buybacks"
+                        subtitle="YoY change % per period (bars) & cumulative drift (line)"
+                        hasData={hasStatements}
+                        emptyMessage="No share data available. Click Refresh Analysis to fetch data."
+                    >
+                        <ShareDilutionChart statements={data.statements ?? []} />
+                    </ChartSection>
+                </ChartErrorBoundary>
+            </DeferredChartSlot>
 
             {/* Valuation History (Intrinsic vs Price) */}
-            <ChartErrorBoundary>
-                <ChartSection
-                    iconBgClass="bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-200"
-                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18" /></svg>}
-                    title="Valuation History"
-                    subtitle="Fair value vs Price (multiple + DCF)"
-                    hasData={hasValuationHistory}
-                    emptyMessage="No valuation history available"
-                >
-                    <ValuationHistoryChart
-                        valuationHistory={data.valuationHistory ?? []}
-                        valuationHistoryPE={data.valuationHistoryPE ?? []}
-                        valuationHistoryPS={data.valuationHistoryPS ?? []}
-                        valuationBasis={data.valuationBasis ?? null}
-                        fairValueMethod={data.fairValueMethod ?? null}
-                        valuationForecast={data.valuationForecast ?? []}
-                        valuationForecastPE={data.valuationForecastPE ?? []}
-                        valuationForecastPS={data.valuationForecastPS ?? []}
-                        summary={data.valuationSummary ?? null}
-                        summaryPE={data.valuationSummaryPE ?? null}
-                        summaryPS={data.valuationSummaryPS ?? null}
-                        stats={data.valuationStats ?? null}
-                        trendSignal={data.trendSignal ?? null}
-                        ticker={ticker}
-                    />
-                </ChartSection>
-            </ChartErrorBoundary>
+            <DeferredChartSlot>
+                <ChartErrorBoundary>
+                    <ChartSection
+                        iconBgClass="bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-200"
+                        icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18" /></svg>}
+                        title="Valuation History"
+                        subtitle="Fair value vs Price (multiple + DCF)"
+                        hasData={hasValuationHistory}
+                        emptyMessage="No valuation history available"
+                    >
+                        <ValuationHistoryChart
+                            valuationHistory={data.valuationHistory ?? []}
+                            valuationHistoryPE={data.valuationHistoryPE ?? []}
+                            valuationHistoryPS={data.valuationHistoryPS ?? []}
+                            valuationBasis={data.valuationBasis ?? null}
+                            fairValueMethod={data.fairValueMethod ?? null}
+                            valuationForecast={data.valuationForecast ?? []}
+                            valuationForecastPE={data.valuationForecastPE ?? []}
+                            valuationForecastPS={data.valuationForecastPS ?? []}
+                            summary={data.valuationSummary ?? null}
+                            summaryPE={data.valuationSummaryPE ?? null}
+                            summaryPS={data.valuationSummaryPS ?? null}
+                            stats={data.valuationStats ?? null}
+                            trendSignal={data.trendSignal ?? null}
+                            ticker={ticker}
+                        />
+                    </ChartSection>
+                </ChartErrorBoundary>
+            </DeferredChartSlot>
 
             {/* Historical Valuation Charts (P/E & P/S Bands) */}
-            <ChartErrorBoundary>
-                <ChartSection
-                    iconBgClass="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                    icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
-                    title="Historical Valuation Charts"
-                    subtitle="Historical P/E & P/S Multiples vs. Percentile Regime"
-                >
-                    <Suspense fallback={suspenseFallback('border-blue-500')}>
-                        <ValuationCharts
-                            ticker={ticker}
-                            peHistory={data.peHistory ?? []}
-                            psHistory={data.psHistory ?? []}
-                            current={{ pe: data.metrics.currentPe, ps: data.metrics.psRatio }}
-                            stats={data.valuationStats ?? null}
-                        />
-                    </Suspense>
-                </ChartSection>
-            </ChartErrorBoundary>
+            <DeferredChartSlot>
+                <ChartErrorBoundary>
+                    <ChartSection
+                        iconBgClass="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                        icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
+                        title="Historical Valuation Charts"
+                        subtitle="Historical P/E & P/S Multiples vs. Percentile Regime"
+                    >
+                        <Suspense fallback={suspenseFallback('border-blue-500')}>
+                            <ValuationCharts
+                                ticker={ticker}
+                                peHistory={data.peHistory ?? []}
+                                psHistory={data.psHistory ?? []}
+                                current={{ pe: data.metrics.currentPe, ps: data.metrics.psRatio }}
+                                stats={data.valuationStats ?? null}
+                            />
+                        </Suspense>
+                    </ChartSection>
+                </ChartErrorBoundary>
+            </DeferredChartSlot>
 
             {/* Correlation Analysis */}
-            <ChartErrorBoundary>
-                <ChartSection
-                    iconBgClass="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
-                    icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18" /></svg>}
-                    title="Price vs Fundamentals"
-                    subtitle="Co-movement of price with revenue- and EPS-implied value — multiple re-rating view, not fair value"
-                    hasData={!!(data.priceHistory && data.priceHistory.length > 0)}
-                    emptyMessage="No price history available for correlation analysis"
-                >
-                    <CorrelationChart
-                        priceHistory={data.priceHistory ?? []}
-                        impliedPS={data.impliedPricePS ?? []}
-                        impliedPE={data.impliedPricePE ?? []}
-                        corrPS={data.correlation?.priceVsImpliedPS ?? null}
-                        corrPE={data.correlation?.priceVsImpliedPE ?? null}
-                    />
-                </ChartSection>
-            </ChartErrorBoundary>
+            <DeferredChartSlot>
+                <ChartErrorBoundary>
+                    <ChartSection
+                        iconBgClass="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
+                        icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18" /></svg>}
+                        title="Price vs Fundamentals"
+                        subtitle="Co-movement of price with revenue- and EPS-implied value — multiple re-rating view, not fair value"
+                        hasData={!!(data.priceHistory && data.priceHistory.length > 0)}
+                        emptyMessage="No price history available for correlation analysis"
+                    >
+                        <CorrelationChart
+                            priceHistory={data.priceHistory ?? []}
+                            impliedPS={data.impliedPricePS ?? []}
+                            impliedPE={data.impliedPricePE ?? []}
+                            corrPS={data.correlation?.priceVsImpliedPS ?? null}
+                            corrPE={data.correlation?.priceVsImpliedPE ?? null}
+                        />
+                    </ChartSection>
+                </ChartErrorBoundary>
+            </DeferredChartSlot>
 
             {/* Scenario Lab — interactive tool gets the full row */}
-            <ChartErrorBoundary>
-                <div className="lg:col-span-2">
-                <ChartSection
-                    iconBgClass="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                    icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>}
-                    title="Scenario Lab"
-                    subtitle="Investment Projection — Data-Driven & Manual Scenarios"
-                >
-                    {hasScenarioData ? (
-                        <ScenarioLab
-                            ticker={ticker}
-                            currentEps={data.metrics.currentEps || 0}
-                            currentPe={data.metrics.currentPe || 0}
-                            currentPrice={Math.max(0, data.ticker?.lastPrice || data.ticker?.latestPrevClose || (data.metrics.currentEps || 0) * (data.metrics.currentPe || 0))}
-                            priceHistory={data.priceHistory ?? []}
-                            forwardPe={data.metrics.forwardPe ?? null}
-                            forwardEps={data.metrics.forwardEps ?? null}
-                            forwardImpliedGrowth={data.metrics.forwardImpliedGrowth ?? null}
-                            peStats={data.valuationStats?.pe ?? null}
-                            epsCagr3y={data.epsCagr3y ?? null}
-                            epsCagr5y={data.epsCagr5y ?? null}
-                        />
-                    ) : (
-                        <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg text-center border border-gray-100 dark:border-gray-700/50">
-                            <p className="text-gray-500 dark:text-gray-400">Not enough data available to run scenarios. Missing valid EPS or P/E Ratio (must be positive).</p>
-                        </div>
-                    )}
-                </ChartSection>
-                </div>
-            </ChartErrorBoundary>
+            <DeferredChartSlot className="lg:col-span-2" minHeight={420}>
+                <ChartErrorBoundary>
+                    <ChartSection
+                        iconBgClass="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                        icon={<svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>}
+                        title="Scenario Lab"
+                        subtitle="Investment Projection — Data-Driven & Manual Scenarios"
+                    >
+                        {hasScenarioData ? (
+                            <ScenarioLab
+                                ticker={ticker}
+                                currentEps={data.metrics.currentEps || 0}
+                                currentPe={data.metrics.currentPe || 0}
+                                currentPrice={Math.max(0, data.ticker?.lastPrice || data.ticker?.latestPrevClose || (data.metrics.currentEps || 0) * (data.metrics.currentPe || 0))}
+                                priceHistory={data.priceHistory ?? []}
+                                forwardPe={data.metrics.forwardPe ?? null}
+                                forwardEps={data.metrics.forwardEps ?? null}
+                                forwardImpliedGrowth={data.metrics.forwardImpliedGrowth ?? null}
+                                peStats={data.valuationStats?.pe ?? null}
+                                epsCagr3y={data.epsCagr3y ?? null}
+                                epsCagr5y={data.epsCagr5y ?? null}
+                            />
+                        ) : (
+                            <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg text-center border border-gray-100 dark:border-gray-700/50">
+                                <p className="text-gray-500 dark:text-gray-400">Not enough data available to run scenarios. Missing valid EPS or P/E Ratio (must be positive).</p>
+                            </div>
+                        )}
+                    </ChartSection>
+                </ChartErrorBoundary>
+            </DeferredChartSlot>
         </div>
     );
 }

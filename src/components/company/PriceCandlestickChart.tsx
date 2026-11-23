@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -65,6 +65,7 @@ import {
   ChartNavArrow,
   SimilarChips,
   PriceReadoutStrip,
+  type PriceReadoutStripHandle,
   PriceOscillatorPanes,
 } from './chart/PriceChartPrimitives';
 import { PriceChartHeaderToolbar } from './chart/PriceChartToolbar';
@@ -435,7 +436,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
   }, [drawTool]);
   const drawActive = mode === 'price' && !bmActive && drawTool != null;
 
-  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const readoutRef = useRef<PriceReadoutStripHandle | null>(null);
 
   const [fading, setFading] = useState(false);
   const fadeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -653,6 +654,42 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     return { last: last.c, date: last.date, headline, changePct, up: changePct >= 0 };
   }, [data, currentPrice, currentChangePct]);
 
+  const showVolSpike = inds.has('volspike');
+  const renderCandleShape = useCallback(
+    (props: { x?: number; width?: number; payload?: ChartPoint; index?: number }) => (
+      <CandleShape
+        key={props.payload?.t ?? props.index}
+        {...(props.x !== undefined ? { x: props.x } : {})}
+        {...(props.width !== undefined ? { width: props.width } : {})}
+        {...(props.payload !== undefined ? { payload: props.payload } : {})}
+        volFrac={volFrac}
+        maxVolume={maxVolume}
+        showVolSpike={showVolSpike}
+        fallbackDomain={yDomain}
+        fallbackPlotHeight={(narrow ? 340 : 420) - 8 - 54}
+      />
+    ),
+    [volFrac, maxVolume, showVolSpike, yDomain, narrow],
+  );
+
+  const renderFairDot = useCallback((props: { cx?: number; cy?: number; payload?: ChartPoint }) => {
+    const { cx, cy, payload } = props;
+    if (cx == null || cy == null || !payload?.fvChanged || payload?.fv == null) {
+      return <g key={payload?.t ?? cx ?? 0} />;
+    }
+    return (
+      <circle
+        key={payload.t}
+        cx={cx}
+        cy={cy}
+        r={3.2}
+        fill={FAIR_COLOR}
+        stroke="#fff"
+        strokeWidth={1.2}
+      />
+    );
+  }, []);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-72">
@@ -858,7 +895,9 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
       ) : (
       <>
       <PriceReadoutStrip
-        hd={(hoverIdx != null ? data[hoverIdx] : undefined) ?? data[data.length - 1]}
+        ref={readoutRef}
+        data={data}
+        hd={data[data.length - 1]}
         ticker={ticker}
         bmActive={bmActive}
         bmLabel={bmLabel}
@@ -867,8 +906,8 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
       />
       <ResponsiveContainer width="100%" height={narrow ? 340 : 420}>
         <ComposedChart data={data} syncId="pmp-price" margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 24 }}
-          onMouseMove={(s: { activeTooltipIndex?: unknown }) => setHoverIdx(typeof s?.activeTooltipIndex === 'number' ? s.activeTooltipIndex : null)}
-          onMouseLeave={() => setHoverIdx(null)}>
+          onMouseMove={(s: { activeTooltipIndex?: unknown }) => readoutRef.current?.setHoverIndex(typeof s?.activeTooltipIndex === 'number' ? s.activeTooltipIndex : null)}
+          onMouseLeave={() => readoutRef.current?.setHoverIndex(null)}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.18)" vertical={false} />
           <XAxis
             dataKey="date"
@@ -902,19 +941,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
           <Bar
             dataKey="c"
             isAnimationActive={false}
-            shape={(props: { x?: number; width?: number; payload?: ChartPoint; index?: number }) => (
-              <CandleShape
-                key={props.payload?.t ?? props.index}
-                {...(props.x !== undefined ? { x: props.x } : {})}
-                {...(props.width !== undefined ? { width: props.width } : {})}
-                {...(props.payload !== undefined ? { payload: props.payload } : {})}
-                volFrac={volFrac}
-                maxVolume={maxVolume}
-                showVolSpike={inds.has('volspike')}
-                fallbackDomain={yDomain}
-                fallbackPlotHeight={(narrow ? 340 : 420) - 8 - 54}
-              />
-            )}
+            shape={renderCandleShape}
           />
           )}
           {!bmActive && inds.has('ma20') && (
@@ -1011,23 +1038,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
               strokeDasharray="5 3"
               isAnimationActive={false}
               connectNulls={false}
-              dot={(props: { cx?: number; cy?: number; payload?: ChartPoint }) => {
-                const { cx, cy, payload } = props;
-                if (cx == null || cy == null || !payload?.fvChanged || payload?.fv == null) {
-                  return <g key={payload?.t ?? cx ?? 0} />;
-                }
-                return (
-                  <circle
-                    key={payload.t}
-                    cx={cx}
-                    cy={cy}
-                    r={3.2}
-                    fill={FAIR_COLOR}
-                    stroke="#fff"
-                    strokeWidth={1.2}
-                  />
-                );
-              }}
+              dot={renderFairDot}
             />
           )}
           {!bmActive && inds.has('w52') && hiLo52 && (

@@ -56,10 +56,10 @@ function formatBillions(n: number): string {
 
 export function HomeBlog({ initialSnapshots }: { initialSnapshots?: Snapshot[] | undefined }) {
   const [snapshots, setSnapshots] = useState<Snapshot[]>(initialSnapshots ?? []);
-  const [loading, setLoading] = useState(!initialSnapshots || initialSnapshots.length === 0);
+  const [loading, setLoading] = useState(!initialSnapshots || initialSnapshots.length <= 1);
 
   useEffect(() => {
-    if (initialSnapshots && initialSnapshots.length > 0) return;
+    if (initialSnapshots && initialSnapshots.length > 1) return;
     fetch('/api/blog/snapshots')
       .then(r => r.json())
       .then(d => { setSnapshots(d.snapshots ?? []); })

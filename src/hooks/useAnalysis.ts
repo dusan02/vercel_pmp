@@ -163,16 +163,27 @@ export function useAnalysis(ticker: string, initialAnalysisData?: any, initialHi
         }
     }, [ticker]);
 
+    const hasCompleteSsrHistory = Boolean(
+        initialHistoryData &&
+        typeof initialHistoryData === 'object' &&
+        (
+            (Array.isArray(initialHistoryData.priceHistory) && initialHistoryData.priceHistory.length > 0) ||
+            (Array.isArray(initialHistoryData.valuationHistory) && initialHistoryData.valuationHistory.length > 0) ||
+            (Array.isArray(initialHistoryData.peHistory) && initialHistoryData.peHistory.length > 0)
+        )
+    );
+
     useEffect(() => {
         autoTriggered.current = null;
-        // Skip initial fetch if we have SSR data — it will be refreshed in background
         if (ssrData) {
-            // Delay background refresh so SSR data shows immediately
+            // Skip duplicate background refetch when SSR already delivered complete analysis + history.
+            if (hasCompleteSsrHistory && !ssrData.insufficientData) return;
+            // SSR history was partial/empty (e.g. timeout) — backfill quietly in background.
             const timer = setTimeout(() => fetchAnalysis(), 5000);
             return () => clearTimeout(timer);
         }
         fetchAnalysis();
-    }, [ticker, fetchAnalysis]);
+    }, [ticker, fetchAnalysis, ssrData, hasCompleteSsrHistory]);
 
     // Auto-run deep analysis when no cached data exists for this ticker (or stub cache with 0 statements).
     // Use per-ticker guard to avoid re-triggering on the same ticker.

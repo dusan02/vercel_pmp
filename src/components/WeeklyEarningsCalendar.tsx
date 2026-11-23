@@ -456,10 +456,11 @@ export default function WeeklyEarningsCalendar({
   eligibleTickers?: Set<string>;
 }) {
   // All dates handled as YYYY-MM-DD strings — deterministic SSR, no hydration mismatch
+  const hasInitialWeekData = initialWeekData != null && Object.keys(initialWeekData).length > 0;
   const [weekStartStr, setWeekStartStr] = useState(initialWeekStartStr);
   const [selectedDateStr, setSelectedDateStr] = useState(todayStr);
   const [weeklyData, setWeeklyData] = useState<Record<string, EarningsWeekDay>>(() => initialWeekData ?? {});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!hasInitialWeekData);
   const [error, setError] = useState<string | null>(null);
 
   // 7 days of the selected week (Mon-Sun)
@@ -473,7 +474,7 @@ export default function WeeklyEarningsCalendar({
 
   // Fetch week data when week changes (skip if it's the SSR-provided initial week)
   useEffect(() => {
-    if (weekStartStr === initialWeekStartStr) return;
+    if (weekStartStr === initialWeekStartStr && hasInitialWeekData) return;
 
     let cancelled = false;
     const fetchWeekData = async () => {
@@ -500,7 +501,7 @@ export default function WeeklyEarningsCalendar({
 
     fetchWeekData();
     return () => { cancelled = true; };
-  }, [weekStartStr, initialWeekStartStr]);
+  }, [weekStartStr, initialWeekStartStr, hasInitialWeekData]);
 
   const handlePrevWeek = () => setWeekStartStr(prev => dateStr(subWeeks(parseDate(prev), 1)));
   const handleNextWeek = () => setWeekStartStr(prev => dateStr(addWeeks(parseDate(prev), 1)));

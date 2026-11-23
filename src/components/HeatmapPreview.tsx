@@ -2,26 +2,12 @@
 
 import React, { useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
+import { ResponsiveMarketHeatmap } from '@/components/ResponsiveMarketHeatmap';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
 import { HeatmapViewButton } from './HeatmapViewButton';
 import type { HeatmapMetric } from '@/lib/heatmap/types';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { HeatmapMethodology } from './HeatmapMethodology';
-
-// OPTIMIZATION: Enable SSR for desktop (faster initial load)
-// Mobile uses different components, so SSR is safe for desktop
-const ResponsiveMarketHeatmap = dynamic(
-  () => import('@/components/ResponsiveMarketHeatmap').then(mod => ({ default: mod.default })),
-  {
-    ssr: true, // Enable SSR for faster desktop loading
-    loading: () => (
-      <div className="w-full h-full flex items-center justify-center bg-black text-white text-sm">
-        Loading heatmap preview...
-      </div>
-    )
-  }
-);
 
 /**
  * Komponent pre miniaturu heatmapy na hlavnej stránke

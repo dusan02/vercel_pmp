@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { StockData, LoadingStates, PriceUpdate } from '@/lib/types';
 import { getProjectTickers } from '@/data/defaultTickers';
-import { useThrottle } from '@/hooks/useThrottle';
 import { usePriceStream } from '@/hooks/usePriceStream';
 
 // Helper function for retry with exponential backoff
@@ -65,36 +64,10 @@ export function useStockData({ initialData = [], favorites, skipTop50 = false }:
     background: false
   });
   const [error, setError] = useState<string | null>(null);
-  const [backgroundStatus, setBackgroundStatus] = useState<string | null>(null);
+  const backgroundStatus: string | null = null;
 
   // Track if initial load happened
   const initialDataLoaded = useRef(initialData.length > 0);
-
-  // Fetch background service status
-  const fetchBackgroundStatus = useCallback(async () => {
-    setLoadingStates(prev => ({ ...prev, background: true }));
-    try {
-      const response = await fetch('/api/background/status', {
-        signal: AbortSignal.timeout(5000)
-      });
-
-      if (!response.ok) {
-        if (response.status !== 404 && response.status !== 500 && response.status !== 429) {
-          console.log('Background status API not ready yet, will retry...');
-        }
-        return;
-      }
-
-      const data = await response.json();
-      if (data.success && data.data?.status) {
-        setBackgroundStatus(data.data.status);
-      }
-    } catch (error) {
-      // Ignore expected errors
-    } finally {
-      setLoadingStates(prev => ({ ...prev, background: false }));
-    }
-  }, []);
 
   const getProjectName = () => {
     if (typeof window !== 'undefined') {
@@ -325,14 +298,11 @@ export function useStockData({ initialData = [], favorites, skipTop50 = false }:
       favoritesInitialLoadRef.current = true;
 
       if (skipTop50) {
-        console.log('⏭️ Standalone view: skipping background status and Phase 3 top 50 stocks fetch');
+        console.log('⏭️ Standalone view: skipping Phase 3 top 50 stocks fetch');
         return;
       }
 
-      console.log('🔄 Phase 2: Loading background status...');
-      fetchBackgroundStatus();
-
-      if (stockData.length >= 50) {
+      if (stockData.length >= 20) {
         console.log('✅ SSR Data: Sufficient stocks already loaded, skipping Phase 3 fetch');
       } else {
         console.log('🔄 Phase 3: Loading top 50 stocks...');
@@ -347,7 +317,7 @@ export function useStockData({ initialData = [], favorites, skipTop50 = false }:
       console.error('Error in progressive loading:', error);
       setError('Failed to refresh data. Please try again.');
     }
-  }, [fetchFavoritesData, fetchTop50StocksData, fetchBackgroundStatus, skipTop50, stockData.length]);
+  }, [fetchFavoritesData, fetchTop50StocksData, skipTop50, stockData.length]);
 
   // Full refresh function
   const loadData = useCallback(async () => {
@@ -355,7 +325,6 @@ export function useStockData({ initialData = [], favorites, skipTop50 = false }:
       setError(null);
       await fetchFavoritesData();
       if (!skipTop50) {
-        fetchBackgroundStatus();
         setTimeout(() => {
           fetchTop50StocksData();
         }, 100);
@@ -364,7 +333,7 @@ export function useStockData({ initialData = [], favorites, skipTop50 = false }:
       console.error('Error refreshing data:', error);
       setError('Failed to refresh data. Please try again.');
     }
-  }, [fetchFavoritesData, fetchBackgroundStatus, fetchTop50StocksData, skipTop50]);
+  }, [fetchFavoritesData, fetchTop50StocksData, skipTop50]);
 
   // Initial load effect
   useEffect(() => {
@@ -372,17 +341,6 @@ export function useStockData({ initialData = [], favorites, skipTop50 = false }:
     loadDataProgressive();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Throttled background status fetch
-  const throttledFetchBackgroundStatus = useThrottle(fetchBackgroundStatus, 30000);
-
-  // Background polling (skipped for standalone portfolio/favorites tools)
-  useEffect(() => {
-    if (skipTop50) return;
-    throttledFetchBackgroundStatus();
-    const interval = setInterval(throttledFetchBackgroundStatus, 60000);
-    return () => clearInterval(interval);
-  }, [throttledFetchBackgroundStatus, skipTop50]);
 
   // Auto-refresh stock data (similar to heatmap - every 30 seconds)
   useEffect(() => {

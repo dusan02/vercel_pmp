@@ -15,6 +15,10 @@ interface StockServiceResult {
   errors: string[];
 }
 
+const GLOBAL_UNIVERSE_TTL_MS = 10_000;
+let globalUniverseCache: { rows: StockData[]; fetchedAt: number } | null = null;
+let inflightGlobalUniverse: Promise<StockData[]> | null = null;
+
 /** In-memory sort shared by the Redis fast path and the overlay path.
  *  API sort names → StockData fields (changePct → percentChange,
  *  name → companyName, symbol → ticker; strings need localeCompare). */
@@ -114,12 +118,39 @@ export async function getStocksList(options: {
 }): Promise<StockServiceResult> {
   const { limit = 50, offset = 0, sort = 'marketCapDiff', order = 'desc', tickers } = options;
   const isGlobalQuery = !(tickers && tickers.length > 0);
+  const useGlobalCache = isGlobalQuery && process.env.NODE_ENV !== 'test';
+
+  if (useGlobalCache && globalUniverseCache && Date.now() - globalUniverseCache.fetchedAt < GLOBAL_UNIVERSE_TTL_MS) {
+    const copy = globalUniverseCache.rows.map((r) => ({ ...r }));
+    sortStockData(copy, sort, order);
+    const paged = copy.slice(offset, limit && limit > 0 ? offset + limit : undefined);
+    await attachScoresAndEarnings(paged);
+    return { data: paged, errors: [] };
+  }
+
+  if (useGlobalCache && inflightGlobalUniverse) {
+    const base = await inflightGlobalUniverse;
+    const copy = base.map((r) => ({ ...r }));
+    sortStockData(copy, sort, order);
+    const paged = copy.slice(offset, limit && limit > 0 ? offset + limit : undefined);
+    await attachScoresAndEarnings(paged);
+    return { data: paged, errors: [] };
+  }
 
   // Session-fresh values from Redis to overlay onto the complete DB universe
   // for global queries (the ranked zset only holds session-active symbols —
   // returning it alone silently drops the rest of the universe).
   let redisOverlayData: Map<string, any> | null = null;
   let redisOverlayPrev: Map<string, number> | null = null;
+  let redisPartialHits: StockData[] = [];
+  let dbQueryTickers: string[] | undefined = tickers;
+
+  const resolveGlobalRef: { fn?: (rows: StockData[]) => void } = {};
+  if (useGlobalCache) {
+    inflightGlobalUniverse = new Promise<StockData[]>((resolve) => {
+      resolveGlobalRef.fn = resolve;
+    });
+  }
 
   try {
     // === FAST PATH: REDIS ===
@@ -193,17 +224,16 @@ export async function getStocksList(options: {
               }
             }
 
-            sortStockData(results, sort, order);
-
-            console.log(`🚀 [stockService] Fast path: Served ${results.length} stocks from Redis!`);
-
-            // If specific tickers were requested but some are missing from Redis
-            // (e.g. ETFs like QQQ/DIA not in universe), fall through to the DB path
-            // which refetches ALL requested tickers (and Polygon for still-missing).
+            // If specific tickers were requested and some are missing from Redis,
+            // keep the Redis hits and only query DB/Polygon for the missing subset.
             if (tickers && results.length < tickers.length) {
-              const missing = tickers.filter(t => !results.some(r => r.ticker === t));
-              console.log(`🔄 [stockService] ${missing.length} tickers missing from Redis, falling through to DB/Polygon: ${missing.join(',')}`);
+              const foundSet = new Set(results.map((r) => r.ticker));
+              const missing = tickers.filter((t) => !foundSet.has(t));
+              redisPartialHits = results;
+              dbQueryTickers = missing;
+              console.log(`🔄 [stockService] Kept ${results.length} Redis hits; fetching ${missing.length} missing tickers: ${missing.join(',')}`);
             } else {
+              sortStockData(results, sort, order);
               await attachScoresAndEarnings(results);
               return { data: results, errors: [] };
             }
@@ -235,8 +265,8 @@ export async function getStocksList(options: {
     const pricingState = getPricingState(etNow);
 
     const SEVEN_DAYS_AGO = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const where = tickers && tickers.length > 0
-      ? { symbol: { in: tickers } }
+    const where = dbQueryTickers && dbQueryTickers.length > 0
+      ? { symbol: { in: dbQueryTickers } }
       : { 
           lastPrice: { gt: 0 },
           updatedAt: { gte: SEVEN_DAYS_AGO },
@@ -325,7 +355,7 @@ export async function getStocksList(options: {
     if (!isLargeQuery && tickersNeedingPrevClose.length > 0) {
       try {
         const { fetchPreviousClosesBatchAndPersist } = await import('@/lib/utils/onDemandPrevClose');
-        const onDemandResults = await fetchPreviousClosesBatchAndPersist(tickersNeedingPrevClose, getSessionDateStr(etNow), { maxTickers: 150, timeoutBudget: 5000, maxConcurrent: 10 });
+        const onDemandResults = await fetchPreviousClosesBatchAndPersist(tickersNeedingPrevClose, getSessionDateStr(etNow), { maxTickers: 30, timeoutBudget: 1200, maxConcurrent: 10 });
         onDemandResults.forEach((prevClose, ticker) => onDemandPrevCloseMap.set(ticker, prevClose));
       } catch (error) {
         console.warn(`⚠️ On-demand prevClose fetch failed:`, error);
@@ -471,9 +501,9 @@ export async function getStocksList(options: {
       sortStockData(results, sort, order);
     }
 
-    if (tickers && tickers.length > 0) {
+    if (dbQueryTickers && dbQueryTickers.length > 0) {
       const foundTickers = new Set(results.map(r => r.ticker));
-      const missingTickers = tickers.filter(t => !foundTickers.has(t));
+      const missingTickers = dbQueryTickers.filter(t => !foundTickers.has(t));
       // During production-build prerender there is no live DB — every ticker
       // is "missing", so this fallback fires a no-store Polygon call that
       // throws DynamicServerError and permanently marks "/" dynamic (ISR
@@ -503,25 +533,36 @@ export async function getStocksList(options: {
           console.warn('⚠️ StockService: Polygon batch fetch failed:', polyError);
         }
 
-        // Price-provider failover: Polygon down/empty → Finnhub quote per missing ticker.
-        // Small batches only (Finnhub free tier = 60 calls/min).
+        // Price-provider failover: Polygon down/empty → bounded parallel Finnhub quote fallback.
         if (stillMissing.length > 0) {
           try {
             const { getFinnhubClient } = await import('@/lib/clients/finnhubClient');
             const fh = getFinnhubClient();
-            const FINNHUB_FALLBACK_LIMIT = 25;
-            for (const t of stillMissing.slice(0, FINNHUB_FALLBACK_LIMIT)) {
-              const q = await fh.fetchQuote(t);
-              if (q && (q.currentPrice ?? 0) > 0) {
-                results.push({
+            const FINNHUB_FALLBACK_LIMIT = 5;
+            const settled = await Promise.race([
+              Promise.allSettled(
+                stillMissing.slice(0, FINNHUB_FALLBACK_LIMIT).map(async (t) => ({
                   ticker: t,
-                  currentPrice: q.currentPrice!,
-                  closePrice: q.previousClose ?? 0,
-                  percentChange: q.percentChange ?? 0,
-                  marketCap: 0, marketCapDiff: 0,
-                  companyName: t,
-                  logoUrl: `/logos/${t.toLowerCase()}-32.webp`
-                });
+                  q: await fh.fetchQuote(t),
+                })),
+              ),
+              new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
+            ]);
+            if (Array.isArray(settled)) {
+              for (const item of settled) {
+                if (item.status !== 'fulfilled') continue;
+                const { ticker: t, q } = item.value;
+                if (q && (q.currentPrice ?? 0) > 0) {
+                  results.push({
+                    ticker: t,
+                    currentPrice: q.currentPrice!,
+                    closePrice: q.previousClose ?? 0,
+                    percentChange: q.percentChange ?? 0,
+                    marketCap: 0, marketCapDiff: 0,
+                    companyName: t,
+                    logoUrl: `/logos/${t.toLowerCase()}-32.webp`
+                  });
+                }
               }
             }
           } catch (fhError) {
@@ -529,6 +570,17 @@ export async function getStocksList(options: {
           }
         }
       }
+    }
+
+    if (redisPartialHits.length > 0) {
+      results.push(...redisPartialHits);
+      sortStockData(results, sort, order);
+    }
+
+    if (useGlobalCache) {
+      globalUniverseCache = { rows: results, fetchedAt: Date.now() };
+      resolveGlobalRef.fn?.(results);
+      inflightGlobalUniverse = null;
     }
 
     // Global queries fetched the full universe — paginate in memory after the
@@ -540,6 +592,10 @@ export async function getStocksList(options: {
     await attachScoresAndEarnings(paged);
     return { data: paged, errors: [] };
   } catch (error) {
+    if (useGlobalCache) {
+      resolveGlobalRef.fn?.([]);
+      inflightGlobalUniverse = null;
+    }
     console.error('Error fetching stock list:', error);
     return { data: [], errors: [String(error)] };
   }

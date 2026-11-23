@@ -1,19 +1,6 @@
 import React from 'react';
-import dynamic from 'next/dynamic';
 import { SectionErrorBoundary } from '../SectionErrorBoundary';
-import { HeatmapSkeleton } from '../SectionSkeleton';
-
-// CRITICAL: Heatmap je prvá obrazovka na mobile - prioritizuj načítanie
-// ssr: true — HeatmapPreview je SSR-safe (browser APIs len v effects/handlers).
-// SSR renderuje "Measuring container..." state a zahŕňa chunk v HTML →
-// odstráni waterfall: užívateľ vidí loading stav hneď a hydratácia je rýchla.
-const HeatmapPreview = dynamic(
-    () => import('../HeatmapPreview').then((mod) => mod.HeatmapPreview),
-    {
-        ssr: true,
-        loading: () => <HeatmapSkeleton />,
-    }
-);
+import { HeatmapPreview } from '../HeatmapPreview';
 
 interface HomeHeatmapProps {
     wrapperClass?: string | undefined;
