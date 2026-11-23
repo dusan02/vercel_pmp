@@ -1,11 +1,10 @@
 'use client';
 
-import { lazy, Suspense, useState } from 'react';
+import { useState } from 'react';
 import { ChartSection } from '@/components/company/shared/ChartSection';
 import { ChartErrorBoundary } from '@/components/company/shared/ChartErrorBoundary';
+import { PriceCandlestickChart } from '@/components/company/PriceCandlestickChart';
 import type { SimilarTickers, TickerNav } from '@/lib/analysis/tickerNav';
-
-const PriceCandlestickChart = lazy(() => import('@/components/company/PriceCandlestickChart'));
 
 /**
  * The main price chart — 5Y weekly candlesticks rendered as a top-level,
@@ -28,9 +27,7 @@ export function PriceHistorySection({ ticker, companyName, nav, similar, current
                     subtitle={cmpLabel ? `Relative Performance vs ${cmpLabel}` : 'Weekly Candlestick Chart — up to 5Y'}
                     as="h2"
                 >
-                    <Suspense fallback={<div className="flex justify-center items-center" style={{ height: 420 }}><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500" /></div>}>
-                        <PriceCandlestickChart ticker={ticker} companyName={companyName ?? null} nav={nav ?? null} similar={similar ?? null} currentPrice={currentPrice ?? null} currentChangePct={currentChangePct ?? null} changeLabel={changeLabel ?? 'day'} onCompareChange={setCmpLabel} />
-                    </Suspense>
+                    <PriceCandlestickChart ticker={ticker} companyName={companyName ?? null} nav={nav ?? null} similar={similar ?? null} currentPrice={currentPrice ?? null} currentChangePct={currentChangePct ?? null} changeLabel={changeLabel ?? 'day'} onCompareChange={setCmpLabel} />
                 </ChartSection>
             </ChartErrorBoundary>
         </div>

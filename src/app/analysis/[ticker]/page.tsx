@@ -38,6 +38,7 @@ import { RecentMovesSection } from '@/components/company/analysis/sections/Recen
 import { RelatedOpportunities } from '@/components/company/analysis/sections/RelatedOpportunities';
 import { getRelatedOpportunities } from '@/lib/analysis/relatedOpportunities';
 import { PriceHistorySection } from '@/components/company/analysis/sections/PriceHistorySection';
+import { getCandlesPayload } from '@/lib/analysis/candlesData';
 import { KeyMetricsTable } from '@/components/company/analysis/KeyMetricsTable';
 import { AnalysisFaqSection, buildAnalysisFaq, buildFaqSchema } from '@/components/company/analysis/sections/AnalysisFaqSection';
 import { AnalysisCrossLinks } from '@/components/company/analysis/sections/AnalysisCrossLinks';
@@ -124,6 +125,9 @@ export default async function AnalysisPage({ params }: PageProps) {
 
   const companyName = data?.name || getCompanyName(tickerUpper) || tickerUpper;
   const isEtf = data?.assetType === 'ETF' || data?.assetType === 'LEVERAGED_ETF';
+  // Non-blocking warm-up so candles + SQLite annotations are ready in cache or
+  // joined in-flight before the client chart finishes mounting.
+  if (!isEtf) void getCandlesPayload(tickerUpper).catch(() => {});
 
   // Reuse metadata already fetched by getTickerData() instead of re-querying
   // prisma.ticker.findUnique across helper modules.

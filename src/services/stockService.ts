@@ -15,9 +15,10 @@ interface StockServiceResult {
   errors: string[];
 }
 
-const GLOBAL_UNIVERSE_TTL_MS = 10_000;
+const GLOBAL_UNIVERSE_FRESH_MS = 15_000;
+const GLOBAL_UNIVERSE_STALE_MS = 180_000;
 let globalUniverseCache: { rows: StockData[]; fetchedAt: number } | null = null;
-let inflightGlobalUniverse: Promise<StockData[]> | null = null;
+let inflightGlobalUniverse: Promise<StockServiceResult> | null = null;
 
 /** In-memory sort shared by the Redis fast path and the overlay path.
  *  API sort names → StockData fields (changePct → percentChange,
@@ -59,16 +60,21 @@ async function attachScoresAndEarnings(rows: StockData[]): Promise<void> {
     const todayStart = new Date();
     todayStart.setUTCHours(0, 0, 0, 0);
     const in14d = new Date(todayStart.getTime() + 14 * 86_400_000);
+    const useFullScan = syms.length > 500;
     const [caches, earnings] = await Promise.all([
       prisma.analysisCache?.findMany
         ? prisma.analysisCache.findMany({
-            where: { symbol: { in: syms } },
+            ...(useFullScan ? {} : { where: { symbol: { in: syms } } }),
             select: { symbol: true, overallScore: true, valuationScore: true, healthScore: true },
           })
         : Promise.resolve([]),
       prisma.earningsCalendar?.findMany
         ? prisma.earningsCalendar.findMany({
-            where: { ticker: { in: syms }, date: { gte: todayStart, lte: in14d }, epsActual: null },
+            where: {
+              ...(useFullScan ? {} : { ticker: { in: syms } }),
+              date: { gte: todayStart, lte: in14d },
+              epsActual: null,
+            },
             orderBy: { date: 'asc' },
             select: { ticker: true, date: true },
           })
@@ -106,6 +112,36 @@ export async function getStocksData(
   return getStocksList({ tickers });
 }
 
+function sliceUniverse(
+  rows: StockData[],
+  sort: string,
+  order: 'asc' | 'desc',
+  offset: number,
+  limit: number,
+): StockData[] {
+  const copy = rows.map((r) => ({ ...r }));
+  sortStockData(copy, sort, order);
+  return copy.slice(offset, limit && limit > 0 ? offset + limit : undefined);
+}
+
+function refreshGlobalUniverse(sort: string, order: 'asc' | 'desc'): Promise<StockServiceResult> {
+  if (inflightGlobalUniverse) return inflightGlobalUniverse;
+
+  const p = executeStocksListQuery({ sort, order })
+    .then(async (res) => {
+      if (res.data.length > 0 || res.errors.length === 0) {
+        await attachScoresAndEarnings(res.data);
+        globalUniverseCache = { rows: res.data, fetchedAt: Date.now() };
+      }
+      return res;
+    })
+    .finally(() => {
+      if (inflightGlobalUniverse === p) inflightGlobalUniverse = null;
+    });
+  inflightGlobalUniverse = p;
+  return p;
+}
+
 /**
  * SQL-first efficient fetching for pagination and sorting
  */
@@ -120,22 +156,44 @@ export async function getStocksList(options: {
   const isGlobalQuery = !(tickers && tickers.length > 0);
   const useGlobalCache = isGlobalQuery && process.env.NODE_ENV !== 'test';
 
-  if (useGlobalCache && globalUniverseCache && Date.now() - globalUniverseCache.fetchedAt < GLOBAL_UNIVERSE_TTL_MS) {
-    const copy = globalUniverseCache.rows.map((r) => ({ ...r }));
-    sortStockData(copy, sort, order);
-    const paged = copy.slice(offset, limit && limit > 0 ? offset + limit : undefined);
-    await attachScoresAndEarnings(paged);
-    return { data: paged, errors: [] };
+  if (useGlobalCache) {
+    if (globalUniverseCache) {
+      const age = Date.now() - globalUniverseCache.fetchedAt;
+      if (age < GLOBAL_UNIVERSE_STALE_MS) {
+        if (age >= GLOBAL_UNIVERSE_FRESH_MS) {
+          void refreshGlobalUniverse(sort, order).catch(() => {});
+        }
+        return {
+          data: sliceUniverse(globalUniverseCache.rows, sort, order, offset, limit),
+          errors: [],
+        };
+      }
+    }
+
+    const res = await refreshGlobalUniverse(sort, order);
+    if (res.errors.length > 0 && res.data.length === 0) return res;
+    return {
+      data: sliceUniverse(res.data, sort, order, offset, limit),
+      errors: res.errors,
+    };
   }
 
-  if (useGlobalCache && inflightGlobalUniverse) {
-    const base = await inflightGlobalUniverse;
-    const copy = base.map((r) => ({ ...r }));
-    sortStockData(copy, sort, order);
-    const paged = copy.slice(offset, limit && limit > 0 ? offset + limit : undefined);
-    await attachScoresAndEarnings(paged);
-    return { data: paged, errors: [] };
-  }
+  const res = await executeStocksListQuery(options);
+  if (res.errors.length > 0 && res.data.length === 0) return res;
+  const paged = isGlobalQuery
+    ? res.data.slice(offset, limit && limit > 0 ? offset + limit : undefined)
+    : res.data;
+  await attachScoresAndEarnings(paged);
+  return { data: paged, errors: res.errors };
+}
+
+async function executeStocksListQuery(options: {
+  sort?: string;
+  order?: 'asc' | 'desc';
+  tickers?: string[];
+}): Promise<StockServiceResult> {
+  const { sort = 'marketCapDiff', order = 'desc', tickers } = options;
+  const isGlobalQuery = !(tickers && tickers.length > 0);
 
   // Session-fresh values from Redis to overlay onto the complete DB universe
   // for global queries (the ranked zset only holds session-active symbols —
@@ -144,13 +202,6 @@ export async function getStocksList(options: {
   let redisOverlayPrev: Map<string, number> | null = null;
   let redisPartialHits: StockData[] = [];
   let dbQueryTickers: string[] | undefined = tickers;
-
-  const resolveGlobalRef: { fn?: (rows: StockData[]) => void } = {};
-  if (useGlobalCache) {
-    inflightGlobalUniverse = new Promise<StockData[]>((resolve) => {
-      resolveGlobalRef.fn = resolve;
-    });
-  }
 
   try {
     // === FAST PATH: REDIS ===
@@ -234,7 +285,6 @@ export async function getStocksList(options: {
               console.log(`🔄 [stockService] Kept ${results.length} Redis hits; fetching ${missing.length} missing tickers: ${missing.join(',')}`);
             } else {
               sortStockData(results, sort, order);
-              await attachScoresAndEarnings(results);
               return { data: results, errors: [] };
             }
           }
@@ -577,25 +627,8 @@ export async function getStocksList(options: {
       sortStockData(results, sort, order);
     }
 
-    if (useGlobalCache) {
-      globalUniverseCache = { rows: results, fetchedAt: Date.now() };
-      resolveGlobalRef.fn?.(results);
-      inflightGlobalUniverse = null;
-    }
-
-    // Global queries fetched the full universe — paginate in memory after the
-    // overlay sort.
-    const paged = isGlobalQuery
-      ? results.slice(offset, (limit && limit > 0) ? offset + limit : undefined)
-      : results;
-
-    await attachScoresAndEarnings(paged);
-    return { data: paged, errors: [] };
+    return { data: results, errors: [] };
   } catch (error) {
-    if (useGlobalCache) {
-      resolveGlobalRef.fn?.([]);
-      inflightGlobalUniverse = null;
-    }
     console.error('Error fetching stock list:', error);
     return { data: [], errors: [String(error)] };
   }

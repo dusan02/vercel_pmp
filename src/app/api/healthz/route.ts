@@ -3,6 +3,7 @@ export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 import { checkRedisHealth } from '@/lib/redis';
 import { prisma } from '@/lib/db/prisma';
+import { pingReadonlySqlite } from '@/lib/db/readonlySqlite';
 
 export async function GET() {
   // Simplified health check with timeout
@@ -27,14 +28,17 @@ export async function GET() {
     health.redis = 'error';
   }
 
-  // Database check with timeout (2 seconds)
+  // Database check with timeout (2 seconds) — prefer direct readonly SQLite
+  // ping to avoid false 503s when Prisma's connection_limit=1 queue is busy.
   try {
-    const dbCheckPromise = prisma.$queryRaw`SELECT 1`;
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('DB check timeout')), 2000)
-    );
+    if (!pingReadonlySqlite()) {
+      const dbCheckPromise = prisma.$queryRaw`SELECT 1`;
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('DB check timeout')), 2000)
+      );
 
-    await Promise.race([dbCheckPromise, timeoutPromise]);
+      await Promise.race([dbCheckPromise, timeoutPromise]);
+    }
     health.db = 'ok';
   } catch (error) {
     health.db = 'error';

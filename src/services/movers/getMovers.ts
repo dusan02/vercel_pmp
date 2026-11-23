@@ -44,7 +44,48 @@ export interface MoversResult {
     marketChangePct: number | null;
 }
 
+const MOVERS_FRESH_MS = 15_000;
+const MOVERS_STALE_MS = 120_000;
+const memMoversCache = new Map<string, { result: MoversResult; fetchedAt: number }>();
+const inflightMovers = new Map<string, Promise<MoversResult>>();
+
+function refreshMoversSingleFlight(key: string, limit: number, minZScore: number): Promise<MoversResult> {
+    const existing = inflightMovers.get(key);
+    if (existing) return existing;
+
+    const promise = computeMoversData(limit, minZScore)
+        .then((result) => {
+            memMoversCache.set(key, { result, fetchedAt: Date.now() });
+            return result;
+        })
+        .finally(() => {
+            inflightMovers.delete(key);
+        });
+    inflightMovers.set(key, promise);
+    return promise;
+}
+
 export async function getMoversData(limit: number, minZScore: number): Promise<MoversResult> {
+    if (process.env.NODE_ENV === 'test') {
+        return computeMoversData(limit, minZScore);
+    }
+
+    const key = `${limit}:${minZScore}`;
+    const cached = memMoversCache.get(key);
+    if (cached) {
+        const age = Date.now() - cached.fetchedAt;
+        if (age < MOVERS_STALE_MS) {
+            if (age >= MOVERS_FRESH_MS) {
+                void refreshMoversSingleFlight(key, limit, minZScore).catch(() => {});
+            }
+            return cached.result;
+        }
+    }
+
+    return refreshMoversSingleFlight(key, limit, minZScore);
+}
+
+async function computeMoversData(limit: number, minZScore: number): Promise<MoversResult> {
     const etNow = nowET();
     const session = detectSession(etNow);
 
