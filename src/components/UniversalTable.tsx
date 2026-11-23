@@ -24,7 +24,7 @@ interface UniversalTableProps<T> {
     keyExtractor: (item: T) => string;
     isLoading?: boolean;
     emptyMessage?: React.ReactNode;
-    sortKey?: SortKey | null;
+    sortKey?: SortKey | (string & {}) | null;
     ascending?: boolean;
     onSort?: (key: SortKey) => void;
     renderMobileCard?: (item: T) => React.ReactNode;

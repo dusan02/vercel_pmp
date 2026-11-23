@@ -5,6 +5,7 @@ import { generatePageMetadata } from '@/lib/seo/metadata';
 import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 import { getEligibleValuationTickers } from '@/lib/seo/eligibleValuation';
 import { StandaloneHeader } from '@/components/StandaloneHeader';
+import { formatMarketCapUsd } from '@/lib/utils/format';
 
 export const revalidate = 3600; // 1 hour
 
@@ -86,13 +87,6 @@ async function getAllStocks(): Promise<StockRow[]> {
       hasValuation: eligibleValuation.has(t.symbol),
     }))
     .sort((a, b) => (b.lastMarketCap ?? 0) - (a.lastMarketCap ?? 0));
-}
-
-function formatMarketCap(value: number | null): string {
-  if (value == null || value <= 0) return '—';
-  if (value >= 1000) return `$${(value / 1000).toFixed(2)}T`;
-  if (value >= 1) return `$${value.toFixed(1)}B`;
-  return `$${(value * 1000).toFixed(0)}M`;
 }
 
 function scoreColor(score: number | null): string {
@@ -218,7 +212,7 @@ export default async function StocksHubPage() {
                       {s.lastPrice != null ? `$${s.lastPrice.toFixed(2)}` : '—'}
                     </td>
                     <td className="py-2 px-2.5 sm:px-4 text-right tabular-nums text-slate-700 dark:text-slate-300">
-                      {formatMarketCap(s.lastMarketCap)}
+                      {formatMarketCapUsd(s.lastMarketCap)}
                     </td>
                     <td className={`py-2 px-2 sm:px-4 text-center tabular-nums font-semibold ${scoreColor(s.healthScore)}`}>
                       {s.healthScore != null ? `${s.healthScore.toFixed(0)}` : '—'}

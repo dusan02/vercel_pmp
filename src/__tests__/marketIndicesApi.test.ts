@@ -36,9 +36,12 @@ describe('GET /api/indices/market', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'clearTimeout'] });
+    jest.setSystemTime(new Date('2026-11-23T11:30:00Z'));
   });
 
   afterEach(() => {
+    jest.useRealTimers();
     global.fetch = originalFetch;
   });
 

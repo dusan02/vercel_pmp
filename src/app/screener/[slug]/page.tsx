@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { generatePageMetadata } from '@/lib/seo/metadata';
 import { getLeaderboard, getLeaderboardRows, getEwLeaderboardRows, LEADERBOARDS } from '@/lib/seo/leaderboards';
 import { formatPrice, formatPercent } from '@/lib/utils/heatmapFormat';
-import { formatSectorName } from '@/lib/utils/format';
+import { formatSectorName, formatMarketCapUsd } from '@/lib/utils/format';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 
 export const revalidate = 3600; // 1 hour — underlying data refreshes daily anyway
@@ -27,13 +27,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     path: `/screener/${def.slug}`,
     keywords: def.keywords,
   });
-}
-
-function formatMarketCap(value: number | null): string {
-  if (value == null || value <= 0) return '—';
-  if (value >= 1000) return `$${(value / 1000).toFixed(2)}T`;
-  if (value >= 1) return `$${value.toFixed(1)}B`;
-  return `$${(value * 1000).toFixed(0)}M`;
 }
 
 export default async function LeaderboardPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -186,7 +179,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
                         {r.changePct != null ? formatPercent(r.changePct) : '—'}
                       </td>
                       <td className="px-3 py-2 text-right hidden sm:table-cell text-slate-600 dark:text-slate-300 tabular-nums">
-                        {formatMarketCap(r.marketCapB)}
+                        {formatMarketCapUsd(r.marketCapB)}
                       </td>
                       <td className="px-3 py-2 text-right font-semibold tabular-nums text-slate-900 dark:text-white">
                         {r.totalScore.toFixed(1)}
@@ -244,7 +237,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ sl
                       {r.changePct != null ? formatPercent(r.changePct) : '—'}
                     </td>
                     <td className="px-3 py-2 text-right hidden sm:table-cell text-slate-600 dark:text-slate-300 tabular-nums">
-                      {formatMarketCap(r.marketCapB)}
+                      {formatMarketCapUsd(r.marketCapB)}
                     </td>
                     <td className="px-3 py-2 text-right font-semibold tabular-nums text-slate-900 dark:text-white">
                       {r.metricValue != null ? def.format(r.metricValue) : '—'}

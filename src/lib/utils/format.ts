@@ -41,6 +41,22 @@ export const formatMarketCapProse = (value: number | null | undefined): string =
 };
 
 /**
+ * Formats a market capitalization stored in billions (or raw USD if >100k)
+ * with a "$" prefix and compact B/T/M suffix for SEO hub/leaderboard tables
+ * (e.g. 250 -> "$250.0B", 3100 -> "$3.10T", 0.5 -> "$500M").
+ */
+export const formatMarketCapUsd = (
+  value: number | null | undefined,
+  emptyFallback = '—',
+): string => {
+  if (value == null || !isFinite(value) || value <= 0) return emptyFallback;
+  const b = value > 100_000 ? value / 1_000_000_000 : value;
+  if (b >= 1000) return `$${(b / 1000).toFixed(2)}T`;
+  if (b >= 1) return `$${b.toFixed(1)}B`;
+  return `$${(b * 1000).toFixed(0)}M`;
+};
+
+/**
  * Legacy wrapper for formatMarketCap
  */
 export const formatBillions = (num: number) => formatMarketCap(num);

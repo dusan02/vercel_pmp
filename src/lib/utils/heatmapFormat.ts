@@ -1,6 +1,12 @@
 /**
  * Heatmap Formatting Utilities
- * Number and text formatting functions for heatmap display
+ *
+ * Contract difference vs `@/lib/utils/format`:
+ * - `formatPrice` / `formatMarketCapDiff` here prepend `$` and use 1 decimal
+ *   for market cap delta (compact treemap tiles & tooltips).
+ * - `@/lib/utils/format` returns bare numeric strings for prices (`185.50`),
+ *   2 decimals for diffs (`+1.23B`), and `$`-prefixed USD/prose helpers
+ *   (`formatMarketCapUsd`, `formatMarketCapProse`).
  */
 
 /**

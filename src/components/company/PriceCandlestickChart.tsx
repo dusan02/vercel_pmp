@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -11,145 +10,64 @@ import {
   Tooltip,
   Bar,
   Line,
-  Cell,
   Area,
   ReferenceLine,
   ReferenceDot,
   Brush,
   AreaChart,
-  useXAxisScale,
-  useYAxisScale,
-  usePlotArea,
 } from 'recharts';
 import { CHART_FONT } from '@/components/charts/chartTheme';
 import { event as gaEvent } from '@/lib/ga';
-import { Ruler, TrendingUp, Eraser, Minus, Square, ArrowUpRight, Percent, Save, Check, CloudOff, SlidersHorizontal } from 'lucide-react';
 import { useSession, signIn } from 'next-auth/react';
 import { ChartDrawLayer, loadDrawings, saveDrawings, type Drawing, type DrawTool } from './chart/ChartDrawTools';
 import { FairValueBreakdown, type FairValueMeta } from './chart/FairValueBreakdown';
 import { useTickerNavMode } from '@/components/company/analysis/useTickerNavMode';
-import type { NavDimension, NavNeighbor, SimilarTickers, TickerNav } from '@/lib/analysis/tickerNav';
-import { FAIR_CFG, FAIR_METHOD_LABEL, formatFairDollar, formatFairStatus, type FairMethod } from '@/lib/valuation/fairValue';
-
-interface Candle {
-  t: number; // timestamp (ms)
-  o: number;
-  h: number;
-  l: number;
-  c: number;
-  v: number;
-  pe?: number | null; // TTM P/E on the candle's close day
-  ps?: number | null; // TTM P/S
-  pb?: number | null; // price ÷ book value/share
-  evEbit?: number | null; // EV ÷ TTM EBIT
-  fcfYield?: number | null; // TTM FCF ÷ market cap — decimal, may be negative
-  mcap?: number | null; // market cap at this close (USD)
-  /** Realized NTM P/E — close ÷ EPS of the four quarters reported after this
-   *  week. Not a historical consensus: uses earnings unknowable at the time.
-   *  Ends ~3–4 quarters before today. */
-  peFwd?: number | null;
-  /** Finnhub consensus forward P/E snapshot stored that day — exists only
-   *  since collection started, never fabricated backward. */
-  peCons?: number | null;
-  /** Composite fair value (50 % historical multiple + 50 % FCF DCF), point-in-time. */
-  fv?: number | null;
-  fvBear?: number | null;
-  fvBull?: number | null;
-  fvMethod?: FairMethod | null;
-}
-
-interface ChartPoint extends Candle {
-  date: string; // ISO yyyy-mm-dd (category key)
-  sma20?: number | null;
-  sma50?: number | null;
-  sma200?: number | null;
-  /** this week carries an updated fair value (new financial statements) */
-  fvChanged?: boolean;
-  /** implied TTM EPS for this week (close / pe) — used by tooltip + markers */
-  eps?: number | null;
-  /** [p25, p75] band for the active valuation-metric view */
-  band?: [number, number];
-  volSpike?: boolean;
-  /** Bollinger Bands (20, 2σ) on weekly closes */
-  bbUp?: number | null;
-  bbLo?: number | null;
-  /** Oscillators on weekly closes (pane below the chart) */
-  rsi14?: number | null;
-  macdL?: number | null; // MACD line = EMA12 − EMA26
-  macdS?: number | null; // signal = EMA9 of MACD line
-  macdH?: number | null; // histogram = line − signal
-  /** Benchmark overlay — raw weekly close of the benchmark (SPY/QQQ/XLF) */
-  bm?: number | null;
-  /** % change of the ticker's close since the visible window's first close */
-  chgPct?: number | null;
-  /** % change of the benchmark since the window's first benchmark value */
-  bmPct?: number | null;
-  /** Compare mode: ticker % split by position vs benchmark (green/red line) */
-  chgUp?: number | null;
-  chgDn?: number | null;
-  /** Divergence bands — [lo, hi] range-area tuples; green ahead, red behind */
-  bandG?: [number, number] | null;
-  bandR?: [number, number] | null;
-}
-
-// ── Valuation metrics ───────────────────────────────────────────────────────
-type MetricKey = 'pe' | 'peFwd' | 'ps' | 'pb' | 'evEbit' | 'fcfYield';
-type MetricField = 'pe' | 'peFwd' | 'ps' | 'pb' | 'evEbit' | 'fcfYield';
-
-interface MetricDef {
-  label: string;
-  /** Tooltip/caption name for the drawn series — P/E NTM's line is realized
-      history ("what the market paid for the next four quarters"), not the
-      consensus estimate, and must never be labelled plain "Fwd P/E". */
-  seriesLabel?: string;
-  /** unit suffix — '×' multiples, '%' yields (stored as decimal, ×100 shown) */
-  unit: '×' | '%';
-  field: MetricField;
-  /** lower multiple = cheaper → falling change badge is green. FCF yield
-      inverts this (higher yield = cheaper). */
-  lowerIsBetter: boolean;
-  /** negative values are real signal (negative FCF) — others are null-stored */
-  allowNegative: boolean;
-  formula: string;
-  gapNote: string;
-  /** Optional plain-English "why this metric exists" — rendered in the
-      bottom caption, after the formula/gap note. */
-  explain?: string;
-}
-
-const METRICS: MetricDef[] = [
-  { label: 'P/E', unit: '×', field: 'pe', lowerIsBetter: true, allowNegative: false,
-    formula: 'close ÷ TTM EPS', gapNote: 'Gaps mark periods with negative or unavailable earnings.' },
-  { label: 'P/E NTM', unit: '×', field: 'peFwd', lowerIsBetter: true, allowNegative: false,
-    seriesLabel: 'NTM P/E (realized)',
-    formula: 'close ÷ EPS of the next 4 reported quarters (realized — not a historical estimate)',
-    gapNote: 'The realized series ends ~3–4 quarters before today — later earnings are not reported yet; the amber dot is today\'s Finnhub consensus.',
-    explain: 'Every point prices the four quarters that actually arrived — earnings no analyst had seen yet. When realized NTM P/E sat low while the trailing P/E looked rich, the market had already paid for profits that later showed up. Judge today\'s amber consensus dot against this history.' },
-  { label: 'P/S', unit: '×', field: 'ps', lowerIsBetter: true, allowNegative: false,
-    formula: 'close ÷ TTM revenue/share', gapNote: 'Gaps mark periods with missing revenue data.' },
-  { label: 'P/B', unit: '×', field: 'pb', lowerIsBetter: true, allowNegative: false,
-    formula: 'close ÷ book value/share', gapNote: 'Gaps mark periods with missing or negative equity.' },
-  { label: 'EV/EBIT', unit: '×', field: 'evEbit', lowerIsBetter: true, allowNegative: false,
-    formula: 'enterprise value ÷ TTM EBIT', gapNote: 'Gaps mark periods with negative or unavailable EBIT.' },
-  { label: 'FCF yield', unit: '%', field: 'fcfYield', lowerIsBetter: false, allowNegative: true,
-    formula: 'TTM FCF ÷ market cap', gapNote: 'Dips below zero mark negative-FCF periods.' },
-];
-
-const METRIC_BY_KEY = Object.fromEntries(METRICS.map(m => [m.field, m])) as Record<MetricField, MetricDef>;
-
-interface MetricStats { median: number; p25: number; p75: number; n: number }
-
-/** Format a metric value in display units (× multiple or % yield). */
-function fmtMetric(v: number, unit: '×' | '%', digits = 1): string {
-  return unit === '%' ? `${(v * 100).toFixed(digits)}%` : `${v.toFixed(digits)}×`;
-}
-
-/** Implied per-share denominator for price-linear multiples (EPS, rev/share,
-    book/share): close ÷ multiple. */
-function impliedPerShare(p: ChartPoint, field: MetricField): number | null {
-  const v = p[field];
-  return v != null && v > 0 && p.c > 0 ? p.c / v : null;
-}
+import type { SimilarTickers, TickerNav } from '@/lib/analysis/tickerNav';
+import { FAIR_CFG, FAIR_METHOD_LABEL, formatFairDollar, formatFairStatus } from '@/lib/valuation/fairValue';
+import {
+  type Candle,
+  type ChartPoint,
+  type MetricField,
+  type MetricDef,
+  type MetricStats,
+  type PeriodLabel,
+  type IndKey,
+  type ModeKey,
+  METRIC_BY_KEY,
+  PERIOD_LABELS,
+  DEFAULT_INDS,
+  IND_KEY,
+  VIEW_KEY,
+  TOOL_HINT,
+  UP,
+  DOWN,
+  FWD_CONS,
+  MA20,
+  MA50,
+  MA200,
+  FAIR_COLOR,
+  PE_FAIR,
+  PE_LINE,
+  REF52,
+  BM_LINE,
+  BB_COLOR,
+  weekKeyOf,
+  fmtMetric,
+  impliedPerShare,
+  formatXTick,
+  enrichCandles,
+} from './chart/priceChartMath';
+import {
+  lineEndTag,
+  CandleShape,
+  FairValueZoneLayer,
+  MetricTooltip,
+  ChartNavArrow,
+  SimilarChips,
+  PriceReadoutStrip,
+  PriceOscillatorPanes,
+} from './chart/PriceChartPrimitives';
+import { PriceChartHeaderToolbar } from './chart/PriceChartToolbar';
 
 interface PriceCandlestickChartProps {
   ticker: string;
@@ -173,448 +91,14 @@ interface PriceCandlestickChartProps {
   onCompareChange?: (label: string | null) => void;
 }
 
-type PeriodLabel = '3M' | '6M' | 'YTD' | '1Y' | '3Y' | '5Y' | 'All';
-
-const UP = '#16a34a'; // green
-const DOWN = '#dc2626'; // red
-const FWD_CONS = '#d97706'; // amber — consensus forward P/E marker
-const MA20 = '#f97316'; // orange
-const MA50 = '#7c3aed'; // violet
-const MA200 = '#0891b2'; // teal — 200-day ≈ 40 weekly bars
-const FAIR_COLOR = '#2563eb'; // blue — composite fair value line
-const PE_FAIR = '#db2777'; // pink — valuation mode median reference line
-const PE_LINE = '#4f46e5'; // indigo — P/E-multiple view
-const VOL_SPIKE = '#d97706'; // amber — volume ≫ its own norm
-const REF52 = '#64748b'; // slate-500 — 52W hi/lo lines (400 was too light on white)
-const BM_LINE = '#78716c'; // stone-500 — benchmark compare line (dashed, neutral)
-
-// Monday-anchored week keys — must match the bucketing in the candles route
-// and /api/indices/weekly so benchmark closes join to the right candle.
-const MS_WEEK = 7 * 24 * 60 * 60 * 1000;
-const MS_MONDAY_OFFSET = 4 * 24 * 60 * 60 * 1000;
-const weekKeyOf = (t: number) => Math.floor((t - MS_MONDAY_OFFSET) / MS_WEEK);
-
-// User-togglable indicator set; persisted per-browser, Fair value on by default.
-const IND_KEY = 'pmp:pricechart:indicators';
-const DEFAULT_INDS: IndKey[] = ['fair'];
-// Chart view (price vs valuation mode, metric, period) persisted per-browser
-// so the ticker slider keeps the same lens when the page navigates — and a
-// hard reload lands back on the last view too.
-const VIEW_KEY = 'pmp:pricechart:view';
-const PERIOD_LABELS: PeriodLabel[] = ['3M', '6M', 'YTD', '1Y', '3Y', '5Y', 'All'];
-type IndKey = 'ma20' | 'ma50' | 'ma200' | 'fair' | 'w52' | 'volspike' | 'bb' | 'rsi' | 'macd';
-type ModeKey = 'price' | 'pe';
-// Draw-tool labels for the armed toolbar button + under-chart hint.
-const TOOL_LABEL: Record<string, string> = {
-  measure: '📐 Measure', trend: '╱ Trend', ray: '➚ Ray',
-  hline: '― Level', zone: '▦ Zone', fibo: 'ƒ Fibo',
-};
-const TOOL_HINT: Record<string, string> = {
-  measure: 'Drag to measure a move',
-  trend: 'Drag to draw a segment between two points',
-  ray: 'Drag to draw a ray — extends forward only',
-  hline: 'Click to place the price level',
-  zone: 'Drag a rectangle to mark a zone',
-  fibo: 'Drag from swing low to swing high',
-};
-const BB_COLOR = '#94a3b8';   // slate — quiet band behind the price
-const RSI_COLOR = '#8b5cf6';  // violet
-const MACD_COLOR = '#0ea5e9'; // sky
-const INDICATORS: { key: IndKey; label: string; color: string }[] = [
-  { key: 'ma20', label: 'MA 20w', color: MA20 },
-  { key: 'ma50', label: 'MA 50w', color: MA50 },
-  { key: 'ma200', label: 'MA 200d', color: MA200 },
-  { key: 'bb', label: 'Bollinger', color: BB_COLOR },
-  { key: 'w52', label: '52W hi/lo', color: REF52 },
-  { key: 'volspike', label: 'Vol spike', color: VOL_SPIKE },
-  { key: 'rsi', label: 'RSI 14', color: RSI_COLOR },
-  { key: 'macd', label: 'MACD', color: MACD_COLOR },
-];
-
-// Rolling mean — null until `n` observations exist (line starts later).
-function rollingMean(vals: number[], n: number): (number | null)[] {
-  const out: (number | null)[] = new Array(vals.length).fill(null);
-  let sum = 0;
-  for (let i = 0; i < vals.length; i++) {
-    sum += vals[i]!;
-    if (i >= n) sum -= vals[i - n]!;
-    if (i >= n - 1) out[i] = sum / n;
-  }
-  return out;
-}
-
-// Rolling stdev of window n (population) — for Bollinger Bands.
-function rollingStd(vals: number[], n: number): (number | null)[] {
-  const out: (number | null)[] = new Array(vals.length).fill(null);
-  let sum = 0, sq = 0;
-  for (let i = 0; i < vals.length; i++) {
-    sum += vals[i]!; sq += vals[i]! * vals[i]!;
-    if (i >= n) { const o = vals[i - n]!; sum -= o; sq -= o * o; }
-    if (i >= n - 1) {
-      const m = sum / n;
-      out[i] = Math.sqrt(Math.max(0, sq / n - m * m));
-    }
-  }
-  return out;
-}
-
-// Exponential MA — seeded with the first value (TradingView-style seeding
-// would use an SMA, but the tail difference is negligible at 260+ bars).
-function ema(vals: number[], n: number): (number | null)[] {
-  const out: (number | null)[] = new Array(vals.length).fill(null);
-  const k = 2 / (n + 1);
-  let e = 0;
-  for (let i = 0; i < vals.length; i++) {
-    e = i === 0 ? vals[i]! : vals[i]! * k + e * (1 - k);
-    if (i >= n - 1) out[i] = e;
-  }
-  return out;
-}
-
-// Wilder RSI(14) — avgGain/avgLoss seeded with SMA of first n changes.
-function rsi(vals: number[], n = 14): (number | null)[] {
-  const out: (number | null)[] = new Array(vals.length).fill(null);
-  if (vals.length <= n) return out;
-  let g = 0, l = 0;
-  for (let i = 1; i <= n; i++) {
-    const ch = vals[i]! - vals[i - 1]!;
-    if (ch > 0) g += ch; else l -= ch;
-  }
-  g /= n; l /= n;
-  out[n] = l === 0 ? 100 : 100 - 100 / (1 + g / l);
-  for (let i = n + 1; i < vals.length; i++) {
-    const ch = vals[i]! - vals[i - 1]!;
-    g = (g * (n - 1) + Math.max(0, ch)) / n;
-    l = (l * (n - 1) + Math.max(0, -ch)) / n;
-    out[i] = l === 0 ? 100 : 100 - 100 / (1 + g / l);
-  }
-  return out;
-}
-
-function formatXTick(dateStr: string) {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
-}
-
-function fmtVol(v: number) {
-  if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
-  if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
-  if (v >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
-  return `${v}`;
-}
-
-// Compare-mode line-end tag — a subtle ticker/symbol label rendered right at
-// the line's last point so the eye doesn't have to travel to the legend.
-// `dy` offsets ticker labels above the line and benchmark labels below it,
-// which keeps the two tags apart when the endpoints run close together.
-function lineEndTag(text: string, color: string, endIdx: number, dy: number) {
-  return function LineEndTag(props: any) {
-    if (props.index !== endIdx || props.value == null || props.x == null || props.y == null) return null;
-    return (
-      <text
-        x={props.x + 6}
-        y={props.y + dy}
-        fontSize={10}
-        fontWeight={700}
-        fill={color}
-        stroke="none"
-        style={{ pointerEvents: 'none' }}
-      >
-        {text}
-      </text>
-    );
-  };
-}
-
-// Custom candlestick + volume bar rendered via Recharts 3 axis/plot hooks so
-// wick/body Y coordinates match <Area>, <Line> and <YAxis> pixel-for-pixel.
-function CandleShape({
-  x,
-  width,
-  payload,
-  volFrac,
-  maxVolume,
-  showVolSpike,
-  fallbackDomain,
-  fallbackPlotHeight,
-}: {
-  x?: number;
-  width?: number;
-  payload?: ChartPoint;
-  volFrac: number;
-  maxVolume: number;
-  showVolSpike: boolean;
-  fallbackDomain: [number, number];
-  fallbackPlotHeight: number;
-}) {
-  const ys = useYAxisScale();
-  const plot = usePlotArea();
-  const d = payload;
-  if (!d || x == null || width == null) return null;
-
-  const top = plot?.y ?? 8;
-  const plotHeight = plot?.height ?? fallbackPlotHeight;
-  const [minY, maxY] = fallbackDomain;
-  const range = maxY - minY;
-  const getY = (val: number) => {
-    if (ys) {
-      const py = ys(val);
-      if (typeof py === 'number' && Number.isFinite(py)) return py;
-    }
-    if (range === 0) return top + plotHeight / 2;
-    return top + plotHeight * (1 - (val - minY) / range);
-  };
-
-  const cx = x + width / 2;
-  const up = d.c >= d.o;
-  const color = up ? UP : DOWN;
-
-  const yHigh = getY(d.h);
-  const yLow = getY(d.l);
-  const yOpen = getY(d.o);
-  const yClose = getY(d.c);
-  const bodyTop = Math.min(yOpen, yClose);
-  const bodyH = Math.max(1, Math.abs(yClose - yOpen));
-
-  const volTop = top + plotHeight * (1 - volFrac);
-  const yBottom = top + plotHeight;
-  const vH = maxVolume > 0 ? ((d.v || 0) / maxVolume) * (yBottom - volTop) : 0;
-
-  const bodyW = Math.max(1, Math.min(width * 0.7, 14));
-  const spike = showVolSpike && d.volSpike;
-
-  return (
-    <g key={d.t}>
-      <rect
-        x={cx - bodyW / 2}
-        y={yBottom - vH}
-        width={bodyW}
-        height={vH}
-        fill={spike ? VOL_SPIKE : color}
-        opacity={spike ? 0.55 : 0.18}
-      />
-      <line x1={cx} x2={cx} y1={yHigh} y2={yLow} stroke={color} strokeWidth={1} />
-      <rect x={cx - bodyW / 2} y={bodyTop} width={bodyW} height={bodyH} fill={color} />
-    </g>
-  );
-}
-
-// Green (price <= fair) and red (price > fair) zone fills rendered via Recharts
-// axis hooks so the fair-value edge steps horizontally with `type="stepAfter"`
-// instead of cutting diagonally across filing jumps.
-function FairValueZoneLayer({ data }: { data: ChartPoint[] }) {
-  const xs = useXAxisScale();
-  const ys = useYAxisScale();
-  if (!xs || !ys || data.length < 2) return null;
-
-  const xOf = (date: string): number | null => {
-    const px = xs(date, { position: 'middle' });
-    return typeof px === 'number' && Number.isFinite(px) ? px : null;
-  };
-  const yOf = (v: number): number | null => {
-    const py = ys(v);
-    return typeof py === 'number' && Number.isFinite(py) ? py : null;
-  };
-
-  const buyParts: string[] = [];
-  const sellParts: string[] = [];
-  const pushPoly = (dest: string[], pts: [number, number][]) => {
-    dest.push(`M${pts.map(([px, py]) => `${px.toFixed(1)},${py.toFixed(1)}`).join('L')}Z`);
-  };
-
-  for (let i = 0; i < data.length - 1; i++) {
-    const d0 = data[i]!;
-    const d1 = data[i + 1]!;
-    if (d0.fv == null || !(d0.fv > 0) || d1.fv == null || !(d1.fv > 0)) continue;
-    const x0 = xOf(d0.date);
-    const x1 = xOf(d1.date);
-    const yFv = yOf(d0.fv);
-    const y0 = yOf(d0.c);
-    const y1 = yOf(d1.c);
-    if (x0 == null || x1 == null || yFv == null || y0 == null || y1 == null) continue;
-
-    const diff0 = d0.c - d0.fv;
-    const diff1 = d1.c - d0.fv;
-    if (diff0 <= 0 && diff1 <= 0) {
-      pushPoly(buyParts, [[x0, yFv], [x0, y0], [x1, y1], [x1, yFv]]);
-    } else if (diff0 >= 0 && diff1 >= 0) {
-      pushPoly(sellParts, [[x0, yFv], [x0, y0], [x1, y1], [x1, yFv]]);
-    } else {
-      const frac = Math.abs(diff0) / (Math.abs(diff0) + Math.abs(diff1));
-      const xMid = x0 + frac * (x1 - x0);
-      pushPoly(diff0 < 0 ? buyParts : sellParts, [[x0, yFv], [x0, y0], [xMid, yFv]]);
-      pushPoly(diff1 < 0 ? buyParts : sellParts, [[xMid, yFv], [x1, y1], [x1, yFv]]);
-    }
-  }
-
-  return (
-    <g style={{ pointerEvents: 'none' }} data-testid="fair-value-zones">
-      {buyParts.length > 0 && <path d={buyParts.join('')} fill={UP} fillOpacity={0.14} stroke="none" />}
-      {sellParts.length > 0 && <path d={sellParts.join('')} fill={DOWN} fillOpacity={0.12} stroke="none" />}
-    </g>
-  );
-}
-
-// ── Custom Tooltip ──────────────────────────────────────────────────────────
-
-// Valuation-metric view tooltip — the multiple itself vs its own
-// distribution. Denominator row shows what the multiple is composed of
-// (implied per-share value for price ratios, totals for EV/FCF metrics).
-function MetricTooltip({ active, payload, metric, stats }: any) {
-  if (!active || !payload?.length) return null;
-  const p: ChartPoint = payload[0].payload;
-  if (!p) return null;
-  const m: MetricDef = METRIC_BY_KEY[metric as MetricField];
-  const raw = p[m.field];
-  const val = raw != null && (m.allowNegative || raw > 0) ? raw : null;
-  const ps = val != null ? impliedPerShare(p, m.field) : null;
-
-  // What's in the denominator of each metric — price-per-share multiples
-  // show the implied per-share figure; EV/FCF metrics show the dollar base.
-  const denomRows: { label: string; text: string }[] = [];
-  if (val != null) {
-    if (metric === 'pe' && ps != null) denomRows.push({ label: 'TTM EPS', text: `$${ps.toFixed(2)}` });
-    if (metric === 'peFwd' && ps != null) denomRows.push({ label: 'NTM EPS', text: `$${ps.toFixed(2)} (realized)` });
-    if (metric === 'ps' && ps != null) denomRows.push({ label: 'TTM rev/sh', text: `$${ps.toFixed(2)}` });
-    if (metric === 'pb' && ps != null) denomRows.push({ label: 'Book/sh', text: `$${ps.toFixed(2)}` });
-    if (metric === 'evEbit' && p.mcap != null) denomRows.push({ label: 'Mkt cap', text: `$${fmtVol(p.mcap)}` });
-    if (metric === 'fcfYield' && p.mcap != null) denomRows.push({ label: 'TTM FCF', text: `$${fmtVol(val * p.mcap)}` });
-  }
-  // Stored consensus snapshot on this day (only exists since collection
-  // started) — shown alongside, never as, the realized value.
-  const cons = metric === 'peFwd' && p.peCons != null && p.peCons > 0 ? p.peCons : null;
-  const seriesLabel = m.seriesLabel ?? m.label;
-
-  const betterVsMedian = val != null && stats
-    ? (m.lowerIsBetter ? val <= stats.median : val >= stats.median)
-    : null;
-
-  return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 shadow-lg text-xs min-w-[170px]">
-      <div className="text-gray-500 dark:text-gray-400 mb-2 font-medium">
-        {new Date(p.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-      </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono">
-        {val != null ? (
-          <>
-            <span style={{ color: PE_LINE }}>{seriesLabel}</span>
-            <span className="text-right font-semibold text-gray-900 dark:text-white">{fmtMetric(val, m.unit)}</span>
-          </>
-        ) : (
-          <>
-            <span className="text-gray-500 dark:text-gray-400">{seriesLabel}</span>
-            <span className="text-right text-gray-400 dark:text-gray-500">n/m</span>
-          </>
-        )}
-        {cons != null && (
-          <>
-            <span style={{ color: FWD_CONS }}>Consensus fwd P/E</span>
-            <span className="text-right font-medium" style={{ color: FWD_CONS }}>{fmtMetric(cons, '×')}</span>
-          </>
-        )}
-        {denomRows.map(r => (
-          <React.Fragment key={r.label}>
-            <span className="text-gray-500 dark:text-gray-400">{r.label}</span>
-            <span className="text-right text-gray-700 dark:text-gray-300">{r.text}</span>
-          </React.Fragment>
-        ))}
-        {val != null && stats && (
-          <>
-            <span className="text-gray-500 dark:text-gray-400">vs median</span>
-            <span className="text-right" style={{ color: betterVsMedian ? UP : DOWN }}>
-              {((val - stats.median) / Math.abs(stats.median)) * 100 >= 0 ? '+' : ''}
-              {(((val - stats.median) / Math.abs(stats.median)) * 100).toFixed(0)}%
-            </span>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-
-const NAV_ARROW_CLS =
-  'inline-flex items-center gap-1 px-1.5 py-1 rounded-md text-xs font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/60 hover:text-gray-800 dark:hover:text-gray-100 transition-colors';
-
-/** Prev/next stepper for the in-chart ticker slider — routes to the
- *  neighbor's analysis page with scroll preserved (scroll={false}), so the
- *  chart stays in view and "slides" to the neighbor's data. The persisted
- *  chart view (mode/metric/period) carries the same lens across the hop. */
-function ChartNavArrow({ direction, neighbor, navMode, fromTicker }: {
-  direction: 'previous' | 'next';
-  neighbor: NavNeighbor | null;
-  navMode: NavDimension;
-  fromTicker: string;
-}) {
-  const arrow = direction === 'previous' ? '←' : '→';
-  const word = direction === 'previous' ? 'Previous' : 'Next';
-  if (!neighbor) {
-    return (
-      <span className={`${NAV_ARROW_CLS} opacity-30 cursor-not-allowed`} aria-disabled="true" title={`No ${word.toLowerCase()} stock`}>
-        <span aria-hidden="true">{arrow}</span>
-      </span>
-    );
-  }
-  return (
-    <Link
-      href={`/analysis/${neighbor.symbol}?nav=${navMode}`}
-      scroll={false}
-      prefetch
-      title={`${word} stock${neighbor.name ? ` — ${neighbor.name}` : ''}`}
-      aria-label={`${word} stock: ${neighbor.symbol}`}
-      onClick={() => gaEvent('stock_navigator_click', { ticker_from: fromTicker, ticker_to: neighbor.symbol, dimension: navMode, direction, location: 'chart' })}
-      className={NAV_ARROW_CLS}
-    >
-      {direction === 'previous'
-        ? <><span aria-hidden="true">{arrow}</span><span>{neighbor.symbol}</span></>
-        : <><span>{neighbor.symbol}</span><span aria-hidden="true">{arrow}</span></>}
-    </Link>
-  );
-}
-
-/** One labeled group of similar-ticker chips (cap peers / sector / industry).
- *  Same slider UX as the arrows: scroll preserved, active metric carried over
- *  via the persisted chart view. */
-function SimilarChips({ label, dim, items, from }: {
-  label: string;
-  dim: NavDimension;
-  items: NavNeighbor[];
-  from: string;
-}) {
-  if (!items.length) return null;
-  return (
-    <span className="flex items-center gap-0.5 flex-wrap min-w-0">
-      <span className="font-semibold text-gray-400 dark:text-gray-500 mr-0.5 shrink-0">{label}:</span>
-      {items.map((n) => (
-        <Link
-          key={n.symbol}
-          href={`/analysis/${n.symbol}?nav=${dim}`}
-          scroll={false}
-          prefetch
-          title={n.name ?? n.symbol}
-          onClick={() => gaEvent('stock_navigator_click', { ticker_from: from, ticker_to: n.symbol, dimension: dim, direction: 'similar', location: 'chart' })}
-          className="px-1 py-0.5 rounded font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-        >
-          {n.symbol}
-        </Link>
-      ))}
-    </span>
-  );
-}
-
 export function PriceCandlestickChart({ ticker, companyName, nav, similar, currentPrice, currentChangePct, changeLabel = 'day', onCompareChange }: PriceCandlestickChartProps) {
-  // In-chart prev/next ticker slider — same dimension resolution as the
-  // page-top navigator (shared ?nav= param + 'ticker-nav-mode' LS key).
   const { mode: navMode, result: navRes } = useTickerNavMode(nav);
   const [allCandles, setAllCandles] = useState<Candle[] | null>(null);
   const [valStats, setValStats] = useState<Partial<Record<MetricField, MetricStats>>>({});
   const [evNetDebt, setEvNetDebt] = useState<number | null>(null);
-  // Today's Finnhub consensus forward P/E — rendered as a labelled dot at the
-  // right edge of the P/E-NTM view (realized history can't reach "now").
   const [fwdPeNow, setFwdPeNow] = useState<number | null>(null);
   const [fwdPeAsOf, setFwdPeAsOf] = useState<string | null>(null);
   const [fairMeta, setFairMeta] = useState<FairValueMeta | null>(null);
-  // Track which trigger opened the breakdown so clicking the bottom legend expands right below it instead of offscreen above the chart.
   const [fvInfoAnchor, setFvInfoAnchor] = useState<'top' | 'bottom' | null>(null);
   const toggleFvInfo = (anchor: 'top' | 'bottom') =>
     setFvInfoAnchor((cur) => (cur === anchor ? null : anchor));
@@ -646,10 +130,9 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<PeriodLabel>('5Y');
   const [inds, setInds] = useState<Set<IndKey>>(() => new Set(DEFAULT_INDS));
-  // Compact toolbar menus — the secondary controls (metric select, overlay
-  // toggles, benchmark compare) collapsed into dropdowns; exactly one open.
   const [openMenu, setOpenMenu] = useState<'metric' | 'overlays' | 'compare' | 'draw' | 'tools' | null>(null);
   const menuWrapRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!openMenu) return;
     const onDown = (e: MouseEvent | TouchEvent) => {
@@ -665,10 +148,9 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
       document.removeEventListener('keydown', onKey);
     };
   }, [openMenu]);
-  // Mode flip collapses any open menu — an invisible menu would still hover.
+
   useEffect(() => { setOpenMenu(null); }, [mode]);
-  // Narrow viewport → tighter chart margins / axis so the plot claims more
-  // of the mobile screen (390px phone otherwise plots in ~64% of width).
+
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 640px)');
@@ -678,21 +160,16 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     return () => mq.removeEventListener('change', update);
   }, []);
 
-  // Hydrate indicator toggles from localStorage after mount (SSR-safe).
   useEffect(() => {
     try {
       const raw = localStorage.getItem(IND_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return;
-      // Migrate legacy 'pefair' toggle to 'fair'
       setInds(new Set(parsed.map((k) => (k === 'pefair' ? 'fair' : k)) as IndKey[]));
     } catch { /* ignore corrupt value */ }
   }, []);
 
-  // Hydrate the last-used chart view (mode / metric / period) — soft-nav via
-  // the ticker slider already keeps these states mounted, this covers hard
-  // reloads and direct landings after a slider hop.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(VIEW_KEY);
@@ -714,7 +191,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
       try { localStorage.setItem(IND_KEY, JSON.stringify([...next])); } catch { /* private mode */ }
       return next;
     });
-    // `inds` from closure is pre-toggle — the new state is its negation.
     gaEvent('chart_indicator', { ind: k, state: inds.has(k) ? 'off' : 'on', ticker });
   };
 
@@ -729,8 +205,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
       .then((json) => {
         if (!mounted) return;
         setAllCandles(Array.isArray(json.candles) ? json.candles : []);
-        // New payloads carry valuationStats; cached/old responses only have
-        // peStats — degrade to just the P/E metric rather than nothing.
         setValStats(
           json.valuationStats ?? (json.peStats ? { pe: json.peStats } : {}),
         );
@@ -754,10 +228,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     };
   }, [ticker]);
 
-  // Available span decides which period buttons exist — Polygon Starter
-  // returns ~5Y max, so on most tickers "5Y" would show the identical series
-  // as "All" (a dead button). A fixed period is only offered when it trims at
-  // least ~5 weeks; "All" always covers whatever history exists.
   const spanYears = useMemo(() => {
     if (!allCandles || allCandles.length < 2) return 0;
     const sorted = [...allCandles].sort((a, b) => a.t - b.t);
@@ -776,9 +246,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
       { label: '3Y', years: 3 },
       { label: '5Y', years: 5 },
     ];
-    // Skip periods that don't trim the series (~5+ weeks) or are too short
-    // to draw (~4 weekly candles), plus dedupe YTD when it equals 1Y.
-    // Allow 5Y when the available span covers at least ~4.5 years (Polygon Starter ~4.95Y span).
     const fixed = candidates.filter(
       (p, i, arr) =>
         (p.years < spanYears - 0.1 || (p.label === '5Y' && spanYears >= 4.5)) &&
@@ -789,87 +256,22 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     return [...fixed, { label: 'All' as const, years: 99 }];
   }, [spanYears]);
 
-  // Selected period may not be offered for this ticker's span (e.g. '5Y'
-  // default on a 2-year IPO) — fall back to 'All' instead of a dead state.
   const activePeriod: PeriodLabel = periodChoices.some((p) => p.label === period)
     ? period
     : 'All';
 
-  // Price-mode "median P/E fair value" overlay still needs the P/E stats.
   const peStats = valStats.pe ?? null;
   const activeMetric: MetricDef = METRIC_BY_KEY[metric];
   const metricStats = valStats[metric] ?? null;
-  // A ticker may lack a metric's history (e.g. no balance sheet → no P/B) —
-  // fall back to P/E so the Valuation tab never opens on a dead chart. The
-  // restored/persisted view can also land on 'pe' for a ticker with no
-  // valuation data at all — snap back to Price instead of an empty plot.
+
   useEffect(() => {
     if (mode !== 'pe') return;
     if (!loading && !Object.keys(valStats).length) setMode('price');
     else if (!valStats[metric]) setMetric('pe');
   }, [mode, metric, valStats, loading]);
 
-  // Enriched full series — sorting, SMAs, implied EPS and the valuation band
-  // are computed over ALL candles once; the price-mode `data` window and the
-  // P/E-mode brush window are slices of this.
-  const enriched: ChartPoint[] = useMemo(() => {
-    if (!allCandles) return [];
-    // Sort the full series first — SMA must see consecutive candles.
-    const sorted = [...allCandles].sort((a, b) => a.t - b.t);
-    const closes = sorted.map((c) => c.c);
-    const sma20 = rollingMean(closes, 20);
-    const sma50 = rollingMean(closes, 50);
-    // 40 weekly bars ≈ the 200-day average investors actually mean by SMA200
-    const sma200 = rollingMean(closes, 40);
-    const volSma = rollingMean(sorted.map((c) => c.v || 0), 20);
-    // Bollinger (20, 2σ) + RSI14 + MACD(12,26,9) on weekly closes — computed
-    // on the full series so window edges don't reset the warmup.
-    const std20 = rollingStd(closes, 20);
-    const rsiArr = rsi(closes, 14);
-    const ema12 = ema(closes, 12);
-    const ema26 = ema(closes, 26);
-    const macdRaw: (number | null)[] = closes.map((_, i) =>
-      ema12[i] != null && ema26[i] != null ? ema12[i]! - ema26[i]! : null);
-    const firstMacd = macdRaw.findIndex((v) => v != null);
-    const macdTail = firstMacd >= 0 ? ema(macdRaw.slice(firstMacd).map((v) => v!), 9) : [];
-    const macdSig: (number | null)[] = new Array(closes.length).fill(null);
-    for (let i = 0; i < macdTail.length; i++) macdSig[firstMacd + i] = macdTail[i] ?? null;
-    // Implied TTM EPS on the full series — used by Valuation mode tooltip.
-    const epsArr: (number | null)[] = sorted.map((c) =>
-      c.pe != null && c.pe > 0 && Number.isFinite(c.pe) ? c.c / c.pe : null,
-    );
-    // Mark weeks where the server-computed fair value stepped (fresh statements)
-    let prevFv: number | null = null;
-    const out: ChartPoint[] = [];
-    for (let i = 0; i < sorted.length; i++) {
-      const c = sorted[i]!;
-      const va = volSma[i];
-      const fv = c.fv != null && c.fv > 0 ? c.fv : null;
-      const fvChanged = fv != null && prevFv != null && Math.abs(fv - prevFv) > Math.abs(prevFv) * 0.001;
-      if (fv != null) prevFv = fv;
-      out.push({
-        ...c,
-        date: new Date(c.t).toISOString().slice(0, 10),
-        sma20: sma20[i] ?? null,
-        sma50: sma50[i] ?? null,
-        sma200: sma200[i] ?? null,
-        eps: epsArr[i] ?? null,
-        fvChanged,
-        // Spike = this week's volume > 2× its own trailing 20w mean (≈ RVOL 2)
-        volSpike: va != null && va > 0 && (c.v || 0) > 2 * va,
-        bbUp: sma20[i] != null && std20[i] != null ? sma20[i]! + 2 * std20[i]! : null,
-        bbLo: sma20[i] != null && std20[i] != null ? sma20[i]! - 2 * std20[i]! : null,
-        rsi14: rsiArr[i] ?? null,
-        macdL: macdRaw[i] ?? null,
-        macdS: macdSig[i] ?? null,
-        macdH: macdRaw[i] != null && macdSig[i] != null ? macdRaw[i]! - macdSig[i]! : null,
-      });
-    }
-    return out;
-  }, [allCandles]);
+  const enriched: ChartPoint[] = useMemo(() => enrichCandles(allCandles), [allCandles]);
 
-  // Per-active-metric series — the p25–p75 band field is stamped only where
-  // the metric has a value so the band breaks cleanly over coverage gaps.
   const metricSeries: ChartPoint[] = useMemo(() => {
     if (!metricStats) return enriched;
     const f = activeMetric.field;
@@ -886,15 +288,9 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     return Date.now() - years * 365.25 * 24 * 60 * 60 * 1000;
   }, [periodChoices, activePeriod]);
 
-  // Benchmark compare (price mode): sector ETF comes from the candles
-  // payload; SPY/QQQ are always offered. The weekly series is fetched lazily
-  // from /api/indices/weekly on first toggle and cached per-symbol so a
-  // re-toggle (or another ticker page) costs nothing.
   const [sectorEtf, setSectorEtf] = useState<string | null>(null);
   const [sectorName, setSectorName] = useState<string | null>(null);
   const [bmSym, setBmSym] = useState<string | null>(null);
-  // Series carries its symbol — on a fast SPY→XLF switch the stale series
-  // is ignored instead of briefly rendering under the wrong label.
   const [bmSeries, setBmSeries] = useState<{ sym: string; pts: { t: number; c: number }[] } | null>(null);
   const bmCache = useRef(new Map<string, { t: number; c: number }[]>());
   useEffect(() => setBmSym(null), [ticker]);
@@ -928,25 +324,16 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
   const bmLabel = benchmarkChoices.find((b) => b.sym === bmSym)?.label ?? bmSym ?? '';
   const bmActive = bmSym != null && bmSeries?.sym === bmSym && bmSeries.pts.length > 0;
 
-  // Tell the section header which subtitle to show — compare view swaps
-  // "Weekly Candlestick Chart" for "Relative Performance vs {symbol}".
   useEffect(() => {
     onCompareChange?.(bmActive ? bmLabel : null);
   }, [bmActive, bmLabel, onCompareChange]);
 
-  // benchmark weekly close keyed by week — joins candles by weekKeyOf(t)
   const bmByWeek = useMemo(() => {
     const m = new Map<number, number>();
     if (bmActive && bmSeries) for (const p of bmSeries.pts) m.set(weekKeyOf(p.t), p.c);
     return m;
   }, [bmSeries, bmActive]);
 
-  // Price-mode window — the P/E chart instead takes the full series and
-  // windows it through the Brush navigator below the chart. When a benchmark
-  // is active each candle carries % change from the window's first value for
-  // both series (chgPct / bmPct) plus the split-line and band fields the
-  // compare view draws on a shared % axis — a relative-performance
-  // comparison over exactly the displayed range.
   const data: ChartPoint[] = useMemo(() => {
     const w = enriched.filter((p) => p.t >= periodCutoffMs);
     if (!bmByWeek.size || !w.length) return w;
@@ -967,10 +354,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
         bm: b ?? null,
         chgPct: chg,
         bmPct: bmp,
-        // Compare-mode split: the ticker line is drawn green where it leads
-        // the benchmark and red where it lags; the bands fill the gap
-        // between the two % series (null at crossings leaves a hairline
-        // notch — honest, interpolation would invent data).
         chgUp: above === true ? chg : null,
         chgDn: above === false ? chg : null,
         bandG: above === true ? [bmp!, chg] : null,
@@ -979,18 +362,10 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     });
   }, [enriched, periodCutoffMs, bmByWeek]);
 
-  // P/E-mode window. The Brush is UNCONTROLLED: its startIndex/endIndex props
-  // are only initial values — the chart remounts via `key` on every period
-  // click so a new window is applied. Drag indices are mirrored into peBrush
-  // solely for the y-domain and the header label — they must NOT feed back
-  // into the Brush props (a controlled loop races recharts' internal store
-  // and can leave the displayed slice empty).
   const [peBrush, setPeBrush] = useState<{ startIndex: number; endIndex: number } | null>(null);
   const [peEpoch, setPeEpoch] = useState(0);
   useEffect(() => setPeBrush(null), [activePeriod, ticker]);
 
-  // Drawing tools (XTB-style): measure boxes + trendlines pinned to
-  // (date, price) coordinates, persisted per ticker in localStorage.
   const [drawTool, setDrawTool] = useState<DrawTool>(null);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [drawDirty, setDrawDirty] = useState(false);
@@ -1004,9 +379,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     setDrawDirty(false);
   }, [ticker]);
 
-  // Server set wins over the local draft — it survived sign-out/cache clears.
-  // A non-empty server set replaces local; an empty one keeps local work and
-  // marks it dirty so the next Save pushes it to the account.
   useEffect(() => {
     if (!loggedIn) return;
     let live = true;
@@ -1028,7 +400,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
   const addDrawing = (d: Drawing) => {
     setDrawings((prev) => { const next = [...prev, d]; saveDrawings(ticker, next); return next; });
     markDirty();
-    setDrawTool(null); // single-shot: after drawing, handles appear for editing
+    setDrawTool(null);
   };
   const updateDrawing = (idx: number, d: Drawing) => {
     setDrawings((prev) => { const next = prev.map((x, j) => (j === idx ? d : x)); saveDrawings(ticker, next); return next; });
@@ -1054,27 +426,17 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     } catch { setDrawSave('error'); }
     setTimeout(() => setDrawSave((s) => (s === 'saved' ? 'idle' : s)), 2500);
   };
-  // Esc disarms the active tool (and any in-progress draft is discarded by
-  // the layer on pointer-up).
+
   useEffect(() => {
     if (!drawTool) return;
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') setDrawTool(null); };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, [drawTool]);
-  // Tools measure price — meaningless on the %-axis compare view and on the
-  // valuation chart, so they stay armed only in plain price mode.
   const drawActive = mode === 'price' && !bmActive && drawTool != null;
 
-  // Hovered candle index for the TradingView-style readout strip — the old
-  // floating tooltip card covered candles and user drawings on hover.
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
-  // Two-phase view swap (mode / metric / period): the chart wrapper fades
-  // out for ~120ms, the change commits while invisible, then it fades back
-  // in with a slight rise (.pmp-chart-swap / .pmp-fading in globals.css).
-  // Brush drags bypass this — they write peBrush directly. Honored
-  // prefers-reduced-motion: commits happen instantly with no fading at all.
   const [fading, setFading] = useState(false);
   const fadeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const reduceMotion = useMemo(
@@ -1110,7 +472,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     [metricSeries, peWindow],
   );
 
-  // Trailing 52-week high/low over the FULL series (window-independent).
   const hiLo52 = useMemo(() => {
     if (!allCandles?.length) return null;
     const last52 = [...allCandles].sort((a, b) => a.t - b.t).slice(-52);
@@ -1119,17 +480,11 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     return Number.isFinite(hi) ? { hi, lo } : null;
   }, [allCandles]);
 
-  // Pre-computed ONCE — the previous per-candle Math.max(...data.map(...))
-  // inside the Bar shape was O(n²) per render (~67k iterations for 5Y weekly).
   const maxVolume = useMemo(
     () => Math.max(...data.map(pt => pt.v || 0), 1),
     [data]
   );
 
-  // Valuation view: y-domain hugs the distribution, not extreme outliers.
-  // Cap at ~q95 of visible values × 1.08 (always ≥ p75×1.6) so single-name
-  // spikes can't flatten the median/band the user came to compare. FCF yield
-  // may dip below zero (cash burn) — the floor follows the data, not zero.
   const peDomain = useMemo((): [number, number] => {
     if (!peVisible.length || !metricStats) return [0, 1];
     const f = activeMetric.field;
@@ -1142,21 +497,13 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     const q05 = vals[Math.min(vals.length - 1, Math.floor(vals.length * 0.05))]!;
     const lo = Math.min(0, q05 * 1.15);
     let hi = Math.max(q95 * 1.08, metricStats.p75 * 1.6);
-    // The consensus dot must fit the P/E-NTM domain even when it lies beyond
-    // the realized distribution.
     if (metric === 'peFwd' && fwdPeNow != null) hi = Math.max(hi, fwdPeNow * 1.06);
-    // Yields are decimals (0.012) — round the domain to % fractions so
-    // axis ticks land on whole percent-ish values.
     const round = activeMetric.unit === '%'
       ? (v: number) => Math.ceil(v * 200) / 200
       : Math.ceil;
     return [round(lo), Math.max(round(hi), lo + 0.001)];
   }, [peVisible, metricStats, activeMetric, metric, fwdPeNow]);
 
-  // Valuation headline — current multiple scaled to the live quote when
-  // available (exact for price-linear metrics and FCF yield; EV/EBIT uses
-  // the stored net-debt leg), else the last stored value. Plus the change
-  // over the visible window and context stats for the caption line.
   const peHeadline = useMemo(() => {
     if (!enriched.length) return null;
     const f = activeMetric.field;
@@ -1168,21 +515,15 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     let live = lastV != null && lastV > 0 ? lastV : (activeMetric.allowNegative ? lastV : null);
     if (currentPrice != null && lastVal && lastV != null && lastVal.c > 0) {
       if (metric === 'fcfYield') {
-        // yield = FCF ÷ mcap → scales inversely with price
         live = lastV * (lastVal.c / currentPrice);
       } else if (metric === 'evEbit' && lastVal.mcap != null && evNetDebt != null) {
-        // EV = mcap + netDebt — only the mcap leg scales with price
         const ebitTTM = (lastVal.mcap + evNetDebt) / lastV;
         const shares = lastVal.mcap / lastVal.c;
         live = ebitTTM > 0 ? (currentPrice * shares + evNetDebt) / ebitTTM : null;
       } else if (metric !== 'evEbit') {
-        // P/E, P/S, P/B — price-linear: multiple scales with the quote
         live = lastV * (currentPrice / lastVal.c);
       }
     }
-    // P/E NTM: the headline is today's Finnhub CONSENSUS (the realized
-    // series can't reach "now" — the last ~3–4 quarters aren't reported).
-    // Falls back to the latest realized point when no snapshot exists.
     const headlineIsConsensus = metric === 'peFwd' && fwdPeNow != null;
     if (headlineIsConsensus) live = fwdPeNow;
     const firstVis = peVisible.find(
@@ -1191,31 +532,23 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     const base = firstVis?.[f] ?? null;
     const chgPct =
       live != null && base != null && base !== 0 ? (live / base - 1) * 100 : null;
-    // Premium/discount vs the metric's own historical median — the headline
-    // "is it expensive vs its own history" answer.
     const premVsMedian =
       live != null && metricStats?.median != null && metricStats.median !== 0
         ? ((live - metricStats.median) / Math.abs(metricStats.median)) * 100
         : null;
-    // Trailing ~1Y mean of the weekly metric (52 weekly candles).
     const last52 = enriched
       .slice(-52)
       .map((p) => p[f])
       .filter((v): v is number => v != null && Number.isFinite(v) && (activeMetric.allowNegative || v > 0));
     const avg1y = last52.length ? last52.reduce((a, b) => a + b, 0) / last52.length : null;
     const price = currentPrice ?? last.c;
-    // Implied per-share denominator for the formula caption (EPS, rev/sh, bv/sh)
     const perShare = lastVal ? impliedPerShare(lastVal, f) : null;
     return { peLive: live, chgPct, premVsMedian, eps: last.eps ?? null, avg1y, price, date: last.date, perShare, isConsensus: headlineIsConsensus, lastRealized: lastV };
   }, [enriched, peVisible, currentPrice, metric, activeMetric, evNetDebt, metricStats, fwdPeNow]);
 
-  // "How far from fair" — premium/discount of current price vs point-in-time
-  // composite fair value. Shown only while the overlay is on and not gated.
   const { fairPremium, liveFairGated } = useMemo(() => {
     if (!inds.has('fair') || !data.length) return { fairPremium: null, liveFairGated: false };
     const tail = data[data.length - 1]!;
-    // Partial current week (Mon morning before DVH cron) has no ratios yet —
-    // allow one-bar fallback ONLY when the latest bar has zero valuation fields.
     const hasRatios = tail.pe != null || tail.ps != null || tail.fcfYield != null || tail.fv != null;
     const anchorIdx = !hasRatios && data.length >= 2 ? data.length - 2 : data.length - 1;
     const last = data[anchorIdx]!;
@@ -1239,15 +572,8 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     };
   }, [data, inds, currentPrice, fairMeta]);
 
-  // Domain is extended below the lowest price so the bottom of the plot is a
-  // dedicated volume strip — the lowest candle wick then never renders inside
-  // the volume bars and axis ticks don't land inside the strip either.
-  // volFrac = the fraction of the plot (from the bottom) reserved for volume.
   const { yDomain, volFrac } = useMemo(() => {
     if (!data.length) return { yDomain: [0, 1] as [number, number], volFrac: 0.16 };
-    // Compare mode: the axis is % change, not price — candles/volume/MAs are
-    // hidden, so only the two % series size the domain. Ticks round to 5pp
-    // and no volume strip is reserved.
     if (bmActive) {
       let mn = Infinity, mx = -Infinity;
       for (const d of data) {
@@ -1275,27 +601,19 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
         if (d.bbUp != null && d.bbUp > max) max = d.bbUp;
         if (d.bbLo != null && d.bbLo < min) min = d.bbLo;
       }
-
     }
     if (inds.has('w52') && hiLo52) {
       if (hiLo52.lo < min) min = hiLo52.lo;
       if (hiLo52.hi > max) max = hiLo52.hi;
     }
     const pad = (max - min) * 0.06 || 1;
-    // Round to whole $10 steps — recharts otherwise adds an unrounded domain-
-    // edge tick ($522 next to $464/$314/$164) that reads as a broken scale.
     const hi = Math.ceil((max + pad) / 10) * 10;
     const lo = Math.floor((min - pad) / 10) * 10;
-    // Exact 16% of the domain below the price zone: (lo - d) / (hi - d) = 0.16.
-    // domMin clamps at 0 — for near-zero-priced stocks lo can also go negative,
-    // so volFrac itself is clamped (0 = no volume strip rather than inverted).
     const domMin = Math.max(0, (lo - 0.16 * hi) / 0.84);
     const volFrac = Math.max(0, Math.min(0.4, (lo - domMin) / (hi - domMin)));
     return { yDomain: [domMin, hi] as [number, number], volFrac };
   }, [data, inds, hiLo52, bmActive]);
 
-  // Window-end delta for the compare legend under the chart:
-  // "JPM +8.1% vs SPY +12.3% (−4.2pp)".
   const bmDelta = useMemo(() => {
     if (!bmActive || !data.length) return null;
     const last = [...data].reverse().find((d) => d.bmPct != null && d.chgPct != null);
@@ -1303,8 +621,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     return { ticker: last.chgPct!, bm: last.bmPct!, label: bmLabel };
   }, [data, bmActive, bmLabel]);
 
-  // Last index carrying each compare series — anchor for the end-of-line
-  // ticker/benchmark tags (last *non-null* point survives holiday gaps).
   const cmpEndIdx = useMemo(() => {
     if (!bmActive || !data.length) return { tk: -1, bm: -1 };
     let tk = -1, bm = -1;
@@ -1316,11 +632,9 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     return { tk, bm };
   }, [data, bmActive]);
 
-  // Distance of latest close from enabled MAs — the "how stretched" sentence.
   const maDistances = useMemo(() => {
     const last = data[data.length - 1];
     if (!last) return null;
-    // Measure from the same price the header shows (live quote preferred).
     const px = currentPrice ?? last.c;
     const out: { label: string; pct: number; color: string }[] = [];
     if (inds.has('ma20') && last.sma20) out.push({ label: '20W', pct: ((px - last.sma20) / last.sma20) * 100, color: MA20 });
@@ -1334,8 +648,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
     const last = data[data.length - 1]!;
     const change = last.c - first.o;
     const periodChangePct = first.o > 0 ? (change / first.o) * 100 : 0;
-    // One price truth: prefer the live quote (same source as the page hero);
-    // fall back to the latest candle close when no live quote exists.
     const headline = currentPrice ?? last.c;
     const changePct = currentChangePct ?? periodChangePct;
     return { last: last.c, date: last.date, headline, changePct, up: changePct >= 0 };
@@ -1359,10 +671,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
 
   return (
     <div className="min-w-0">
-      {/* Ticker slider + chart identity — step through the nav universe
-          without leaving the chart context; the persisted view keeps the
-          same metric across hops. Rendered even without neighbors so the
-          charted company name + ticker are always visible. */}
       <div className="flex items-center gap-0.5 mb-2 -mt-1 min-w-0">
         {navRes && (
           <ChartNavArrow direction="previous" neighbor={navRes.prev} navMode={navMode} fromTicker={ticker} />
@@ -1379,414 +687,49 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
           <ChartNavArrow direction="next" neighbor={navRes.next} navMode={navMode} fromTicker={ticker} />
         )}
       </div>
-      {/* Header: current price (price mode) or current metric (valuation
-          mode) + toolbar. The header row itself never wraps — the headline
-          may wrap internally (last-candle note drops under the number) and
-          the toolbar anchors right with internal wrap — so switching modes
-          never moves the toolbar between lines. */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-2">
-        {mode === 'pe' && peHeadline ? (
-          <div key={metric} className="flex items-baseline gap-2 flex-wrap flex-1 min-w-0 pmp-fade-up">
-            <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-              {peHeadline.peLive != null ? fmtMetric(peHeadline.peLive, activeMetric.unit) : 'n/m'}
-            </span>
-            {peHeadline.isConsensus && (
-              <span
-                className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
-                style={{ color: FWD_CONS, backgroundColor: 'rgba(217,119,6,0.12)' }}
-                title={`Finnhub consensus forward P/E${fwdPeAsOf ? `, snapshot ${fwdPeAsOf}` : ''} — the realized series below uses earnings reported after each date`}
-              >
-                consensus
-              </span>
-            )}
-            {peHeadline.premVsMedian != null && (
-              <span
-                className={`text-sm font-semibold ${(activeMetric.lowerIsBetter ? peHeadline.premVsMedian <= 0 : peHeadline.premVsMedian >= 0) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-                title={`${activeMetric.label} vs its own median over the stored history — ${activeMetric.lowerIsBetter ? 'above median = more expensive than usual' : 'above median = richer yield than usual'}`}
-              >
-                {peHeadline.premVsMedian >= 0 ? '+' : ''}{peHeadline.premVsMedian.toFixed(1)}% vs median
-              </span>
-            )}
-            {peHeadline.peLive == null && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">not meaningful</span>
-            )}
-          </div>
-        ) : stats && (
-          <div key="price" className="flex items-baseline gap-2 flex-wrap flex-1 min-w-0 pmp-fade-up">
-            <span className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-              ${stats.headline.toFixed(2)}
-            </span>
-            <span
-              className={`text-sm font-semibold ${stats.up ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-            >
-              {stats.changePct >= 0 ? '+' : ''}{stats.changePct.toFixed(2)}%{currentChangePct == null ? ` (${activePeriod})` : ` (${changeLabel})`}
-            </span>
-            {currentPrice != null && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                last candle ${stats.last.toFixed(2)} on {stats.date}
-              </span>
-            )}
-            {!bmActive && fairPremium && (
-              <button
-                type="button"
-                onClick={() => toggleFvInfo('top')}
-                aria-expanded={fvInfoAnchor === 'top'}
-                className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full tabular-nums transition-shadow hover:shadow-sm cursor-pointer ${
-                  Math.abs(fairPremium.undervalPct) < 1
-                    ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-                    : fairPremium.undervalPct > 0
-                      ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:ring-emerald-800'
-                      : 'bg-rose-50 text-rose-700 ring-1 ring-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:ring-rose-800'
-                }`}
-                title="Click to see how Fair Value is calculated"
-              >
-                <span className="w-2.5 border-t-2 border-dashed" style={{ borderColor: FAIR_COLOR }} />
-                <span>{formatFairStatus(fairPremium.undervalPct)}</span>
-                <span className="font-medium opacity-75">· Fair {formatFairDollar(fairPremium.fair)}</span>
-                <span className="text-[9px] opacity-70">{fvInfoAnchor === 'top' ? '▴' : '▾'}</span>
-              </button>
-            )}
-          </div>
-        )}
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:justify-end sm:ml-auto" ref={menuWrapRef}>
-          {/* Front-and-center primary controls: Overlays (in Price mode) or Valuation Metric (in Valuation mode) */}
-          {mode === 'pe' ? (
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5">
-              <button
-                type="button"
-                onClick={() => animatedSet(() => { setMode('price'); setOpenMenu(null); gaEvent('chart_mode', { mode: 'price', ticker }); })}
-                className="px-2 py-1 text-xs font-semibold rounded-md text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-900 transition-colors"
-                title="Switch back to candlestick price chart"
-              >
-                ← Price
-              </button>
-              <span className="w-px h-4 bg-gray-300 dark:bg-gray-600" />
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setOpenMenu((m) => (m === 'metric' ? null : 'metric'))}
-                  aria-haspopup="listbox"
-                  aria-expanded={openMenu === 'metric'}
-                  title="Valuation multiple to chart"
-                  className="min-w-[88px] justify-between px-2.5 py-1 text-xs font-bold rounded-md bg-white dark:bg-gray-900 shadow-sm flex items-center gap-1.5"
-                  style={{ color: PE_LINE }}
-                >
-                  <span>{activeMetric.label}</span>
-                  <span className="text-[9px] opacity-60">{openMenu === 'metric' ? '▴' : '▾'}</span>
-                </button>
-                {openMenu === 'metric' && (
-                  <div
-                    role="listbox"
-                    className="absolute left-0 top-full mt-1 z-50 min-w-[150px] rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl py-1"
-                  >
-                    {METRICS.map((m) => {
-                      const has = !!valStats[m.field];
-                      const active = metric === m.field;
-                      return (
-                        <button
-                          key={m.field}
-                          type="button"
-                          role="option"
-                          aria-selected={active}
-                          disabled={!has}
-                          onClick={() => { setOpenMenu(null); animatedSet(() => { setMetric(m.field); gaEvent('chart_metric', { metric: m.field, ticker }); }); }}
-                          title={has ? `${m.label} = ${m.formula}` : `${m.label} history not available`}
-                          className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                            active
-                              ? 'text-gray-900 dark:text-white font-semibold'
-                              : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                          }`}
-                        >
-                          <span className="w-3 text-center">{active ? '✓' : ''}</span>
-                          {m.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5">
-              {!bmActive && (
-                <label
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md cursor-pointer select-none transition-colors ${
-                    inds.has('fair')
-                      ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                  }`}
-                  title="Toggle Fair value blue line and green/red buy/sell zones"
-                >
-                  <input
-                    type="checkbox"
-                    checked={inds.has('fair')}
-                    onChange={() => toggleInd('fair')}
-                    aria-label="Fair value"
-                    className="h-3.5 w-3.5 rounded accent-blue-600 cursor-pointer"
-                  />
-                  <span className="w-2.5 border-t-2 border-dashed shrink-0" style={{ borderColor: FAIR_COLOR }} />
-                  <span>Fair value</span>
-                </label>
-              )}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setOpenMenu((m) => (m === 'overlays' ? null : 'overlays'))}
-                  aria-haspopup="true"
-                  aria-expanded={openMenu === 'overlays'}
-                  title="Chart overlays — moving averages, Bollinger bands, 52-week range"
-                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
-                    openMenu === 'overlays' || INDICATORS.some((i) => inds.has(i.key))
-                      ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                  }`}
-                >
-                  {INDICATORS.some((i) => inds.has(i.key)) && (
-                    <span className="flex items-center -space-x-0.5">
-                      {INDICATORS.filter((i) => inds.has(i.key)).map((i) => (
-                        <span key={i.key} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: i.color }} />
-                      ))}
-                    </span>
-                  )}
-                  Overlays
-                  <span className="text-[9px] opacity-60">{openMenu === 'overlays' ? '▴' : '▾'}</span>
-                </button>
-                {openMenu === 'overlays' && (
-                  <div
-                    role="menu"
-                    className="absolute left-0 top-full mt-1 z-50 min-w-[170px] rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl py-1"
-                  >
-                    {INDICATORS.map((ind) => (
-                      <button
-                        key={ind.key}
-                        type="button"
-                        onClick={() => toggleInd(ind.key)}
-                        title={
-                          ind.key === 'volspike'
-                            ? 'Highlight weeks with volume > 2× the 20-week average'
-                            : undefined
-                        }
-                        className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                          inds.has(ind.key)
-                            ? 'text-gray-900 dark:text-white font-semibold'
-                            : 'text-gray-500 dark:text-gray-400'
-                        }`}
-                      >
-                        <span
-                          className="w-2 h-2 rounded-full shrink-0"
-                          style={{ backgroundColor: inds.has(ind.key) ? ind.color : 'rgba(148,163,184,0.4)' }}
-                        />
-                        {ind.label}
-                        {inds.has(ind.key) && <span className="ml-auto text-[10px]">✓</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
 
-              {/* Active quick-clear chips for secondary Tools options */}
-              {bmSym && (
-                <button
-                  type="button"
-                  onClick={() => animatedSet(() => { setBmSym(null); gaEvent('chart_compare', { symbol: bmSym, state: 'off', ticker }); })}
-                  title={`Comparing vs ${bmLabel} — click to exit comparison`}
-                  className="px-2 py-1 text-xs font-semibold rounded-md bg-white dark:bg-gray-900 shadow-sm flex items-center gap-1"
-                  style={{ color: BM_LINE }}
-                >
-                  <span>⇄ {bmLabel}</span>
-                  <span className="text-[10px] opacity-70">×</span>
-                </button>
-              )}
-              {drawTool && !bmActive && (
-                <button
-                  type="button"
-                  onClick={() => setDrawTool(null)}
-                  title="Active drawing tool — click to exit drawing mode"
-                  className="px-2 py-1 text-xs font-semibold rounded-md bg-white dark:bg-gray-900 shadow-sm text-violet-600 dark:text-violet-400 flex items-center gap-1"
-                >
-                  <span>{TOOL_LABEL[drawTool] ?? 'Draw'}</span>
-                  <span className="text-[10px] opacity-70">×</span>
-                </button>
-              )}
-              {(drawings.length > 0 || drawSave === 'saved') && (
-                <button
-                  type="button"
-                  onClick={saveToAccount}
-                  disabled={drawSave === 'saving'}
-                  title={loggedIn ? 'Save drawings to your account' : 'Sign in to save drawings to your account'}
-                  className={`px-2 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1 disabled:opacity-50 ${
-                    drawSave === 'saved'
-                      ? 'bg-white dark:bg-gray-900 shadow-sm text-emerald-600 dark:text-emerald-400'
-                      : drawDirty
-                        ? 'bg-white dark:bg-gray-900 shadow-sm text-violet-600 dark:text-violet-400'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                  }`}
-                >
-                  {drawSave === 'saved' ? <Check size={12} /> : drawSave === 'error' ? <CloudOff size={12} /> : <Save size={12} />}
-                  <span>{drawSave === 'saving' ? 'Saving…' : drawSave === 'saved' ? 'Saved' : drawSave === 'error' ? 'Retry' : 'Save'}</span>
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Consolidated Tools menu: Mode (Price / Valuation), Compare Benchmark & Draw Tools */}
-          <div className="relative bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5">
-            <button
-              type="button"
-              onClick={() => setOpenMenu((m) => (m === 'tools' ? null : 'tools'))}
-              aria-haspopup="true"
-              aria-expanded={openMenu === 'tools'}
-              title="Chart mode (Valuation multiples), benchmark comparison, and drawing tools"
-              className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 ${
-                openMenu === 'tools' || mode === 'pe' || bmSym || drawTool
-                  ? 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-              }`}
-            >
-              <SlidersHorizontal size={12} />
-              <span>Tools</span>
-              <span className="text-[9px] opacity-60">{openMenu === 'tools' ? '▴' : '▾'}</span>
-            </button>
-            {openMenu === 'tools' && (
-              <div
-                role="menu"
-                className="absolute right-0 top-full mt-1 z-50 min-w-[215px] max-h-[75vh] overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-xl py-1.5"
-              >
-                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                  Chart View
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpenMenu(null);
-                    animatedSet(() => { setMode('price'); gaEvent('chart_mode', { mode: 'price', ticker }); });
-                  }}
-                  className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                    mode === 'price' ? 'text-gray-900 dark:text-white font-semibold' : 'text-gray-500 dark:text-gray-400'
-                  }`}
-                >
-                  <span className="w-3 text-center">{mode === 'price' ? '✓' : ''}</span>
-                  Price Candles
-                </button>
-                <button
-                  type="button"
-                  disabled={!Object.keys(valStats).length}
-                  onClick={() => {
-                    setOpenMenu(null);
-                    animatedSet(() => { setMode('pe'); gaEvent('chart_mode', { mode: 'valuation', ticker }); });
-                  }}
-                  title={Object.keys(valStats).length ? 'Historical P/E, P/S, P/B vs median' : 'Valuation history not available'}
-                  className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed ${
-                    mode === 'pe' ? 'text-gray-900 dark:text-white font-semibold' : 'text-gray-500 dark:text-gray-400'
-                  }`}
-                >
-                  <span className="w-3 text-center">{mode === 'pe' ? '✓' : ''}</span>
-                  Valuation Multiples ({activeMetric.label})
-                </button>
-
-                {benchmarkChoices.length > 0 && (
-                  <>
-                    <div className="my-1.5 h-px bg-gray-100 dark:bg-gray-700" />
-                    <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                      Compare Benchmark
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOpenMenu(null);
-                        if (bmSym) animatedSet(() => { setBmSym(null); gaEvent('chart_compare', { symbol: bmSym, state: 'off', ticker }); });
-                      }}
-                      className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                        bmSym == null ? 'text-gray-900 dark:text-white font-semibold' : 'text-gray-500 dark:text-gray-400'
-                      }`}
-                    >
-                      <span className="w-3 text-center">{bmSym == null ? '✓' : ''}</span>
-                      None (candles only)
-                    </button>
-                    {benchmarkChoices.map((b) => (
-                      <button
-                        key={b.sym}
-                        type="button"
-                        onClick={() => {
-                          setOpenMenu(null);
-                          if (bmSym !== b.sym) {
-                            animatedSet(() => { setMode('price'); setBmSym(b.sym); gaEvent('chart_compare', { symbol: b.sym, state: 'on', ticker }); });
-                          }
-                        }}
-                        title={`${b.title} — relative performance rebased to range start`}
-                        className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                          bmSym === b.sym ? 'text-gray-900 dark:text-white font-semibold' : 'text-gray-500 dark:text-gray-400'
-                        }`}
-                      >
-                        <span className="w-3 text-center">{bmSym === b.sym ? '✓' : ''}</span>
-                        {b.label}
-                      </button>
-                    ))}
-                  </>
-                )}
-
-                <div className="my-1.5 h-px bg-gray-100 dark:bg-gray-700" />
-                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                  Draw on Chart
-                </div>
-                {([
-                  ['measure', 'Measure move', <Ruler key="r" size={13} />],
-                  ['trend', 'Trendline', <TrendingUp key="t" size={13} />],
-                  ['ray', 'Ray', <ArrowUpRight key="a" size={13} />],
-                  ['hline', 'Horizontal level', <Minus key="h" size={13} />],
-                  ['zone', 'Zone', <Square key="z" size={13} />],
-                  ['fibo', 'Fib retracement', <Percent key="f" size={13} />],
-                ] as [DrawTool & string, string, React.ReactNode][]).map(([k, label, icon]) => (
-                  <button
-                    key={k}
-                    type="button"
-                    disabled={bmActive}
-                    onClick={() => {
-                      setOpenMenu(null);
-                      setMode('price');
-                      setDrawTool(drawTool === k ? null : k);
-                      gaEvent('chart_draw', { tool: k, ticker });
-                    }}
-                    className={`flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed ${
-                      drawTool === k ? 'text-gray-900 dark:text-white font-semibold' : 'text-gray-500 dark:text-gray-400'
-                    }`}
-                  >
-                    <span className="shrink-0">{icon}</span>
-                    <span>{label}</span>
-                    {drawTool === k && <span className="ml-auto text-[10px]">✓</span>}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => { setOpenMenu(null); setDrawTool(null); clearDrawings(); }}
-                  disabled={!drawings.length}
-                  className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Eraser size={13} className="shrink-0" />
-                  Clear drawings{drawings.length ? ` (${drawings.length})` : ''}
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center bg-gray-100 dark:bg-gray-700/50 rounded-lg p-0.5 gap-0.5">
-            {periodChoices.map((p) => (
-              <button
-                key={p.label}
-                type="button"
-                onClick={() => animatedSet(() => { setPeriod(p.label); setPeBrush(null); setPeEpoch((e) => e + 1); gaEvent('chart_period', { period: p.label, ticker }); })}
-                className={`px-2 sm:px-3 py-1 text-xs font-bold rounded-md transition-colors ${
-                  activePeriod === p.label
-                    ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+      <PriceChartHeaderToolbar
+        ticker={ticker}
+        mode={mode}
+        metric={metric}
+        activeMetric={activeMetric}
+        valStats={valStats}
+        peHeadline={peHeadline}
+        fwdPeAsOf={fwdPeAsOf}
+        stats={stats}
+        currentPrice={currentPrice}
+        currentChangePct={currentChangePct}
+        changeLabel={changeLabel}
+        activePeriod={activePeriod}
+        periodChoices={periodChoices}
+        bmActive={bmActive}
+        bmSym={bmSym}
+        bmLabel={bmLabel}
+        benchmarkChoices={benchmarkChoices}
+        inds={inds}
+        openMenu={openMenu}
+        setOpenMenu={setOpenMenu}
+        menuWrapRef={menuWrapRef}
+        drawTool={drawTool}
+        setDrawTool={setDrawTool}
+        drawingsCount={drawings.length}
+        drawDirty={drawDirty}
+        drawSave={drawSave}
+        loggedIn={loggedIn}
+        saveToAccount={saveToAccount}
+        clearDrawings={clearDrawings}
+        fairPremium={fairPremium}
+        fvInfoAnchor={fvInfoAnchor}
+        toggleFvInfo={toggleFvInfo}
+        animatedSet={animatedSet}
+        setMode={setMode}
+        setMetric={setMetric}
+        setPeriod={setPeriod}
+        setPeBrush={setPeBrush}
+        setPeEpoch={setPeEpoch}
+        setBmSym={setBmSym}
+        toggleInd={toggleInd}
+      />
 
       {renderFvBreakdown('top', mode === 'price', bmActive, inds.has('fair'), fairPremium, fairMeta, liveFairGated)}
 
@@ -1823,9 +766,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
               width={narrow ? 40 : 52}
             />
             <Tooltip content={<MetricTooltip metric={metric} stats={metricStats} />} isAnimationActive={false} />
-            {/* 25th–75th percentile band — the stock's own normal range.
-                activeDot off: a range area renders two hover dots (band
-                edges); only the metric's own dot should appear. */}
             <Area
               type="monotone"
               dataKey="band"
@@ -1837,7 +777,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
               dot={false}
               activeDot={false}
             />
-            {/* The multiple itself — gradient area, finance-charts style */}
             <Area
               type="monotone"
               dataKey={activeMetric.field}
@@ -1856,10 +795,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
               strokeDasharray="6 4"
               label={{ value: `median ${fmtMetric(metricStats.median, activeMetric.unit)}`, position: 'insideTopLeft', fontSize: 10, fill: PE_FAIR }}
             />
-            {/* Consensus forward P/E — today's Finnhub estimate pinned to the
-                right edge. Deliberately a labelled DOT, not part of the line:
-                it is a different quantity (analyst estimate, not realized
-                NTM) and must read as such. */}
             {metric === 'peFwd' && fwdPeNow != null && metricSeries.length > 0 && (
               <ReferenceDot
                 x={metricSeries[metricSeries.length - 1]!.date}
@@ -1872,9 +807,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
                 ifOverflow="extendDomain"
               />
             )}
-            {/* Navigator — mini full-history chart; drag handles or use the
-                period buttons above. Brush dataKey = the X category (date),
-                and its child must be a nested chart element. */}
             <Brush
               dataKey="date"
               height={26}
@@ -1882,12 +814,12 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
               travellerWidth={8}
               startIndex={pePeriodStart}
               endIndex={Math.max(0, metricSeries.length - 1)}
-              onChange={(b: any) => {
+              onChange={(b: { startIndex?: number; endIndex?: number } | null) => {
                 if (b?.startIndex != null && b?.endIndex != null) {
                   setPeBrush({ startIndex: b.startIndex, endIndex: b.endIndex });
                 }
               }}
-              tickFormatter={(v: any) => (typeof v === 'string' && v.includes('-') ? formatXTick(v) : '')}
+              tickFormatter={(v: unknown) => (typeof v === 'string' && v.includes('-') ? formatXTick(v) : '')}
             >
               <AreaChart>
                 <Area type="monotone" dataKey={activeMetric.field} stroke={PE_LINE} strokeWidth={1} fill={PE_LINE} fillOpacity={0.15} isAnimationActive={false} dot={false} activeDot={false} />
@@ -1895,12 +827,11 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
             </Brush>
           </ComposedChart>
         </ResponsiveContainer>
-        {/* Formula caption — how the current multiple is composed */}
         {peHeadline && peHeadline.peLive != null && (
           <div className="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400 tabular-nums">
             {metric === 'peFwd' ? (
               <>
-                NTM P/E (realized) = close ÷ next 4 quarters' reported EPS
+                NTM P/E (realized) = close ÷ next 4 quarters&apos; reported EPS
                 {peHeadline.isConsensus && (
                   <>
                     {' · now '}
@@ -1926,65 +857,17 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
         </>
       ) : (
       <>
-      {/* TradingView-style readout strip — updates on hover, defaults to the
-          last bar. Replaces the floating tooltip card that covered candles
-          and user drawings. */}
-      {(() => {
-        const hd = (hoverIdx != null ? data[hoverIdx] : undefined) ?? data[data.length - 1];
-        if (!hd) return null;
-        const up = hd.c >= hd.o;
-        const chg = hd.o > 0 ? ((hd.c - hd.o) / hd.o) * 100 : 0;
-        const med = peStats?.median ?? null;
-        return (
-          <div className="mb-0.5 flex items-baseline gap-x-2.5 overflow-x-auto whitespace-nowrap text-[11px] tabular-nums text-gray-500 dark:text-gray-400 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <span className="font-medium">{new Date(hd.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-            {bmActive ? (
-              <>
-                <span className="font-semibold" style={{ color: (hd.chgPct ?? 0) >= 0 ? UP : DOWN }}>{ticker} {(hd.chgPct ?? 0) >= 0 ? '+' : ''}{(hd.chgPct ?? 0).toFixed(1)}%</span>
-                <span className="font-semibold" style={{ color: '#0ea5e9' }}>{bmLabel} {(hd.bmPct ?? 0) >= 0 ? '+' : ''}{(hd.bmPct ?? 0).toFixed(1)}%</span>
-                {hd.chgPct != null && hd.bmPct != null && (
-                  <span>Δ {(hd.chgPct - hd.bmPct) >= 0 ? '+' : ''}{(hd.chgPct - hd.bmPct).toFixed(1)}pp</span>
-                )}
-              </>
-            ) : (
-              <>
-                <span>O ${hd.o.toFixed(2)}</span>
-                <span>H ${hd.h.toFixed(2)}</span>
-                <span>L ${hd.l.toFixed(2)}</span>
-                <span>C <b className="font-semibold" style={{ color: up ? UP : DOWN }}>${hd.c.toFixed(2)} ({chg >= 0 ? '+' : ''}{chg.toFixed(2)}%)</b></span>
-                <span>Vol {fmtVol(hd.v)}{hd.volSpike ? ' ⚡' : ''}</span>
-                {inds.has('ma20') && hd.sma20 != null && <span style={{ color: MA20 }}>MA20 ${hd.sma20.toFixed(2)}</span>}
-                {inds.has('ma50') && hd.sma50 != null && <span style={{ color: MA50 }}>MA50 ${hd.sma50.toFixed(2)}</span>}
-                {inds.has('ma200') && hd.sma200 != null && <span style={{ color: MA200 }}>MA200 ${hd.sma200.toFixed(2)}</span>}
-                {inds.has('bb') && hd.bbLo != null && hd.bbUp != null && <span style={{ color: BB_COLOR }}>BB ${hd.bbLo.toFixed(0)}–${hd.bbUp.toFixed(0)}</span>}
-                {hd.pe != null && hd.pe > 0 && (
-                  <span>P/E {hd.pe.toFixed(1)}×{med != null && med !== 0 && (
-                    <span style={{ color: hd.pe >= med ? DOWN : UP }}> ({((hd.pe - med) / med) * 100 >= 0 ? '+' : ''}{(((hd.pe - med) / med) * 100).toFixed(0)}% vs med)</span>
-                  )}</span>
-                )}
-                {inds.has('fair') && hd.fv != null && (
-                  <span style={{ color: FAIR_COLOR }}>
-                    Fair {formatFairDollar(hd.fv)}
-                    {hd.fvBear != null && hd.fvBull != null && ` (${formatFairDollar(hd.fvBear)}–${formatFairDollar(hd.fvBull)})`}
-                    {(() => {
-                      const uv = ((hd.fv - hd.c) / hd.fv) * 100;
-                      return (
-                        <span style={{ color: uv >= 0 ? UP : DOWN }}>
-                          {' '}({Math.abs(uv) < 1 ? 'fair' : uv > 0 ? `${uv.toFixed(0)}% under` : `${Math.abs(uv).toFixed(0)}% over`})
-                        </span>
-                      );
-                    })()}
-                  </span>
-                )}
-                {inds.has('fair') && hd.fvChanged && <span style={{ color: FAIR_COLOR }}>↑ earnings update</span>}
-              </>
-            )}
-          </div>
-        );
-      })()}
+      <PriceReadoutStrip
+        hd={(hoverIdx != null ? data[hoverIdx] : undefined) ?? data[data.length - 1]}
+        ticker={ticker}
+        bmActive={bmActive}
+        bmLabel={bmLabel}
+        inds={inds}
+        medianPe={peStats?.median ?? null}
+      />
       <ResponsiveContainer width="100%" height={narrow ? 340 : 420}>
         <ComposedChart data={data} syncId="pmp-price" margin={{ top: 8, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 24 }}
-          onMouseMove={(s: any) => setHoverIdx(typeof s?.activeTooltipIndex === 'number' ? s.activeTooltipIndex : null)}
+          onMouseMove={(s: { activeTooltipIndex?: unknown }) => setHoverIdx(typeof s?.activeTooltipIndex === 'number' ? s.activeTooltipIndex : null)}
           onMouseLeave={() => setHoverIdx(null)}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.18)" vertical={false} />
           <XAxis
@@ -2009,28 +892,22 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
             axisLine={false}
             width={narrow ? 44 : 56}
           />
-          {/* Cursor column highlight only — the readout lives in the strip
-              above the chart so nothing overlays the candles/drawings. */}
           <Tooltip
             content={() => null}
             cursor={{ fill: 'rgba(148,163,184,0.12)' }}
             isAnimationActive={false}
           />
-          {/* Buy/Sell zones vs Fair Value — rendered behind candlesticks so
-              green marks price below fair value (buy) and red marks price above (sell). */}
           {!bmActive && inds.has('fair') && <FairValueZoneLayer data={data} />}
-          {/* Visible candles + volume drawn as a custom shape inside Bar.
-              Hidden in compare mode — the % axis makes $ candles meaningless. */}
           {!bmActive && (
           <Bar
             dataKey="c"
             isAnimationActive={false}
-            shape={(props: any) => (
+            shape={(props: { x?: number; width?: number; payload?: ChartPoint; index?: number }) => (
               <CandleShape
                 key={props.payload?.t ?? props.index}
-                x={props.x}
-                width={props.width}
-                payload={props.payload}
+                {...(props.x !== undefined ? { x: props.x } : {})}
+                {...(props.width !== undefined ? { width: props.width } : {})}
+                {...(props.payload !== undefined ? { payload: props.payload } : {})}
                 volFrac={volFrac}
                 maxVolume={maxVolume}
                 showVolSpike={inds.has('volspike')}
@@ -2040,7 +917,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
             )}
           />
           )}
-          {/* Moving averages — values precomputed on the full candle series */}
           {!bmActive && inds.has('ma20') && (
             <Line type="monotone" dataKey="sma20" stroke={MA20} strokeWidth={1.5} dot={false} isAnimationActive={false} />
           )}
@@ -2056,10 +932,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
               <Line type="monotone" dataKey="bbLo" stroke={BB_COLOR} strokeWidth={1} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
             </>
           )}
-          {/* Compare mode — both series indexed to the window start on a %
-              axis. Solid benchmark line; the ticker's line is split green/
-              red by whether it leads or lags, and range-areas fill the gap
-              between the two (financecharts-style divergence shading). */}
           {bmActive && (
             <>
               <Area
@@ -2130,8 +1002,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
               />
             </>
           )}
-          {/* Composite fair value: blue dashed stepAfter line; dots mark
-              weeks where fresh statements updated fair value */}
           {!bmActive && inds.has('fair') && (
             <Line
               type="stepAfter"
@@ -2141,7 +1011,7 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
               strokeDasharray="5 3"
               isAnimationActive={false}
               connectNulls={false}
-              dot={(props: any) => {
+              dot={(props: { cx?: number; cy?: number; payload?: ChartPoint }) => {
                 const { cx, cy, payload } = props;
                 if (cx == null || cy == null || !payload?.fvChanged || payload?.fv == null) {
                   return <g key={payload?.t ?? cx ?? 0} />;
@@ -2160,7 +1030,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
               }}
             />
           )}
-          {/* Trailing 52-week high/low reference levels */}
           {!bmActive && inds.has('w52') && hiLo52 && (
             <>
               <ReferenceLine
@@ -2177,9 +1046,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
               />
             </>
           )}
-          {/* Drawing tools — measure boxes + trendlines. Renders inside the
-              chart SVG with the real axis scales (recharts 3 hooks); pointer
-              capture is armed only while a tool is selected. */}
           {(drawActive || drawings.length > 0) && !bmActive && (
             <ChartDrawLayer
               tool={drawActive ? drawTool : null}
@@ -2195,56 +1061,17 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
       </>
       )}
       </div>
-      {/* Oscillator panes — RSI(14) / MACD(12,26,9) under the price chart.
-          Right-axis width and margins mirror the main chart so plots align;
-          syncId links the crosshair across panes. */}
-      {mode === 'price' && !bmActive && inds.has('rsi') && (
-        <ResponsiveContainer width="100%" height={80}>
-          <ComposedChart data={data} syncId="pmp-price" margin={{ top: 2, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 2 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" vertical={false} />
-            <XAxis dataKey="date" scale="band" hide />
-            <YAxis domain={[0, 100]} orientation="right" ticks={[30, 50, 70]}
-              tick={{ fontSize: CHART_FONT.axis, fill: 'currentColor' }}
-              className="text-gray-500 dark:text-gray-500" tickLine={false} axisLine={false}
-              width={narrow ? 44 : 56} />
-            <Tooltip content={() => null} cursor={{ stroke: 'rgba(148,163,184,0.4)' }} isAnimationActive={false} />
-            <ReferenceLine y={70} stroke={DOWN} strokeDasharray="3 3" strokeOpacity={0.5} />
-            <ReferenceLine y={50} stroke="rgba(148,163,184,0.35)" strokeDasharray="3 3" />
-            <ReferenceLine y={30} stroke={UP} strokeDasharray="3 3" strokeOpacity={0.5} />
-            <Line type="monotone" dataKey="rsi14" name="RSI 14" stroke={RSI_COLOR} strokeWidth={1.5} dot={false} isAnimationActive={false} connectNulls />
-          </ComposedChart>
-        </ResponsiveContainer>
+
+      {mode === 'price' && !bmActive && (inds.has('rsi') || inds.has('macd')) && (
+        <PriceOscillatorPanes data={data} narrow={narrow} showRsi={inds.has('rsi')} showMacd={inds.has('macd')} />
       )}
-      {mode === 'price' && !bmActive && inds.has('macd') && (
-        <ResponsiveContainer width="100%" height={80}>
-          <ComposedChart data={data} syncId="pmp-price" margin={{ top: 2, right: narrow ? 4 : 16, left: narrow ? 0 : 8, bottom: 2 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" vertical={false} />
-            <XAxis dataKey="date" scale="band" hide />
-            <YAxis orientation="right" tickFormatter={(v: number) => v.toFixed(1)}
-              tick={{ fontSize: CHART_FONT.axis, fill: 'currentColor' }}
-              className="text-gray-500 dark:text-gray-500" tickLine={false} axisLine={false}
-              width={narrow ? 44 : 56} />
-            <Tooltip content={() => null} cursor={{ stroke: 'rgba(148,163,184,0.4)' }} isAnimationActive={false} />
-            <ReferenceLine y={0} stroke="rgba(148,163,184,0.4)" />
-            <Bar dataKey="macdH" isAnimationActive={false}>
-              {data.map((d, i) => (
-                <Cell key={i} fill={(d.macdH ?? 0) >= 0 ? UP : DOWN} fillOpacity={0.45} />
-              ))}
-            </Bar>
-            <Line type="monotone" dataKey="macdL" name="MACD" stroke={MACD_COLOR} strokeWidth={1.5} dot={false} isAnimationActive={false} connectNulls />
-            <Line type="monotone" dataKey="macdS" name="Signal" stroke="#f59e0b" strokeWidth={1.2} dot={false} isAnimationActive={false} connectNulls />
-          </ComposedChart>
-        </ResponsiveContainer>
-      )}
-      {/* Tool hint — below the chart so it never covers the drawings */}
+
       {drawActive && drawTool && (
         <div className="mt-1 text-[10px] font-semibold text-violet-600 dark:text-violet-400">
           {TOOL_HINT[drawTool]} · Esc to cancel
         </div>
       )}
 
-      {/* Benchmark legend — only while a compare overlay is active; the
-          solid swatch matches the line, delta text shows the window-end gap */}
       {mode === 'price' && bmDelta && (
         <div className="mt-1.5 flex items-center gap-1.5 text-[11px] tabular-nums text-gray-500 dark:text-gray-400">
           <span className="w-4 border-t-2" style={{ borderColor: BM_LINE }} />
@@ -2258,7 +1085,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
         </div>
       )}
 
-      {/* "How far from fair" — composite fair value & buy/sell zone legend */}
       {mode === 'price' && !bmActive && fairPremium && (
         <div className="mt-2 text-xs flex items-center gap-x-2.5 gap-y-1 flex-wrap">
           <span className="flex items-center gap-1.5">
@@ -2320,7 +1146,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
       )}
       {renderFvBreakdown('bottom', mode === 'price', bmActive, inds.has('fair'), fairPremium, fairMeta, liveFairGated)}
 
-      {/* "How stretched vs trend" — one line, only for enabled MAs */}
       {mode === 'price' && maDistances && (
         <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-3 flex-wrap">
           {maDistances.map((d) => (
@@ -2355,8 +1180,6 @@ export function PriceCandlestickChart({ ticker, companyName, nav, similar, curre
         )}
       </p>
 
-      {/* Similar tickers — 5 closest-cap peers overall, in-sector and
-          in-industry. Quick hops that keep the chart's current view. */}
       {similar && (
         <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/60 flex flex-wrap gap-x-5 gap-y-1 text-[11px]">
           <SimilarChips label="Similar cap" dim="market_cap" items={similar.market_cap} from={ticker} />

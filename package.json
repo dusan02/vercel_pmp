@@ -18,6 +18,7 @@
     "start": "cross-env ENABLE_WEBSOCKET=true tsx server.ts",
     "start:no-websocket": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "test": "npx jest --config jest.config.mjs",
     "reset-prod-data": "node scripts/archive/production-data-reset-fixed.cjs",
     "refresh-prod-data": "node scripts/archive/production-data-refresh-fixed.cjs",

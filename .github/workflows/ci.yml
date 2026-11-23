@@ -43,6 +43,10 @@ jobs:
       - name: Apply database schema
         run: npx prisma db push
 
+      - name: Typecheck
+        if: matrix.timezone == 'UTC'
+        run: npm run typecheck
+
       - name: Run tests
         run: npm test
 
