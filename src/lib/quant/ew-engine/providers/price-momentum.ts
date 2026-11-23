@@ -13,7 +13,7 @@
  * PIT: All prices queried with availableAt <= asOfTime. orderBy for determinism.
  */
 
-import { PrismaClient } from '../../p4-engine/db/client';
+import type { PrismaClient } from '../../p4-engine/db/client';
 import {
   EwFeature,
   FeatureProvider,

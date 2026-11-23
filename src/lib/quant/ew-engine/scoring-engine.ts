@@ -27,7 +27,7 @@
  * Partial categories are flagged but NOT renormalized.
  */
 
-import { PrismaClient } from '../p4-engine/db/client';
+import type { PrismaClient } from '../p4-engine/db/client';
 import {
   EwFeature,
   EwScore,

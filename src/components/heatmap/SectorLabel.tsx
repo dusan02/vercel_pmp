@@ -58,20 +58,8 @@ export function SectorLabel({
         && scale > 0
         && treemapBoundsNotNull;
 
-    if (!showLabel) return null;
-
-    const minFont = labelConfig.FONT_SIZE_MIN;
-    const maxFont = labelConfig.FONT_SIZE_MAX;
-    const maxLabelWidth = scaledWidth * 0.9;
-    const widthBasedFont = Math.min(maxFont, Math.max(minFont, maxLabelWidth / 8));
-    const responsiveFontSize = `clamp(${minFont}px, ${widthBasedFont}px, ${maxFont}px)`;
-    const fontSizeValue = parseFloat(responsiveFontSize.match(/\d+\.?\d*/)?.[0] || String(minFont));
-
-    const sectorSummary = !isMobile && sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
-        ? calculateSectorSummary(node, metric)
-        : null;
-
     const accentColor = useMemo(() => {
+        if (!showLabel) return '';
         const leaves = node.leaves?.() as Array<{ data: HierarchyData }> | undefined ?? [];
         let totalMcap = 0;
         let weightedChange = 0;
@@ -86,7 +74,20 @@ export function SectorLabel({
         const perf = totalMcap > 0 ? weightedChange / totalMcap : 0;
         const sentiment = getMetricSentiment(perf, metric);
         return sentiment === 'good' ? '#16a34a' : sentiment === 'bad' ? '#dc2626' : '#4b5563';
-    }, [node, metric]);
+    }, [showLabel, node, metric]);
+
+    if (!showLabel) return null;
+
+    const minFont = labelConfig.FONT_SIZE_MIN;
+    const maxFont = labelConfig.FONT_SIZE_MAX;
+    const maxLabelWidth = scaledWidth * 0.9;
+    const widthBasedFont = Math.min(maxFont, Math.max(minFont, maxLabelWidth / 8));
+    const responsiveFontSize = `clamp(${minFont}px, ${widthBasedFont}px, ${maxFont}px)`;
+    const fontSizeValue = parseFloat(responsiveFontSize.match(/\d+\.?\d*/)?.[0] || String(minFont));
+
+    const sectorSummary = !isMobile && sectorLabelVariant === 'full' && LAYOUT_CONFIG.SECTOR_LABEL_FULL.SHOW_SUMMARY
+        ? calculateSectorSummary(node, metric)
+        : null;
 
     const maxChars = calculateMaxCharsForWidth(scaledWidth, fontSizeValue, labelConfig.LEFT + 20);
     const defaultMaxLength = sectorLabelVariant === 'full' ? 25 : 20;

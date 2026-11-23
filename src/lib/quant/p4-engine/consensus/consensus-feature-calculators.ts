@@ -33,7 +33,7 @@
  *   6. estimateDispersionPct: (stdDev / |mean|) * 100 (uncertainty)
  */
 
-import { PrismaClient } from '../db/client';
+import type { PrismaClient } from '../db/client';
 
 const DB_URL = 'postgresql://postgres:postgres@localhost:54320/postgres?schema=public';
 

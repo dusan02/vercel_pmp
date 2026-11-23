@@ -34,7 +34,7 @@
  * If a vendor later provides exact report timestamps, prefer those.
  */
 
-import { PrismaClient } from '../db/client';
+import type { PrismaClient } from '../db/client';
 
 export interface PitActual {
   value: number;

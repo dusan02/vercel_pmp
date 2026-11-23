@@ -48,7 +48,6 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
   const tileWidth = x1 - x0;
   const tileHeight = y1 - y0;
   const company = leaf.data.meta?.companyData;
-  if (!company) return null;
 
   const scaledWidth = tileWidth * scale;
   const scaledHeight = tileHeight * scale;
@@ -56,7 +55,7 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
   // Fit ticker text to the available tile box (DOM mode only).
   // Canvas mode does a more precise fit with ctx.measureText.
   const fittedSymbolFontPx = React.useMemo(() => {
-    if (!labelConfig.showSymbol || !labelConfig.symbolFontPx) return 0;
+    if (!company || !labelConfig.showSymbol || !labelConfig.symbolFontPx) return 0;
     const padding = 4;
     const maxW = Math.max(0, scaledWidth - padding * 2);
     const maxH = Math.max(0, scaledHeight - padding * 2);
@@ -68,7 +67,9 @@ export const HeatmapTile = React.memo<HeatmapTileProps>(({
     const byHeight = Math.floor(maxH); // rough upper bound
     const fitted = Math.min(labelConfig.symbolFontPx, byWidth, byHeight);
     return fitted >= 6 ? fitted : 0;
-  }, [labelConfig.showSymbol, labelConfig.symbolFontPx, scaledWidth, scaledHeight, company.symbol]);
+  }, [company, labelConfig.showSymbol, labelConfig.symbolFontPx, scaledWidth, scaledHeight]);
+
+  if (!company) return null;
 
   return (
     <div

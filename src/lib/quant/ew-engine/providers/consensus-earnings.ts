@@ -19,7 +19,7 @@
  * Vendor decision: Estimize (see docs/v5-consensus-vendor-gate.md)
  */
 
-import { PrismaClient } from '../../p4-engine/db/client';
+import type { PrismaClient } from '../../p4-engine/db/client';
 import {
   EwFeature,
   FeatureProvider,

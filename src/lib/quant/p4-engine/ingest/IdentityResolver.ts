@@ -1,4 +1,4 @@
-import { PrismaClient } from '../db/client';
+import type { PrismaClient } from '../db/client';
 
 export class IdentityResolver {
     private prisma: PrismaClient;

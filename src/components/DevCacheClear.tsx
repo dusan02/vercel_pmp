@@ -50,7 +50,7 @@ export function DevCacheClear() {
       try {
         location.reload();
       } catch {
-        location.href = location.href;
+        window.location.assign(window.location.href);
       }
     };
 

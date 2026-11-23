@@ -10,7 +10,7 @@
  * Also exports the PIT-correct TickerResolver over PitTickerHistory.
  */
 
-import { PrismaClient } from '../db/client';
+import type { PrismaClient } from '../db/client';
 import {
   ConsensusFactInsert,
   ConsensusRevisionInsert,

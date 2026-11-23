@@ -7,19 +7,14 @@ export interface User {
   name: string;
 }
 
-export async function getCurrentUser(request: NextRequest): Promise<User | null> {
-  try {
-    // For now, return a default user since we don't have full auth implemented
-    // This allows the favorites API to work without breaking
-    return {
-      id: 'default',
-      email: 'default@example.com',
-      name: 'Default User'
-    };
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return null;
-  }
+export async function getCurrentUser(_request: NextRequest): Promise<User | null> {
+  // For now, return a default user since we don't have full auth implemented.
+  // This allows the favorites API to work without breaking.
+  return {
+    id: 'default',
+    email: 'default@example.com',
+    name: 'Default User'
+  };
 }
 
 export function validateToken(token: string): User | null {

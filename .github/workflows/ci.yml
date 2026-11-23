@@ -47,6 +47,10 @@ jobs:
         if: matrix.timezone == 'UTC'
         run: npm run typecheck
 
+      - name: Lint
+        if: matrix.timezone == 'UTC'
+        run: npm run lint
+
       - name: Run tests
         run: npm test
 

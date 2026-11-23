@@ -1,4 +1,4 @@
-import type { TrancheLevelPlan, TrancheExecutionRow } from './dipEngine';
+import type { TrancheLevelPlan, TrancheExecutionRow } from './dipTypesAndMath';
 
 /**
  * Standard Normal Cumulative Distribution Function Φ(z)
