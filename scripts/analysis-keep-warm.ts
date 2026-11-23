@@ -1,121 +1,127 @@
 /**
- * Analysis cache pre-warm script.
+ * Analysis page ISR pre-warm bot.
  *
- * Iterates all tickers with AnalysisCache and calls:
- *   - /api/analysis/[ticker]        (analysis data)
- *   - /api/analysis/[ticker]/history (chart data)
+ * Clicking a heatmap tile navigates to /analysis/[ticker]. When that page has
+ * no ISR artifact yet (first visit, or right after a deploy — the `.next` swap
+ * wipes every ISR file), the server must SSR it cold (~2–3 s, more under load).
+ * Once an artifact exists, Next serves it instantly and revalidates in the
+ * background (stale-while-revalidate, `revalidate = 60`).
  *
- * This populates the Redis cache so the SSR page's internal fetch
- * (5s timeout) hits cache instead of computing from scratch.
+ * So this bot only renders pages that are MISSING an ISR artifact:
+ *   1. ticker list straight from read-only SQLite (no HTTP dependency — the old
+ *      `/api/stocks?limit=1000` fetch timed out under load and killed every run)
+ *   2. ordered by market cap (largest heatmap tiles first)
+ *   3. skip symbols whose `.next/server/app/analysis/SYM.html` already exists
+ *   4. GET /analysis/SYM with low concurrency so the 2-core VPS isn't swamped
  *
- * Run as PM2 cron: every 4 minutes
+ * Idempotent: if PM2 restarts it mid-sweep, the next run continues with the
+ * still-missing pages only. Runs as PM2 cron and right after each deploy.
  */
-const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3001';
-const BATCH_SIZE = 10;
-const BATCH_DELAY_MS = 500;
+import fs from 'fs';
+import path from 'path';
+import Database from 'better-sqlite3';
 
-async function fetchTickerList(): Promise<string[]> {
-  // Fetch the ticker list from the API (uses Redis cache internally)
-  const res = await fetch(`${BASE_URL}/api/stocks?limit=1000`, {
-    signal: AbortSignal.timeout(10000),
-  });
-  if (!res.ok) throw new Error(`Failed to fetch ticker list: ${res.status}`);
-  const data = await res.json();
-  const stocks = data.data ?? data.stocks ?? (Array.isArray(data) ? data : []);
-  // Extract ticker symbol from each stock entry
-  return stocks
-    .map((s: any) => (typeof s === 'string' ? s : s.ticker ?? s.symbol))
-    .filter((s: string | undefined): s is string => !!s);
+const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3001';
+const CONCURRENCY = Math.max(1, Number(process.env.WARM_CONCURRENCY || 2));
+const REQUEST_TIMEOUT_MS = 30_000;
+const PAUSE_BETWEEN_MS = 150;
+const APP_DIR = process.cwd();
+const ISR_DIR = path.join(APP_DIR, '.next', 'server', 'app', 'analysis');
+
+function loadDatabaseUrl(): string | undefined {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  for (const file of ['.env', '.env.production', '.env.local']) {
+    const p = path.join(APP_DIR, file);
+    if (!fs.existsSync(p)) continue;
+    const line = fs.readFileSync(p, 'utf8').split('\n').find((l) => l.trim().startsWith('DATABASE_URL='));
+    if (line) return line.slice(line.indexOf('=') + 1).trim().replace(/^["']|["']$/g, '');
+  }
+  return undefined;
 }
 
-/**
- * Filter to only tickers that have AnalysisCache in the database.
- * Avoids 589 wasted requests for tickers without analysis data.
- */
-async function filterEligibleTickers(tickers: string[]): Promise<string[]> {
+function resolveDbPath(): string {
+  const url = loadDatabaseUrl() ?? 'file:./prisma/data/premarket.db';
+  const raw = (url.startsWith('file:') ? url.slice(5) : url).split('?')[0]!.trim();
+  return path.isAbsolute(raw) ? raw : path.resolve(APP_DIR, raw);
+}
+
+function loadTickers(): string[] {
+  const db = new Database(resolveDbPath(), { readonly: true, fileMustExist: true });
   try {
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
-    const eligible = await prisma.analysisCache.findMany({
-      select: { symbol: true },
-    });
-    await prisma.$disconnect();
-    const eligibleSet = new Set(eligible.map(e => e.symbol));
-    return tickers.filter(t => eligibleSet.has(t));
-  } catch {
-    // If DB query fails, fall back to all tickers
-    return tickers;
+    db.pragma('busy_timeout = 5000');
+    const rows = db.prepare(
+      'SELECT symbol FROM Ticker ' +
+      'WHERE (inHeatmap = 1 OR symbol IN (SELECT symbol FROM AnalysisCache)) ' +
+      'AND lastPrice > 0 ' +
+      'ORDER BY lastMarketCap DESC NULLS LAST',
+    ).all() as Array<{ symbol: string }>;
+    return rows.map((r) => r.symbol).filter((s) => /^[A-Z0-9.\-]+$/.test(s));
+  } finally {
+    db.close();
   }
 }
 
-async function warmTicker(symbol: string): Promise<{ ok: boolean; cached: boolean; ms: number }> {
+function hasIsrArtifact(symbol: string): boolean {
+  return fs.existsSync(path.join(ISR_DIR, `${symbol}.html`));
+}
+
+async function warmPage(symbol: string): Promise<{ ok: boolean; ms: number; status: number }> {
   const start = Date.now();
   try {
-    // Fetch both endpoints in parallel
-    const [analysisRes, historyRes] = await Promise.all([
-      fetch(`${BASE_URL}/api/analysis/${symbol}`, {
-        signal: AbortSignal.timeout(15000),
-      }),
-      fetch(`${BASE_URL}/api/analysis/${symbol}/history`, {
-        signal: AbortSignal.timeout(15000),
-      }).catch(() => null),
-    ]);
-
-    const ms = Date.now() - start;
-    const ok = analysisRes.ok;
-    const cached = analysisRes.headers.get('x-cache-status') === 'HIT';
-    return { ok, cached, ms };
+    const res = await fetch(`${BASE_URL}/analysis/${encodeURIComponent(symbol)}`, {
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      headers: { 'user-agent': 'pmp-analysis-keep-warm/2.0' },
+    });
+    await res.arrayBuffer();
+    return { ok: res.ok, ms: Date.now() - start, status: res.status };
   } catch {
-    const ms = Date.now() - start;
-    return { ok: false, cached: false, ms };
+    return { ok: false, ms: Date.now() - start, status: 0 };
   }
 }
 
 async function main() {
   const startTotal = Date.now();
   let tickers: string[];
-
   try {
-    tickers = await fetchTickerList();
-    tickers = await filterEligibleTickers(tickers);
+    tickers = loadTickers();
   } catch (err) {
-    console.error(`❌ Analysis keep-warm: failed to fetch ticker list:`, err instanceof Error ? err.message : err);
+    console.error('❌ Analysis keep-warm: failed to read ticker list from SQLite:', err instanceof Error ? err.message : err);
     process.exit(1);
   }
 
-  if (tickers.length === 0) {
-    console.log('⚠️ Analysis keep-warm: no eligible tickers found');
-    process.exit(0);
-  }
+  const missing = tickers.filter((s) => !hasIsrArtifact(s));
+  console.log(`🔥 Analysis keep-warm: ${tickers.length} tickers, ${missing.length} without ISR page — warming (concurrency ${CONCURRENCY})`);
+  if (missing.length === 0) return;
 
   let warmed = 0;
   let failed = 0;
-  let cachedHits = 0;
+  let totalRenderMs = 0;
+  let cursor = 0;
 
-  // Process in batches to avoid overwhelming the server
-  for (let i = 0; i < tickers.length; i += BATCH_SIZE) {
-    const batch = tickers.slice(i, i + BATCH_SIZE);
-    const results = await Promise.all(batch.map((t) => warmTicker(t)));
-
-    for (const r of results) {
-      if (r.ok) {
-        warmed++;
-        if (r.cached) cachedHits++;
-      } else {
-        failed++;
+  async function worker() {
+    while (cursor < missing.length) {
+      const symbol = missing[cursor++]!;
+      const r = await warmPage(symbol);
+      totalRenderMs += r.ms;
+      if (r.ok) warmed++;
+      else failed++;
+      const done = warmed + failed;
+      if (done % 50 === 0) {
+        console.log(`   … ${done}/${missing.length} (avg ${Math.round(totalRenderMs / done)} ms/page, ${failed} failed)`);
       }
-    }
-
-    // Small delay between batches
-    if (i + BATCH_SIZE < tickers.length) {
-      await new Promise((r) => setTimeout(r, BATCH_DELAY_MS));
+      await new Promise((res) => setTimeout(res, PAUSE_BETWEEN_MS));
     }
   }
 
-  const totalMs = Date.now() - startTotal;
+  await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
+
+  const done = warmed + failed;
   console.log(
-    `✅ Analysis keep-warm: ${warmed} tickers warmed (${cachedHits} cache hits, ${failed} failed) in ${totalMs}ms`
+    `✅ Analysis keep-warm: ${warmed} pages warmed, ${failed} failed, avg ${done ? Math.round(totalRenderMs / done) : 0} ms/page, total ${Math.round((Date.now() - startTotal) / 1000)} s`,
   );
 }
 
-main();
+main().catch((err) => {
+  console.error('❌ Analysis keep-warm crashed:', err);
+  process.exit(1);
+});

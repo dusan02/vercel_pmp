@@ -545,8 +545,10 @@ module.exports = {
       error_file: path.join(__dirname, "logs", "pm2", "analysis-keep-warm-error.log"),
       out_file: path.join(__dirname, "logs", "pm2", "analysis-keep-warm-out.log"),
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      // Every 4 minutes — keeps analysis Redis cache warm (TTL is 5min)
-      cron_restart: "*/4 * * * *",
+      // Every 30 minutes — renders only /analysis/[ticker] pages missing an ISR
+      // artifact (idempotent; a restart mid-sweep just continues). Also kicked
+      // by vps-activate.sh right after each deploy (the .next swap wipes ISR).
+      cron_restart: "*/30 * * * *",
       autorestart: false,
     },
     {

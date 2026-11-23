@@ -183,4 +183,9 @@ if [ "$SITEMAP_URLS" -lt 1000 ]; then
   echo "⚠️  WARNING: sitemap.xml has only $SITEMAP_URLS URLs (expected ~2400) — DB sections missing, investigate sitemap.ts eligibility queries"
 fi
 
+# The .next swap wiped every /analysis/[ticker] ISR artifact — reload cron config
+# and start the pre-warm bot now in the background under PM2 so heatmap →
+# analysis clicks hit cached pages instead of cold SSR.
+pm2 startOrRestart ecosystem.config.cjs --only analysis-keep-warm > /dev/null 2>&1 || echo "⚠️  could not start analysis-keep-warm"
+
 echo "=== Done ==="
