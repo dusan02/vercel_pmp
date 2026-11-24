@@ -1,10 +1,38 @@
 import { prisma } from '@/lib/db/prisma';
 import { getCachedData, setCachedData } from '@/lib/redis/operations';
+import { readScreenerIndustriesSqlite } from '@/lib/db/readonlySqlite';
 import { downsampleSeries, RANGE_FILTERS, SCORE_FILTERS, ADVANCED_FILTERS, ANALYSIS_SORT_FIELDS, VERDICT_FILTERS, VERDICT_PARAM_VALUES, MARKET_CAP_PRESETS } from '@/lib/utils/screener';
 import { computeTrendSignal, type TrendSignal } from '@/lib/analysis/trendSignal';
 import { getTrendQualifiedSymbols } from '@/lib/analysis/trendUniverse';
 
 const SCREENER_CACHE_TTL = 600; // 10 minutes
+const L1_SCREENER_TTL_MS = 5 * 60 * 1000;
+const L1_INDUSTRIES_TTL_MS = 60 * 60 * 1000;
+const MAX_L1_ENTRIES = 30;
+
+const screenerL1 = new Map<string, { fetchedAt: number; body: Record<string, any> }>();
+const screenerInflight = new Map<string, Promise<Record<string, any>>>();
+let industriesL1: { fetchedAt: number; list: string[] } | null = null;
+
+async function getScreenerIndustries(): Promise<string[]> {
+    if (industriesL1 && Date.now() - industriesL1.fetchedAt < L1_INDUSTRIES_TTL_MS) {
+        return industriesL1.list;
+    }
+    const sqliteRes = readScreenerIndustriesSqlite();
+    if (sqliteRes.ok) {
+        industriesL1 = { fetchedAt: Date.now(), list: sqliteRes.data };
+        return sqliteRes.data;
+    }
+    const rows = await prisma.ticker.findMany({
+        where: { lastPrice: { gt: 0 }, industry: { not: null } },
+        distinct: ['industry'],
+        select: { industry: true },
+        orderBy: { industry: 'asc' },
+    });
+    const list = rows.map((r) => r.industry).filter((i): i is string => !!i);
+    industriesL1 = { fetchedAt: Date.now(), list };
+    return list;
+}
 
 /**
  * Shared screener pipeline — used by /api/analysis/screener (HTTP layer adds
@@ -127,11 +155,22 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
         .map((r) => `ac.${r.field}=${r.min ?? ''}-${r.max ?? ''}`)
         .join('|');
     const cacheKey = `screener:${scoresKey}:${sector || ''}:${industry || ''}:${q || ''}:${minMarketCap ?? ''}:${maxMarketCap ?? ''}:${metricsKey}:${enumKey}:${trendConfirmed ? 'tc1' : ''}:${page}:${limit}:${sortParams}`;
+    const l1Hit = screenerL1.get(cacheKey);
+    if (l1Hit && Date.now() - l1Hit.fetchedAt < L1_SCREENER_TTL_MS) {
+        return l1Hit.body;
+    }
     try {
         const cached = await getCachedData(cacheKey);
-        if (cached) return cached as Record<string, any>;
+        if (cached) {
+            screenerL1.set(cacheKey, { fetchedAt: Date.now(), body: cached as Record<string, any> });
+            return cached as Record<string, any>;
+        }
     } catch {}
 
+    const pending = screenerInflight.get(cacheKey);
+    if (pending) return pending;
+
+    const job = (async (): Promise<Record<string, any>> => {
     try {
         // ── Base query: Ticker (ALL active stocks with a price and market cap) ──
         const tickerWhere: any = { lastPrice: { gt: 0 }, lastMarketCap: { gt: 0 } };
@@ -394,21 +433,11 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
             return rows;
         };
 
-        const [tickers, total, industryRows] = await Promise.all([
+        const [tickers, total, industries] = await Promise.all([
             fetchPage(),
             prisma.ticker.count({ where }),
-            // Distinct industries for the filter dropdown (cached with the page)
-            prisma.ticker.findMany({
-                where: { lastPrice: { gt: 0 }, industry: { not: null } },
-                distinct: ['industry'],
-                select: { industry: true },
-                orderBy: { industry: 'asc' },
-            }),
+            getScreenerIndustries(),
         ]);
-
-        const industries = industryRows
-            .map((r) => r.industry)
-            .filter((i): i is string => !!i);
 
         // 1Y sparkline — daily closes from DailyValuationHistory (covers ~999
         // symbols, ~4.8y of history), downsampled to ~52 weekly points so the
@@ -542,11 +571,21 @@ export async function runScreener(searchParams: URLSearchParams): Promise<Record
             }
         };
 
+        if (screenerL1.size >= MAX_L1_ENTRIES) {
+            const oldestKey = screenerL1.keys().next().value;
+            if (oldestKey) screenerL1.delete(oldestKey);
+        }
+        screenerL1.set(cacheKey, { fetchedAt: Date.now(), body: responseBody });
         try { await setCachedData(cacheKey, responseBody, SCREENER_CACHE_TTL); } catch {}
 
         return responseBody;
     } catch (error) {
         console.error('Error in Screener API:', error);
-        return { error: 'Failed to fetch screened results' };
+        return l1Hit?.body ?? { error: 'Failed to fetch screened results' };
     }
+    })().finally(() => {
+        screenerInflight.delete(cacheKey);
+    });
+    screenerInflight.set(cacheKey, job);
+    return job;
 }

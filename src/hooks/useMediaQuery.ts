@@ -3,11 +3,9 @@
 import { useState, useEffect } from 'react';
 
 export function useMediaQuery(query: string): boolean {
-    // Initialize with correct value on client, false on server
-    const [matches, setMatches] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        return window.matchMedia(query).matches;
-    });
+    // Start false on both SSR and initial hydration pass so server/client markup
+    // matches (avoids React #418); useEffect syncs the live media state right after.
+    const [matches, setMatches] = useState(false);
 
     useEffect(() => {
         // Avoid running on server

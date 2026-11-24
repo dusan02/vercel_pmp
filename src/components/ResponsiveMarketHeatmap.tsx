@@ -56,6 +56,8 @@ export type ResponsiveMarketHeatmapProps = {
   onMetricChange?: (metric: HeatmapMetric) => void;
   /** Skryť buttony pre prepínanie metriky (ak sú kontrolované zvonka) */
   hideMetricButtons?: boolean;
+  /** Hide the inner MobileHeatmapHeader when the parent route already renders a header */
+  hideMobileHeader?: boolean;
   /** Variant sector labels: 'compact' for homepage, 'full' for heatmap page */
   sectorLabelVariant?: 'compact' | 'full';
   /** Signalizuje, či je heatmap aktívny view (pre automatické zatvorenie sheetu) */
@@ -81,6 +83,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   controlledMetric,
   onMetricChange,
   hideMetricButtons = false,
+  hideMobileHeader = false,
   sectorLabelVariant = 'compact',
   activeView,
   initialHeatmapData,
@@ -261,6 +264,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
           onMetricChange={setMetric}
           {...(onTileClick ? { onTileClick } : {})}
           activeView={activeView}
+          hideHeader={hideMobileHeader}
         />
       );
     }

@@ -73,7 +73,11 @@ export const getTickerData = cache(async function getTickerData(symbol: string) 
           select: {
             overallScore: true,
             healthScore: true,
+            profitabilityScore: true,
             valuationScore: true,
+            growthScore: true,
+            qualityScore: true,
+            moatScore: true,
             verdictText: true,
             piotroskiScore: true,
             altmanZ: true,
@@ -86,14 +90,20 @@ export const getTickerData = cache(async function getTickerData(symbol: string) 
             debtRepaymentYears: true,
             humanDebtInfo: true,
             humanPeInfo: true,
+            pePercentile: true,
+            fundLevel: true,
+            valLevel: true,
+            verdictKey: true,
           },
         },
         finnhubMetrics: {
           select: {
             peRatio: true,
+            forwardPe: true,
             dividendYield: true,
             roe: true,
             payoutRatio: true,
+            revenueGrowth: true,
           },
         },
         finnhubPriceTarget: {

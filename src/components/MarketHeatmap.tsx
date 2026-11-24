@@ -412,10 +412,9 @@ export const MarketHeatmap: React.FC<MarketHeatmapProps> = ({
         />
       )}
 
-      {/* Legend overlay — derived from the same adaptive scale as the tiles,
-          so it always matches what the map actually shows */}
+      {/* Legend overlay — bottom-right sits over small tail tiles rather than mega-caps */}
       {showLegend && (
-        <div className="absolute bottom-2 left-2 z-20 pointer-events-none">
+        <div className="absolute bottom-2 right-2 z-20 pointer-events-none">
           <HeatmapLegend
             timeframe={timeframe}
             metric={metric}

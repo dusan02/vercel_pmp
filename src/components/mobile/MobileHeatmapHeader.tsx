@@ -51,13 +51,16 @@ export const MobileHeatmapHeader: React.FC<MobileHeatmapHeaderProps> = ({
         value={metric}
         onChange={(e) => onMetricChange(e.target.value as HeatmapMetric)}
         aria-label="Heatmap metric"
+        className="appearance-none"
         style={{
           height: 28, paddingLeft: 10, paddingRight: 22, borderRadius: 8,
           fontSize: 11, fontWeight: 700, cursor: 'pointer',
-          background: 'rgba(255,255,255,0.06)',
+          backgroundColor: 'rgba(255,255,255,0.06)',
           border: '1px solid rgba(255,255,255,0.1)',
           color: 'rgba(255,255,255,0.85)',
           appearance: 'none',
+          WebkitAppearance: 'none',
+          MozAppearance: 'none',
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5' viewBox='0 0 9 5'%3E%3Cpath d='M1 1l3.5 3.5L8 1' stroke='%23ffffff' stroke-opacity='0.6' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'right 7px center',

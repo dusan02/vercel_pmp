@@ -32,6 +32,7 @@ import { TrackPageEvent } from '@/components/analytics/TrackPageEvent';
 import { KeyInsightsSection } from '@/components/company/analysis/sections/KeyInsightsSection';
 import { MoverInsightSection } from '@/components/company/analysis/sections/MoverInsightSection';
 import PillarsRadar, { PillarChips } from '@/components/company/analysis/PillarsRadar';
+import type { PillarScores } from '@/services/analysis/pillars';
 import { getPeerPillars } from '@/lib/analysis/peerPillars';
 import { EarningsSection } from '@/components/company/analysis/sections/EarningsSection';
 import { EarningsBanner } from '@/components/company/analysis/sections/EarningsBanner';
@@ -238,9 +239,28 @@ export default async function AnalysisPage({ params }: PageProps) {
     : null;
 
   // Pillar-derived values — one consistent source feeding hero, verdict,
-  // FAQ, insights and the radar. Stored AnalysisCache scores are the
-  // fallback while the cache refresh converges to the new definitions.
-  const pillarVals = analysisData?.pillars ?? null;
+  // FAQ, insights and the radar. When SSR prefetchAnalysisData hits its 1.5s
+  // timeout under load, synthesize fallback pillars from persisted AnalysisCache
+  // scores so PmpVerdict never falls back to "Insufficient data" on liquid stocks.
+  const cachedAc = data?.analysisCache ?? null;
+  const fallbackPillars: PillarScores | null =
+    !analysisData?.pillars && cachedAc && cachedAc.verdictKey !== 'insufficient' && (
+      cachedAc.healthScore != null ||
+      cachedAc.profitabilityScore != null ||
+      cachedAc.growthScore != null ||
+      cachedAc.qualityScore != null ||
+      cachedAc.valuationScore != null
+    )
+      ? {
+          valuation: { key: 'valuation', label: 'Valuation', score: Math.round(cachedAc.valuationScore ?? 50), legs: [] },
+          growth: { key: 'growth', label: 'Growth', score: Math.round(cachedAc.growthScore ?? 50), legs: [] },
+          profitability: { key: 'profitability', label: 'Profitability', score: Math.round(cachedAc.profitabilityScore ?? 50), legs: [] },
+          health: { key: 'health', label: 'Financial Health', score: Math.round(cachedAc.healthScore ?? 50), legs: [] },
+          quality: { key: 'quality', label: 'Quality', score: Math.round(cachedAc.qualityScore ?? 50), legs: [] },
+          moat: { key: 'moat', label: 'Moat', score: Math.round(cachedAc.moatScore ?? 50), legs: [] },
+        }
+      : null;
+  const pillarVals = analysisData?.pillars ?? fallbackPillars;
   const pillarHealth = pillarVals?.health.score ?? null;
   const pillarValuation = pillarVals?.valuation.score ?? null;
   const pillarRoeVal = pillarVals?.profitability.legs.find((l: { key: string }) => l.key === 'roe')?.value;
@@ -297,8 +317,11 @@ export default async function AnalysisPage({ params }: PageProps) {
   // 0-statement tickers (ADRs Finnhub doesn't cover) get zero pillars —
   // hide the radar/chips rather than show garbage scores, and let the
   // verdict say "insufficient data" instead.
-  const hasPillars = analysisData?.pillars != null && !analysisData?.insufficientData
-    && (analysisData.statements?.length ?? 0) > 0;
+  const effectiveInsufficientData = analysisData
+    ? Boolean(analysisData.insufficientData)
+    : (cachedAc?.verdictKey === 'insufficient' || (!pillarVals && !cachedAc));
+  const hasPillars = pillarVals != null && !effectiveInsufficientData
+    && ((analysisData?.statements?.length ?? 0) > 0 || fallbackPillars != null);
   const ewScore = data?.ewScoreSnapshots?.[0] ?? null;
 
   return (
@@ -394,17 +417,17 @@ export default async function AnalysisPage({ params }: PageProps) {
               employees={data?.employees ?? null}
               websiteUrl={data?.websiteUrl ?? null}
             />
-            {hasPillars && (
+            {hasPillars && pillarVals && (
               <div className="hidden lg:block h-full">
-                <PillarsRadar pillars={analysisData!.pillars!} previous={analysisData?.pillarsPrev ?? null} peer={peerPillars} />
+                <PillarsRadar pillars={pillarVals} previous={analysisData?.pillarsPrev ?? null} peer={peerPillars} />
               </div>
             )}
           </div>
 
           {/* Mobile-only profile chips — quick score strip right under the hero on phones */}
-          {hasPillars && (
+          {hasPillars && pillarVals && (
             <div className="mb-4 lg:hidden">
-              <PillarChips pillars={analysisData!.pillars!} />
+              <PillarChips pillars={pillarVals} />
             </div>
           )}
 
@@ -414,16 +437,16 @@ export default async function AnalysisPage({ params }: PageProps) {
               Col 3: Gaussian RSI & Dip Curve + 3-Tranche Plan */}
           <div className="mb-6 grid gap-4 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_23.5rem] lg:items-stretch">
             <PmpVerdict
-              pillars={analysisData?.pillars ?? null}
-              insufficientData={analysisData?.insufficientData ?? null}
-              pePercentile={analysisData?.valuationHistoryStats?.pe?.percentile ?? null}
+              pillars={pillarVals}
+              insufficientData={effectiveInsufficientData}
+              pePercentile={analysisData?.valuationHistoryStats?.pe?.percentile ?? cachedAc?.pePercentile ?? null}
               peCurrent={displayPeRatio}
               peMedian={analysisData?.valuationHistoryStats?.pe?.median ?? null}
               peYears={analysisData?.valuationHistoryStats?.pe?.years ?? null}
               psPercentile={analysisData?.valuationHistoryStats?.ps?.percentile ?? null}
-              forwardPe={analysisData?.finnhubMetrics?.forwardPe ?? null}
-              revenueGrowthYoY={analysisData?.finnhubMetrics?.revenueGrowth ?? null}
-              revenueCagr={analysisData?.revenueCagr ?? null}
+              forwardPe={analysisData?.finnhubMetrics?.forwardPe ?? data?.finnhubMetrics?.forwardPe ?? null}
+              revenueGrowthYoY={analysisData?.finnhubMetrics?.revenueGrowth ?? data?.finnhubMetrics?.revenueGrowth ?? null}
+              revenueCagr={analysisData?.revenueCagr ?? cachedAc?.revenueCagr ?? null}
               changePct={displayChangePct}
               moversReason={data?.moversReason ?? null}
               moversCategory={data?.moversCategory ?? null}

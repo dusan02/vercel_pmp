@@ -76,10 +76,10 @@ export default function HeatmapClient({ initialHeatmapData }: HeatmapClientProps
     >
       {/* 1. Interactive Heatmap Canvas Viewport */}
       <div className="h-[92vh] min-h-[580px] w-full flex flex-col flex-shrink-0 border-b border-gray-800">
-        <div className="relative px-2 py-1 z-[100] text-white flex-shrink-0 flex items-center justify-between bg-black border-b border-gray-800" style={{ pointerEvents: 'auto' }}>
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-xl font-bold mb-0 leading-none">
+        <div className="relative px-2 py-1.5 z-[100] text-white flex-shrink-0 flex items-center justify-between gap-2 sm:gap-4 bg-black border-b border-gray-800" style={{ pointerEvents: 'auto' }}>
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-xl font-bold mb-0 leading-tight truncate">
                 Heatmap<span className="text-green-500">.{HEATMAP_METRICS.find(m => m.id === metric)?.label ?? 'Day change %'}</span>
               </h1>
               <p className="text-[9px] text-gray-400 hidden sm:block">
@@ -88,7 +88,7 @@ export default function HeatmapClient({ initialHeatmapData }: HeatmapClientProps
             </div>
 
             {/* Score methodology — ⓘ opens floating panel */}
-            <details className="relative group">
+            <details className="relative group shrink-0">
               <summary
                 className="list-none cursor-pointer w-5 h-5 flex items-center justify-center rounded-full border border-gray-600 text-gray-400 hover:text-white hover:border-gray-400 transition-colors text-[10px] font-bold italic"
                 title="How are the scores calculated?"
@@ -96,22 +96,22 @@ export default function HeatmapClient({ initialHeatmapData }: HeatmapClientProps
               >
                 i
               </summary>
-              <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-[320px] sm:w-[420px] max-h-[70vh] overflow-y-auto bg-gray-900 border border-gray-700 rounded-lg p-3 shadow-xl z-[200]">
+              <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-[300px] sm:w-[420px] max-h-[70vh] overflow-y-auto bg-gray-900 border border-gray-700 rounded-lg p-3 shadow-xl z-[200]">
                 <HeatmapMethodology />
               </div>
             </details>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             {/* Global ticker search */}
-            <div className="w-44 sm:w-64">
-              <AnalysisStockSearch variant="dark" placeholder="Search stocks…" />
+            <div className="w-28 sm:w-64 min-w-0">
+              <AnalysisStockSearch variant="dark" placeholder="Search…" />
             </div>
 
             {/* Exit fullscreen button */}
             <button
               onClick={handleExitFullscreen}
-              className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200 text-sm font-semibold shadow-md relative z-10"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors duration-200 text-sm font-semibold shadow-md relative z-10 shrink-0"
               style={{ pointerEvents: 'auto' }}
               title="Exit fullscreen (back to homepage)"
               aria-label="Exit fullscreen"
@@ -155,6 +155,7 @@ export default function HeatmapClient({ initialHeatmapData }: HeatmapClientProps
             controlledMetric={metric}
             onMetricChange={setMetric}
             hideMetricButtons={true}
+            hideMobileHeader={true}
             initialHeatmapData={initialHeatmapData}
             initialFetchDelayMs={250}
           />

@@ -65,7 +65,11 @@ export interface ReadonlyTickerPageData {
   analysisCache: {
     overallScore: number | null;
     healthScore: number | null;
+    profitabilityScore: number | null;
     valuationScore: number | null;
+    growthScore: number | null;
+    qualityScore: number | null;
+    moatScore: number | null;
     verdictText: string | null;
     piotroskiScore: number | null;
     altmanZ: number | null;
@@ -78,12 +82,18 @@ export interface ReadonlyTickerPageData {
     debtRepaymentYears: number | null;
     humanDebtInfo: string | null;
     humanPeInfo: string | null;
+    pePercentile: number | null;
+    fundLevel: string | null;
+    valLevel: string | null;
+    verdictKey: string | null;
   } | null;
   finnhubMetrics: {
     peRatio: number | null;
+    forwardPe: number | null;
     dividendYield: number | null;
     roe: number | null;
     payoutRatio: number | null;
+    revenueGrowth: number | null;
   } | null;
   finnhubPriceTarget: {
     targetHigh: number | null;
@@ -316,6 +326,32 @@ interface RawFinancialFlowRow {
   netPPE: number | null;
 }
 
+export interface ReadonlySearchTickerRow {
+  symbol: string;
+  name: string | null;
+  lastPrice: number | null;
+  lastChangePct: number | null;
+  assetType: string | null;
+  lastMarketCap: number | null;
+  tier: number | null;
+}
+
+export interface ReadonlyEarningsDayRow {
+  ticker: string;
+  companyName: string | null;
+  marketCap: number | null;
+  epsEstimate: number | null;
+  epsActual: number | null;
+  revenueEstimate: number | null;
+  revenueActual: number | null;
+  epsSurprisePercent: number | null;
+  revenueSurprisePercent: number | null;
+  percentChange: number | null;
+  marketCapDiff: number | null;
+  time: string | null;
+  date: number | string;
+}
+
 interface PreparedReadonlyStmts {
   ping: Database.Statement<[], { ok: number }>;
   valRows: Database.Statement<[string, number], RawValRow>;
@@ -343,6 +379,10 @@ interface PreparedReadonlyStmts {
   matchedAnalysisCache: Database.Statement<[string], NonNullable<ReadonlyMatchedScreensData['analysisCache']>>;
   matchedFinnhubMetrics: Database.Statement<[string], NonNullable<ReadonlyMatchedScreensData['finnhubMetrics']>>;
   matchedInsiderAgg: Database.Statement<[string], NonNullable<ReadonlyMatchedScreensData['insiderAggregate']>>;
+  searchIndex: Database.Statement<[], ReadonlySearchTickerRow>;
+  earningsDay: Database.Statement<[number, number], ReadonlyEarningsDayRow>;
+  verdictMatrix: Database.Statement<[], { verdictKey: string; cnt: number }>;
+  screenerIndustries: Database.Statement<[], { industry: string }>;
 }
 
 interface ReadonlySqliteState {
@@ -433,12 +473,13 @@ function getReadonlyState(): ReadonlySqliteState | null {
         'latestMoversZScore, latestMoversRVOL, aiConfidence, isSbcAlert FROM Ticker WHERE symbol = ? LIMIT 1',
       ),
       tickerAnalysisCache: db.prepare(
-        'SELECT overallScore, healthScore, valuationScore, verdictText, piotroskiScore, altmanZ, ' +
-        'beneishScore, interestCoverage, negativeNiYears, revenueCagr, netIncomeCagr, fcfMargin, ' +
-        'debtRepaymentYears, humanDebtInfo, humanPeInfo FROM AnalysisCache WHERE symbol = ? LIMIT 1',
+        'SELECT overallScore, healthScore, profitabilityScore, valuationScore, growthScore, qualityScore, moatScore, ' +
+        'verdictText, piotroskiScore, altmanZ, beneishScore, interestCoverage, negativeNiYears, revenueCagr, netIncomeCagr, ' +
+        'fcfMargin, debtRepaymentYears, humanDebtInfo, humanPeInfo, pePercentile, fundLevel, valLevel, verdictKey ' +
+        'FROM AnalysisCache WHERE symbol = ? LIMIT 1',
       ),
       tickerFinnhubMetrics: db.prepare(
-        'SELECT peRatio, dividendYield, roe, payoutRatio FROM FinnhubMetrics WHERE symbol = ? LIMIT 1',
+        'SELECT peRatio, forwardPe, dividendYield, roe, payoutRatio, revenueGrowth FROM FinnhubMetrics WHERE symbol = ? LIMIT 1',
       ),
       tickerPriceTarget: db.prepare(
         'SELECT targetHigh, targetLow, targetMean, targetMedian, numberOfAnalysts, currentPrice, fetchedAt ' +
@@ -500,6 +541,23 @@ function getReadonlyState(): ReadonlySqliteState | null {
       ),
       matchedInsiderAgg: db.prepare(
         'SELECT netBuyValue90d, netBuyPct90d FROM InsiderAggregate WHERE symbol = ? LIMIT 1',
+      ),
+      searchIndex: db.prepare(
+        'SELECT symbol, name, lastPrice, lastChangePct, assetType, lastMarketCap, tier FROM Ticker',
+      ),
+      earningsDay: db.prepare(
+        'SELECT ticker, companyName, marketCap, epsEstimate, epsActual, revenueEstimate, revenueActual, ' +
+        'epsSurprisePercent, revenueSurprisePercent, percentChange, marketCapDiff, time, date ' +
+        'FROM EarningsCalendar WHERE date >= ? AND date < ? ORDER BY time ASC, ticker ASC',
+      ),
+      verdictMatrix: db.prepare(
+        'SELECT ac.verdictKey AS verdictKey, COUNT(*) AS cnt ' +
+        'FROM AnalysisCache ac INNER JOIN Ticker t ON t.symbol = ac.symbol ' +
+        'WHERE t.lastPrice > 0 AND t.lastMarketCap > 0 AND ac.verdictKey IS NOT NULL ' +
+        'GROUP BY ac.verdictKey',
+      ),
+      screenerIndustries: db.prepare(
+        'SELECT DISTINCT industry FROM Ticker WHERE lastPrice > 0 AND industry IS NOT NULL ORDER BY industry ASC',
       ),
     };
     globalForSqlite.__pmpReadonlySqlite = { db, prepared };
@@ -778,6 +836,58 @@ export function readMatchedScreensSqlite(symbol: string): SqliteReadResult<Reado
       ok: true,
       data: { ...market, analysisCache, finnhubMetrics, insiderAggregate },
     };
+  } catch {
+    return { ok: false };
+  }
+}
+
+/** Read full slim ticker list for in-memory autocomplete search (bypasses Prisma queue). */
+export function readSearchIndexSqlite(): SqliteReadResult<ReadonlySearchTickerRow[]> {
+  const state = getReadonlyState();
+  if (!state || !('searchIndex' in state.prepared)) return { ok: false };
+  try {
+    return { ok: true, data: state.prepared.searchIndex.all() };
+  } catch {
+    return { ok: false };
+  }
+}
+
+/** Read single-day EarningsCalendar rows directly via WAL read-only SQLite. */
+export function readEarningsDaySqlite(
+  startDate: Date,
+  endDate: Date,
+): SqliteReadResult<Array<Omit<ReadonlyEarningsDayRow, 'date'> & { date: Date }>> {
+  const state = getReadonlyState();
+  if (!state || !('earningsDay' in state.prepared)) return { ok: false };
+  try {
+    const rows = state.prepared.earningsDay.all(startDate.getTime(), endDate.getTime());
+    return { ok: true, data: rows.map((r) => ({ ...r, date: toDate(r.date) })) };
+  } catch {
+    return { ok: false };
+  }
+}
+
+/** Read verdictKey counts directly via WAL read-only SQLite. */
+export function readVerdictMatrixSqlite(): SqliteReadResult<Record<string, number>> {
+  const state = getReadonlyState();
+  if (!state || !('verdictMatrix' in state.prepared)) return { ok: false };
+  try {
+    const rows = state.prepared.verdictMatrix.all();
+    const counts: Record<string, number> = {};
+    for (const r of rows) if (r.verdictKey) counts[r.verdictKey] = r.cnt;
+    return { ok: true, data: counts };
+  } catch {
+    return { ok: false };
+  }
+}
+
+/** Read distinct active industries directly via WAL read-only SQLite. */
+export function readScreenerIndustriesSqlite(): SqliteReadResult<string[]> {
+  const state = getReadonlyState();
+  if (!state || !('screenerIndustries' in state.prepared)) return { ok: false };
+  try {
+    const rows = state.prepared.screenerIndustries.all();
+    return { ok: true, data: rows.map((r) => r.industry).filter(Boolean) };
   } catch {
     return { ok: false };
   }

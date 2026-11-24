@@ -23,18 +23,23 @@ export const HeatmapLegend: React.FC<HeatmapLegendProps> = ({ timeframe, metric 
   // Ticks = the scale domain stops — always consistent with tile colors
   // (mcap uses the same adaptive domain the tiles use).
   const extent = getHeatmapScaleExtent(timeframe, metric, values);
-  const points = metric === 'mcap' ? extent.map((v) => Math.round(v)) : extent;
+  const maxAbsMcap = metric === 'mcap' ? Math.max(...extent.map((v) => Math.abs(v))) : 0;
+  // Preserve 1 decimal when mcap extent is narrow (<5B$) so intermediate stops
+  // don't collapse to duplicate "0B$" labels.
+  const points = metric === 'mcap'
+    ? extent.map((v) => (maxAbsMcap < 5 ? Number(v.toFixed(1)) : Math.round(v)))
+    : extent;
 
   const unit = metric === 'mcap' ? 'B$'
     : PERCENT_METRICS.has(metric) ? '%'
     : metric === 'zscore' ? 'σ'
     : metric === 'rvol' ? '×'
     : '';
-  const formatTick = (v: number) => `${v}${unit}`;
+  const formatTick = (v: number) => `${Object.is(v, -0) ? 0 : v}${unit}`;
   const labelIndices = points.length >= 7 ? [0, 2, 3, 4, 6] : points.map((_, i) => i);
 
   return (
-    <div className="bg-gray-900 bg-opacity-70 px-2.5 py-1.5 rounded-lg">
+    <div className="bg-gray-900/85 backdrop-blur-sm border border-white/10 px-2.5 py-1.5 rounded-lg shadow-lg">
       <div className="flex items-stretch">
         {points.map((p, idx) => (
           <div

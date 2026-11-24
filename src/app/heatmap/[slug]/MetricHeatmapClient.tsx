@@ -79,6 +79,7 @@ export default function MetricHeatmapClient({
           onTileHover={handleTileHover}
           onMetricChange={handleMetricChange}
           hideMetricButtons={true}
+          hideMobileHeader={true}
           sectorLabelVariant="full"
           initialHeatmapData={initialHeatmapData}
           initialFetchDelayMs={250}

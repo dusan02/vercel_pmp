@@ -22,9 +22,11 @@ import path from 'path';
 import Database from 'better-sqlite3';
 
 const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3001';
-const CONCURRENCY = Math.max(1, Number(process.env.WARM_CONCURRENCY || 2));
+// Keep concurrency at 1 + generous pause so post-deploy ISR warming doesn't
+// saturate the 2-core VPS / Prisma connection_limit=1 queue and starve live APIs.
+const CONCURRENCY = Math.max(1, Number(process.env.WARM_CONCURRENCY || 1));
 const REQUEST_TIMEOUT_MS = 30_000;
-const PAUSE_BETWEEN_MS = 150;
+const PAUSE_BETWEEN_MS = Math.max(150, Number(process.env.WARM_PAUSE_MS || 800));
 const APP_DIR = process.cwd();
 const ISR_DIR = path.join(APP_DIR, '.next', 'server', 'app', 'analysis');
 

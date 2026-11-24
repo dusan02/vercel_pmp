@@ -25,6 +25,7 @@ interface MobileTreemapNewProps {
   isFavorite?: (ticker: string) => boolean;
   activeView?: string | undefined;
   height?: number;
+  hideHeader?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -42,6 +43,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
   isFavorite,
   activeView,
   height,
+  hideHeader = false,
 }) => {
   // -- Container measurement: width-only continuous + one-time height --------
   // Width-only tracking prevents layout thrashing: re-layout changes content
@@ -181,7 +183,7 @@ export const MobileTreemapNew: React.FC<MobileTreemapNewProps> = ({
       className="flex flex-col w-full overflow-hidden"
       style={{ position: 'relative', height: '100%', minHeight: '100%', zIndex: 1, background: '#0a0a0a' }}
     >
-      {height === undefined && (
+      {!hideHeader && height === undefined && (
         <MobileHeatmapHeader metric={metric} onMetricChange={onMetricChange} />
       )}
 
