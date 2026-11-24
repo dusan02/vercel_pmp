@@ -25,7 +25,13 @@ export function getMetricNavigationTarget(next: HeatmapMetric): string {
  * Metric switches navigate to that metric's dedicated page (or `/heatmap?metric=...`
  * for metrics without one) so URL state always matches the view.
  */
-export default function MetricHeatmapClient({ metric }: { metric: HeatmapMetric }) {
+export default function MetricHeatmapClient({
+  metric,
+  initialHeatmapData,
+}: {
+  metric: HeatmapMetric;
+  initialHeatmapData?: any[];
+}) {
   const router = useRouter();
   const handleTileHover = useAnalysisPrefetch();
 
@@ -74,6 +80,8 @@ export default function MetricHeatmapClient({ metric }: { metric: HeatmapMetric 
           onMetricChange={handleMetricChange}
           hideMetricButtons={true}
           sectorLabelVariant="full"
+          initialHeatmapData={initialHeatmapData}
+          initialFetchDelayMs={250}
         />
       </div>
     </div>

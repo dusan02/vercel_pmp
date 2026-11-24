@@ -62,6 +62,8 @@ export type ResponsiveMarketHeatmapProps = {
   activeView?: string | undefined;
   /** SSR pre-fetched heatmap data (compact rows format from API) */
   initialHeatmapData?: any[] | undefined;
+  /** Delay (ms) before background refresh when initial/cached data is present */
+  initialFetchDelayMs?: number | undefined;
 };
 
 /**
@@ -82,6 +84,7 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
   sectorLabelVariant = 'compact',
   activeView,
   initialHeatmapData,
+  initialFetchDelayMs,
 }) => {
   // Resize hook
   const { ref, size } = useElementResize();
@@ -123,10 +126,22 @@ export const ResponsiveMarketHeatmap: React.FC<ResponsiveMarketHeatmapProps> = (
     initialTimeframe,
     autoRefresh: autoRefresh && isMounted, // Only auto-refresh after mount
     initialHeatmapData,
+    initialFetchDelayMs,
     // Keep-alive tabs stay mounted while hidden — pause polling then.
     // undefined activeView (e.g. /heatmap page) = always active.
     active: activeView === undefined || activeView === 'heatmap',
   });
+
+  // Eagerly start downloading the active heatmap bundle on mount rather than
+  // waiting for ResizeObserver to resolve non-zero dimensions first.
+  useEffect(() => {
+    if (process.env.JEST_WORKER_ID) return;
+    if (isMobile) {
+      void import('@/components/MobileTreemapNew');
+    } else {
+      void import('@/components/MarketHeatmap');
+    }
+  }, [isMobile]);
 
   // Single source of truth: controlled prop, else the centralized (localStorage) hook
   const metric = controlledMetric ?? centralizedMetric;

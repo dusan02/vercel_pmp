@@ -213,9 +213,13 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
   // Prefetch inactive screens and prioritize heatmap on mobile
   useMobilePrefetch(activeSection);
 
-  // Warm up lazy tab chunks on idle so tab switches don't trigger a
-  // sequential chunk-download waterfall (each dynamic() is a separate fetch).
+  // Preload active heatmap chunk immediately on mount; warm inactive tab chunks on idle.
   useEffect(() => {
+    if (isDesktop) {
+      void import('@/components/MarketHeatmap');
+    } else {
+      void import('@/components/MobileTreemapNew');
+    }
     const warmup = () => {
       void import('@/components/home/HomeMovers');
       void import('@/components/home/HomeAnalysis');
@@ -225,9 +229,6 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
       void import('@/components/home/HomeBlog');
       void import('@/components/home/HomePricing');
       void import('@/components/StockScreener');
-      // Heatmap inner dynamic chunks (desktop D3 map + mobile treemap)
-      void import('@/components/MarketHeatmap');
-      void import('@/components/MobileTreemapNew');
     };
     if ('requestIdleCallback' in window) {
       const id = requestIdleCallback(warmup, { timeout: 5000 });
@@ -235,7 +236,7 @@ export default function HomePage({ initialData = [], initialMoversData, initialB
     }
     const t = setTimeout(warmup, 3000);
     return () => clearTimeout(t);
-  }, []);
+  }, [isDesktop]);
 
   // Warm the Next.js /analysis/[ticker] route (chunks + ISR/RSC payload) on heatmap tile hover
   const handleAnalysisPrefetch = useAnalysisPrefetch();

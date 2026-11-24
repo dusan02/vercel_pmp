@@ -20,6 +20,7 @@ import {
   buildPriceMap,
   buildPrevCloseMaps,
   toCompactRow,
+  type HeatmapPayloadRow,
 } from './heatmapTransformer';
 
 /**
@@ -33,9 +34,26 @@ import {
 
 const CACHE_KEY = `heatmap-data:${process.env.NEXT_PUBLIC_BUILD_ID || 'dev'}`;
 const CACHE_TTL = 900;
+// Max age for the in-process fallback cache if Redis is unavailable (e.g. MISCONF/restart).
+const MEMORY_FALLBACK_MAX_AGE_MS = 30 * 60 * 1000;
 // With the Yahoo real-time overlay, DB prices update every ~60s during
 // active sessions — a 5-min cache age cap would double the visible lag.
 const MAX_DATA_AGE = 60 * 1000;
+
+interface HeatmapMemoryCache {
+  fetchedAt: number;
+  payload: HeatmapPayloadRow[];
+  rows: Record<string, unknown>[];
+  dataTimestamp: string | null;
+}
+
+/**
+ * In-process L1/fallback cache:
+ * 1. Avoids re-mapping ~1,000 rows on every Redis hit when fetchedAt matches.
+ * 2. Keeps serving stale-while-revalidate if Redis becomes unavailable (e.g. MISCONF),
+ *    preventing 3-6s SQLite rebuilds on every incoming request.
+ */
+let memoryCache: HeatmapMemoryCache | null = null;
 
 const DATE_RANGE = {
   DAYS_BACK: 1,
@@ -101,6 +119,26 @@ function applyLimit(result: HeatmapServiceResult, requestedLimit: number | null)
   };
 }
 
+function buildCachedResult(
+  payload: unknown[],
+  rows: Record<string, unknown>[],
+  dataTimestamp: string | null,
+  dataAgeMs: number,
+  requestedLimit: number | null,
+): HeatmapServiceResult {
+  const limitedPayload = requestedLimit ? payload.slice(0, requestedLimit) : payload;
+  const limitedRows = requestedLimit ? rows.slice(0, requestedLimit) : rows;
+  return {
+    ok: true,
+    payload: limitedPayload,
+    rows: limitedRows,
+    count: limitedPayload.length,
+    fromCache: true,
+    dataAgeMs,
+    lastUpdatedAt: dataTimestamp || new Date().toISOString(),
+  };
+}
+
 export async function getHeatmapData(query: HeatmapQuery = {}): Promise<HeatmapServiceResult> {
   const startTime = Date.now();
   // NaN (non-numeric ?limit=) must not reach prisma.take — it 500s.
@@ -111,67 +149,96 @@ export async function getHeatmapData(query: HeatmapQuery = {}): Promise<HeatmapS
   const forceRefresh = query.forceRefresh === true;
   const debug = query.debug === true;
 
-  // 1. Cache check
+  const rebuildWindowMs = detectSession(nowET()) === 'closed' ? CACHE_TTL * 1000 : MAX_DATA_AGE;
+
+  // 1. Cache check (in-memory L1 → Redis → stale-while-revalidate fallback)
   if (!forceRefresh) {
+    // 1a. Fast L1 hit: avoids Redis round-trip + JSON.parse(~1.4MB) + toCompactRow map
+    if (memoryCache && memoryCache.payload.length > 0) {
+      const memFetchAgeMs = Date.now() - memoryCache.fetchedAt;
+      const memDataAgeMs = memoryCache.dataTimestamp
+        ? Date.now() - new Date(memoryCache.dataTimestamp).getTime()
+        : Infinity;
+      if (memDataAgeMs < MAX_DATA_AGE || memFetchAgeMs < rebuildWindowMs) {
+        return buildCachedResult(
+          memoryCache.payload,
+          memoryCache.rows,
+          memoryCache.dataTimestamp,
+          memDataAgeMs,
+          requestedLimit,
+        );
+      }
+    }
+
+    let cachedData: HeatmapPayloadRow[] | null = null;
+    let fetchedAtMs: number | null = null;
+
     try {
       const cachedEnvelope = await getCachedData(CACHE_KEY);
       // Envelope {fetchedAt, data} since 2026-10; tolerate legacy bare array.
-      const cachedData = Array.isArray(cachedEnvelope) ? cachedEnvelope : (cachedEnvelope as any)?.data;
-      const fetchedAtMs = !Array.isArray(cachedEnvelope) && typeof (cachedEnvelope as any)?.fetchedAt === 'number'
-        ? (cachedEnvelope as any).fetchedAt
-        : null;
-
-      if (cachedData && Array.isArray(cachedData) && cachedData.length > 0) {
-        const cacheTimestamp = (cachedData as any)?.[0]?._timestamp || null;
-        const dataAgeMs = cacheTimestamp ? Date.now() - new Date(cacheTimestamp).getTime() : Infinity;
-
-        // Rebuild-rate gate: dataAge alone can't distinguish "stale because
-        // the market moved" from "stale because the market is closed" — a
-        // closed market freezes maxUpdatedAt, so refetches return identical
-        // rows yet ran on EVERY call (permanent cache-miss loop, ~1.7s of
-        // DB work per request). fetchedAt bounds rebuilds to once per
-        // window; while closed the window stretches to the cache TTL since
-        // the DB provably holds nothing fresher.
-        const fetchAgeMs = fetchedAtMs ? Date.now() - fetchedAtMs : Infinity;
-        const rebuildWindowMs = detectSession(nowET()) === 'closed' ? CACHE_TTL * 1000 : MAX_DATA_AGE;
-
-        if (dataAgeMs < MAX_DATA_AGE || fetchAgeMs < rebuildWindowMs) {
-          console.log(`✅ Heatmap cache hit - returning ${cachedData.length} companies (data age: ${Math.floor(dataAgeMs / 1000)}s, ${Date.now() - startTime}ms)`);
-          const limited = requestedLimit ? cachedData.slice(0, requestedLimit) : cachedData;
-          return {
-            ok: true,
-            payload: limited,
-            rows: limited.map(toCompactRow),
-            count: limited.length,
-            fromCache: true,
-            dataAgeMs,
-            lastUpdatedAt: cacheTimestamp || new Date().toISOString(),
-          };
-        }
-
-        // Stale-while-revalidate: serve the stale payload now (bounded by the
-        // Redis envelope TTL — never older than the last successful rebuild +
-        // CACHE_TTL) and refresh the cache via the shared rebuild. Blocking
-        // on the rebuild here was what turned rebuild storms into 60s+ waits.
-        console.log(`⚠️ Cache data is stale (${Math.floor(dataAgeMs / 1000)}s old) - serving stale + rebuilding in background`);
-        void startHeatmapRebuild({ timeframe, forceRefresh: false, debug }).then((res) => {
-          if (!res.ok) console.warn('⚠️ Heatmap background rebuild failed:', res.error);
-        }).catch((err) => {
-          console.warn('⚠️ Heatmap background rebuild error:', err);
-        });
-        const limited = requestedLimit ? cachedData.slice(0, requestedLimit) : cachedData;
-        return {
-          ok: true,
-          payload: limited,
-          rows: limited.map(toCompactRow),
-          count: limited.length,
-          fromCache: true,
-          dataAgeMs,
-          lastUpdatedAt: cacheTimestamp || new Date().toISOString(),
-        };
+      const candidate = Array.isArray(cachedEnvelope) ? cachedEnvelope : (cachedEnvelope as any)?.data;
+      if (Array.isArray(candidate) && candidate.length > 0) {
+        cachedData = candidate as HeatmapPayloadRow[];
+        fetchedAtMs = !Array.isArray(cachedEnvelope) && typeof (cachedEnvelope as any)?.fetchedAt === 'number'
+          ? (cachedEnvelope as any).fetchedAt
+          : null;
       }
     } catch (cacheError) {
-      console.warn('⚠️ Cache read error, continuing with DB fetch:', cacheError);
+      console.warn('⚠️ Cache read error, checking in-memory fallback:', cacheError);
+    }
+
+    if (cachedData) {
+      const cacheTimestamp = (cachedData as any)?.[0]?._timestamp || null;
+      const dataAgeMs = cacheTimestamp ? Date.now() - new Date(cacheTimestamp).getTime() : Infinity;
+      const fetchAgeMs = fetchedAtMs ? Date.now() - fetchedAtMs : Infinity;
+
+      const rows = (memoryCache && fetchedAtMs && memoryCache.fetchedAt === fetchedAtMs)
+        ? memoryCache.rows
+        : cachedData.map(toCompactRow);
+
+      if (!memoryCache || (fetchedAtMs && memoryCache.fetchedAt !== fetchedAtMs)) {
+        memoryCache = {
+          fetchedAt: fetchedAtMs ?? Date.now(),
+          payload: cachedData,
+          rows,
+          dataTimestamp: cacheTimestamp,
+        };
+      }
+
+      if (dataAgeMs < MAX_DATA_AGE || fetchAgeMs < rebuildWindowMs) {
+        console.log(`✅ Heatmap cache hit - returning ${cachedData.length} companies (data age: ${Math.floor(dataAgeMs / 1000)}s, ${Date.now() - startTime}ms)`);
+        return buildCachedResult(cachedData, rows, cacheTimestamp, dataAgeMs, requestedLimit);
+      }
+
+      // Stale-while-revalidate: serve stale payload immediately and rebuild in background.
+      console.log(`⚠️ Cache data is stale (${Math.floor(dataAgeMs / 1000)}s old) - serving stale + rebuilding in background`);
+      void startHeatmapRebuild({ timeframe, forceRefresh: false, debug }).then((res) => {
+        if (!res.ok) console.warn('⚠️ Heatmap background rebuild failed:', res.error);
+      }).catch((err) => {
+        console.warn('⚠️ Heatmap background rebuild error:', err);
+      });
+      return buildCachedResult(cachedData, rows, cacheTimestamp, dataAgeMs, requestedLimit);
+    }
+
+    // 1b. Redis returned null/error — serve bounded in-memory fallback if present
+    // so a Redis outage/MISCONF never triggers 3-6s DB rebuilds on every hit.
+    if (memoryCache && memoryCache.payload.length > 0 && (Date.now() - memoryCache.fetchedAt) < MEMORY_FALLBACK_MAX_AGE_MS) {
+      const memDataAgeMs = memoryCache.dataTimestamp
+        ? Date.now() - new Date(memoryCache.dataTimestamp).getTime()
+        : Infinity;
+      console.warn(`⚠️ Redis heatmap cache miss — serving in-memory fallback (${Math.floor((Date.now() - memoryCache.fetchedAt) / 1000)}s old) + background rebuild`);
+      void startHeatmapRebuild({ timeframe, forceRefresh: false, debug }).then((res) => {
+        if (!res.ok) console.warn('⚠️ Heatmap background rebuild failed:', res.error);
+      }).catch((err) => {
+        console.warn('⚠️ Heatmap background rebuild error:', err);
+      });
+      return buildCachedResult(
+        memoryCache.payload,
+        memoryCache.rows,
+        memoryCache.dataTimestamp,
+        memDataAgeMs,
+        requestedLimit,
+      );
     }
   }
 
@@ -369,9 +436,16 @@ async function rebuildHeatmapData(opts: { timeframe: string; forceRefresh: boole
     // 13. Cache + return
     const lastUpdatedAt = transformResult.maxUpdatedAt ? transformResult.maxUpdatedAt.toISOString() : new Date().toISOString();
     const dataAgeMs = transformResult.maxUpdatedAt ? Date.now() - transformResult.maxUpdatedAt.getTime() : 0;
+    const fetchedAt = Date.now();
+    // Always populate in-process fallback even if Redis write fails.
+    memoryCache = { fetchedAt, payload, rows, dataTimestamp: lastUpdatedAt };
     try {
-      await setCachedData(CACHE_KEY, { fetchedAt: Date.now(), data: payload }, CACHE_TTL);
-      console.log(`✅ Heatmap data fetched from DB and cached: ${payload.length} companies (lastUpdated: ${lastUpdatedAt}) in ${Date.now() - startTime}ms`);
+      const wrote = await setCachedData(CACHE_KEY, { fetchedAt, data: payload }, CACHE_TTL);
+      if (wrote) {
+        console.log(`✅ Heatmap data fetched from DB and cached: ${payload.length} companies (lastUpdated: ${lastUpdatedAt}) in ${Date.now() - startTime}ms`);
+      } else {
+        console.warn(`⚠️ Heatmap Redis cache write returned false (serving from in-memory fallback): ${payload.length} companies in ${Date.now() - startTime}ms`);
+      }
     } catch (cacheError) {
       console.warn('⚠️ Error caching heatmap results:', cacheError);
       console.log(`✅ Heatmap data fetched from DB (cache failed): ${payload.length} companies (lastUpdated: ${lastUpdatedAt}) in ${Date.now() - startTime}ms`);
@@ -389,5 +463,27 @@ async function rebuildHeatmapData(opts: { timeframe: string; forceRefresh: boole
     };
   } finally {
     delete process.env.SILENT_PREVCLOSE_LOGS;
+  }
+}
+
+/**
+ * Safe SSR prefetch helper — fetches top `limit` compact rows within
+ * `timeoutMs`, returning `[]` on timeout or error so client hydration can
+ * still recover via /api/heatmap.
+ */
+export async function getInitialHeatmapRows(limit = 300, timeoutMs = 2500): Promise<Record<string, unknown>[]> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const result = await Promise.race([
+      getHeatmapData({ limit }),
+      new Promise<null>((resolve) => {
+        timer = setTimeout(() => resolve(null), timeoutMs);
+      }),
+    ]);
+    return result && result.ok ? result.rows : [];
+  } catch {
+    return [];
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }

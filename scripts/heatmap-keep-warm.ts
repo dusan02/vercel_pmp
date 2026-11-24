@@ -11,13 +11,14 @@
 const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3001';
 
 const ISR_WARM_PATHS = [
+  '/',
+  '/heatmap',
   '/brief',
   '/premarket-movers',
   '/gainers',
   '/losers',
   '/earnings',
   '/unusual-volume',
-  '/',
 ];
 
 async function main() {
@@ -27,8 +28,8 @@ async function main() {
   try {
     const res = await fetch(url, {
       headers: { 'Accept': 'application/json' },
-      // Short timeout — don't block if the server is busy
-      signal: AbortSignal.timeout(10000),
+      // Allow enough headroom for an occasional cold DB rebuild (~3-9s)
+      signal: AbortSignal.timeout(20000),
     });
 
     if (!res.ok) {

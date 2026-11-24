@@ -6,6 +6,7 @@ import { getMetricPage, METRIC_PAGES } from '@/lib/heatmap/metricPages';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 import MetricHeatmapClient from './MetricHeatmapClient';
 import { StandaloneHeader } from '@/components/StandaloneHeader';
+import { getInitialHeatmapRows } from '@/lib/heatmap/heatmapService';
 
 export const revalidate = 3600;
 
@@ -45,6 +46,7 @@ export default async function MetricHeatmapPage({ params }: { params: Promise<{ 
   };
 
   const others = METRIC_PAGES.filter((p) => p.slug !== def.slug);
+  const initialHeatmapData = await getInitialHeatmapRows(300, 2500);
 
   return (
     <>
@@ -72,7 +74,7 @@ export default async function MetricHeatmapPage({ params }: { params: Promise<{ 
 
           {/* Interactive heatmap preset to this metric — click a tile for its analysis */}
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden bg-black h-[65vh] min-h-[420px]">
-            <MetricHeatmapClient metric={def.metric} />
+            <MetricHeatmapClient metric={def.metric} initialHeatmapData={initialHeatmapData} />
           </div>
 
           {/* FAQ — visible copy + FAQPage schema above */}

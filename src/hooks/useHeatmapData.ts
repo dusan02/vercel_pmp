@@ -10,6 +10,8 @@ interface UseHeatmapDataProps {
   initialTimeframe?: 'day' | 'week' | 'month' | undefined;
   autoRefresh?: boolean | undefined;
   initialHeatmapData?: any[] | undefined;
+  /** Override delay (ms) before background refresh when SSR/cache data is already present. */
+  initialFetchDelayMs?: number | undefined;
   /** False = keep-alive tab is hidden — skip interval ticks, refetch on reactivation. */
   active?: boolean | undefined;
 }
@@ -121,6 +123,7 @@ export function useHeatmapData({
   initialTimeframe = 'day',
   autoRefresh = true,
   initialHeatmapData,
+  initialFetchDelayMs = 2000,
   active = true
 }: UseHeatmapDataProps = {}) {
   // Cache hook FIRST — so cachedData is available for synchronous state init below
@@ -366,9 +369,11 @@ export function useHeatmapData({
 
   // Initial load and auto-refresh
   useEffect(() => {
-    // If we have SSR data, delay the first fetch — the user already sees data.
-    // This avoids an immediate API call that would compete with other resources.
-    const initialDelay = (ssrData || cachedData) ? 2000 : 0;
+    // If we have SSR or fresh cache data, delay the first fetch so it doesn't
+    // compete with hydration/other resources. If we're displaying a stale
+    // localStorage placeholder without SSR data, refresh immediately (0ms).
+    const hasFreshInitial = Boolean(ssrData || (cachedData && !cachedData.isStale));
+    const initialDelay = hasFreshInitial ? initialFetchDelayMs : 0;
     const timer = setTimeout(() => fetchDataRef.current(false), initialDelay);
 
     let interval: ReturnType<typeof setInterval> | undefined;

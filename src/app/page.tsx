@@ -10,7 +10,7 @@ import { getSessionDateStr } from '@/lib/utils/timeUtils';
 import Link from 'next/link';
 import { getEligibleAnalysisTickers } from '@/lib/seo/eligibleTickers';
 import { getMoversData } from '@/services/movers/getMovers';
-import { getHeatmapData } from '@/lib/heatmap/heatmapService';
+import { getInitialHeatmapRows } from '@/lib/heatmap/heatmapService';
 import { prisma } from '@/lib/db/prisma';
 import { SsrFreshnessGuard } from '@/components/SsrFreshnessGuard';
 
@@ -128,14 +128,7 @@ export default async function Page() {
       ),
       // Heatmap via shared service — top 300 caps for fast SSR hydration;
       // client refreshes the full universe after mount.
-      withTimeout(
-        (async () => {
-          const result = await getHeatmapData({ limit: 300 });
-          return result.ok ? result.rows : [];
-        })(),
-        SSR_TIMEOUT_MS,
-        []
-      ),
+      getInitialHeatmapRows(300, SSR_TIMEOUT_MS),
     ]);
 
     if (stocksResult.status === 'fulfilled' && stocksResult.value) {

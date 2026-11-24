@@ -14,17 +14,22 @@ const getMaxAge = () => {
   if (typeof window === 'undefined') return 5 * 60 * 1000;
   return window.innerWidth <= 768 ? 10 * 60 * 1000 : 5 * 60 * 1000;
 };
-const LOCALSTORAGE_MAX_AGE = 5 * 60 * 1000; // Default, will be checked dynamically
+// Stale-while-revalidate window in localStorage: render previous snapshot
+// immediately on revisit instead of a blank spinner while refreshing.
+const STALE_FALLBACK_MAX_AGE = 24 * 60 * 60 * 1000;
 
 interface CachedHeatmapData {
   data: CompanyNode[];
   lastUpdated: string;
   timestamp: number;
   etag: string | null;
+  isStale?: boolean;
 }
 
 /**
- * Read cache from localStorage synchronously (safe for both SSR and CSR)
+ * Read cache from localStorage synchronously (safe for both SSR and CSR).
+ * Returns stale entries up to 24h flagged with `isStale: true` so the UI can
+ * paint immediately and trigger a background refresh instead of a spinner.
  */
 function readCacheSync(): CachedHeatmapData | null {
   if (typeof window === 'undefined') return null;
@@ -34,8 +39,8 @@ function readCacheSync(): CachedHeatmapData | null {
     const parsed: CachedHeatmapData = JSON.parse(cached);
     if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.data) || !parsed.data.length) return null;
     const age = Date.now() - (parsed.timestamp || 0);
-    if (age < 0 || age >= getMaxAge()) return null;
-    return parsed;
+    if (age < 0 || age >= STALE_FALLBACK_MAX_AGE) return null;
+    return age < getMaxAge() ? parsed : { ...parsed, isStale: true };
   } catch {
     return null;
   }
