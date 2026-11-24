@@ -120,6 +120,147 @@ describe('GET /api/indices/market', () => {
     expect(res.headers.get('cache-control')).toContain('s-maxage=30');
   });
 
+  it('rejects stale yesterday TradingView premarket_change and uses CNBC PRE_MKT', async () => {
+    (detectSession as jest.Mock).mockReturnValue('pre');
+    // 2026-11-24T09:13:00Z = 04:13 AM EST (Tuesday)
+    jest.setSystemTime(new Date('2026-11-24T09:13:00Z'));
+
+    // Yesterday's premarket timestamp (2026-11-23 04:00 AM EST)
+    const yesterdayPreSec = Math.floor(new Date('2026-11-23T09:00:00Z').getTime() / 1000);
+    const yesterdayLiveSec = Math.floor(new Date('2026-11-23T14:30:00Z').getTime() / 1000);
+
+    global.fetch = jest.fn((url: any) => {
+      const urlStr = String(url);
+
+      if (urlStr.includes('quote.cnbc.com')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            FormattedQuoteResult: {
+              FormattedQuote: [
+                { symbol: '.SPX', code: 0, last: '7,237.17', previous_day_closing: '7,237.17', change: '+326.78', change_pct: '+4.73%', last_time: '2026-11-23' },
+                { symbol: '.IXIC', code: 0, last: '24,089.56', previous_day_closing: '24,089.56', change: '+1,471.82', change_pct: '+6.51%', last_time: '2026-11-23' },
+                { symbol: '.DJI', code: 0, last: '49,595.31', previous_day_closing: '49,595.31', change: '+1,447.98', change_pct: '+3.01%', last_time: '2026-11-23' },
+                {
+                  symbol: 'SPY', code: 0, last: '722.29', previous_day_closing: '722.29', last_time: '2026-11-23',
+                  ExtendedMktQuote: { type: 'PRE_MKT', last: '719.64', change_pct: '-0.37%', last_time: '2026-11-24T04:13:00.000-0500' },
+                },
+                {
+                  symbol: 'QQQ', code: 0, last: '651.03', previous_day_closing: '651.03', last_time: '2026-11-23',
+                  ExtendedMktQuote: { type: 'PRE_MKT', last: '644.89', change_pct: '-0.94%', last_time: '2026-11-24T04:13:00.000-0500' },
+                },
+                {
+                  symbol: 'DIA', code: 0, last: '495.80', previous_day_closing: '495.80', last_time: '2026-11-23',
+                  ExtendedMktQuote: { type: 'PRE_MKT', last: '495.00', change_pct: '-0.16%', last_time: '2026-11-24T04:12:00.000-0500' },
+                },
+              ],
+            },
+          }),
+        });
+      }
+
+      if (urlStr.includes('scanner.tradingview.com')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            data: [
+              { s: 'SP:SPX', d: ['SPX', 7237.17, 4.73, 326.78, null, null, null, null, null, null, yesterdayLiveSec, null, null] },
+              { s: 'NASDAQ:IXIC', d: ['IXIC', 24089.56, 6.51, 1471.82, null, null, null, null, null, null, yesterdayLiveSec, null, null] },
+              { s: 'DJ:DJI', d: ['DJI', 49595.31, 3.01, 1447.98, null, null, null, null, null, null, yesterdayLiveSec, null, null] },
+              { s: 'AMEX:SPY', d: ['SPY', 722.29, 4.71, 32.48, 724.39, 5.01, 34.58, null, null, null, yesterdayLiveSec, yesterdayPreSec, yesterdayLiveSec] },
+              { s: 'NASDAQ:QQQ', d: ['QQQ', 651.03, 7.00, 42.58, 656.19, 7.85, 47.74, null, null, null, yesterdayLiveSec, yesterdayPreSec, yesterdayLiveSec] },
+              { s: 'AMEX:DIA', d: ['DIA', 495.80, 3.06, 14.72, 494.23, 2.73, 13.15, null, null, null, yesterdayLiveSec, yesterdayPreSec, yesterdayLiveSec] },
+            ],
+          }),
+        });
+      }
+
+      if (urlStr.includes('query1.finance.yahoo.com')) {
+        const barTs = Math.floor(new Date('2026-11-24T09:10:00Z').getTime() / 1000);
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            chart: {
+              result: [
+                {
+                  meta: { regularMarketPrice: 722.29, chartPreviousClose: 689.81 },
+                  timestamp: [barTs],
+                  indicators: { quote: [{ close: [719.84] }] },
+                },
+              ],
+            },
+          }),
+        });
+      }
+
+      return Promise.reject(new Error(`Unhandled fetch: ${urlStr}`));
+    }) as any;
+
+    const res = await GET();
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+    expect(json.SPX.percentChange).toBe(-0.37);
+    expect(json.SPX.price).toBe(7210.39);
+    expect(json.IXIC.percentChange).toBe(-0.94);
+    expect(json.DJI.percentChange).toBe(-0.16);
+  });
+
+  it('falls back to today Yahoo 5m premarket bars (using regularMarketPrice, not 2-day-old previousClose) when CNBC fails and TV is stale', async () => {
+    (detectSession as jest.Mock).mockReturnValue('pre');
+    jest.setSystemTime(new Date('2026-11-24T09:13:00Z'));
+
+    const yesterdayPreSec = Math.floor(new Date('2026-11-23T09:00:00Z').getTime() / 1000);
+    const yesterdayLiveSec = Math.floor(new Date('2026-11-23T14:30:00Z').getTime() / 1000);
+
+    global.fetch = jest.fn((url: any) => {
+      const urlStr = String(url);
+
+      if (urlStr.includes('quote.cnbc.com')) {
+        return Promise.resolve({ ok: false, status: 503 });
+      }
+
+      if (urlStr.includes('scanner.tradingview.com')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            data: [
+              { s: 'SP:SPX', d: ['SPX', 7237.17, 4.73, 326.78, null, null, null, null, null, null, yesterdayLiveSec, null, null] },
+              { s: 'AMEX:SPY', d: ['SPY', 722.29, 4.71, 32.48, 724.39, 5.01, 34.58, null, null, null, yesterdayLiveSec, yesterdayPreSec, null] },
+            ],
+          }),
+        });
+      }
+
+      if (urlStr.includes('query1.finance.yahoo.com')) {
+        const barTs = Math.floor(new Date('2026-11-24T09:10:00Z').getTime() / 1000);
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            chart: {
+              result: [
+                {
+                  meta: { regularMarketPrice: 722.29, chartPreviousClose: 689.81 },
+                  timestamp: [barTs],
+                  indicators: { quote: [{ close: [715.07] }] },
+                },
+              ],
+            },
+          }),
+        });
+      }
+
+      return Promise.reject(new Error(`Unhandled fetch: ${urlStr}`));
+    }) as any;
+
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    // 715.07 / 722.29 - 1 = -1.00%
+    expect(json.SPX.percentChange).toBe(-1);
+    expect(json.SPX.previousClose).toBe(7237.17);
+  });
+
   it('uses cash index quotes and regular bars during live session', async () => {
     (detectSession as jest.Mock).mockReturnValue('live');
 
@@ -169,5 +310,120 @@ describe('GET /api/indices/market', () => {
     expect(json.SPX.price).toBe(7560.0);
     expect(json.SPX.percentChange).toBe(0.8);
     expect(json.SPX.dollarChange).toBe(60.0);
+  });
+
+  it('rejects stale yesterday TradingView bar during live open and uses CNBC', async () => {
+    (detectSession as jest.Mock).mockReturnValue('live');
+    jest.setSystemTime(new Date('2026-11-24T14:35:00Z')); // 09:35 AM EST
+
+    const yesterdayLiveSec = Math.floor(new Date('2026-11-23T14:30:00Z').getTime() / 1000);
+
+    global.fetch = jest.fn((url: any) => {
+      const urlStr = String(url);
+
+      if (urlStr.includes('quote.cnbc.com')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            FormattedQuoteResult: {
+              FormattedQuote: [
+                { symbol: '.SPX', code: 0, last: '7,210.00', previous_day_closing: '7,237.17', change: '-27.17', change_pct: '-0.38%', last_time: '2026-11-24T09:35:00.000-0500' },
+              ],
+            },
+          }),
+        });
+      }
+
+      if (urlStr.includes('scanner.tradingview.com')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            data: [
+              { s: 'SP:SPX', d: ['SPX', 7237.17, 4.73, 326.78, null, null, null, null, null, null, yesterdayLiveSec, null, null] },
+            ],
+          }),
+        });
+      }
+
+      if (urlStr.includes('query1.finance.yahoo.com')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            chart: {
+              result: [
+                {
+                  meta: { regularMarketPrice: 7210.0, regularMarketTime: Math.floor(new Date('2026-11-24T14:35:00Z').getTime() / 1000), chartPreviousClose: 7237.17 },
+                  timestamp: [Math.floor(new Date('2026-11-24T14:35:00Z').getTime() / 1000)],
+                  indicators: { quote: [{ close: [7210.0] }] },
+                },
+              ],
+            },
+          }),
+        });
+      }
+
+      return Promise.reject(new Error(`Unhandled fetch: ${urlStr}`));
+    }) as any;
+
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.SPX.price).toBe(7210.0);
+    expect(json.SPX.percentChange).toBe(-0.38);
+    expect(json.SPX.dollarChange).toBe(-27.17);
+  });
+
+  it('rejects stale yesterday TradingView postmarket_time during after-hours', async () => {
+    (detectSession as jest.Mock).mockReturnValue('after');
+    jest.setSystemTime(new Date('2026-11-24T21:05:00Z')); // 16:05 EST
+
+    const todayLiveSec = Math.floor(new Date('2026-11-24T14:30:00Z').getTime() / 1000);
+    const yesterdayPostSec = Math.floor(new Date('2026-11-23T21:00:00Z').getTime() / 1000);
+
+    global.fetch = jest.fn((url: any) => {
+      const urlStr = String(url);
+
+      if (urlStr.includes('quote.cnbc.com')) {
+        return Promise.resolve({ ok: false, status: 503 });
+      }
+
+      if (urlStr.includes('scanner.tradingview.com')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            data: [
+              { s: 'SP:SPX', d: ['SPX', 7220.0, -0.24, -17.17, null, null, null, null, null, null, todayLiveSec, null, null] },
+              { s: 'AMEX:SPY', d: ['SPY', 720.5, -0.25, -1.79, null, null, null, 724.18, 0.26, 1.89, todayLiveSec, null, yesterdayPostSec] },
+            ],
+          }),
+        });
+      }
+
+      if (urlStr.includes('query1.finance.yahoo.com')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            chart: {
+              result: [
+                {
+                  meta: { regularMarketPrice: 7220.0, regularMarketTime: todayLiveSec, chartPreviousClose: 7237.17 },
+                  timestamp: [todayLiveSec],
+                  indicators: { quote: [{ close: [7220.0] }] },
+                },
+              ],
+            },
+          }),
+        });
+      }
+
+      return Promise.reject(new Error(`Unhandled fetch: ${urlStr}`));
+    }) as any;
+
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.SPX.session).toBe('after');
+    expect(json.SPX.price).toBe(7220.0);
+    expect(json.SPX.ah).toBeNull();
   });
 });

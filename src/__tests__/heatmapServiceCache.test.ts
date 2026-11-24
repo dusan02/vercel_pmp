@@ -100,4 +100,44 @@ describe('heatmapService L1/fallback cache & SSR helper', () => {
     const rows = await freshHelper(300, 20);
     expect(rows).toEqual([]);
   });
+
+  test('resets single-flight inflightRebuild if a rebuild hangs past timeout', async () => {
+    jest.resetModules();
+    jest.useFakeTimers();
+
+    const hangFetchTickers = jest.fn(() => new Promise(() => { /* never resolves */ }));
+    jest.doMock('@/lib/redis/operations', () => ({
+      getCachedData: jest.fn().mockResolvedValue(null),
+      setCachedData: jest.fn(),
+    }));
+    jest.doMock('@/lib/heatmap/heatmapFetcher', () => ({
+      fetchTickers: hangFetchTickers,
+      fetchPriceData: jest.fn(),
+      fetchCachedStockData: jest.fn(),
+      fetchPrevCloseOnDemand: jest.fn(),
+      fetchWeekRefCloses: jest.fn(),
+      fetchLastSessionRefs: jest.fn(),
+      fetchPerfRefCloses: jest.fn(),
+      computeDateBoundaries: jest.fn(),
+      deduplicateSessionPrices: jest.fn(),
+      deduplicateDailyRefs: jest.fn(),
+    }));
+
+    const { getHeatmapData: freshGetHeatmapData } = await import('@/lib/heatmap/heatmapService');
+    const firstPromise = freshGetHeatmapData({ limit: 5 });
+
+    // Advance past 30s rebuild timeout
+    await jest.advanceTimersByTimeAsync(30_000);
+    const firstRes = await firstPromise;
+    expect(firstRes.ok).toBe(false);
+    expect(hangFetchTickers).toHaveBeenCalledTimes(1);
+
+    // Next call must start a fresh rebuild rather than awaiting the wedged promise
+    const secondPromise = freshGetHeatmapData({ limit: 5 });
+    await jest.advanceTimersByTimeAsync(30_000);
+    await secondPromise;
+    expect(hangFetchTickers).toHaveBeenCalledTimes(2);
+
+    jest.useRealTimers();
+  });
 });

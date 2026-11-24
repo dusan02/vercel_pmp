@@ -100,11 +100,25 @@ export type HeatmapServiceResult =
  * instead of stampeding SQLite/Redis (was the cause of multi-second
  * queueing and nginx 504s during pre-market open rebuild bursts).
  */
+const REBUILD_TIMEOUT_MS = 30_000;
 let inflightRebuild: Promise<HeatmapServiceResult> | null = null;
 
 function startHeatmapRebuild(opts: { timeframe: string; forceRefresh: boolean; debug: boolean }): Promise<HeatmapServiceResult> {
   if (!inflightRebuild) {
-    inflightRebuild = rebuildHeatmapData(opts).finally(() => { inflightRebuild = null; });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeoutPromise = new Promise<HeatmapServiceResult>((resolve) => {
+      timer = setTimeout(() => {
+        console.error(`❌ Heatmap rebuild timed out after ${REBUILD_TIMEOUT_MS}ms — resetting single-flight lock`);
+        resolve({ ok: false, kind: 'db_error', error: 'Heatmap rebuild timed out' });
+      }, REBUILD_TIMEOUT_MS);
+      if (typeof timer.unref === 'function') timer.unref();
+    });
+
+    const p = Promise.race([rebuildHeatmapData(opts), timeoutPromise]).finally(() => {
+      if (timer) clearTimeout(timer);
+      if (inflightRebuild === p) inflightRebuild = null;
+    });
+    inflightRebuild = p;
   }
   return inflightRebuild;
 }
