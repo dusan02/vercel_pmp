@@ -11,14 +11,14 @@ export function useMobilePrefetch(activeView: string) {
     const prefetchAPIs = () => {
       if (activeView !== 'screener') {
         fetch('/api/stocks?getAll=true&limit=50', {
-          cache: 'force-cache',
+          cache: 'default',
           priority: 'low' as RequestPriority
         }).catch(() => {});
       }
 
       if (activeView !== 'earnings') {
         fetch('/api/earnings/today', {
-          cache: 'force-cache',
+          cache: 'default',
           priority: 'low' as RequestPriority
         }).catch(() => {});
       }

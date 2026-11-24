@@ -45,38 +45,54 @@ export const MobileHeatmapHeader: React.FC<MobileHeatmapHeaderProps> = ({
 
     <div className="flex-1" />
 
-    {/* Metric dropdown */}
+    {/* Metric dropdown — custom visual pill with invisible native <select> overlay
+        so Chromium/Safari never render a duplicate shadow-DOM triangle next to the chevron. */}
     {onMetricChange && (
-      <select
-        value={metric}
-        onChange={(e) => onMetricChange(e.target.value as HeatmapMetric)}
-        aria-label="Heatmap metric"
-        className="appearance-none"
+      <div
+        className="relative inline-flex items-center gap-1.5"
         style={{
-          height: 28, paddingLeft: 10, paddingRight: 22, borderRadius: 8,
-          fontSize: 11, fontWeight: 700, cursor: 'pointer',
+          height: 28,
+          paddingLeft: 10,
+          paddingRight: 8,
+          borderRadius: 8,
           backgroundColor: 'rgba(255,255,255,0.06)',
           border: '1px solid rgba(255,255,255,0.1)',
           color: 'rgba(255,255,255,0.85)',
-          appearance: 'none',
-          WebkitAppearance: 'none',
-          MozAppearance: 'none',
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5' viewBox='0 0 9 5'%3E%3Cpath d='M1 1l3.5 3.5L8 1' stroke='%23ffffff' stroke-opacity='0.6' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'right 7px center',
-          WebkitTapHighlightColor: 'transparent',
         }}
       >
-        {HEATMAP_METRIC_GROUPS.map((g) => (
-          <optgroup key={g} label={g}>
-            {HEATMAP_METRICS.filter((m) => m.group === g).map((m) => (
-              <option key={m.id} value={m.id} style={{ color: '#1e293b', background: '#fff' }}>
-                {m.short ?? m.label}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
+        <span className="pointer-events-none text-[11px] font-bold leading-none whitespace-nowrap">
+          {(() => {
+            const cur = HEATMAP_METRICS.find((m) => m.id === metric);
+            return cur?.short ?? cur?.label ?? metric;
+          })()}
+        </span>
+        <svg
+          className="pointer-events-none shrink-0 opacity-60"
+          width="9"
+          height="5"
+          viewBox="0 0 9 5"
+          aria-hidden="true"
+        >
+          <path d="M1 1l3.5 3.5L8 1" stroke="#ffffff" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+        </svg>
+        <select
+          value={metric}
+          onChange={(e) => onMetricChange(e.target.value as HeatmapMetric)}
+          aria-label="Heatmap metric"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
+        >
+          {HEATMAP_METRIC_GROUPS.map((g) => (
+            <optgroup key={g} label={g}>
+              {HEATMAP_METRICS.filter((m) => m.group === g).map((m) => (
+                <option key={m.id} value={m.id} style={{ color: '#1e293b', background: '#fff' }}>
+                  {m.short ?? m.label}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </div>
     )}
 
     {/* Login */}
