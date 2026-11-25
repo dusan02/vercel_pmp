@@ -73,10 +73,10 @@ export async function POST(request: NextRequest) {
 async function validateTickerCount(tickers: any[]) {
     const totalTickers = tickers.length;
     
-    // Count by market cap tiers
-    const largeCap = tickers.filter(t => t.lastMarketCap && t.lastMarketCap > 100000).length;
-    const midCap = tickers.filter(t => t.lastMarketCap && t.lastMarketCap > 10000 && t.lastMarketCap <= 100000).length;
-    const smallCap = tickers.filter(t => t.lastMarketCap && t.lastMarketCap <= 10000).length;
+    // Count by market cap tiers (Ticker.lastMarketCap is stored in BILLIONS)
+    const largeCap = tickers.filter(t => t.lastMarketCap && t.lastMarketCap > 100).length;
+    const midCap = tickers.filter(t => t.lastMarketCap && t.lastMarketCap > 10 && t.lastMarketCap <= 100).length;
+    const smallCap = tickers.filter(t => t.lastMarketCap && t.lastMarketCap <= 10).length;
     
     return {
         total: totalTickers,
@@ -167,8 +167,8 @@ async function validateDataConsistency(tickers: any[]) {
             });
         }
         
-        // Check for extremely high values
-        if (ticker.lastMarketCap && ticker.lastMarketCap > 10000000) { // > $10T
+        // Check for extremely high values (Ticker.lastMarketCap is in BILLIONS: 10000 = $10T)
+        if (ticker.lastMarketCap && ticker.lastMarketCap > 10000) { // > $10T
             inconsistencies.push({
                 symbol: ticker.symbol,
                 type: 'extreme_market_cap',

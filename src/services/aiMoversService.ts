@@ -55,15 +55,16 @@ export class AiMoversService {
             topSymbols = tickers.map(t => t.symbol);
         }
 
-        // Always prioritize Mega-Cap movers ($50B+) with significant moves (|changePct| >= 3% or |marketCapDiff| >= $15B)
+        // Always prioritize Mega-Cap movers ($50B+) with significant moves (|changePct| >= 3% or |marketCapDiff| >= $15B).
+        // Note: Ticker.lastMarketCap and Ticker.lastMarketCapDiff are stored in BILLIONS (50 = $50B, 15 = $15B).
         const megaCaps = await prisma.ticker.findMany({
             where: {
-                lastMarketCap: { gte: 50_000_000_000 },
+                lastMarketCap: { gte: 50 },
                 OR: [
                     { lastChangePct: { gte: 3.0 } },
                     { lastChangePct: { lte: -3.0 } },
-                    { lastMarketCapDiff: { gte: 15_000_000_000 } },
-                    { lastMarketCapDiff: { lte: -15_000_000_000 } },
+                    { lastMarketCapDiff: { gte: 15 } },
+                    { lastMarketCapDiff: { lte: -15 } },
                 ]
             },
             select: { symbol: true },
@@ -86,7 +87,7 @@ export class AiMoversService {
                     { latestMoversZScore: { lte: -AI_ZSCORE_THRESHOLD } },
                     { latestMoversRVOL: { gte: 2.0 } },
                     {
-                        lastMarketCap: { gte: 50_000_000_000 },
+                        lastMarketCap: { gte: 50 },
                         OR: [
                             { lastChangePct: { gte: 3.0 } },
                             { lastChangePct: { lte: -3.0 } }
@@ -216,7 +217,7 @@ PRICE ACTION:
 - Today's move: ${changePctStr} (${direction})
 - Z-score: ${zStr} standard deviations from 20-day mean (extreme = unusual)
 - Relative Volume (RVOL): ${rvolStr} of normal daily volume
-${lastMarketCap && lastMarketCap >= 50_000_000_000 ? `- Market Cap: $${(lastMarketCap / 1e9).toFixed(1)}B (Mega/Large Cap)` : ''}
+${lastMarketCap && lastMarketCap >= 50 ? `- Market Cap: $${lastMarketCap.toFixed(1)}B (Mega/Large Cap)` : ''}
 
 RECENT NEWS (last 6 hours):
 ${newsSummary}
@@ -279,7 +280,7 @@ Return strictly valid JSON:
             reason = `${changePctStr} on ${rvolStr} relative volume with no immediate news – elevated institutional interest in ${sector || 'sector'}.`;
             category = 'Technical';
             aiConfidence = 60;
-        } else if (lastMarketCap && lastMarketCap >= 50_000_000_000) {
+        } else if (lastMarketCap && lastMarketCap >= 50) {
             reason = `Mega-cap ${direction}ward move of ${changePctStr} driven by broader ${sector || 'market'} sentiment without specific company news.`;
             category = 'Macro';
             aiConfidence = 65;
@@ -299,7 +300,7 @@ Return strictly valid JSON:
         ].filter(Boolean).join(' · ');
         const catalyst = absZ >= 4
             ? 'extreme move, no clear catalyst'
-            : (lastMarketCap && lastMarketCap >= 50_000_000_000)
+            : (lastMarketCap && lastMarketCap >= 50)
                 ? 'mega-cap momentum, broader sentiment'
                 : 'elevated activity, no clear catalyst';
         const sectorTag = (sector || 'Stocks').replace(/[^A-Za-z]/g, '');
