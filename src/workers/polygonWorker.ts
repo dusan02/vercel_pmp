@@ -122,15 +122,31 @@ async function runRefsScheduler(apiKey: string): Promise<void> {
 
 /**
  * Snapshot mode: continuous ingestion loop (every 60s).
+ * Includes a hard watchdog so a hung HTTP/DB/Redis promise forces an exit
+ * and lets PM2 immediately restart the worker instead of silently stalling.
  */
+const INGEST_LOOP_WATCHDOG_MS = parseInt(
+  process.env.WORKER_WATCHDOG_MS || String(12 * 60 * 1000),
+  10
+);
+
 function runSnapshotLoop(apiKey: string): void {
   const runIngestLoop = async () => {
     const loopStartTime = Date.now();
+    const watchdog = setTimeout(() => {
+      const stuckSec = Math.round((Date.now() - loopStartTime) / 1000);
+      console.error(
+        `💀 Watchdog: ingestLoop hung for ${stuckSec}s (limit ${Math.round(INGEST_LOOP_WATCHDOG_MS / 1000)}s) — exiting for PM2 restart`
+      );
+      process.exit(1);
+    }, INGEST_LOOP_WATCHDOG_MS);
+
     try {
       await ingestLoop(apiKey);
     } catch (error) {
       console.error('Unhandled error in ingestLoop:', error);
     } finally {
+      clearTimeout(watchdog);
       const elapsed = Date.now() - loopStartTime;
       const etNow = nowET();
       const etParts = toET(etNow);

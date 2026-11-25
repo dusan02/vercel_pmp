@@ -28,6 +28,21 @@ import { maybeNotifyTrackedMove } from '@/services/alerts/trackedMoveAlerts';
 import { checkStaticLock, resolvePrevCloses, loadRegularCloses, loadFrozenPrices } from './prevCloseResolver';
 import { batchLoadLastChangePct, batchLoadTickerStats } from './batchStatsLoader';
 
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([
+    promise.finally(() => {
+      if (timer) clearTimeout(timer);
+    }),
+    new Promise<T>((resolve) => {
+      timer = setTimeout(() => resolve(fallback), ms);
+    }),
+  ]);
+}
+
+const SHARES_FETCH_TIMEOUT_MS = 15_000;
+const SHARES_FETCH_CONCURRENCY = 5;
+
 export async function ingestBatch(
   tickers: string[],
   apiKey: string,
@@ -90,33 +105,56 @@ export async function ingestBatch(
     }
   }
 
-  // Batch fetch sharesOutstanding pre tickery, kt. majú prevClose ale chýbajú im shares.
-  // marketCapDiff je 0 keď prevClose chýba (pozri riadok nižšie), takže shares
-  // sú potrebné len pre tickery kde prevClose existuje.
+  // Batch load sharesOutstanding from DB first (single query, uses arbitrated Ticker.sharesOutstanding).
+  // Only fall back to Polygon /v3/reference/tickers for symbols missing shares in DB,
+  // with bounded concurrency and a hard timeout so a stalled HTTP call can never hang the worker.
   const symbolsNeedingShares = snapshots.map(s => s.ticker).filter(symbol => {
     return prevCloseMap.has(symbol);
   });
 
   const sharesMap = new Map<string, number>();
   if (symbolsNeedingShares.length > 0) {
-    console.log(`🔄 Batch fetching sharesOutstanding for ${symbolsNeedingShares.length} tickers...`);
-    const sharesPromises = symbolsNeedingShares.map(async (symbol) => {
-      try {
-        const shares = await getSharesOutstanding(symbol);
-        return { symbol, shares };
-      } catch (error) {
-        console.warn(`Failed to fetch shares for ${symbol}:`, error);
-        return { symbol, shares: 0 };
+    try {
+      const dbShares = await prisma.ticker.findMany({
+        where: { symbol: { in: symbolsNeedingShares } },
+        select: { symbol: true, sharesOutstanding: true }
+      });
+      for (const row of dbShares) {
+        if (row.sharesOutstanding && row.sharesOutstanding > 0) {
+          sharesMap.set(row.symbol, row.sharesOutstanding);
+        }
       }
-    });
+    } catch (err) {
+      console.warn('⚠️ Failed to batch-load sharesOutstanding from DB, falling back to Polygon:', err);
+    }
 
-    const sharesResults = await Promise.all(sharesPromises);
-    sharesResults.forEach(({ symbol, shares }) => {
-      if (shares > 0) {
-        sharesMap.set(symbol, shares);
-      }
-    });
-    console.log(`✅ Batch fetched ${sharesMap.size} sharesOutstanding values`);
+    const missingShareSymbols = symbolsNeedingShares.filter(s => !sharesMap.has(s));
+    if (missingShareSymbols.length > 0) {
+      console.log(`🔄 Fetching missing sharesOutstanding from Polygon for ${missingShareSymbols.length}/${symbolsNeedingShares.length} tickers...`);
+      const sharesResults = await processBatchWithConcurrency(
+        missingShareSymbols,
+        async (symbol) => {
+          try {
+            const shares = await withTimeout(
+              getSharesOutstanding(symbol),
+              SHARES_FETCH_TIMEOUT_MS,
+              0
+            );
+            return { symbol, shares };
+          } catch (error) {
+            console.warn(`Failed to fetch shares for ${symbol}:`, error);
+            return { symbol, shares: 0 };
+          }
+        },
+        SHARES_FETCH_CONCURRENCY
+      );
+      sharesResults.forEach(({ symbol, shares }) => {
+        if (shares > 0) {
+          sharesMap.set(symbol, shares);
+        }
+      });
+    }
+    console.log(`✅ Resolved ${sharesMap.size}/${symbolsNeedingShares.length} sharesOutstanding values (${symbolsNeedingShares.length - missingShareSymbols.length} DB, ${missingShareSymbols.length} fallback)`);
   }
 
   // Get pricing state (for freeze mechanism)
@@ -169,7 +207,11 @@ export async function ingestBatch(
         // Get batch-fetched shares
         let shares = sharesMap.get(symbol) || 0;
         if (shares === 0) {
-          shares = await getSharesOutstanding(symbol, normalized.price);
+          shares = await withTimeout(
+            getSharesOutstanding(symbol, normalized.price),
+            SHARES_FETCH_TIMEOUT_MS,
+            0
+          );
         }
 
         const cachedLastChangePct = lastChangePctMap.get(symbol);
