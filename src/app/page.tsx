@@ -126,9 +126,9 @@ export default async function Page() {
         SSR_TIMEOUT_MS,
         []
       ),
-      // Heatmap via shared service — top 300 caps for fast SSR hydration;
-      // client refreshes the full universe after mount.
-      getInitialHeatmapRows(300, SSR_TIMEOUT_MS),
+      // Heatmap via shared service — full universe in slim SSR format so
+      // initial treemap geometry matches /api/heatmap with zero tile-size jump.
+      getInitialHeatmapRows(null, SSR_TIMEOUT_MS),
     ]);
 
     if (stocksResult.status === 'fulfilled' && stocksResult.value) {

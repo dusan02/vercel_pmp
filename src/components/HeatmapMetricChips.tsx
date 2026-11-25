@@ -37,10 +37,12 @@ export function HeatmapMetricChips({
     setMounted(true);
   }, []);
 
-  // Render placeholder during SSR to avoid hydration mismatch
+  // Render placeholder during SSR to avoid hydration mismatch.
+  // Match the 2-row horizontal bar height (~46px) so mount doesn't shift the heatmap down.
   if (!mounted) {
+    const placeholderH = isVertical ? 'h-7' : 'h-[46px]';
     return (
-      <div className={`h-7 rounded-lg animate-pulse ${isDark ? 'bg-slate-800/60' : 'bg-slate-200 dark:bg-slate-800/60'} ${className}`} aria-hidden="true" />
+      <div className={`${placeholderH} rounded-lg animate-pulse ${isDark ? 'bg-slate-800/60' : 'bg-slate-200 dark:bg-slate-800/60'} ${className}`} aria-hidden="true" />
     );
   }
 

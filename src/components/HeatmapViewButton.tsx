@@ -21,15 +21,12 @@ export function HeatmapViewButton({ className = '', overlay = false }: HeatmapVi
   const [isNavigating, setIsNavigating] = useState(false);
   const [hasPrefetched, setHasPrefetched] = useState(false);
 
-  // Prefetch route + warm HTTP cache on mount
+  // Prefetch /heatmap route on desktop mount (heatmap data itself is already
+  // fetched and cached in localStorage by ResponsiveMarketHeatmap right below —
+  // firing a separate /api/heatmap?metric=percent request duplicated ~580KB).
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
     router.prefetch('/heatmap');
-    // Real GET so the browser HTTP cache is populated for the heatmap page
-    fetch('/api/heatmap?timeframe=day&metric=percent', {
-      method: 'GET',
-      cache: 'default',
-      priority: 'low',
-    } as RequestInit).catch(() => {});
     setHasPrefetched(true);
   }, [router]);
 

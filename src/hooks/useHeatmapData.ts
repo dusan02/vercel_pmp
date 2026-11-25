@@ -123,21 +123,35 @@ export function useHeatmapData({
   initialTimeframe = 'day',
   autoRefresh = true,
   initialHeatmapData,
-  initialFetchDelayMs = 2000,
+  initialFetchDelayMs = 500,
   active = true
 }: UseHeatmapDataProps = {}) {
   // Cache hook FIRST — so cachedData is available for synchronous state init below
   const { cachedData, isLoading: cacheLoading, saveCache } = useHeatmapCache();
 
-  // Transform SSR initial data (compact rows format) to CompanyNode[]
+  // Transform SSR initial data (compact rows format) to CompanyNode[],
+  // backfilling secondary metrics from localStorage cache when available so
+  // returning users with a non-default saved metric (e.g. P/E, Health) don't
+  // see neutral gray tiles before the background /api/heatmap refresh lands.
   const ssrData = useMemo(() => {
     if (!initialHeatmapData || !Array.isArray(initialHeatmapData) || initialHeatmapData.length === 0) return null;
+    const cachedBySymbol = cachedData?.data
+      ? new Map(cachedData.data.map((c) => [c.symbol.toUpperCase(), c]))
+      : null;
     const companies: CompanyNode[] = [];
     for (const row of initialHeatmapData) {
       const node = mapCompactRow(row);
-      if (node) companies.push(node);
+      if (!node) continue;
+      const prev = cachedBySymbol?.get(node.symbol.toUpperCase());
+      if (prev) {
+        const definedEntries = Object.entries(node).filter(([, v]) => v !== undefined);
+        companies.push({ ...prev, ...(Object.fromEntries(definedEntries) as Partial<CompanyNode>) });
+      } else {
+        companies.push(node);
+      }
     }
     return companies.length > 0 ? companies : null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialHeatmapData]);
 
   // State — initialized from SSR data or cache synchronously (no useEffect needed for initial data)
@@ -213,10 +227,13 @@ export function useHeatmapData({
         url.searchParams.set('force', 'true');
       }
 
-      // OPTIMIZATION (mobile): Request fewer items for MobileTreemap (we only render a small subset anyway)
-      if (isMobile) {
-        // Big enough to cover top market cap + a bit of tail, but much smaller than 3000
-        url.searchParams.set('limit', '250');
+      // OPTIMIZATION (mobile): Match prepareMobileTreemapData maxTiles (500) so
+      // SSR → client refresh keeps the exact same company subset without a layout jump.
+      const mobileViewport = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(max-width: 767px)').matches
+        : isMobile;
+      if (mobileViewport) {
+        url.searchParams.set('limit', '500');
       }
 
       const headers: HeadersInit = {

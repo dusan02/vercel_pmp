@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ResponsiveMarketHeatmap } from '@/components/ResponsiveMarketHeatmap';
 import { useHeatmapMetric } from '@/hooks/useHeatmapMetric';
@@ -45,30 +45,26 @@ export function HeatmapPreview({ activeView, wrapperClass, onTileClick, onTileHo
   }, [router, isDesktop, activeView]);
 
   return (
-    <section className={`heatmap-preview ${wrapperClass || ''} ${!isDesktop ? 'h-full flex flex-col' : ''}`}>
+    <section className={`heatmap-preview ${wrapperClass || ''} h-full flex flex-col lg:block lg:h-auto`}>
       {/* No visible title — the active tab above already carries the label.
           Search + fullscreen live in the nav row, metric chips in the header
           subnav row (PageHeader) — the map starts flush below them. */}
       <h2 className="sr-only">Market Heatmap</h2>
 
-      {/* Map — full width; height tracks the viewport so the whole map fills
-          the fold (≈215px of hero/header/nav/chips chrome above it). On large
-          monitors the 600px cap left tiles shrunk and the next section
-          peeking in, so the ceiling scales with viewport height instead. */}
-      <div className={isDesktop ? '' : 'flex-1 flex flex-col'}>
+      {/* Map — full width; desktop height is set in CSS (@media min-width: 1024px)
+          so SSR + first paint already carry max(420px, calc(100vh - 215px)) without
+          waiting for useMediaQuery hydration (prevents 400px → full-height resize). */}
+      <div className="flex-1 flex flex-col lg:block">
       {/* Content Wrapper - simplified: removed unnecessary inner div */}
       <div
-        className={`relative w-full bg-black overflow-hidden group heatmap-preview-container border-none outline-none ${isDesktop ? 'heatmap-preview-desktop' : 'flex-1'
-          }`}
-        style={isDesktop ? { cursor: 'pointer', border: 'none', outline: 'none', height: 'max(420px, calc(100vh - 215px))' } : { cursor: 'pointer', border: 'none', outline: 'none' }}
+        className="relative w-full bg-black overflow-hidden group heatmap-preview-container border-none outline-none flex-1 lg:flex-none heatmap-preview-desktop"
+        style={{ cursor: 'pointer', border: 'none', outline: 'none' }}
         onClick={handleBackgroundClick}
       >
         {/* Fullscreen — a map control, visually owned by the map itself */}
-        {isDesktop && (
-          <div className="absolute top-2 right-2 z-10">
-            <HeatmapViewButton overlay />
-          </div>
-        )}
+        <div className="hidden lg:block absolute top-2 right-2 z-10">
+          <HeatmapViewButton overlay />
+        </div>
         <ResponsiveMarketHeatmap
           apiEndpoint="/api/heatmap"
           autoRefresh={true}

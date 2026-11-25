@@ -618,6 +618,10 @@
       width: 100vw;
       margin-left: calc(50% - 50vw);
     }
+
+    .heatmap-preview-container {
+      height: max(420px, calc(100vh - 215px));
+    }
   }
 
   /* Mobile: tighter section spacing */

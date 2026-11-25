@@ -46,7 +46,7 @@ export default async function MetricHeatmapPage({ params }: { params: Promise<{ 
   };
 
   const others = METRIC_PAGES.filter((p) => p.slug !== def.slug);
-  const initialHeatmapData = await getInitialHeatmapRows(300, 2500);
+  const initialHeatmapData = await getInitialHeatmapRows(null, 2500, def.metric);
 
   return (
     <>

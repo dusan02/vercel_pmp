@@ -20,8 +20,10 @@ import {
   buildPriceMap,
   buildPrevCloseMaps,
   toCompactRow,
+  toSlimCompactRow,
   type HeatmapPayloadRow,
 } from './heatmapTransformer';
+import type { HeatmapMetric } from './types';
 
 /**
  * Shared heatmap data pipeline — used by /api/heatmap (HTTP layer keeps
@@ -481,11 +483,16 @@ async function rebuildHeatmapData(opts: { timeframe: string; forceRefresh: boole
 }
 
 /**
- * Safe SSR prefetch helper — fetches top `limit` compact rows within
- * `timeoutMs`, returning `[]` on timeout or error so client hydration can
- * still recover via /api/heatmap.
+ * Safe SSR prefetch helper — fetches slim compact rows within `timeoutMs`
+ * (defaults to the full universe so the initial SSR treemap has the exact same
+ * company set & tile geometry as /api/heatmap, without a 300→1000 layout jump),
+ * returning `[]` on timeout or error so client hydration can still recover.
  */
-export async function getInitialHeatmapRows(limit = 300, timeoutMs = 2500): Promise<Record<string, unknown>[]> {
+export async function getInitialHeatmapRows(
+  limit: number | null = null,
+  timeoutMs = 2500,
+  metric?: HeatmapMetric,
+): Promise<Record<string, unknown>[]> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const result = await Promise.race([
@@ -494,7 +501,8 @@ export async function getInitialHeatmapRows(limit = 300, timeoutMs = 2500): Prom
         timer = setTimeout(() => resolve(null), timeoutMs);
       }),
     ]);
-    return result && result.ok ? result.rows : [];
+    if (!result || !result.ok) return [];
+    return result.rows.map((r) => toSlimCompactRow(r, metric));
   } catch {
     return [];
   } finally {

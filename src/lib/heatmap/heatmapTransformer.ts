@@ -7,6 +7,7 @@ import { detectSession, nowET, isMarketHoliday, getTradingDay, getLastTradingDay
 import { isWeekendET } from '@/lib/utils/dateET';
 import { resolvePrevClose, buildPrevCloseFromDailyRefs } from '@/lib/heatmap/resolvePrevClose';
 import type { TickerInfo, PerfRefCloses } from './heatmapFetcher';
+import type { HeatmapMetric } from './types';
 
 export interface HeatmapPayloadRow {
   ticker: string;
@@ -529,6 +530,45 @@ const METRIC_ROW_FIELDS: ReadonlyArray<readonly [keyof HeatmapPayloadRow, string
   ['earningsGrowth', 'eg'], ['dividendYield', 'dy'], ['beta', 'bt'],
 ];
 
+/** Map HeatmapMetric id → compact wire key (percent uses `c`, mcap uses `d`). */
+export const HEATMAP_METRIC_TO_COMPACT_KEY: Partial<Record<HeatmapMetric, string>> = {
+  week: 'w',
+  month: 'm1',
+  quarter: 'm3',
+  halfyear: 'm6',
+  ytd: 'ytd',
+  year: 'y1',
+  health: 'hs',
+  valuation: 'vs',
+  growth: 'gs',
+  profitability: 'ps',
+  quality: 'qs',
+  moat: 'ms',
+  piotroski: 'pi',
+  altman: 'az',
+  beneish: 'be',
+  fcfmargin: 'fcfm',
+  zscore: 'z',
+  rvol: 'rv',
+  pe: 'pe',
+  fpe: 'fpe',
+  ps: 'psr',
+  pb: 'pb',
+  peg: 'peg',
+  evebitda: 'eve',
+  roe: 'roe',
+  netmargin: 'nm',
+  revgrowth: 'rg',
+  epsgrowth: 'eg',
+  divyield: 'dy',
+  beta: 'bt',
+};
+
+function roundCompactNumber(v: unknown): unknown {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return v;
+  return Number.isInteger(v) ? v : Math.round(v * 10000) / 10000;
+}
+
 /**
  * Map a payload row to the compact wire format (t/n/s/i/m/c/d/p/...).
  * Shared by buildPayload and the route's cached path — keep the key
@@ -536,13 +576,49 @@ const METRIC_ROW_FIELDS: ReadonlyArray<readonly [keyof HeatmapPayloadRow, string
  */
 export function toCompactRow(s: HeatmapPayloadRow): Record<string, unknown> {
   const row: Record<string, unknown> = {
-    t: s.ticker, n: s.companyName, s: s.sector, i: s.industry,
-    m: s.marketCap, c: s.percentChange, d: s.marketCapDiff, p: s.currentPrice,
+    t: s.ticker,
+    n: s.companyName,
+    s: s.sector,
+    i: s.industry,
+    m: roundCompactNumber(s.marketCap),
+    c: roundCompactNumber(s.percentChange),
+    d: roundCompactNumber(s.marketCapDiff),
+    p: roundCompactNumber(s.currentPrice),
   };
   for (const [field, key] of METRIC_ROW_FIELDS) {
-    row[key] = s[field] ?? null;
+    const val = s[field];
+    if (val != null) {
+      row[key] = roundCompactNumber(val);
+    }
   }
   return row;
+}
+
+/**
+ * Strip secondary metrics from a compact row for SSR HTML hydration.
+ * Keeping only layout + primary color fields (`t/n/s/i/m/c/d/p` + optional
+ * route-pinned metric) lets SSR ship 100% of the company universe in ~110KB
+ * so initial treemap geometry matches /api/heatmap with zero tile-size jump.
+ */
+export function toSlimCompactRow(
+  row: Record<string, unknown>,
+  metric?: HeatmapMetric,
+): Record<string, unknown> {
+  const slim: Record<string, unknown> = {
+    t: row.t,
+    n: row.n,
+    s: row.s,
+    i: row.i,
+    m: row.m,
+    c: row.c,
+    d: row.d,
+    p: row.p,
+  };
+  const extraKey = metric ? HEATMAP_METRIC_TO_COMPACT_KEY[metric] : undefined;
+  if (extraKey && row[extraKey] != null) {
+    slim[extraKey] = row[extraKey];
+  }
+  return slim;
 }
 
 /**

@@ -90,6 +90,45 @@ describe('heatmapService L1/fallback cache & SSR helper', () => {
     expect(mockFetchTickers).not.toHaveBeenCalled();
   });
 
+  test('getInitialHeatmapRows returns full universe in slim SSR format and preserves pinned metric', async () => {
+    jest.resetModules();
+    const bigUniverse = Array.from({ length: 350 }, (_, idx) => ({
+      ...makePayloadRow(`T${idx}`, 5000 - idx),
+      peRatio: 25.123456,
+      healthScore: 80,
+    }));
+    jest.doMock('@/lib/redis/operations', () => ({
+      getCachedData: jest.fn().mockResolvedValue({
+        fetchedAt: Date.now(),
+        data: bigUniverse,
+      }),
+      setCachedData: jest.fn(),
+    }));
+    const { getInitialHeatmapRows: freshHelper } = await import('@/lib/heatmap/heatmapService');
+
+    // Default (limit = null): returns ALL 350 rows (no 300-row truncation) with slim keys only
+    const defaultRows = await freshHelper(null, 500);
+    expect(defaultRows).toHaveLength(350);
+    expect(defaultRows[0]).toEqual({
+      t: 'T0',
+      n: 'T0 Corp',
+      s: 'Technology',
+      i: 'Software',
+      m: 5000,
+      c: 1.5,
+      d: 10,
+      p: 100,
+    });
+    expect(defaultRows[0]).not.toHaveProperty('pe');
+    expect(defaultRows[0]).not.toHaveProperty('hs');
+
+    // Pinned metric (e.g. /heatmap/pe-ratio): includes rounded `pe` key while keeping row slim
+    const peRows = await freshHelper(null, 500, 'pe');
+    expect(peRows).toHaveLength(350);
+    expect(peRows[0]?.pe).toBe(25.1235);
+    expect(peRows[0]).not.toHaveProperty('hs');
+  });
+
   test('getInitialHeatmapRows returns [] on timeout without throwing', async () => {
     jest.resetModules();
     jest.doMock('@/lib/redis/operations', () => ({
