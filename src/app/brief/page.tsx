@@ -10,6 +10,7 @@ import { formatPercent, formatPrice, formatMarketCap } from '@/lib/utils/heatmap
 import { shortName } from '@/lib/seo/metadata';
 import { toJsonLd } from '@/lib/seo/jsonLd';
 import { SsrFreshnessGuard } from '@/components/SsrFreshnessGuard';
+import { NotificationToggle } from '@/components/notifications/NotificationToggle';
 import { getMoversData, type MoverRecord } from '@/services/movers/getMovers';
 import { isMicrocap } from '@/services/movers/liquidity';
 
@@ -213,13 +214,75 @@ export default async function BriefPage() {
         </div>
         <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
           {rows.length > 0
-            ? `${SESSION_LABEL[session]}. Market breadth is ${breadthWord}: ${advancers} advancing vs ${decliners} declining of ${rows.length} tracked stocks.`
+            ? `${SESSION_LABEL[session]}. Market breadth is ${breadthWord}: ${advancers} advancing vs ${decliners} declining of ${rows.length} tracked stocks (${formatPercent(weightedAvg)} cap-weighted).`
             : `${SESSION_LABEL[session]}. Market data is loading — check back in a moment.`}
         </p>
+        {(gainers.length > 0 || losers.length > 0 || sectors.length > 0) && (
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed max-w-4xl">
+            {gainers.length > 0 && (
+              <>
+                <strong>Top gainers:</strong>{' '}
+                {gainers.slice(0, 3).map((g, i) => (
+                  <span key={g.ticker}>
+                    {i > 0 && ', '}
+                    {eligible.has(g.ticker) ? (
+                      <Link href={`/analysis/${g.ticker}`} className="font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                        {g.ticker}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold">{g.ticker}</span>
+                    )}{' '}
+                    ({formatPercent(g.percentChange)})
+                  </span>
+                ))}
+                {'. '}
+              </>
+            )}
+            {losers.length > 0 && (
+              <>
+                <strong>Top losers:</strong>{' '}
+                {losers.slice(0, 3).map((l, i) => (
+                  <span key={l.ticker}>
+                    {i > 0 && ', '}
+                    {eligible.has(l.ticker) ? (
+                      <Link href={`/analysis/${l.ticker}`} className="font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                        {l.ticker}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold">{l.ticker}</span>
+                    )}{' '}
+                    ({formatPercent(l.percentChange)})
+                  </span>
+                ))}
+                {'. '}
+              </>
+            )}
+            {sectors.length > 1 && (
+              <>
+                <strong>Leading sector:</strong> {sectors[0]!.name} ({formatPercent(sectors[0]!.avg)});{' '}
+                <strong>lagging:</strong> {sectors[sectors.length - 1]!.name} ({formatPercent(sectors[sectors.length - 1]!.avg)}).
+              </>
+            )}
+          </p>
+        )}
+        <div className="mt-4 flex flex-wrap items-center gap-2.5 text-sm">
+          <Link href="/heatmap" className="inline-flex items-center px-3.5 py-1.5 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm">
+            Live Market Heatmap →
+          </Link>
+          <Link href="/premarket-movers" className="inline-flex items-center px-3.5 py-1.5 rounded-lg font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+            Full Movers Board →
+          </Link>
+          <Link href="/gainers" className="inline-flex items-center px-3 py-1.5 rounded-lg font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+            Top Gainers
+          </Link>
+          <Link href="/losers" className="inline-flex items-center px-3 py-1.5 rounded-lg font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+            Top Losers
+          </Link>
+        </div>
       </div>
 
       {/* Breadth strip */}
-      <section aria-label="Market breadth" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
+      <section aria-label="Market breadth" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         <StatCard label="Weighted avg" value={formatPercent(weightedAvg)} sub="cap-weighted move" tone={breadthTone} />
         <StatCard label="Advancing" value={String(advancers)} tone="up" sub={`of ${rows.length} stocks`} />
         <StatCard label="Declining" value={String(decliners)} tone="down" sub={`${unchanged} flat`} />
@@ -232,6 +295,14 @@ export default async function BriefPage() {
           sub={gainers[0]?.marketCap ? formatMarketCap(gainers[0].marketCap) : undefined}
         />
       </section>
+
+      {/* Morning alert hook — right below breadth strip for returning-user loop */}
+      <div className="mb-8 max-w-xl">
+        <NotificationToggle
+          title="Daily Morning Brief Alerts"
+          subtitle="Get top premarket movers every weekday at 8:00 AM ET — 1-click browser alert."
+        />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Sector board */}

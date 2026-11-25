@@ -232,15 +232,61 @@ export default async function PremarketMoversPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(itemListSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(faqSchema) }} />
       <div className="container mx-auto py-8 px-4">
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
             Stocks Moving in Premarket Today ({today})
           </h1>
-          <p className="mt-3 text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
-            The biggest pre-market movers ranked by percentage change.
-            {topGainer && ` Top gainer: ${topGainer.name ?? topGainer.symbol} (${topGainer.symbol}) at ${formatPercent(topGainer.lastChangePct ?? 0)}.`}
-            {topLoser && ` Biggest decliner: ${topLoser.name ?? topLoser.symbol} (${topLoser.symbol}) at ${formatPercent(topLoser.lastChangePct ?? 0)}.`}
+          <p className="mt-3 text-slate-600 dark:text-slate-300 max-w-4xl leading-relaxed">
+            The biggest pre-market movers ranked by percentage change ({liquidGainers.length} gainers, {liquidLosers.length} decliners).
+            {topGainer && (
+              <>
+                {' '}Top gainer:{' '}
+                {eligibleAnalysis.has(topGainer.symbol) ? (
+                  <Link href={`/analysis/${topGainer.symbol}`} className="font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                    {topGainer.name ?? topGainer.symbol} ({topGainer.symbol})
+                  </Link>
+                ) : (
+                  <span className="font-semibold">{topGainer.name ?? topGainer.symbol} ({topGainer.symbol})</span>
+                )}{' '}
+                at <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatPercent(topGainer.lastChangePct ?? 0)}</span>.
+              </>
+            )}
+            {topLoser && (
+              <>
+                {' '}Biggest decliner:{' '}
+                {eligibleAnalysis.has(topLoser.symbol) ? (
+                  <Link href={`/analysis/${topLoser.symbol}`} className="font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                    {topLoser.name ?? topLoser.symbol} ({topLoser.symbol})
+                  </Link>
+                ) : (
+                  <span className="font-semibold">{topLoser.name ?? topLoser.symbol} ({topLoser.symbol})</span>
+                )}{' '}
+                at <span className="font-semibold text-rose-600 dark:text-rose-400">{formatPercent(topLoser.lastChangePct ?? 0)}</span>.
+              </>
+            )}
           </p>
+          <div className="mt-4 flex flex-wrap items-center gap-2.5 text-sm">
+            <Link href="/heatmap" className="inline-flex items-center px-3.5 py-1.5 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm">
+              Live Market Heatmap →
+            </Link>
+            <Link href="/brief" className="inline-flex items-center px-3.5 py-1.5 rounded-lg font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              60s Market Brief →
+            </Link>
+            <Link href="/gainers" className="inline-flex items-center px-3 py-1.5 rounded-lg font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              Top Gainers
+            </Link>
+            <Link href="/losers" className="inline-flex items-center px-3 py-1.5 rounded-lg font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              Top Losers
+            </Link>
+          </div>
+        </div>
+
+        {/* Above-the-fold digest subscribe — daily premarket movers at ~08:00 ET */}
+        <div className="mb-6 max-w-xl">
+          <NotificationToggle
+            title="Daily Premarket Movers Alert"
+            subtitle="Get top gainers & losers every weekday at 8:00 AM ET — 1-click browser alert."
+          />
         </div>
 
         {recapData && (
@@ -291,14 +337,6 @@ export default async function PremarketMoversPage() {
             </div>
           </section>
         )}
-
-        {/* Push/email digest subscribe — daily premarket movers at ~08:00 ET */}
-        <div className="mt-6 max-w-md">
-          <NotificationToggle
-            title="Daily Movers Digest"
-            subtitle="Top premarket movers each weekday at 8:00 AM ET."
-          />
-        </div>
 
         {/* Historical premarket archive — links to past dates from PostgreSQL */}
         {archiveDates.length > 0 && (

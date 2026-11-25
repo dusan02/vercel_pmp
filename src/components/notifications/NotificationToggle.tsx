@@ -152,28 +152,39 @@ export function NotificationToggle({
                     </div>
                 </div>
 
-                <button
-                    onClick={() => isSubscribed ? unsubscribe() : symbol ? subscribe() : setShowEmailInput(!showEmailInput)}
-                    disabled={loading}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${isSubscribed
-                        ? 'bg-white text-blue-600 shadow-sm border border-blue-100'
-                        : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
-                        }`}
-                >
-                    {loading ? (
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    ) : isSubscribed ? (
-                        <>
-                            <BellOff className="w-3 h-3" />
-                            Unsubscribe
-                        </>
-                    ) : (
-                        <>
-                            <Bell className="w-3 h-3" />
-                            Get Alerts
-                        </>
+                <div className="flex items-center gap-2">
+                    {!isSubscribed && !symbol && !showEmailInput && (
+                        <button
+                            type="button"
+                            onClick={() => setShowEmailInput(true)}
+                            className="text-[11px] font-medium text-blue-600/80 dark:text-blue-400 hover:underline px-1.5 py-1"
+                        >
+                            + Email
+                        </button>
                     )}
-                </button>
+                    <button
+                        onClick={() => isSubscribed ? unsubscribe() : subscribe()}
+                        disabled={loading}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${isSubscribed
+                            ? 'bg-white text-blue-600 shadow-sm border border-blue-100'
+                            : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
+                            }`}
+                    >
+                        {loading ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : isSubscribed ? (
+                            <>
+                                <BellOff className="w-3 h-3" />
+                                Unsubscribe
+                            </>
+                        ) : (
+                            <>
+                                <Bell className="w-3 h-3" />
+                                Get Alerts
+                            </>
+                        )}
+                    </button>
+                </div>
             </div>
 
             {showEmailInput && !isSubscribed && (

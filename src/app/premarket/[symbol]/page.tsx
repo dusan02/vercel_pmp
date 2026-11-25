@@ -316,6 +316,34 @@ export default async function MoverSymbolPage({ params }: PageProps) {
               {' '}beyond its typical daily range.
               {moves.length > 0 && ` ${moves.length} significant move${moves.length === 1 ? '' : 's'} detected in the last ${LOOKBACK_DAYS} days.`}
             </p>
+            <div className="mt-4 flex flex-wrap items-center gap-2.5 text-sm">
+              <Link
+                href={`/analysis/${tickerUpper}`}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                Full {tickerUpper} Analysis →
+              </Link>
+              <Link
+                href="/heatmap"
+                className="inline-flex items-center px-3.5 py-2 rounded-lg font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                Market Heatmap
+              </Link>
+              <Link
+                href="/premarket-movers"
+                className="inline-flex items-center px-3.5 py-2 rounded-lg font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                All Premarket Movers
+              </Link>
+              {data.sector && (
+                <Link
+                  href={`/sectors/${encodeURIComponent(data.sector)}`}
+                  className="inline-flex items-center px-3.5 py-2 rounded-lg font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {formatSectorName(data.sector)} Sector
+                </Link>
+              )}
+            </div>
           </div>
 
           {/* Today's intraday — pre-market + regular (5-min bars) */}

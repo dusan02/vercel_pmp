@@ -12,7 +12,9 @@ export function PushAttribution() {
     useEffect(() => {
         const src = new URLSearchParams(window.location.search).get('src');
         if (src === 'alert' || src === 'digest') {
-            event('push_return', { source: src, path: window.location.pathname });
+            // Never use reserved GA4 param name `source` — use `click_source`
+            // (registered custom dimension) so session attribution is preserved.
+            event('push_return', { click_source: src, path: window.location.pathname });
         }
     }, []);
     return null;

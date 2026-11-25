@@ -52,8 +52,9 @@ export class SocialDistributorService {
                     { latestMoversRVOL: { gte: 4.0 }, lastChangePct: { gte: 5.0 } },
                     { latestMoversRVOL: { gte: 4.0 }, lastChangePct: { lte: -5.0 } },
                     // Mega-cap mover: large market cap ($50B+) with significant move (>= 3%)
+                    // Note: Ticker.lastMarketCap is stored in BILLIONS (e.g. 50 = $50B).
                     {
-                        lastMarketCap: { gte: 50_000_000_000 },
+                        lastMarketCap: { gte: 50 },
                         OR: [
                             { lastChangePct: { gte: 3.0 } },
                             { lastChangePct: { lte: -3.0 } },
@@ -69,11 +70,11 @@ export class SocialDistributorService {
             return results;
         }
 
-        // Sort movers: Mega-Caps ($100B+) moving >= 3% get absolute first priority,
+        // Sort movers: Mega-Caps ($100B+, lastMarketCap in billions) moving >= 3% get absolute first priority,
         // followed by highest absolute impact (|Z-score|), so big drops aren't eclipsed by mild gainers.
         movers.sort((a, b) => {
-            const aMega = (a.lastMarketCap ?? 0) >= 100_000_000_000 && Math.abs(a.lastChangePct ?? 0) >= 3.0;
-            const bMega = (b.lastMarketCap ?? 0) >= 100_000_000_000 && Math.abs(b.lastChangePct ?? 0) >= 3.0;
+            const aMega = (a.lastMarketCap ?? 0) >= 100 && Math.abs(a.lastChangePct ?? 0) >= 3.0;
+            const bMega = (b.lastMarketCap ?? 0) >= 100 && Math.abs(b.lastChangePct ?? 0) >= 3.0;
             if (aMega && !bMega) return -1;
             if (!aMega && bMega) return 1;
 
@@ -241,7 +242,8 @@ export class SocialDistributorService {
             }),
             prisma.ticker.findMany({
                 where: {
-                    lastMarketCap: { gte: 100_000_000_000 },
+                    // Ticker.lastMarketCap is stored in BILLIONS (100 = $100B).
+                    lastMarketCap: { gte: 100 },
                     lastPrice: { gte: 1 },
                     OR: [
                         { lastChangePct: { gte: 3.0 } },
