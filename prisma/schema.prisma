@@ -161,9 +161,6 @@ model Ticker {
   portfolio            PortfolioItem[]
   sessionPrices        SessionPrice[]
   userFavorites        UserFavorite[]
-  valuationHistories   ValuationHistory[]
-  valuationPercentiles ValuationPercentiles[]
-  volumeBuckets        VolumeBucket[]
   ewScoreSnapshots     EwScoreSnapshot[]
 
   // Finnhub data
@@ -222,7 +219,6 @@ model DailyRef {
 
   @@unique([symbol, date])
   @@index([date])
-  @@index([symbol])
 }
 
 model SessionPrice {
@@ -289,19 +285,6 @@ model ChartDrawing {
   @@index([ticker])
 }
 
-model VolumeBucket {
-  id        String   @id @default(cuid())
-  symbol    String
-  bucket    String
-  avgVolume Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ticker    Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
-
-  @@unique([symbol, bucket])
-  @@index([symbol])
-}
-
 model FinancialStatement {
   id                 String   @id @default(cuid())
   symbol             String
@@ -333,7 +316,7 @@ model FinancialStatement {
   ticker             Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@unique([symbol, fiscalYear, fiscalPeriod])
-  @@index([symbol])
+  @@index([symbol, endDate])
   @@index([fiscalYear, fiscalPeriod])
   @@index([endDate])
 }
@@ -368,10 +351,7 @@ model DailyValuationHistory {
   ticker            Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
   @@unique([symbol, date])
-  @@index([symbol])
   @@index([date])
-  @@index([symbol, date, peRatio])
-  @@index([symbol, date, pbRatio])
 }
 
 model AnalysisCache {
@@ -435,6 +415,9 @@ model AnalysisCache {
   @@index([moatScore])
   @@index([overallScore])
   @@index([pePercentile])
+  @@index([verdictKey])
+  @@index([fundLevel])
+  @@index([valLevel])
 }
 
 model Subscription {
@@ -463,43 +446,6 @@ model SymbolAlert {
 
   @@unique([endpoint, symbol])
   @@index([symbol])
-}
-
-model ValuationHistory {
-  id         String   @id @default(cuid())
-  symbol     String
-  date       DateTime
-  metric     String
-  value      Float
-  percentile Float?
-  period     String
-  createdAt  DateTime @default(now())
-  ticker     Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
-
-  @@unique([symbol, date, metric, period])
-  @@index([symbol, date])
-  @@index([date])
-  @@index([symbol, metric])
-}
-
-model ValuationPercentiles {
-  id          String   @id @default(cuid())
-  symbol      String
-  metric      String
-  period      String
-  p10         Float
-  p25         Float
-  p50         Float
-  p75         Float
-  p90         Float
-  mean        Float
-  stdDev      Float
-  sampleSize  Int
-  lastUpdated DateTime @default(now())
-  ticker      Ticker   @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
-
-  @@unique([symbol, metric, period])
-  @@index([symbol, metric])
 }
 
 // ============================================================================
@@ -573,7 +519,6 @@ model FinnhubMetrics {
 
   ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
-  @@index([symbol])
   @@index([fetchedAt])
 }
 
@@ -602,7 +547,6 @@ model FinnhubProfile {
 
   ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
-  @@index([symbol])
   @@index([fetchedAt])
 }
 
@@ -623,7 +567,6 @@ model FinnhubPriceTarget {
 
   ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
-  @@index([symbol])
   @@index([fetchedAt])
 }
 
@@ -697,7 +640,6 @@ model FinnhubRecommendation {
 
   ticker Ticker @relation(fields: [symbol], references: [symbol], onDelete: Cascade)
 
-  @@index([symbol])
   @@index([fetchedAt])
 }
 
@@ -710,8 +652,6 @@ model DailyBlogSnapshot {
   earningsJson   String   @default("[]") // JSON array of earnings today (from Finnhub)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
-  @@index([date])
 }
 
 // ============================================================================
